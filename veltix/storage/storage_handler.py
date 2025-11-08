@@ -5,10 +5,10 @@ from pathlib import Path
 from queue import Queue, Empty
 from typing import Optional, Any
 
-from crypto.aes_handler import AESManager
-from network.requests_handler import Langage
-from storage.atomic import AtomicFile
-from utils.veltix_exceptions import VeltixStorageError
+from veltix.crypto.aes_handler import AESManager
+from veltix.network.requests_handler import Langage
+from veltix.storage.atomic import AtomicFile
+from veltix.utils.veltix_exceptions import VeltixStorageError
 
 
 class VeltixStorage:

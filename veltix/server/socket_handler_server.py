@@ -5,7 +5,7 @@ import json
 import time
 from typing import Callable, Optional, Dict, List
 
-from network.requests_handler import Langage, Requests, Sender
+from veltix.network.requests_handler import Langage, Requests, Sender
 
 class RequestsSize:
     TINY = 512

@@ -3,7 +3,7 @@ import socket
 import threading
 from typing import Callable, Optional
 
-from network.requests_handler import Langage, Requests, Sender
+from veltix.network.requests_handler import Langage, Requests, Sender
 
 
 class RequestsSize:

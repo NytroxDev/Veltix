@@ -5,7 +5,7 @@ import time
 from collections import deque
 from typing import Callable, Optional
 
-from utils.veltix_exceptions import VeltixProtocolError
+from veltix.utils.veltix_exceptions import VeltixProtocolError
 
 
 class Langage:
