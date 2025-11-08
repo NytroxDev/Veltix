@@ -697,7 +697,7 @@ R: Les callbacks sont appelés dans le thread réseau. Pour des ops longues, uti
 - ✅ **v1.0** : Core réseau + chiffrement
 - ✅ **v1.1** : Auto-reconnexion client
 - ✅ **v1.2** : Stats et monitoring
-- 🔄 **v1.3** : Benchmarks officiels
+- 🔄 **v1.3** : Benchmarks officiels et dossier .veltix fonctionnel !
 - 📅 **v2.0** : ...
 
 ---
