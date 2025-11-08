@@ -1,21 +1,23 @@
-import os
-import time
 import hashlib
+import os
 import pickle
-from typing import Callable, Optional
+import time
 from collections import deque
+from typing import Callable, Optional
+
 from utils.veltix_exceptions import VeltixProtocolError
 
 
 class Langage:
     """Charge et vérifie le protocole depuis un fichier commun (optimisé)."""
-    __slots__ = ('file_path', '_categories', '_code_cache', '_valid_codes')
+    __slots__ = ('file_path', '_categories', '_code_cache', '_valid_codes', 'content')
 
     class Basic:
         pass
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, content: Optional[str] = None):
         self.file_path = file_path
+        self.content = content
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Protocole introuvable : {file_path}")
         self._categories = {}
@@ -24,8 +26,11 @@ class Langage:
         self._load_protocol()
 
     def _load_protocol(self):
-        with open(self.file_path, "r", encoding="utf-8") as f:
-            lines = f.read().splitlines()
+        if not self.content:
+            with open(self.file_path, encoding="utf-8") as f:
+                lines = f.read().splitlines()
+        else:
+            lines = self.content.splitlines()
 
         current_category = None
         used_codes = set()
