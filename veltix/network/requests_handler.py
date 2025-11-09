@@ -10,12 +10,13 @@ from veltix.utils.veltix_exceptions import VeltixProtocolError
 
 class Langage:
     """Charge et vérifie le protocole depuis un fichier commun (optimisé)."""
-    __slots__ = ('file_path', '_categories', '_code_cache', '_valid_codes', 'content')
+    __slots__ = ('file_path', 'INIT', '_categories', '_code_cache', '_valid_codes', 'content')
 
     class Basic:
         pass
 
     def __init__(self, file_path, content: Optional[str] = None):
+        self.INIT = 0x0000
         self.file_path = file_path
         self.content = content
         if not os.path.exists(file_path):
@@ -34,6 +35,7 @@ class Langage:
 
         current_category = None
         used_codes = set()
+        used_codes.add(0x0000)
 
         for line_num, line in enumerate(lines, 1):
             line = line.strip()
@@ -115,8 +117,8 @@ class Requests:
     def _compute_hash_fast(self, content_bytes: bytes) -> str:
         """Hash optimisé - évite pickle multiple fois"""
         m = hashlib.sha256()
-        m.update(self.type.encode('utf-8'))
-        m.update(str(self.timestamp).encode('utf-8'))
+        m.update(self.type.encode())
+        m.update(str(self.timestamp).encode())
         m.update(content_bytes)
         return m.hexdigest()
 
@@ -260,6 +262,7 @@ class Sender:
         """
         success_count = 0
         for req in requests:
+            # noinspection TryExceptContinue
             try:
                 if self.send(req, private):
                     success_count += 1

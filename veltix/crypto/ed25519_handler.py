@@ -1,7 +1,9 @@
 import base64
 from typing import Optional
-from cryptography.hazmat.primitives.asymmetric import ed25519
+
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519
+
 
 class Ed25519Signer:
     def __init__(self, private_key: Optional[ed25519.Ed25519PrivateKey] = None):
@@ -15,13 +17,13 @@ class Ed25519Signer:
     def sign(self, data: bytes | str) -> str:
         """Retourne la signature base64"""
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode()
         signature = self.private_key.sign(data)
-        return base64.b64encode(signature).decode('utf-8')
+        return base64.b64encode(signature).decode()
 
     def verify(self, data: bytes | str, signature_b64: str) -> bool:
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode()
         signature = base64.b64decode(signature_b64)
         try:
             self.public_key.verify(signature, data)
@@ -52,7 +54,7 @@ class Ed25519Signer:
         with open(path, 'rb') as f:
             pem_data = f.read()
         private_key = serialization.load_pem_private_key(pem_data, password=password)
-        return cls(private_key) # type: ignore
+        return cls(private_key)
 
     @classmethod
     def load_public_key(cls, path: str):

@@ -21,6 +21,8 @@
 
 ---
 
+### *(les exemple de code ne sont pas encore a jour avec la derniere version de veltix)*
+
 ## 🎯 Démarrage rapide (5 minutes)
 
 ### Installation
@@ -29,17 +31,16 @@
 pip install veltix-network
 ```
 
-### Votre premier serveur (5 lignes !)
+### Votre premier serveur (6 lignes !)
 
 ```python
-from veltix import Server, Langage, Requests
+from veltix import Server, VeltixStorage, Requests
 
-lang = Langage("protocol.txt")
-server = Server(langage=lang)
+server = Server(storage=VeltixStorage(".veltix")) # VeltixStorage.create_veltix(".veltix")
 
 @server.on_message
 def handle(client, msg):
-    client.send(Requests(lang.Response.Ok, {"status": "ok"}, lang))
+    client.send(Requests(lang.Response.Ok, f"Echo : {msg.content}"))
 
 server.run()
 ```
@@ -222,14 +223,14 @@ def block_attacker(client, data):
 
 ### Estimations (en attente des benchmarks officiels)
 
-| Métrique | Valeur | Comparaison |
-|----------|--------|-------------|
-| **Messages/sec** | ~1,000,000 | 100x plus rapide que Flask-SocketIO |
-| **Latence** | <1ms (LAN) | 10x plus rapide que Socket.IO |
-| **Connexions simultanées** | ~50,000 | Comparable à nginx |
-| **Throughput** | ~2 GB/s | Limité par le réseau, pas Veltix |
-| **RAM par connexion** | ~8 KB | 5x moins que les frameworks traditionnels |
-| **CPU idle** | ~0.1% | Optimisations zero-copy |
+| Métrique                   | Valeur     | Comparaison                               |
+|----------------------------|------------|-------------------------------------------|
+| **Messages/sec**           | ~1,000,000 | 100x plus rapide que Flask-SocketIO       |
+| **Latence**                | <1ms (LAN) | 10x plus rapide que Socket.IO             |
+| **Connexions simultanées** | ~50,000    | Comparable à nginx                        |
+| **Throughput**             | ~2 GB/s    | Limité par le réseau, pas Veltix          |
+| **RAM par connexion**      | ~5 KB      | 5x moins que les frameworks traditionnels |
+| **CPU idle**               | ~0.1%      | Optimisations zero-copy                   |
 
 *Sur AMD Ryzen 9 / Intel i9 avec réseau 10Gbps*
 

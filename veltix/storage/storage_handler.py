@@ -4,7 +4,7 @@ import time
 from enum import Enum, auto
 from pathlib import Path
 from queue import Queue, Empty
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 from veltix.crypto.aes_handler import AESManager
 from veltix.network.requests_handler import Langage
@@ -19,6 +19,7 @@ class LogCategory(Enum):
     SYSTEM = auto()
     AUTH = auto()
     STORAGE = auto()
+    CONNECTION = auto()
     CUSTOM = auto()
 
     def __str__(self):
@@ -35,11 +36,13 @@ class LogLevel(Enum):
     def __str__(self):
         return self.name
 
+
 class VeltixStorage:
     """
     Gestionnaire de stockage et de logs Veltix.
     - Chargement Langage avec détection chiffrée
     - Journalisation atomique (synchrone ou asynchrone)
+    - Sauvegarde de paramètres/configuration chiffrés
     """
 
     def __init__(self, path: Path, mdp: Optional[str] = None, version: Optional[int] = None, log_mode: str = "sync"):
@@ -59,6 +62,12 @@ class VeltixStorage:
         self._log_queue = Queue()
         self._log_thread: Optional[threading.Thread] = None
         self._log_stop = threading.Event()
+
+        # === Gestion des paramètres/config ===
+        self.config_path = path / "veltix_config.json"
+        self._config_file = AtomicFile(str(self.config_path))
+        self._config_cache: Optional[Dict] = None
+        self._config_lock = threading.Lock()
 
         # Démarrage auto seulement si async
         if self.log_mode == "async":
@@ -194,6 +203,137 @@ class VeltixStorage:
         if category:
             logs = [l for l in logs if l["category"] == category]
         return logs[-last_n:]
+
+    # === Gestion des paramètres/configuration ===
+    def _load_config(self) -> Dict:
+        """Charge la configuration depuis le fichier (avec cache)"""
+        with self._config_lock:
+            if self._config_cache is not None:
+                return self._config_cache
+
+            data = self._config_file.read()
+            if not data:
+                self._config_cache = {}
+                return self._config_cache
+
+            try:
+                config = json.loads(data)
+
+                # Déchiffrer si mot de passe fourni
+                if self.mdp and "encrypted" in config and config["encrypted"]:
+                    salt = bytes.fromhex(config["salt"])
+                    key, _ = AESManager.derive_key_from_password(self.mdp, salt=salt)
+                    aes = AESManager(key)
+
+                    decrypted_data = {}
+                    for k, v in config.get("data", {}).items():
+                        try:
+                            decrypted_data[k] = aes.decrypt(v)
+                        except:
+                            decrypted_data[k] = v  # Fallback si pas chiffré
+
+                    self._config_cache = decrypted_data
+                else:
+                    self._config_cache = config.get("data", {})
+
+                return self._config_cache
+            except json.JSONDecodeError:
+                self._config_cache = {}
+                return self._config_cache
+
+    def _save_config(self, config: Dict):
+        """Sauvegarde la configuration de manière atomique"""
+        with self._config_lock:
+            if self.mdp:
+                # Chiffrer chaque valeur
+                key, salt = AESManager.derive_key_from_password(self.mdp)
+                aes = AESManager(key)
+
+                encrypted_data = {}
+                for k, v in config.items():
+                    encrypted_data[k] = aes.encrypt(str(v))
+
+                data = {
+                    "encrypted": True,
+                    "salt": salt.hex(),
+                    "data": encrypted_data
+                }
+            else:
+                data = {
+                    "encrypted": False,
+                    "data": config
+                }
+
+            self._config_file.write(json.dumps(data, indent=2))
+            self._config_cache = config
+
+    def save_parameter(self, key: str, value: Any):
+        """
+        Sauvegarde un paramètre de configuration.
+        Si un mot de passe est défini, le paramètre sera chiffré.
+
+        Exemples:
+            storage.save_parameter("api_key", "secret_key_123")
+            storage.save_parameter("server_port", 5050)
+            storage.save_parameter("crypto_keys", {"pub": "...", "priv": "..."})
+        """
+        config = self._load_config()
+        config[key] = value
+        self._save_config(config)
+
+    def get_parameter(self, key: str, default: Any = None) -> Any:
+        """
+        Récupère un paramètre de configuration.
+
+        Exemples:
+            api_key = storage.get_parameter("api_key")
+            port = storage.get_parameter("server_port", default=5050)
+        """
+        config = self._load_config()
+        return config.get(key, default)
+
+    def delete_parameter(self, key: str) -> bool:
+        """
+        Supprime un paramètre de configuration.
+        Retourne True si le paramètre existait, False sinon.
+        """
+        config = self._load_config()
+        if key in config:
+            del config[key]
+            self._save_config(config)
+            return True
+        return False
+
+    def list_parameters(self) -> list[str]:
+        """Liste toutes les clés de paramètres stockées"""
+        config = self._load_config()
+        return list(config.keys())
+
+    def clear_parameters(self):
+        """Supprime tous les paramètres de configuration"""
+        self._save_config({})
+
+    def export_parameters(self) -> Dict:
+        """
+        Exporte tous les paramètres (déchiffrés si mot de passe fourni).
+        Utile pour backup ou migration.
+        """
+        return self._load_config().copy()
+
+    def import_parameters(self, parameters: Dict, merge: bool = True):
+        """
+        Importe des paramètres depuis un dictionnaire.
+
+        Args:
+            parameters: Dictionnaire des paramètres à importer
+            merge: Si True, fusionne avec l'existant. Si False, remplace tout.
+        """
+        if merge:
+            config = self._load_config()
+            config.update(parameters)
+            self._save_config(config)
+        else:
+            self._save_config(parameters)
 
     def close(self):
         """Arrêt propre (si async)"""
