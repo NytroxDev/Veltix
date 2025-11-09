@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+from enum import Enum, auto
 from pathlib import Path
 from queue import Queue, Empty
 from typing import Optional, Any
@@ -10,6 +11,29 @@ from veltix.network.requests_handler import Langage
 from veltix.storage.atomic import AtomicFile
 from veltix.utils.veltix_exceptions import VeltixStorageError
 
+
+class LogCategory(Enum):
+    GENERAL = auto()
+    NETWORK = auto()
+    SECURITY = auto()
+    SYSTEM = auto()
+    AUTH = auto()
+    STORAGE = auto()
+    CUSTOM = auto()
+
+    def __str__(self):
+        return self.name.lower()
+
+
+class LogLevel(Enum):
+    DEBUG = auto()
+    INFO = auto()
+    WARNING = auto()
+    ERROR = auto()
+    CRITICAL = auto()
+
+    def __str__(self):
+        return self.name
 
 class VeltixStorage:
     """
@@ -84,16 +108,21 @@ class VeltixStorage:
                 f.write(content)
 
     # === Logs : flexible (sync/async) ===
-    def logs_add(self, message: str, category: str = "general", level: str = "INFO", data: Optional[Any] = None):
+    def logs_add(
+            self,
+            message: str,
+            category: LogCategory = LogCategory.GENERAL,
+            level: LogLevel = LogLevel.INFO,
+            data: Optional[Any] = None
+    ):
         """
         Ajoute un log.
-        Si mode = 'sync' → écrit directement.
-        Si mode = 'async' → met en file.
+        Compatible Enum pour category et level.
         """
         log_entry = {
             "time": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "category": category,
-            "level": level,
+            "category": str(category),
+            "level": str(level),
             "message": message,
             "data": data,
         }

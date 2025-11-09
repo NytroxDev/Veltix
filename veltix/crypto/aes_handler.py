@@ -1,9 +1,11 @@
-import os
 import base64
+import os
 from typing import Union, Optional
+
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
+
 
 class AESManager:
     def __init__(self, key: Optional[bytes] = None):
@@ -48,8 +50,8 @@ class AESManager:
 
     def decrypt(self, token: str) -> bytes:
         """
-        Déchiffre une string base64 (nonce + ciphertext + tag)
-        Retourne les bytes. Si l'entrée est une string d'origine, faire .decode('utf-8')
+        Déchiffre un string base64 (nonce + ciphertext + tag)
+        Retourne les bytes. Si l'entrée est un string d'origine, faire .decode('utf-8').
         """
         data = base64.b64decode(token)
         nonce = data[:12]
