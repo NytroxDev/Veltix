@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0] - 2026-02-06
+## [1.0.0] - 2026-02-07
 
 ### Added
 - TCP Server with multi-threading
