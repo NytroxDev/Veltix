@@ -1,9 +1,9 @@
 # Veltix
 
-> The networking library you always wanted
+# The networking library you always wanted
 
-[![PyPI](https://img.shields.io/pypi/v/veltix)](https://pypi.org/project/veltix/)
-[![Python](https://img.shields.io/pypi/pyversions/veltix)](https://pypi.org/project/veltix/)
+[![PyPI](https://img.shields.io/pypi/v/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
+[![Python](https://img.shields.io/pypi/pyversions/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
 [![License](https://img.shields.io/github/license/NytroxDev/Veltix)](https://github.com/NytroxDev/Veltix/blob/main/LICENSE)
 
 ## ✨ Features
