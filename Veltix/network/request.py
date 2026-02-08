@@ -2,6 +2,7 @@ import dataclasses
 import hashlib
 import struct
 import time
+import uuid
 
 from ..exceptions import RequestError
 from .types import MessageType, MessageTypeRegistry
@@ -18,6 +19,7 @@ class Response:
         timestamp: Send timestamp (milliseconds)
         hash: SHA256 hash of content
         received_at: Receive timestamp (milliseconds)
+        request_id: Unique request identifier
     """
 
     type: MessageType
@@ -25,6 +27,7 @@ class Response:
     timestamp: int
     hash: bytes
     received_at: int
+    request_id: str
 
     @property
     def latency(self) -> int:
@@ -39,11 +42,15 @@ class Request:
     Attributes:
         type: Message type
         content: Message content (bytes)
+        request_id: Unique request identifier (auto-generated if not provided)
     """
 
-    def __init__(self, _type: MessageType, content: bytes) -> None:
+    def __init__(
+        self, _type: MessageType, content: bytes, request_id: str = None
+    ) -> None:
         self.type = _type
         self.content: bytes = content
+        self.request_id: str = request_id or str(uuid.uuid4())
 
     @staticmethod
     def parse(data: bytes) -> Response:
@@ -61,15 +68,22 @@ class Request:
         Raises:
             RequestError: If invalid hash, incorrect size, or unknown type
         """
+
         # Get current time as fast as possible
         received_at = int(time.time() * 1000)
 
         # Step 1: Separate header and content
-        header = data[:46]
-        content = data[46:]
+        header = data[:62]
+        content = data[62:]
 
         # Step 2: Unpack header
-        code, size, hash_received, timestamp_ms = struct.unpack(">HI32sQ", header)
+        code, size, hash_received, timestamp_ms, request_id_bytes = struct.unpack(
+            ">HI32sQ16s", header
+        )
+
+        # CORRECTION ICI : reformater en UUID avec tirets
+        request_id_hex = request_id_bytes.hex()
+        request_id = f"{request_id_hex[:8]}-{request_id_hex[8:12]}-{request_id_hex[12:16]}-{request_id_hex[16:20]}-{request_id_hex[20:]}"
 
         # Step 3: Verify hash and size
         hash_content = hashlib.sha256(content).digest()
@@ -92,6 +106,7 @@ class Request:
             timestamp=timestamp_ms,
             hash=hash_received,
             received_at=received_at,
+            request_id=request_id,
         )
 
     def compile(self) -> bytes:
@@ -120,7 +135,23 @@ class Request:
         # Current timestamp
         timestamp_ms = int(time.time() * 1000)
 
-        # Header construction (46 bytes)
-        header = struct.pack(">HI32sQ", code, size, hash_value, timestamp_ms)
+        # Request ID as bytes
+        try:
+            # Si c'est un UUID valide (avec ou sans tirets)
+            clean_id = self.request_id.replace("-", "")
+            if len(clean_id) == 32 and all(
+                c in "0123456789abcdefABCDEF" for c in clean_id
+            ):
+                request_id_bytes = bytes.fromhex(clean_id)
+            else:
+                # Sinon, hash la string pour obtenir 16 bytes
+                request_id_bytes = hashlib.md5(self.request_id.encode()).digest()
+        except:
+            # Fallback: hash l'ID
+            request_id_bytes = hashlib.md5(self.request_id.encode()).digest()
+
+        header = struct.pack(
+            ">HI32sQ16s", code, size, hash_value, timestamp_ms, request_id_bytes
+        )
 
         return header + self.content
