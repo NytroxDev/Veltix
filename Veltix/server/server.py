@@ -1,10 +1,12 @@
 import dataclasses
 import socket
 import threading
+from queue import Empty, Queue
 from typing import Callable, Optional, Union
 
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
+from ..network.system_types import PING, PONG
 from ..utils.binding import Binding
 from ..utils.network import recv
 
@@ -52,6 +54,7 @@ class Server:
             config: Server configuration (host, port, buffer_size, max_connection)
         """
         # variable
+        self._pending_requests: dict[str, Queue] = {}
         self.clients: list[ClientInfo] = []
         self.threads: list[threading.Thread] = []
         self.config: ServerConfig = config
@@ -59,6 +62,9 @@ class Server:
         self.on_recv: Optional[Callable] = None
         self.on_connect: Optional[Callable] = None
         self.running: bool = True
+
+        self.wait_for_ping = False
+        self.ping_result: Optional[Response] = None
 
         self.sender = Sender(mode=Mode.SERVER)
 
@@ -83,6 +89,39 @@ class Server:
         for event_ in events:
             if event == event_ or event == event_.value:
                 setattr(self, event_.value, func)
+
+    def send_and_wait(
+        self, request: Request, client: ClientInfo, timeout: float = 5.0
+    ) -> Optional[Response]:
+        """
+        Send a request to client and wait for response.
+
+        Args:
+            request: Request to send
+            client: Target client
+            timeout: Timeout in seconds
+
+        Returns:
+            Response object or None if timeout/error
+        """
+        response_queue = Queue(maxsize=1)
+        self._pending_requests[request.request_id] = response_queue
+
+        # Send request
+        if not self.sender.send(request, client=client.conn):
+            del self._pending_requests[request.request_id]
+            return None
+
+        # Wait for response
+        try:
+            response = response_queue.get(timeout=timeout)
+            return response
+        except Empty:
+            return None  # Timeout
+        finally:
+            # Cleanup
+            if request.request_id in self._pending_requests:
+                del self._pending_requests[request.request_id]
 
     def get_sender(self) -> Sender:
         """
@@ -156,12 +195,27 @@ class Server:
                 self.close_client(client)
                 break
 
-            if self.on_recv:
-                try:
-                    response: Response = Request.parse(msg)
-                    self.on_recv(client, response)
-                except:
-                    pass  # TODO: logger l'erreur
+            try:
+                response: Response = Request.parse(msg)
+
+                # Auto-respond to PING
+                if response.type.code == PING.code:
+                    pong_request = Request(
+                        PONG, b"", request_id=response.request_id
+                    )  # MODIFIÉ
+                    self.sender.send(pong_request, client=client.conn)
+                    continue
+
+                # NOUVEAU : Check if someone is waiting for this response
+                if response.request_id in self._pending_requests:
+                    self._pending_requests[response.request_id].put(response)
+                else:
+                    # Normal callback
+                    if self.on_recv:
+                        self.on_recv(client, response)
+
+            except:
+                pass  # TODO: logger l'erreur
 
     def close_client(self, client: ClientInfo) -> bool:
         """
@@ -179,6 +233,26 @@ class Server:
             return True
         else:
             return False
+
+    def ping_client(self, client: ClientInfo, timeout: float = 5.0) -> Optional[float]:
+        """
+        Ping a client and measure latency.
+
+        Args:
+            client: Client to ping
+            timeout: Timeout in seconds
+
+        Returns:
+            Latency in milliseconds, or None if timeout
+        """
+        from ..network.system_types import PING
+
+        ping_request = Request(PING, b"")
+        response = self.send_and_wait(ping_request, client, timeout=timeout)
+
+        if response:
+            return response.latency
+        return None
 
     def close_all(self) -> None:
         """

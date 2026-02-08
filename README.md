@@ -14,6 +14,8 @@
 - 🪶 **Zero dependencies** - Pure Python stdlib only
 - 🔌 **Extensible** - Custom message types with plugin support
 - ⚡ **Multi-threaded** - Handle multiple clients automatically
+- 🔄 **Request/Response pattern** - Built-in send_and_wait with timeout support
+- 📡 **Built-in ping/pong** - Automatic latency measurement
 
 ## 📖 Why Veltix?
 
@@ -99,34 +101,182 @@ python server.py
 python client.py  # In another terminal
 ```
 
+## 🔄 Request/Response Pattern
+
+Veltix supports synchronous request-response communication with `send_and_wait()`:
+
+### Client Example
+
+```python
+from veltix import Client, ClientConfig, MessageType, Request
+
+# Setup
+ECHO = MessageType(code=201, name="echo")
+client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
+client.connect()
+
+# Send and wait for response
+request = Request(ECHO, b"Hello Server!")
+response = client.send_and_wait(request, timeout=5.0)
+
+if response:
+    print(f"Got response: {response.content.decode()}")
+    print(f"Latency: {response.latency}ms")
+else:
+    print("Timeout or error")
+
+client.disconnect()
+```
+
+### Server Example
+
+```python
+from veltix import Server, ServerConfig, MessageType, Request, Binding
+
+ECHO = MessageType(code=201, name="echo")
+server = Server(ServerConfig(host="0.0.0.0", port=8080))
+
+
+def on_message(client, response):
+    # Echo back with same request_id
+    reply = Request(response.type, response.content, request_id=response.request_id)
+    server.get_sender().send(reply, client=client.conn)
+
+
+server.bind(Binding.ON_RECV, on_message)
+server.start()
+
+input("Press Enter to stop...")
+server.close_all()
+```
+
+**Key points:**
+
+- Use the same `request_id` in the response to match the waiting request
+- The client automatically receives the response when IDs match
+- Built-in timeout support to avoid infinite waiting
+
+## 📡 Built-in Ping/Pong
+
+Veltix includes automatic ping/pong functionality for measuring latency:
+
+### Client to Server Ping
+
+```python
+from veltix import Client, ClientConfig
+
+client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
+client.connect()
+
+# Ping the server
+latency = client.ping_server(timeout=2.0)
+
+if latency:
+    print(f"Server latency: {latency}ms")
+else:
+    print("Ping timeout")
+
+client.disconnect()
+```
+
+### Server to Client Ping
+
+```python
+from veltix import Server, ServerConfig, Binding
+
+server = Server(ServerConfig(host="0.0.0.0", port=8080))
+
+
+def on_connect(client):
+    # Ping client when they connect
+    latency = server.ping_client(client, timeout=2.0)
+    if latency:
+        print(f"Client {client.addr} latency: {latency}ms")
+
+
+server.bind(Binding.ON_CONNECT, on_connect)
+server.start()
+
+input("Press Enter to stop...")
+server.close_all()
+```
+
+**Features:**
+
+- Automatic PING/PONG handling (no manual implementation needed)
+- Returns latency in milliseconds
+- Built-in timeout support
+- Works bidirectionally (client ↔ server)
+
 ## 📦 Examples
 
 More examples in [`examples/`](examples/):
 
-- **Echo Server** - Simple echo implementation
-- **File Transfer** - Send files over network
-- **Custom Types** - Define your message types
-- **Advanced Sender** - Complex messaging patterns
+- **Echo Server** - Simple echo implementation with send_and_wait
+- **Chat Server** - Simple Chat in < 80 lines
+- **Ping Example** - Latency measurement demonstrations
+
+## 🎯 Advanced Features
+
+### Custom Message Types
+
+```python
+from veltix import MessageType
+
+# System messages (0-199)
+PING = MessageType(0, "ping", "System ping message")
+
+# User messages (200-499)
+CHAT = MessageType(200, "chat", "Chat message")
+FILE_TRANSFER = MessageType(201, "file", "File transfer")
+
+# Plugin messages (500+)
+CUSTOM_PLUGIN = MessageType(500, "plugin", "Custom plugin message")
+```
+
+### Event Callbacks
+
+```python
+from veltix import Server, Binding
+
+server = Server(config)
+
+# Bind to connection event
+server.bind(Binding.ON_CONNECT, lambda client: print(f"Client connected: {client.addr}"))
+
+# Bind to message event
+server.bind(Binding.ON_RECV, lambda client, msg: print(f"Message from {client.addr}"))
+```
+
+### Broadcasting
+
+```python
+# Broadcast to all connected clients
+message = Request(CHAT, b"Server announcement!")
+sender.broadcast(message, server.get_all_clients_sockets())
+```
 
 ## 📊 Comparison
 
-| Feature           | Veltix | socket | asyncio | Twisted |
-|-------------------|--------|--------|---------|---------|
-| Easy API          | ✅      | ❌      | ⚠️      | ❌       |
-| Zero deps         | ✅      | ✅      | ✅       | ❌       |
-| Custom protocol   | ✅      | ❌      | ❌       | ⚠️      |
-| Message integrity | ✅      | ❌      | ❌       | ❌       |
-| Multi-threading   | ✅      | ❌      | ❌       | ✅       |
+| Feature            | Veltix | socket | asyncio | Twisted |
+|--------------------|--------|--------|---------|---------|
+| Easy API           | ✅      | ❌      | ⚠️      | ❌       |
+| Zero deps          | ✅      | ✅      | ✅       | ❌       |
+| Custom protocol    | ✅      | ❌      | ❌       | ⚠️      |
+| Message integrity  | ✅      | ❌      | ❌       | ❌       |
+| Multi-threading    | ✅      | ❌      | ❌       | ✅       |
+| Request/Response   | ✅      | ❌      | ⚠️      | ✅       |
+| Built-in ping/pong | ✅      | ❌      | ❌       | ❌       |
 
 ## 🗺️ Roadmap
 
-### v1.0.0 - Foundation (March 2026)
+### v1.1.0 - Request/Response (February 2026) ✅
 
-- Core TCP server/client
-- Binary protocol with SHA256 integrity
-- Custom message types
-- Zero dependencies
-- **Status: IN PROGRESS**
+- Request/Response pattern with send_and_wait
+- Built-in ping/pong functionality
+- Automatic latency measurement
+- UUID-based request tracking
+- **Status: RELEASED**
 
 ### v2.0.0 - Security (Summer 2026)
 
