@@ -4,9 +4,7 @@ Simple Chat Client Example for Veltix
 A chat client that can send and receive messages in a group chat.
 """
 
-import threading
-
-from Veltix import Binding, Client, ClientConfig, MessageType, Request
+from veltix import Events, Client, ClientConfig, MessageType, Request
 
 # Define message types (must match server)
 CHAT = MessageType(code=201, name="chat", description="Chat message")
@@ -30,7 +28,7 @@ def main():
         print("You: ", end="", flush=True)
 
     # Bind callback
-    client.bind(Binding.ON_RECV, on_message)
+    client.set_callback(Events.ON_RECV, on_message)
 
     # Connect to server
     print("Connecting to chat server...")

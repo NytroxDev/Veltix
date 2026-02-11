@@ -1,13 +1,15 @@
+# ruff: noqa: UP035
 import dataclasses
 import socket
 import threading
 from queue import Empty, Queue
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union  # noqa: UP035
 
+from ..logger.core import Logger
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING, PONG
-from ..utils.binding import Binding
+from ..utils.events import Events
 from ..utils.network import recv
 
 
@@ -27,7 +29,6 @@ class ServerConfig:
     port: int = 8080
 
     buffer_size: int = 1024
-
     max_connection: int = 2
 
 
@@ -53,7 +54,9 @@ class Server:
         Args:
             config: Server configuration (host, port, buffer_size, max_connection)
         """
-        # variable
+        # Logger setup
+        self._logger = Logger.get_instance()
+
         self._pending_requests: dict[str, Queue] = {}
         self.clients: list[ClientInfo] = []
         self.threads: list[threading.Thread] = []
@@ -68,27 +71,35 @@ class Server:
 
         self.sender = Sender(mode=Mode.SERVER)
 
-        # configuration du socket
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.settimeout(0.5)
         self.socket.bind((self.config.host, self.config.port))
 
-    def bind(self, event: Union[str, Binding], func: Callable) -> None:
+        self._logger.info(f"Server initialized on {self.config.host}:{self.config.port}")
+        self._logger.debug(
+            f"Server config: buffer_size={self.config.buffer_size}, max_connections={self.config.max_connection}"
+        )
+
+    def set_callback(self, event: Union[str, Events], func: Callable) -> None:
         """
-        Bind a callback function to a server event.
+        Set a callback function to a server event.
 
         Args:
-            event: Event type (Binding.ON_RECV, Binding.ON_CONNECT or string)
+            event: Event type (Events.ON_RECV, Events.ON_CONNECT or string)
             func: Callback function to execute
                 - on_recv: func(client: ClientInfo, msg: Response)
                 - on_connect: func(client: ClientInfo)
         """
-        events = [Binding.ON_RECV, Binding.ON_CONNECT]
+        events = [Events.ON_RECV, Events.ON_CONNECT]
 
         for event_ in events:
             if event == event_ or event == event_.value:
                 setattr(self, event_.value, func)
+                self._logger.debug(f"Bound callback to event: {event_.value}")
+                return
+
+        self._logger.warning(f"Unknown event type for binding: {event}")
 
     def send_and_wait(
         self, request: Request, client: ClientInfo, timeout: float = 5.0
@@ -107,16 +118,25 @@ class Server:
         response_queue = Queue(maxsize=1)
         self._pending_requests[request.request_id] = response_queue
 
+        self._logger.debug(f"Sending request {request.request_id} to client {client.addr}")
+
         # Send request
         if not self.sender.send(request, client=client.conn):
             del self._pending_requests[request.request_id]
+            self._logger.error(
+                f"Failed to send request {request.request_id} to client {client.addr}"
+            )
             return None
 
         # Wait for response
         try:
             response = response_queue.get(timeout=timeout)
+            self._logger.debug(f"Received response {request.request_id} from client {client.addr}")
             return response
         except Empty:
+            self._logger.warning(
+                f"Timeout waiting for response {request.request_id} from client {client.addr}"
+            )
             return None  # Timeout
         finally:
             # Cleanup
@@ -139,6 +159,8 @@ class Server:
         Returns:
             list[socket.socket]: List of all connected client sockets
         """
+        if self.clients is None:
+            return []
         return [client.conn for client in self.clients]
 
     def start(self, _on_th: bool = False) -> None:
@@ -152,11 +174,13 @@ class Server:
             _on_th: Internal parameter, do not use (indicates if already in a thread)
         """
         if not _on_th:
+            self._logger.info(f"Starting server on {self.config.host}:{self.config.port}")
             self.start_th = threading.Thread(target=self.start, args=(True,))
             self.start_th.start()
             return
 
         self.socket.listen()
+        self._logger.info(f"Server listening on {self.config.host}:{self.config.port}")
 
         while self.running:
             try:
@@ -165,12 +189,16 @@ class Server:
                 conn, addr = self.socket.accept()
                 client = ClientInfo(conn=conn, addr=addr)
                 self.clients.append(client)
+                self._logger.info(
+                    f"New client connected: {addr} (total: {len(self.clients)}/{self.config.max_connection})"
+                )
                 thread = threading.Thread(target=self.handle_client, args=(client,))
                 thread.start()
                 self.threads.append(thread)
-            except socket.timeout:
+            except TimeoutError:
                 continue
-            except:
+            except Exception as e:
+                self._logger.error(f"Error accepting connections: {type(e).__name__}: {e}")
                 return
 
     def handle_client(self, client: ClientInfo) -> None:
@@ -184,38 +212,62 @@ class Server:
         Args:
             client: Client information to handle
         """
+        self._logger.debug(f"Starting to handle client {client.addr}")
 
         if self.on_connect:
-            self.on_connect(client)
+            try:
+                self.on_connect(client)
+                self._logger.debug(f"Called on_connect callback for client {client.addr}")
+            except Exception as e:
+                import traceback
+
+                traceback.print_exc()
+                self._logger.error(
+                    f"Error in on_connect callback for client {client.addr}: {type(e).__name__}: {e}"
+                )
 
         while True:
             msg = recv(client.conn, self.config.buffer_size)
 
             if msg is None:
+                self._logger.info(f"Client {client.addr} disconnected")
                 self.close_client(client)
                 break
 
             try:
                 response: Response = Request.parse(msg)
+                self._logger.debug(
+                    f"Received message from client {client.addr}: {response.type.code}"
+                )
 
                 # Auto-respond to PING
                 if response.type.code == PING.code:
-                    pong_request = Request(
-                        PONG, b"", request_id=response.request_id
-                    )  # MODIFIÉ
+                    pong_request = Request(PONG, b"", request_id=response.request_id)
                     self.sender.send(pong_request, client=client.conn)
+                    self._logger.debug(f"Auto-responded with PONG to client {client.addr}")
                     continue
 
-                # NOUVEAU : Check if someone is waiting for this response
+                # Check if someone is waiting for this response
                 if response.request_id in self._pending_requests:
                     self._pending_requests[response.request_id].put(response)
+                    self._logger.debug(
+                        f"Delivered response {response.request_id} to waiting request"
+                    )
                 else:
                     # Normal callback
                     if self.on_recv:
-                        self.on_recv(client, response)
+                        try:
+                            self.on_recv(client, response)
+                            self._logger.debug(f"Called on_recv callback for client {client.addr}")
+                        except Exception as e:
+                            self._logger.error(
+                                f"Error in on_recv callback for client {client.addr}: {type(e).__name__}: {e}"
+                            )
 
-            except:
-                pass  # TODO: logger l'erreur
+            except Exception as e:
+                self._logger.error(
+                    f"Error parsing message from client {client.addr}: {type(e).__name__}: {e}"
+                )
 
     def close_client(self, client: ClientInfo) -> bool:
         """
@@ -227,14 +279,51 @@ class Server:
         Returns:
             True if the client was in the list and was removed, False otherwise
         """
-        client.conn.close()
+        try:
+            client.conn.close()
+            self._logger.debug(f"Closed connection for client {client.addr}")
+        except Exception as e:
+            self._logger.warning(
+                f"Error closing connection for client {client.addr}: {type(e).__name__}: {e}"
+            )
+
         if client in self.clients:
             self.clients.remove(client)
+            self._logger.info(
+                f"Removed client {client.addr} from list (remaining: {len(self.clients)})"
+            )
             return True
         else:
+            self._logger.warning(f"Client {client.addr} not found in client list")
             return False
 
-    def ping_client(self, client: ClientInfo, timeout: float = 5.0) -> Optional[float]:
+    def ping_client_async(
+        self, client: ClientInfo, callback: Callable[[Optional[float]], None], timeout: float = 5.0
+    ) -> None:
+        """
+        Ping a client asynchronously and call callback with result.
+
+        This method is safe to call from within client handler threads.
+
+        Args:
+            client: Client to ping
+            callback: Function to call with latency result (float or None)
+            timeout: Timeout in seconds
+        """
+        import threading
+
+        def ping_thread():
+            try:
+                latency = self.ping_client(client, timeout=timeout)
+                callback(latency)
+            except Exception as e:
+                self._logger.error(f"Error in async ping: {e}")
+                callback(None)
+
+        thread = threading.Thread(target=ping_thread)
+        thread.start()
+
+    def ping_client(self, client: ClientInfo, timeout: float = 5.0) -> float | None:
         """
         Ping a client and measure latency.
 
@@ -247,12 +336,17 @@ class Server:
         """
         from ..network.system_types import PING
 
+        self._logger.debug(f"Pinging client {client.addr}")
         ping_request = Request(PING, b"")
         response = self.send_and_wait(ping_request, client, timeout=timeout)
 
         if response:
-            return response.latency
-        return None
+            latency = response.latency
+            self._logger.info(f"Ping response from client {client.addr}: {latency:.2f}ms")
+            return latency
+        else:
+            self._logger.warning(f"Ping timeout for client {client.addr}")
+            return None
 
     def close_all(self) -> None:
         """
@@ -263,22 +357,36 @@ class Server:
         - Waits for threads to finish (timeout 0.1s)
         - Closes the server socket
         """
+        self._logger.info("Shutting down server")
+
         if self.start_th:
             self.running = False
+            self._logger.debug("Stopping server main loop")
 
+        # Close all clients
+        client_count = len(self.clients)
         for client in self.clients:
             try:
                 self.close_client(client)
-            except:
-                pass  # TODO: logger l'erreur
+            except Exception as e:
+                self._logger.error(f"Error closing client {client.addr}: {type(e).__name__}: {e}")
 
+        # Wait for threads to finish
+        thread_count = len(self.threads)
         for thread in self.threads:
             try:
                 thread.join(0.1)
-            except:
-                pass  # TODO: logger l'erreur
+                self._logger.debug(f"Thread {thread.name} joined")
+            except Exception as e:
+                self._logger.error(f"Error joining thread {thread.name}: {type(e).__name__}: {e}")
 
+        # Close server socket
         try:
             self.socket.close()
-        except:
-            pass  # TODO: logger l'erreur
+            self._logger.info("Server socket closed")
+        except Exception as e:
+            self._logger.error(f"Error closing server socket: {type(e).__name__}: {e}")
+
+        self._logger.info(
+            f"Server shutdown complete. Closed {client_count} clients and {thread_count} threads"
+        )

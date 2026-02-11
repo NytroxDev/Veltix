@@ -16,6 +16,8 @@
 - ⚡ **Multi-threaded** - Handle multiple clients automatically
 - 🔄 **Request/Response pattern** - Built-in send_and_wait with timeout support
 - 📡 **Built-in ping/pong** - Automatic latency measurement
+- 📝 **Integrated logging** - Powerful, colorful, production-ready logger
+- 🛡️ **Enhanced security** - Improved error handling and data validation
 
 ## 📖 Why Veltix?
 
@@ -42,7 +44,7 @@ pip install veltix
 **Server (server.py):**
 
 ```python
-from veltix import Server, ServerConfig, MessageType, Request, Binding
+from veltix import Server, ServerConfig, MessageType, Request, Events
 
 # Define message type
 CHAT = MessageType(code=200, name="chat")
@@ -60,7 +62,7 @@ def on_message(client, response):
     sender.broadcast(reply, server.get_all_clients_sockets())
 
 
-server.bind(Binding.ON_RECV, on_message)
+server.set_callback(Events.ON_RECV, on_message)
 server.start()
 
 input("Press Enter to stop...")
@@ -70,7 +72,7 @@ server.close_all()
 **Client (client.py):**
 
 ```python
-from veltix import Client, ClientConfig, MessageType, Request, Binding
+from veltix import Client, ClientConfig, MessageType, Request, Events
 
 CHAT = MessageType(code=200, name="chat")
 
@@ -83,7 +85,7 @@ def on_message(response):
     print(f"Server: {response.content.decode()}")
 
 
-client.bind(Binding.ON_RECV, on_message)
+client.set_callback(Events.ON_RECV, on_message)
 client.connect()
 
 # Send message
@@ -100,6 +102,94 @@ client.disconnect()
 python server.py
 python client.py  # In another terminal
 ```
+
+## 📝 Integrated Logger
+
+Veltix 1.2.0 includes a powerful, production-ready logging system with colorful console output and file rotation.
+
+### Basic Usage
+
+```python
+from veltix import Logger, LoggerConfig, LogLevel
+
+# Get logger instance (singleton)
+logger = Logger.get_instance()
+
+# Log at different levels
+logger.trace("Detailed trace information")
+logger.debug("Debug information")
+logger.info("General information")
+logger.success("Operation successful!")
+logger.warning("Warning message")
+logger.error("Error occurred")
+logger.critical("Critical error!")
+```
+
+### Advanced Configuration
+
+```python
+from veltix import Logger, LoggerConfig, LogLevel
+from pathlib import Path
+
+# Configure logger
+config = LoggerConfig(
+    level=LogLevel.DEBUG,  # Minimum log level
+    enabled=True,  # Enable/disable logging
+    use_colors=True,  # Colored console output
+    show_timestamp=True,  # Show timestamps
+    show_caller=True,  # Show file:line info
+    show_level=True,  # Show level name
+
+    # File logging
+    file_path=Path("logs/veltix.log"),  # Log file path
+    file_rotation_size=10 * 1024 * 1024,  # 10MB rotation
+    file_backup_count=5,  # Keep 5 backup files
+
+    # Performance
+    async_write=False,  # Async file writing
+    buffer_size=100,  # Buffer size for async
+)
+
+logger = Logger.get_instance(config)
+```
+
+### Logger Output Example
+
+```
+[14:23:45.123] INFO  [server.py:45] Server listening on 0.0.0.0:8080
+[14:23:46.456] OK    [client.py:78] Successfully connected to server
+[14:23:47.789] DEBUG [sender.py:92] Sent 156 bytes via client (request_id: a3f2...)
+[14:23:48.012] WARN  [network.py:34] Connection issue occurred: ConnectionResetError
+[14:23:49.345] ERROR [request.py:89] Parse error: Hash mismatch - corrupted data
+```
+
+### Log Levels
+
+```python
+from veltix import LogLevel
+
+# Available levels (in order of severity)
+LogLevel.TRACE  # Most detailed (5)
+LogLevel.DEBUG  # Debug info (10)
+LogLevel.INFO  # General info (20)
+LogLevel.SUCCESS  # Success messages (25)
+LogLevel.WARNING  # Warnings (30)
+LogLevel.ERROR  # Errors (40)
+LogLevel.CRITICAL  # Critical errors (50)
+
+# Change level dynamically
+logger.set_level(LogLevel.WARNING)  # Only show WARNING and above
+```
+
+### Logger Features
+
+- **Singleton pattern** - One logger instance across your application
+- **Colorful output** - Easy-to-read colored console logs
+- **File rotation** - Automatic log file rotation with configurable size
+- **Performance** - Optional async file writing for high-throughput apps
+- **Caller info** - Automatic file:line tracking
+- **Thread-safe** - Safe for multi-threaded applications
+- **Zero config** - Works great out of the box with sensible defaults
 
 ## 🔄 Request/Response Pattern
 
@@ -131,7 +221,7 @@ client.disconnect()
 ### Server Example
 
 ```python
-from veltix import Server, ServerConfig, MessageType, Request, Binding
+from veltix import Server, ServerConfig, MessageType, Request, Events
 
 ECHO = MessageType(code=201, name="echo")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
@@ -143,7 +233,7 @@ def on_message(client, response):
     server.get_sender().send(reply, client=client.conn)
 
 
-server.bind(Binding.ON_RECV, on_message)
+server.set_callback(Events.ON_RECV, on_message)
 server.start()
 
 input("Press Enter to stop...")
@@ -182,7 +272,7 @@ client.disconnect()
 ### Server to Client Ping
 
 ```python
-from veltix import Server, ServerConfig, Binding
+from veltix import Server, ServerConfig, Events
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
@@ -194,7 +284,7 @@ def on_connect(client):
         print(f"Client {client.addr} latency: {latency}ms")
 
 
-server.bind(Binding.ON_CONNECT, on_connect)
+server.set_callback(Events.ON_CONNECT, on_connect)
 server.start()
 
 input("Press Enter to stop...")
@@ -237,15 +327,15 @@ CUSTOM_PLUGIN = MessageType(500, "plugin", "Custom plugin message")
 ### Event Callbacks
 
 ```python
-from veltix import Server, Binding
+from veltix import Server, Events
 
 server = Server(config)
 
 # Bind to connection event
-server.bind(Binding.ON_CONNECT, lambda client: print(f"Client connected: {client.addr}"))
+server.set_callback(Events.ON_CONNECT, lambda client: print(f"Client connected: {client.addr}"))
 
 # Bind to message event
-server.bind(Binding.ON_RECV, lambda client, msg: print(f"Message from {client.addr}"))
+server.set_callback(Events.ON_RECV, lambda client, msg: print(f"Message from {client.addr}"))
 ```
 
 ### Broadcasting
@@ -254,6 +344,9 @@ server.bind(Binding.ON_RECV, lambda client, msg: print(f"Message from {client.ad
 # Broadcast to all connected clients
 message = Request(CHAT, b"Server announcement!")
 sender.broadcast(message, server.get_all_clients_sockets())
+
+# Broadcast to all except specific clients
+sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[client1.conn])
 ```
 
 ## 📊 Comparison
@@ -267,16 +360,27 @@ sender.broadcast(message, server.get_all_clients_sockets())
 | Multi-threading    | ✅      | ❌      | ❌       | ✅       |
 | Request/Response   | ✅      | ❌      | ⚠️      | ✅       |
 | Built-in ping/pong | ✅      | ❌      | ❌       | ❌       |
+| Integrated logger  | ✅      | ❌      | ⚠️      | ✅       |
 
 ## 🗺️ Roadmap
 
-### v1.1.0 - Request/Response (February 2026) ✅
+### v1.2.0 - Logging & Stability (February 2026) ✅
 
-- Request/Response pattern with send_and_wait
-- Built-in ping/pong functionality
-- Automatic latency measurement
-- UUID-based request tracking
+- Integrated powerful logging system with colors and file rotation
+- Enhanced error handling throughout the codebase
+- Improved sender with better broadcasting capabilities
+- API improvements: `set_callback()` instead of `bind()`, `Events` enum
+- Better security and data validation
+- Foundation for v1.3.0 handshake system
 - **Status: RELEASED**
+
+### v1.3.0 - Handshake & Authentication (March 2026)
+
+- Connection handshake protocol (HELLO messages)
+- Client authentication system
+- Server-side client validation
+- Protocol version negotiation
+- **Status: IN DEVELOPMENT**
 
 ### v2.0.0 - Security (Summer 2026)
 
@@ -298,6 +402,36 @@ sender.broadcast(message, server.get_all_clients_sockets())
 - Plugin ecosystem
 - Compression
 - WebSocket bridge
+
+## 🆕 What's New in 1.2.0
+
+### Major Changes
+
+- **🎨 Integrated Logger**: Production-ready logging with colors, file rotation, and async writing
+- **🔧 API Improvements**: `set_callback()` replaces `bind()`, new `Events` enum
+- **🛡️ Enhanced Security**: Better error handling and data validation throughout
+- **📡 Improved Sender**: Enhanced broadcasting with exclusion lists
+- **📝 Comprehensive Logging**: Detailed logs at every level for easier debugging
+- **🏗️ Foundation for v1.3.0**: Prepared infrastructure for handshake system
+
+### Breaking Changes
+
+- `bind()` → `set_callback()`
+- `Bindings` → `Events`
+
+### Migration Guide
+
+```python
+# Old (v1.1.x)
+from veltix import Bindings
+
+server.bind(Bindings.ON_RECV, callback)
+
+# New (v1.2.0)
+from veltix import Events
+
+server.set_callback(Events.ON_RECV, callback)
+```
 
 ## 🤝 Contributing
 
@@ -333,6 +467,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **GitHub:** [NytroxDev/Veltix](https://github.com/NytroxDev/Veltix)
 - **PyPI:** [pypi.org/project/veltix](https://pypi.org/project/veltix)
 - **Issues:** [Report a bug](https://github.com/NytroxDev/Veltix/issues)
+- **Discord:** [Join our community](https://discord.gg/NrEjSHtfMp)
 
 ---
 
