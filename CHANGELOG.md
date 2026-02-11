@@ -5,6 +5,91 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-11
+
+### Added
+
+- **Integrated Logger System**: Production-ready logging with powerful features
+    - `Logger.get_instance()` - Singleton logger accessible throughout the application
+    - Colorful console output with ANSI colors for better readability
+    - File logging with automatic rotation based on file size
+    - Multiple log levels: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
+    - Configurable via `LoggerConfig` with extensive options
+    - Automatic caller information (file:line) tracking
+    - Thread-safe implementation for multi-threaded applications
+    - Optional async file writing for high-performance scenarios
+    - Zero configuration required - works great with defaults
+- **Comprehensive Logging**: Added detailed logging throughout the entire codebase
+    - Client operations (connect, disconnect, send, receive)
+    - Server operations (start, stop, client handling)
+    - Network operations (data transmission, parsing)
+    - Error conditions with detailed context
+    - Request/response tracking with request IDs
+- **Enhanced Sender**: Improved broadcasting capabilities
+    - `except_clients` parameter to exclude specific clients from broadcasts
+    - Better error reporting and statistics
+    - Detailed logging of broadcast operations
+    - Success rate tracking for broadcast operations
+- **Foundation for v1.3.0**: Prepared infrastructure for handshake system
+    - HELLO message type added to system types
+    - Architecture ready for connection handshake protocol
+    - Base structure for client authentication
+
+### Changed
+
+- **API Improvements**: More intuitive method names
+    - `bind()` → `set_callback()` for event binding
+    - `Bindings` enum → `Events` enum for consistency
+    - More descriptive variable names throughout
+- **Security Enhancements**:
+    - Improved error handling in network operations
+    - Better data validation in request parsing
+    - Enhanced exception handling with detailed error messages
+    - More robust connection state management
+- **Code Quality**:
+    - Refactored multiple code sections for better maintainability
+    - Improved type hints and documentation
+    - Better separation of concerns
+    - More consistent error handling patterns
+
+### Fixed
+
+- Minor bugs in connection handling
+- Edge cases in broadcast operations
+- Race conditions in multi-threaded scenarios
+- Memory leaks in logger file rotation
+- Improved socket cleanup on disconnection
+
+### Technical
+
+- Logger singleton pattern implementation
+- File rotation with configurable backup count
+- Async buffer flushing for file writes
+- Enhanced exception hierarchy
+- Better thread management in server
+- Improved socket timeout handling
+
+### Breaking Changes
+
+- `bind()` method renamed to `set_callback()`
+- `Bindings` enum renamed to `Events`
+
+### Migration Guide
+
+```python
+# Before (v1.1.x)
+from veltix import Bindings
+
+server.bind(Bindings.ON_RECV, callback)
+client.bind(Bindings.ON_RECV, callback)
+
+# After (v1.2.0)
+from veltix import Events
+
+server.set_callback(Events.ON_RECV, callback)
+client.set_callback(Events.ON_RECV, callback)
+```
+
 ## [1.1.0] - 2026-02-08
 
 ### Added

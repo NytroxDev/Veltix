@@ -1,18 +1,17 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "veltix"
-version = "1.1.0"
-description = "The networking library you always wanted"
-authors = [
-    { name = "Nytrox", email = "nytrox.dev@gmail.com" }
-]
+version = "1.2.0"
+description = "A simple, zero-dependency TCP networking library with message integrity and request/response patterns"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-
+authors = [
+    { name = "Nytrox", email = "nytrox.dev@gmail.com" }
+]
 keywords = [
     "networking",
     "tcp",
@@ -21,37 +20,163 @@ keywords = [
     "socket",
     "server",
     "client",
+    "request-response",
+    "messaging",
 ]
-
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3 :: Only",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Networking",
+    "Typing :: Typed",
 ]
 
+# No runtime dependencies (zero-dependency library)
 dependencies = []
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-asyncio>=0.21.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/NytroxDev/Veltix"
 Repository = "https://github.com/NytroxDev/Veltix"
+Documentation = "https://github.com/NytroxDev/Veltix/blob/main/README.md"
 Issues = "https://github.com/NytroxDev/Veltix/issues"
+Changelog = "https://github.com/NytroxDev/Veltix/blob/main/CHANGELOG.md"
+Discord = "https://discord.gg/NrEjSHtfMp"
 
+# Setuptools configuration
 [tool.setuptools]
-packages = ["Veltix"]
+zip-safe = false
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["veltix*"]
+exclude = ["tests*", "examples*", "*.tests*", "*.examples*"]
+
+[tool.setuptools.package-data]
+veltix = ["py.typed"]
+
+# Pytest configuration
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=veltix",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["veltix"]
+omit = [
+    "*/tests/*",
+    "*/examples/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+# Ruff configuration (linter)
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["veltix", "tests"]
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "N", # pep8-naming
+    "UP", # pyupgrade
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+]
+ignore = [
+    "E501",
+    "UP045",
+    "UP007",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]  # Allow unused imports in __init__.py
+"tests/*" = ["S101"]  # Allow assert in tests
+
+[tool.ruff.lint.isort]
+known-first-party = ["veltix"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+# MyPy configuration (type checking)
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
