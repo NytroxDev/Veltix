@@ -14,3 +14,4 @@ class Events(Enum):
 
     ON_RECV = "on_recv"
     ON_CONNECT = "on_connect"
+    ON_DISCONNECT = "on_disconnect"
