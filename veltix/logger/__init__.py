@@ -4,9 +4,9 @@ Veltix logging system.
 Simple, powerful, and integrated logging for Veltix networking.
 """
 
-from veltix.logger.config import LoggerConfig
-from veltix.logger.core import Logger
-from veltix.logger.levels import LogLevel
+from .config import LoggerConfig
+from .core import Logger
+from .levels import LogLevel
 
 __all__ = [
     "Logger",

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "veltix"
-version = "1.2.0"
+version = "1.2.1"
 description = "A simple, zero-dependency TCP networking library with message integrity and request/response patterns"
 readme = "README.md"
 license = { text = "MIT" }
@@ -148,6 +148,7 @@ ignore = [
     "E501",
     "UP045",
     "UP007",
+    "W293",
 ]
 
 [tool.ruff.lint.per-file-ignores]
