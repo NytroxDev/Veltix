@@ -6,7 +6,7 @@ A simple client that sends messages to the echo server and prints responses.
 
 import time
 
-from veltix import Events, Client, ClientConfig, MessageType, Request
+from veltix import Client, ClientConfig, Events, MessageType, Request
 
 # Define message type (must match server)
 ECHO = MessageType(code=200, name="echo", description="Echo message")

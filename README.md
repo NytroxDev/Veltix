@@ -103,6 +103,20 @@ python server.py
 python client.py  # In another terminal
 ```
 
+## 🆕 What's New in 1.2.1
+
+### Critical Bug Fix
+
+- **Fixed race conditions** in multi-threaded client handling
+- All shared data structures now properly protected with locks
+
+### New Features
+
+- `ON_DISCONNECT` event for cleanup logic
+- `Request.respond()` helper for easier response correlation
+
+[See full changelog](CHANGELOG.md)
+
 ## 📝 Integrated Logger
 
 Veltix 1.2.0 includes a powerful, production-ready logging system with colorful console output and file rotation.

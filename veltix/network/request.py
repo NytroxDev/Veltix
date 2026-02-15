@@ -6,8 +6,8 @@ import struct
 import time
 import uuid
 
-from ..logger.core import Logger
 from ..exceptions import RequestError
+from ..logger.core import Logger
 from .types import MessageType, MessageTypeRegistry
 
 
@@ -53,16 +53,29 @@ class Request:
         request_id: Unique identifier (auto-generated UUID if not provided)
     """
 
-    def __init__(
-        self, _type: MessageType, content: bytes, request_id: str | None = None
-    ) -> None:
+    def __init__(self, _type: MessageType, content: bytes, request_id: str | None = None) -> None:
         self.type = _type
         self.content: bytes = content
         self.request_id: str = request_id or str(uuid.uuid4())
-        
+
         # Logger setup
         self._logger = Logger.get_instance()
-        self._logger.debug(f"Created request: type={_type.name}, size={len(content)} bytes, id={self.request_id[:8]}...")
+        self._logger.debug(
+            f"Created request: type={_type.name}, size={len(content)} bytes, id={self.request_id[:8]}..."
+        )
+
+    def respond(self, response: Response):
+        """
+        Update this request's ID to match a received response.
+        
+        This method is used to correlate a sent request with its corresponding
+        response by updating the request_id to match the response's request_id.
+        
+        Args:
+            response: The Response object received from the network
+        """
+        self.request_id = response.request_id
+        self._logger.debug(f"Request {self.request_id[:8]}... responded with matching ID")
 
     @staticmethod
     def parse(data: bytes) -> Response:
@@ -87,7 +100,7 @@ class Request:
             RequestError: If hash mismatch, size mismatch, or unknown type code
         """
         logger = Logger.get_instance()
-        
+
         # Capture receive time as early as possible
         received_at = int(time.time() * 1000)
 
@@ -115,19 +128,23 @@ class Request:
         # Verify integrity
         hash_content = hashlib.sha256(content).digest()
         if hash_received != hash_content:
-            logger.error(f"Parse error: Hash mismatch for request {request_id[:8]}... - corrupted data detected")
+            logger.error(
+                f"Parse error: Hash mismatch for request {request_id[:8]}... - corrupted data detected"
+            )
             raise RequestError("Hash mismatch - corrupted data detected")
 
         if len(content) != size:
-            logger.error(f"Parse error: Size mismatch for request {request_id[:8]}... - expected {size} bytes, got {len(content)}")
-            raise RequestError(
-                f"Size mismatch: expected {size} bytes, got {len(content)}"
+            logger.error(
+                f"Parse error: Size mismatch for request {request_id[:8]}... - expected {size} bytes, got {len(content)}"
             )
+            raise RequestError(f"Size mismatch: expected {size} bytes, got {len(content)}")
 
         # Lookup message type
         msg_type = MessageTypeRegistry.get(code)
         if not msg_type:
-            logger.error(f"Parse error: Unknown message type code {code} for request {request_id[:8]}...")
+            logger.error(
+                f"Parse error: Unknown message type code {code} for request {request_id[:8]}..."
+            )
             raise RequestError(f"Unknown message type code: {code}")
 
         response = Response(
@@ -138,8 +155,10 @@ class Request:
             received_at=received_at,
             request_id=request_id,
         )
-        
-        logger.debug(f"Parsed request: type={msg_type.name}, size={len(content)} bytes, id={request_id[:8]}..., latency={response.latency}ms")
+
+        logger.debug(
+            f"Parsed request: type={msg_type.name}, size={len(content)} bytes, id={request_id[:8]}..., latency={response.latency}ms"
+        )
         return response
 
     def compile(self) -> bytes:
@@ -157,7 +176,9 @@ class Request:
         # Validate size
         size = len(self.content)
         if size > max_size:
-            self._logger.error(f"Compile error: Content too large for request {self.request_id[:8]}...: {size} bytes (max: {max_size})")
+            self._logger.error(
+                f"Compile error: Content too large for request {self.request_id[:8]}...: {size} bytes (max: {max_size})"
+            )
             raise RequestError(f"Content too large: {size} bytes (max: {max_size})")
 
         # Calculate hash
@@ -170,9 +191,7 @@ class Request:
         try:
             # Parse as UUID (with or without hyphens)
             clean_id = self.request_id.replace("-", "")
-            if len(clean_id) == 32 and all(
-                c in "0123456789abcdefABCDEF" for c in clean_id
-            ):
+            if len(clean_id) == 32 and all(c in "0123456789abcdefABCDEF" for c in clean_id):
                 request_id_bytes = bytes.fromhex(clean_id)
             else:
                 # Not a hex UUID, hash the string
@@ -192,15 +211,15 @@ class Request:
         )
 
         compiled_data = header + self.content
-        self._logger.debug(f"Compiled request: type={self.type.name}, total_size={len(compiled_data)} bytes, id={self.request_id[:8]}...")
-        
+        self._logger.debug(
+            f"Compiled request: type={self.type.name}, total_size={len(compiled_data)} bytes, id={self.request_id[:8]}..."
+        )
+
         return compiled_data
 
     def __repr__(self) -> str:
         """String representation of Request."""
-        content_preview = (
-            self.content[:20] + b"..." if len(self.content) > 20 else self.content
-        )
+        content_preview = self.content[:20] + b"..." if len(self.content) > 20 else self.content
         return (
             f"Request(type={self.type.name}, "
             f"content={content_preview!r}, "

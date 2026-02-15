@@ -3,6 +3,7 @@ import dataclasses
 import socket
 import threading
 from queue import Empty, Queue
+from threading import Lock
 from typing import Callable, Optional, Union  # noqa: UP035
 
 from ..logger.core import Logger
@@ -45,6 +46,8 @@ class ClientInfo:
     conn: socket.socket
     addr: socket._RetAddress
 
+    thread_id: int
+
 
 class Server:
     def __init__(self, config: ServerConfig) -> None:
@@ -57,14 +60,24 @@ class Server:
         # Logger setup
         self._logger = Logger.get_instance()
 
+        # Thread-safe structures with locks
         self._pending_requests: dict[str, Queue] = {}
+        self._pending_requests_lock = Lock()
+
         self.clients: list[ClientInfo] = []
-        self.threads: list[threading.Thread] = []
+        self._clients_lock = Lock()
+
+        self.threads: list[tuple[int, threading.Thread]] = []
+        self._threads_lock = Lock()
+
         self.config: ServerConfig = config
         self.start_th: Optional[threading.Thread] = None
         self.on_recv: Optional[Callable] = None
         self.on_connect: Optional[Callable] = None
+        self.on_disconnect: Optional[Callable] = None
         self.running: bool = True
+        self.n_th = 0
+        self._n_th_lock = Lock()
 
         self.wait_for_ping = False
         self.ping_result: Optional[Response] = None
@@ -90,6 +103,7 @@ class Server:
             func: Callback function to execute
                 - on_recv: func(client: ClientInfo, msg: Response)
                 - on_connect: func(client: ClientInfo)
+                - on_disconnect: func(client: ClientInfo)
         """
         events = [Events.ON_RECV, Events.ON_CONNECT]
 
@@ -116,13 +130,16 @@ class Server:
             Response object or None if timeout/error
         """
         response_queue = Queue(maxsize=1)
-        self._pending_requests[request.request_id] = response_queue
+
+        with self._pending_requests_lock:
+            self._pending_requests[request.request_id] = response_queue
 
         self._logger.debug(f"Sending request {request.request_id} to client {client.addr}")
 
         # Send request
         if not self.sender.send(request, client=client.conn):
-            del self._pending_requests[request.request_id]
+            with self._pending_requests_lock:
+                del self._pending_requests[request.request_id]
             self._logger.error(
                 f"Failed to send request {request.request_id} to client {client.addr}"
             )
@@ -140,8 +157,9 @@ class Server:
             return None  # Timeout
         finally:
             # Cleanup
-            if request.request_id in self._pending_requests:
-                del self._pending_requests[request.request_id]
+            with self._pending_requests_lock:
+                if request.request_id in self._pending_requests:
+                    del self._pending_requests[request.request_id]
 
     def get_sender(self) -> Sender:
         """
@@ -159,9 +177,10 @@ class Server:
         Returns:
             list[socket.socket]: List of all connected client sockets
         """
-        if self.clients is None:
-            return []
-        return [client.conn for client in self.clients]
+        with self._clients_lock:
+            if self.clients is None:
+                return []
+            return [client.conn for client in self.clients]
 
     def start(self, _on_th: bool = False) -> None:
         """
@@ -184,17 +203,32 @@ class Server:
 
         while self.running:
             try:
-                if len(self.clients) >= self.config.max_connection:
+                with self._clients_lock:
+                    current_client_count = len(self.clients)
+
+                if current_client_count >= self.config.max_connection:
                     continue
+
                 conn, addr = self.socket.accept()
-                client = ClientInfo(conn=conn, addr=addr)
-                self.clients.append(client)
+
+                with self._n_th_lock:
+                    self.n_th += 1
+                    thread_id = self.n_th
+
+                client = ClientInfo(conn=conn, addr=addr, thread_id=thread_id)
+
+                with self._clients_lock:
+                    self.clients.append(client)
+                    total_clients = len(self.clients)
+
                 self._logger.info(
-                    f"New client connected: {addr} (total: {len(self.clients)}/{self.config.max_connection})"
+                    f"New client connected: {addr} (total: {total_clients}/{self.config.max_connection})"
                 )
                 thread = threading.Thread(target=self.handle_client, args=(client,))
                 thread.start()
-                self.threads.append(thread)
+
+                with self._threads_lock:
+                    self.threads.append((thread_id, thread))
             except TimeoutError:
                 continue
             except Exception as e:
@@ -248,8 +282,13 @@ class Server:
                     continue
 
                 # Check if someone is waiting for this response
-                if response.request_id in self._pending_requests:
-                    self._pending_requests[response.request_id].put(response)
+                with self._pending_requests_lock:
+                    is_pending = response.request_id in self._pending_requests
+                    if is_pending:
+                        queue = self._pending_requests[response.request_id]
+
+                if is_pending:
+                    queue.put(response)
                     self._logger.debug(
                         f"Delivered response {response.request_id} to waiting request"
                     )
@@ -279,6 +318,15 @@ class Server:
         Returns:
             True if the client was in the list and was removed, False otherwise
         """
+
+        try:
+            if self.on_disconnect:
+                self.on_disconnect(client)
+        except Exception as e:
+            self._logger.error(
+                f"Error calling on_disconnect for client {client.addr}: {type(e).__name__}: {e}"
+            )
+
         try:
             client.conn.close()
             self._logger.debug(f"Closed connection for client {client.addr}")
@@ -287,15 +335,27 @@ class Server:
                 f"Error closing connection for client {client.addr}: {type(e).__name__}: {e}"
             )
 
-        if client in self.clients:
-            self.clients.remove(client)
-            self._logger.info(
-                f"Removed client {client.addr} from list (remaining: {len(self.clients)})"
-            )
-            return True
-        else:
-            self._logger.warning(f"Client {client.addr} not found in client list")
+        with self._clients_lock:
+            if client in self.clients:
+                self.clients.remove(client)
+                remaining_clients = len(self.clients)
+            else:
+                self._logger.warning(f"Client {client.addr} not found in client list")
+                return False
+
+        try:
+            with self._threads_lock:
+                for id_th, thread in self.threads:
+                    if thread.is_alive() and id_th == client.thread_id:
+                        thread.join(0.01)
+        except Exception as e:
+            self._logger.error(f"Error closing client {client.addr}: {type(e).__name__}: {e}")
             return False
+
+        self._logger.info(
+            f"Removed client {client.addr} from list (remaining: {remaining_clients})"
+        )
+        return True
 
     def ping_client_async(
         self, client: ClientInfo, callback: Callable[[Optional[float]], None], timeout: float = 5.0
@@ -364,18 +424,24 @@ class Server:
             self._logger.debug("Stopping server main loop")
 
         # Close all clients
-        client_count = len(self.clients)
-        for client in self.clients:
+        with self._clients_lock:
+            clients_to_close = list(self.clients)
+            client_count = len(clients_to_close)
+
+        for client in clients_to_close:
             try:
                 self.close_client(client)
             except Exception as e:
                 self._logger.error(f"Error closing client {client.addr}: {type(e).__name__}: {e}")
 
         # Wait for threads to finish
-        thread_count = len(self.threads)
-        for thread in self.threads:
+        with self._threads_lock:
+            threads_to_join = list(self.threads)
+            thread_count = len(threads_to_join)
+
+        for _, thread in threads_to_join:
             try:
-                thread.join(0.1)
+                thread.join(0.01)
                 self._logger.debug(f"Thread {thread.name} joined")
             except Exception as e:
                 self._logger.error(f"Error joining thread {thread.name}: {type(e).__name__}: {e}")
