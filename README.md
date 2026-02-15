@@ -5,6 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
 [![Python](https://img.shields.io/pypi/pyversions/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
 [![License](https://img.shields.io/github/license/NytroxDev/Veltix)](https://github.com/NytroxDev/Veltix/blob/main/LICENSE)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/veltix?period=total&units=NONE&left_color=BLACK&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/veltix)
 
 ## ✨ Features
 
