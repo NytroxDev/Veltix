@@ -329,14 +329,12 @@ class TestClientServer:
 
         server.set_callback(Events.ON_RECV, on_message)
         server.start()
-        time.sleep(0.3)
 
         # Client connects
         config_client = ClientConfig(server_addr="127.0.0.1", port=19999)
         client = Client(config_client)
 
         assert client.connect()
-        time.sleep(0.2)
 
         # Send message
         msg_type = MessageType(code=300, name="test_basic")
@@ -344,7 +342,7 @@ class TestClientServer:
         request = Request(msg_type, b"Hello Server")
         sender.send(request)
 
-        time.sleep(0.3)
+        time.sleep(0.01)
 
         # Verify
         assert len(messages_received) > 0
@@ -359,19 +357,16 @@ class TestClientServer:
         config_server = ServerConfig(host="127.0.0.1", port=19998)
         server = Server(config_server)
         server.start()
-        time.sleep(0.3)
 
         config_client = ClientConfig(server_addr="127.0.0.1", port=19998)
         client = Client(config_client)
 
         # First connection
         assert client.connect()
-        time.sleep(0.2)
         assert client.is_connected
 
         # Disconnect
         client.disconnect()
-        time.sleep(0.2)
         assert not client.is_connected
 
         # Cleanup
@@ -389,13 +384,12 @@ class TestClientServer:
 
         server.set_callback(Events.ON_CONNECT, on_connect)
         server.start()
-        time.sleep(0.3)
 
         config_client = ClientConfig(server_addr="127.0.0.1", port=19997)
         client = Client(config_client)
         client.connect()
 
-        time.sleep(0.3)
+        time.sleep(0.01)
 
         assert len(connected_clients) == 1
 
@@ -408,7 +402,6 @@ class TestClientServer:
         config_server = ServerConfig(host="127.0.0.1", port=19996, max_connection=3)
         server = Server(config_server)
         server.start()
-        time.sleep(0.3)
 
         clients = []
         for _i in range(3):
@@ -416,9 +409,7 @@ class TestClientServer:
             client = Client(config)
             assert client.connect()
             clients.append(client)
-            time.sleep(0.2)
 
-        time.sleep(0.3)
         assert len(server.clients) == 3
 
         # Cleanup
@@ -431,7 +422,7 @@ class TestClientServer:
         config_server = ServerConfig(host="127.0.0.1", port=19995, max_connection=3)
         server = Server(config_server)
         server.start()
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         # Create clients with message tracking
         clients = []
@@ -451,9 +442,9 @@ class TestClientServer:
             client.set_callback(Events.ON_RECV, make_callback(i))
             client.connect()
             clients.append(client)
-            time.sleep(0.2)
+            time.sleep(0.1)
 
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         # Broadcast message
         msg_type = MessageType(code=301, name="broadcast_test")
@@ -461,7 +452,7 @@ class TestClientServer:
         sender = server.get_sender()
         sender.broadcast(broadcast_msg, server.get_all_clients_sockets())
 
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         # All clients should receive the message
         for msgs in messages_received:
@@ -478,7 +469,7 @@ class TestClientServer:
         config_server = ServerConfig(host="127.0.0.1", port=19994, max_connection=3)
         server = Server(config_server)
         server.start()
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         # Create 3 clients
         clients = []
@@ -497,9 +488,9 @@ class TestClientServer:
             client.set_callback(Events.ON_RECV, make_callback(i))
             client.connect()
             clients.append(client)
-            time.sleep(0.2)
+            time.sleep(0.03)
 
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         # Broadcast excluding first client
         msg_type = MessageType(code=302, name="selective_broadcast")
@@ -512,7 +503,7 @@ class TestClientServer:
             broadcast_msg, server.get_all_clients_sockets(), except_clients=[exclude_socket]
         )
 
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         # First client should not receive
         assert len(messages_received[0]) == 0
@@ -586,7 +577,7 @@ class TestPingPong:
         client.connect()
         print("Client connected, waiting...")
 
-        time.sleep(0.5)
+        time.sleep(0.1)
 
         print(ping_results)
 
@@ -603,12 +594,12 @@ class TestPingPong:
         config_server = ServerConfig(host="127.0.0.1", port=19991)
         server = Server(config_server)
         server.start()
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         config_client = ClientConfig(server_addr="127.0.0.1", port=19991)
         client = Client(config_client)
         client.connect()
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         # Very short timeout should work or timeout gracefully
         latency = client.ping_server(timeout=0.001)
@@ -646,7 +637,7 @@ class TestSendAndWait:
         config_client = ClientConfig(server_addr="127.0.0.1", port=19990)
         client = Client(config_client)
         client.connect()
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         # Send and wait
         msg_type = MessageType(code=303, name="echo_test")
@@ -667,7 +658,7 @@ class TestSendAndWait:
         config_server = ServerConfig(host="127.0.0.1", port=19989)
         server = Server(config_server)
         server.start()
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         # Client echoes back
         config_client = ClientConfig(server_addr="127.0.0.1", port=19989)
@@ -679,7 +670,7 @@ class TestSendAndWait:
 
         client.set_callback(Events.ON_RECV, on_message)
         client.connect()
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         # Server sends and waits
         msg_type = MessageType(code=304, name="server_echo")
@@ -706,12 +697,12 @@ class TestSendAndWait:
 
         server.set_callback(Events.ON_RECV, on_message)
         server.start()
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         config_client = ClientConfig(server_addr="127.0.0.1", port=19988)
         client = Client(config_client)
         client.connect()
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         # Send and wait with short timeout
         msg_type = MessageType(code=305, name="timeout_test")
