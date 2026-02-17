@@ -1,10 +1,12 @@
+from veltix.server.server import ClientInfo
+
 # Veltix
 
 # The networking library you always wanted
 
 [![PyPI](https://img.shields.io/pypi/v/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
 [![Python](https://img.shields.io/pypi/pyversions/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
-[![License](https://img.shields.io/github/license/NytroxDev/Veltix)](https://github.com/NytroxDev/Veltix/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/NytroxDev/Veltix?cacheSeconds=300)](https://github.com/NytroxDev/Veltix/blob/main/LICENSE)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/veltix?period=total&units=NONE&left_color=BLACK&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/veltix)
 
 ## ✨ Features
@@ -45,7 +47,7 @@ pip install veltix
 **Server (server.py):**
 
 ```python
-from veltix import Server, ServerConfig, MessageType, Request, Events
+from veltix import Server, ClientInfo, ServerConfig, Response, MessageType, Request, Events
 
 # Define message type
 CHAT = MessageType(code=200, name="chat")
@@ -56,7 +58,7 @@ server = Server(config)
 sender = server.get_sender()
 
 
-def on_message(client, response):
+def on_message(client: ClientInfo, response: Response):
     print(f"[{client.addr[0]}] {response.content.decode()}")
     # Broadcast to all
     reply = Request(CHAT, f"Echo: {response.content.decode()}".encode())
@@ -73,7 +75,7 @@ server.close_all()
 **Client (client.py):**
 
 ```python
-from veltix import Client, ClientConfig, MessageType, Request, Events
+from veltix import Client, Response, ClientConfig, MessageType, Request, Events
 
 CHAT = MessageType(code=200, name="chat")
 
@@ -82,7 +84,7 @@ client = Client(config)
 sender = client.get_sender()
 
 
-def on_message(response):
+def on_message(response: Response):
     print(f"Server: {response.content.decode()}")
 
 
@@ -103,20 +105,6 @@ client.disconnect()
 python server.py
 python client.py  # In another terminal
 ```
-
-## 🆕 What's New in 1.2.1
-
-### Critical Bug Fix
-
-- **Fixed race conditions** in multi-threaded client handling
-- All shared data structures now properly protected with locks
-
-### New Features
-
-- `ON_DISCONNECT` event for cleanup logic
-- `Request.respond()` helper for easier response correlation
-
-[See full changelog](CHANGELOG.md)
 
 ## 📝 Integrated Logger
 
@@ -447,6 +435,20 @@ from veltix import Events
 
 server.set_callback(Events.ON_RECV, callback)
 ```
+
+## 🆕 What's New in 1.2.1
+
+### Critical Bug Fix
+
+- **Fixed race conditions** in multi-threaded client handling
+- All shared data structures now properly protected with locks
+
+### New Features
+
+- `ON_DISCONNECT` event for cleanup logic
+- `Request.respond()` helper for easier response correlation
+
+[See full changelog](CHANGELOG.md)
 
 ## 🤝 Contributing
 
