@@ -1,5 +1,3 @@
-from veltix.server.server import ClientInfo
-
 # Veltix
 
 # The networking library you always wanted
