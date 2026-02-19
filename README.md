@@ -6,6 +6,7 @@
 [![Python](https://img.shields.io/pypi/pyversions/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
 [![License](https://img.shields.io/github/license/NytroxDev/Veltix?cacheSeconds=300)](https://github.com/NytroxDev/Veltix/blob/main/LICENSE)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/veltix?period=total&units=NONE&left_color=BLACK&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/veltix)
+[![Security Policy](https://img.shields.io/badge/security-policy-blue)](SECURITY.md)
 
 ## ✨ Features
 
@@ -475,6 +476,13 @@ Want to be listed here? Check out our [Contributing guide](CONTRIBUTING.md)!
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🛡️ Security
+
+Security is a core priority of Veltix.
+
+If you discover a vulnerability, please report it responsibly.
+See our full [Security Policy](SECURITY.md) for details.
 
 ## 🔗 Links
 
