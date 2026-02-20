@@ -1,189 +1,121 @@
 # Contributing to Veltix
 
-Thank you for considering contributing to Veltix! 🎉
+Contributions of any kind are welcome — bug reports, feature requests, documentation improvements, or code changes. This guide explains how to get involved effectively.
 
-We welcome contributions from everyone, whether you're fixing bugs, adding features, improving documentation, or
-translating.
+---
 
 ## Code of Conduct
 
-Be respectful, inclusive, and constructive. We're here to build something great together.
+All contributors are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Be respectful and constructive.
 
-## How to Contribute
+---
 
-### Reporting Bugs 🐛
+## Reporting Bugs
 
-Before creating a bug report, please check if the issue already exists.
+Before opening a bug report, check if the issue already exists in the [issue tracker](https://github.com/NytroxDev/Veltix/issues).
 
-**When reporting bugs, include:**
+A good bug report includes:
 
-- Python version and OS
-- Clear reproduction steps
-- Expected vs actual behavior
-- Error messages (if any)
+- Python version and operating system
+- Minimal reproduction steps
+- Expected behavior vs. actual behavior
+- Full error message and traceback if applicable
 
-### Suggesting Features 💡
+---
 
-We love new ideas! Before suggesting:
+## Suggesting Features
 
-- Check if it's already planned in our [Roadmap](README.md#roadmap)
-- Explain the use case and benefits
-- Consider if it fits Veltix's philosophy (simple, zero-deps)
+Before suggesting a new feature:
 
-Open an issue with `[Feature Request]` in the title.
+- Check the [Roadmap](README.md#roadmap) to see if it is already planned
+- Consider whether it fits Veltix's philosophy: simple, zero dependencies, focused scope
 
-### Code Contributions 💻
+Open an issue with a clear description of the use case and the proposed behavior.
 
-#### Development Setup
+---
 
-**No dependencies needed!** Veltix uses Python stdlib only.
+## Contributing Code
+
+### Setup
+
+Veltix has no runtime dependencies. Getting started is straightforward:
 
 ```bash
-# Clone the repo
 git clone https://github.com/NytroxDev/Veltix.git
 cd Veltix
-
-# That's it! Ready to code.
 ```
 
-**Optional dev tools:**
+Optional development tools:
 
 ```bash
-pip install pytest  # For running tests
+pip install pytest ruff
 ```
 
-#### Making Changes
+### Workflow
 
-1. **Fork** the repository
-2. **Create a branch** for your changes:
+1. Fork the repository
+2. Create a branch for your change:
    ```bash
-   git checkout -b feature/amazing-feature
+   git checkout -b fix/issue-description
    ```
-3. **Make your changes**
-    - Write clear, readable code
-    - Add/update tests if needed
-    - Follow existing code style
-4. **Test your changes**
+3. Make your changes
+4. Run the tests:
    ```bash
    python -m pytest tests/
    ```
-5. **Commit** with a clear message:
+5. Commit with a clear message:
    ```bash
-   git commit -m "Add amazing feature that does X"
+   git commit -m "Fix: description of what was fixed and why"
    ```
-6. **Push** to your fork:
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-7. **Open a Pull Request** on GitHub
+6. Push and open a Pull Request
 
-#### Code Style
+### Code Style
 
 - Follow **PEP 8**
-- Use **type hints** everywhere
-- Add **docstrings** to public methods (Google style)
-- Keep it **simple and readable**
-- Avoid adding dependencies
-
-**Example:**
+- Use **type hints** on all public methods
+- Write **docstrings** for all public classes and methods (Google style)
+- Keep the code readable — clarity over cleverness
+- Do not add external dependencies
 
 ```python
 def send_message(self, data: bytes, client: ClientInfo) -> bool:
     """
     Send a message to a specific client.
-    
+
     Args:
         data: Message bytes to send
         client: Target client information
-        
+
     Returns:
         True if send succeeded, False otherwise
     """
-    # Implementation
 ```
 
-## Other Ways to Contribute
+### Pull Request Checklist
 
-You don't need to write code to help Veltix grow!
-
-### ⭐ Star the Project
-
-Show your support by starring the repo on GitHub.
-
-### 📢 Spread the Word
-
-- Share Veltix on social media
-- Write blog posts or tutorials
-- Mention it in your projects
-- Tell other developers
-
-### 📚 Documentation
-
-- Improve README or docs
-- Write tutorials or guides
-- Translate documentation
-- Fix typos
-
-### 💬 Community Support
-
-- Help answer questions in Issues
-- Join our Discord (coming soon)
-- Share your Veltix projects
-- Help newcomers get started
-
-### 🎨 Design & Branding
-
-- Improve the website (coming soon)
-- Create graphics or logos
-- Suggest UI/UX improvements
-
-### 💰 Financial Support
-
-- Sponsor the project (GitHub Sponsors - coming soon)
-- Help cover infrastructure costs
-
-### 🏗️ Architecture & Vision
-
-- Participate in roadmap discussions
-- Suggest architectural improvements
-- Review major pull requests
-
-### 🐛 Testing & QA
-
-- Test new releases
-- Report edge cases
-- Create reproducible bug reports
-- Benchmark performance
-
-## Pull Request Process
-
-1. **Update documentation** if needed
-2. **Add tests** for new features
-3. **Ensure all tests pass**
-4. **Keep PRs focused** - one feature per PR
-5. **Write clear descriptions** of what changed and why
-
-### PR Checklist
-
-- [ ] Code follows project style
-- [ ] Added/updated docstrings
-- [ ] Added/updated tests
+- [ ] Code follows the project style
+- [ ] Docstrings added or updated
+- [ ] Tests added or updated
 - [ ] All tests pass
-- [ ] Updated README if needed
-- [ ] No new dependencies added
-
-## Questions?
-
-- Open an issue with `[Question]` tag
-- Join our Discord :https://discord.gg/NrEjSHtfMp
-- Email: nytrox.dev@gmail.com
-
-## Recognition
-
-All contributors will be recognized in our [README](README.md#contributors)!
-
-Thank you for making Veltix better! 💚
+- [ ] Documentation updated if needed
+- [ ] No new dependencies introduced
 
 ---
 
-**Every contribution matters, no matter how small!**
+## Other Ways to Help
+
+You do not need to write code to contribute meaningfully:
+
+- **Star the project** on GitHub to increase visibility
+- **Report bugs** or unclear documentation
+- **Improve the docs** — fix typos, clarify explanations, add examples
+- **Answer questions** in issues or on Discord
+- **Share the project** if you find it useful
+
+---
+
+## Questions
+
+- Open an issue with a `[Question]` tag
+- Join the Discord: [discord.gg/NrEjSHtfMp](https://discord.gg/NrEjSHtfMp)
+- Email: nytrox.dev@gmail.com
