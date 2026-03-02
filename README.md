@@ -1,6 +1,3 @@
-**OK ! Je refais le README complet en gardant TOUT ce qui existe déjà + ajout des benchmarks ! 📝**
-
----
 
 # Veltix
 
