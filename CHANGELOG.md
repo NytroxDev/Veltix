@@ -5,6 +5,111 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-24
+
+### Added
+
+- **RequestHandler Architecture**: Extracted message routing logic into dedicated handler class
+    - Centralizes PING/PONG auto-response
+    - Manages request/response correlation for `send_and_wait()`
+    - Thread-safe message routing with proper locking
+    - Works in both SERVER and CLIENT modes for consistent behavior
+    - Unified message handling flow across the entire codebase
+- **MessageBuffer**: Proper TCP stream handling to prevent message corruption
+    - Accumulates incoming data and extracts complete messages
+    - Handles partial messages and multiple concatenated messages
+    - Prevents hash mismatch errors from fragmented TCP streams
+    - Configurable max message size (default: 10MB) for DoS protection
+- **Mode Enum**: New `Mode` enum in `utils.mode` for consistent mode handling
+    - `Mode.SERVER` and `Mode.CLIENT` replace string-based mode checks
+    - Shared across `Sender` and `RequestHandler` for consistency
+    - Prevents circular import issues
+- **Performance Optimizations**: Added `__slots__` throughout codebase
+    - Reduced memory footprint: 148KB idle server, 52KB per client
+    - Improved attribute access speed
+    - Applied to Request, Response, MessageType, and config classes
+
+### Changed
+
+- **Server**: Now delegates all message handling to `RequestHandler`
+    - Simplified `handle_client()` method (~70 lines removed)
+    - Better error handling through centralized handler
+    - Per-client MessageBuffer for proper stream handling
+- **Client**: Now uses `RequestHandler` for consistent message processing
+    - Same message handling logic as Server
+    - Unified callback signature across Server and Client
+    - Integrated MessageBuffer for reliable message parsing
+- **send_and_wait()**: Fixed critical race condition
+    - Request queue now registered BEFORE sending message
+    - Prevents lost responses that arrive before queue registration
+    - Consistent implementation for both Server and Client
+- **Thread Management**:
+    - Main server thread uses daemon mode
+    - Improved shutdown sequence with proper socket closing
+    - Better cleanup of client buffers on disconnect
+
+### Fixed
+
+- **CRITICAL**: Race condition in `send_and_wait()` where responses could be lost
+- **CRITICAL**: TCP stream fragmentation causing hash mismatch errors
+- MessageBuffer `__len__` causing falsy evaluation when empty
+- Ping latency of 0.0ms incorrectly evaluated as failed (was counting as timeout)
+- Thread synchronization during server shutdown
+- Edge cases in PING/PONG auto-response
+- Improved cleanup of pending requests on timeout
+
+### Performance
+
+Benchmarked on Python 3.14 • 12-core CPU • 30GB RAM • Linux
+
+**Memory:**
+
+- Idle server: 148 KB
+- Per client: 52.4 KB
+- 50 clients: 29.6 MB
+
+**Latency (localhost):**
+
+- Average: 0.012 ms
+- P95: 0.000 ms
+- P99: 1.000 ms
+
+**Throughput:**
+
+- Burst send: 67,236 msg/s
+- Burst receive: 50,304 msg/s
+- 100 concurrent clients: 40,402 msg/s
+- Data throughput: 3.07 MB/s
+
+**Real-world simulations:**
+
+- 64 players @ 64 tick/s: 4,489 msg/s (100% success)
+- 128 players @ 20 tick/s: 2,813 msg/s (100% success)
+
+All tests achieved 100% message delivery with zero errors.
+
+### Internal
+
+- Moved `Mode` enum from `sender.py` to `utils.mode` to avoid circular imports
+- Refactored message handling flow for better testability
+- Added comprehensive logging throughout `RequestHandler` and `MessageBuffer`
+- Improved type hints across Server, Client, RequestHandler, and MessageBuffer
+- Better documentation with detailed docstrings
+
+### Developer Experience
+
+- Easier to understand code flow with separated concerns
+- Better error messages with source attribution
+- Consistent patterns across Server and Client
+- Improved debugging with detailed trace logs
+- TCP stream handling now transparent to users
+
+### Notes
+
+- No breaking changes to public API
+- If you were directly accessing internal `_pending_requests`, this has moved to `RequestHandler`
+- Main server thread uses daemon mode (will be replaced with selectors in v1.6.0)
+
 ## [1.2.1] - 2026-02-15
 
 ### Fixed

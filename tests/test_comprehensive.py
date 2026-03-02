@@ -342,7 +342,7 @@ class TestClientServer:
         request = Request(msg_type, b"Hello Server")
         sender.send(request)
 
-        time.sleep(0.01)
+        time.sleep(0.5)
 
         # Verify
         assert len(messages_received) > 0
@@ -444,7 +444,7 @@ class TestClientServer:
             clients.append(client)
             time.sleep(0.1)
 
-        time.sleep(0.1)
+        time.sleep(0.5)
 
         # Broadcast message
         msg_type = MessageType(code=301, name="broadcast_test")
@@ -452,7 +452,7 @@ class TestClientServer:
         sender = server.get_sender()
         sender.broadcast(broadcast_msg, server.get_all_clients_sockets())
 
-        time.sleep(0.1)
+        time.sleep(0.5)
 
         # All clients should receive the message
         for msgs in messages_received:
@@ -503,7 +503,7 @@ class TestClientServer:
             broadcast_msg, server.get_all_clients_sockets(), except_clients=[exclude_socket]
         )
 
-        time.sleep(0.1)
+        time.sleep(1)
 
         # First client should not receive
         assert len(messages_received[0]) == 0

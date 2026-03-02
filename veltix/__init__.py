@@ -5,7 +5,7 @@ A simple, zero-dependency TCP networking library with message integrity
 and request/response patterns.
 """
 
-__version__ = "1.2.1"
+__version__ = "1.3.0"
 
 from .client.client import Client, ClientConfig
 from .exceptions import MessageTypeError, RequestError, SenderError, VeltixError

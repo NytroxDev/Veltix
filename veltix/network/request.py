@@ -67,10 +67,10 @@ class Request:
     def respond(self, response: Response):
         """
         Update this request's ID to match a received response.
-        
+
         This method is used to correlate a sent request with its corresponding
         response by updating the request_id to match the response's request_id.
-        
+
         Args:
             response: The Response object received from the network
         """
@@ -78,28 +78,33 @@ class Request:
         self._logger.debug(f"Request {self.request_id[:8]}... responded with matching ID")
 
     @staticmethod
-    def parse(data: bytes) -> Response:
+    def parse(data: bytes, max_message_size: int = 10 * 1024 * 1024) -> Response:
         """
-        Parse raw bytes into a Response object.
-
-        Protocol format (62 byte header + N byte content):
-        - 2 bytes: message type code (unsigned short, big-endian)
-        - 4 bytes: content size (unsigned int, big-endian)
-        - 32 bytes: SHA256 hash of content
-        - 8 bytes: timestamp in milliseconds (unsigned long long, big-endian)
-        - 16 bytes: request UUID (raw bytes)
-        - N bytes: actual content
+        Parse binary data into a Response object.
 
         Args:
-            data: Raw bytes received from network
+            data: Raw binary data to parse
+            max_message_size: Maximum allowed message size (default: 10MB)
 
         Returns:
-            Parsed Response object
+            Response: Parsed response object
 
         Raises:
-            RequestError: If hash mismatch, size mismatch, or unknown type code
+            RequestError: If data is invalid or corrupted
         """
         logger = Logger.get_instance()
+
+        # Check minimum size
+        if len(data) < 62:
+            logger.error(f"Parse error: Data too short ({len(data)} bytes, minimum 62)")
+            raise RequestError(f"Invalid data length: {len(data)} bytes (minimum 62 required)")
+
+        # Check maximum size
+        if len(data) > max_message_size:
+            logger.error(
+                f"Parse error: Data too large ({len(data)} bytes, maximum {max_message_size})"
+            )
+            raise RequestError(f"Message too large: {len(data)} bytes (maximum {max_message_size})")
 
         # Capture receive time as early as possible
         received_at = int(time.time() * 1000)
