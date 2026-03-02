@@ -536,9 +536,3 @@ MIT License — see [LICENSE](LICENSE) for details.
 - **PyPI:** [pypi.org/project/veltix](https://pypi.org/project/veltix)
 - **Documentation:** Coming soon
 - **Discord:** [discord.gg/NrEjSHtfMp](https://discord.gg/NrEjSHtfMp)
-
----
-
-**README complet avec vrais benchmarks et sans liens morts ! ✅**
-
-**Prochaine étape : Version bump et deploy ! 🚀**
