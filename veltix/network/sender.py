@@ -1,26 +1,12 @@
 """Message sending functionality for Veltix."""
 
-from enum import Enum
-from socket import error as socket_error
 from socket import socket
-from typing import Optional
+from typing import Optional, Union
 
 from ..exceptions import SenderError
 from ..logger.core import Logger
+from ..utils.mode import Mode
 from .request import Request
-
-
-class Mode(Enum):
-    """
-    Sender operating mode.
-
-    Attributes:
-        SERVER: Can send to multiple clients (broadcast)
-        CLIENT: Can only send to server
-    """
-
-    SERVER = "server"
-    CLIENT = "client"
 
 
 class Sender:
@@ -31,7 +17,7 @@ class Sender:
     SERVER mode (multiple client connections).
     """
 
-    def __init__(self, mode: Mode, conn: Optional[socket] = None) -> None:
+    def __init__(self, mode: Union[Mode, str], conn: Optional[socket] = None) -> None:
         """
         Initialize the sender.
 
@@ -131,7 +117,7 @@ class Sender:
                 try:
                     peer = client.getpeername()
                     self._logger.debug(f"Excluding client {peer} from broadcast")
-                except (OSError, socket_error):
+                except OSError:
                     self._logger.debug("Excluding client from broadcast")
                 continue
 
@@ -139,15 +125,10 @@ class Sender:
             results.append(success)
             if not success:
                 failed_count += 1
-                self._logger.warning(
-                    f"Failed to send to client {i + 1}/{len(list_of_client)}"
-                )
+                self._logger.warning(f"Failed to send to client {i + 1}/{len(list_of_client)}")
 
         total_sent = len(list_of_client) - except_count
-        if total_sent > 0:
-            success_rate = (total_sent - failed_count) / total_sent
-        else:
-            success_rate = 1.0  # All clients excluded = 100% success
+        success_rate = (total_sent - failed_count) / total_sent if total_sent > 0 else 1.0
 
         self._logger.info(
             f"Broadcast completed: {total_sent - failed_count}/{total_sent} successful ({success_rate:.1%}) - {except_count} excluded"

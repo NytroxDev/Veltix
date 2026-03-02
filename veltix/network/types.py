@@ -30,9 +30,7 @@ class MessageTypeRegistry:
         """
         if msg_type.code in cls._registry:
             existing = cls._registry[msg_type.code]
-            raise MessageTypeError(
-                f"Code {msg_type.code} already registered as '{existing.name}'"
-            )
+            raise MessageTypeError(f"Code {msg_type.code} already registered as '{existing.name}'")
         cls._registry[msg_type.code] = msg_type
 
     @classmethod
@@ -71,6 +69,8 @@ class MessageType:
     Raises:
         MessageTypeError: If code is out of range or already registered
     """
+
+    __slots__ = ("code", "name", "description")
 
     def __init__(
         self, code: int, name: Optional[str] = None, description: Optional[str] = None

@@ -1,15 +1,17 @@
-# ruff: noqa: UP035
 import dataclasses
 import socket
 import threading
-from queue import Empty, Queue
+from collections.abc import Callable
 from threading import Lock
-from typing import Callable, Optional, Union  # noqa: UP035
+from typing import Optional, Union
+
+from veltix.handler.request_handler import RequestHandler
 
 from ..logger.core import Logger
+from ..network.message_buffer import MessageBuffer
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
-from ..network.system_types import PING, PONG
+from ..network.system_types import PING
 from ..utils.events import Events
 from ..utils.network import recv
 
@@ -24,6 +26,7 @@ class ServerConfig:
         port (int): Server listening port (default: 8080)
         buffer_size (int): Buffer size for receiving data (default: 1024)
         max_connection (int): Maximum number of simultaneous connections (default: 2)
+        max_message_size (int): Maximum allowed message size in bytes (default: 10MB)
     """
 
     host: str = "0.0.0.0"
@@ -31,6 +34,7 @@ class ServerConfig:
 
     buffer_size: int = 1024
     max_connection: int = 2
+    max_message_size: int = 10 * 1024 * 1024  # 10 MB
 
 
 @dataclasses.dataclass
@@ -43,6 +47,8 @@ class ClientInfo:
         addr (socket._RetAddress): Client address (host, port)
     """
 
+    __slots__ = ("conn", "addr", "thread_id")
+
     conn: socket.socket
     addr: socket._RetAddress
 
@@ -50,6 +56,28 @@ class ClientInfo:
 
 
 class Server:
+    __slots__ = (
+        "_logger",
+        "_client_buffers",
+        "_buffers_lock",
+        "clients",
+        "_clients_lock",
+        "threads",
+        "_threads_lock",
+        "config",
+        "start_th",
+        "on_recv",
+        "on_connect",
+        "on_disconnect",
+        "running",
+        "n_th",
+        "_n_th_lock",
+        "ping_result",
+        "sender",
+        "request_handler",
+        "socket",
+    )
+
     def __init__(self, config: ServerConfig) -> None:
         """
         Initialize the TCP server.
@@ -60,9 +88,8 @@ class Server:
         # Logger setup
         self._logger = Logger.get_instance()
 
-        # Thread-safe structures with locks
-        self._pending_requests: dict[str, Queue] = {}
-        self._pending_requests_lock = Lock()
+        self._client_buffers: dict[socket.socket, MessageBuffer] = {}
+        self._buffers_lock = Lock()
 
         self.clients: list[ClientInfo] = []
         self._clients_lock = Lock()
@@ -79,10 +106,11 @@ class Server:
         self.n_th = 0
         self._n_th_lock = Lock()
 
-        self.wait_for_ping = False
         self.ping_result: Optional[Response] = None
 
         self.sender = Sender(mode=Mode.SERVER)
+
+        self.request_handler = RequestHandler(self.sender, mode=Mode.SERVER)
 
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -95,21 +123,17 @@ class Server:
         )
 
     def set_callback(self, event: Union[str, Events], func: Callable) -> None:
-        """
-        Set a callback function to a server event.
-
-        Args:
-            event: Event type (Events.ON_RECV, Events.ON_CONNECT or string)
-            func: Callback function to execute
-                - on_recv: func(client: ClientInfo, msg: Response)
-                - on_connect: func(client: ClientInfo)
-                - on_disconnect: func(client: ClientInfo)
-        """
-        events = [Events.ON_RECV, Events.ON_CONNECT]
+        """Set a callback function to a server event."""
+        events = [Events.ON_RECV, Events.ON_CONNECT, Events.ON_DISCONNECT]
 
         for event_ in events:
             if event == event_ or event == event_.value:
+                # Set sur Server
                 setattr(self, event_.value, func)
+
+                if event_ == Events.ON_RECV:
+                    self.request_handler.set_on_recv(func)
+
                 self._logger.debug(f"Bound callback to event: {event_.value}")
                 return
 
@@ -119,47 +143,34 @@ class Server:
         self, request: Request, client: ClientInfo, timeout: float = 5.0
     ) -> Optional[Response]:
         """
-        Send a request to client and wait for response.
+        Send a request to a client and block until the matching response is received.
+
+        Registers the request queue before sending to avoid race conditions
+        where the response could arrive before wait() is called.
 
         Args:
             request: Request to send
-            client: Target client
-            timeout: Timeout in seconds
+            client: Target client to send the request to
+            timeout: Maximum time to wait for response in seconds (default: 5.0)
 
         Returns:
-            Response object or None if timeout/error
+            Response object if received within timeout, None if timeout or send failure
         """
-        response_queue = Queue(maxsize=1)
+        request_id = request.request_id
 
-        with self._pending_requests_lock:
-            self._pending_requests[request.request_id] = response_queue
+        self._logger.debug(f"Sending request {request_id} to client {client.addr}")
 
-        self._logger.debug(f"Sending request {request.request_id} to client {client.addr}")
+        # 1. Register BEFORE sending to avoid race condition
+        self.request_handler.register(request_id)
 
-        # Send request
+        # 2. Send the request
         if not self.sender.send(request, client=client.conn):
-            with self._pending_requests_lock:
-                del self._pending_requests[request.request_id]
-            self._logger.error(
-                f"Failed to send request {request.request_id} to client {client.addr}"
-            )
+            self._logger.error(f"Failed to send request {request_id} to client {client.addr}")
+            self.request_handler.unregister(request_id)
             return None
 
-        # Wait for response
-        try:
-            response = response_queue.get(timeout=timeout)
-            self._logger.debug(f"Received response {request.request_id} from client {client.addr}")
-            return response
-        except Empty:
-            self._logger.warning(
-                f"Timeout waiting for response {request.request_id} from client {client.addr}"
-            )
-            return None  # Timeout
-        finally:
-            # Cleanup
-            with self._pending_requests_lock:
-                if request.request_id in self._pending_requests:
-                    del self._pending_requests[request.request_id]
+        # 3. Wait for the response
+        return self.request_handler.wait(request_id, timeout)
 
     def get_sender(self) -> Sender:
         """
@@ -194,7 +205,7 @@ class Server:
         """
         if not _on_th:
             self._logger.info(f"Starting server on {self.config.host}:{self.config.port}")
-            self.start_th = threading.Thread(target=self.start, args=(True,))
+            self.start_th = threading.Thread(target=self.start, args=(True,), daemon=True)
             self.start_th.start()
             return
 
@@ -248,6 +259,13 @@ class Server:
         """
         self._logger.debug(f"Starting to handle client {client.addr}")
 
+        # Create message buffer for this client
+        with self._buffers_lock:
+            self._client_buffers[client.conn] = MessageBuffer(
+                max_message_size=self.config.max_message_size
+            )
+            self._logger.debug(f"Created message buffer for client {client.addr}")
+
         if self.on_connect:
             try:
                 self.on_connect(client)
@@ -263,49 +281,48 @@ class Server:
         while True:
             msg = recv(client.conn, self.config.buffer_size)
 
+            self._logger.trace(f"Received message: {msg}")
+
             if msg is None:
                 self._logger.info(f"Client {client.addr} disconnected")
+
+                # Clean up buffer
+                with self._buffers_lock:
+                    if client.conn in self._client_buffers:
+                        del self._client_buffers[client.conn]
+                        self._logger.debug(f"Cleaned up buffer for client {client.addr}")
+
                 self.close_client(client)
                 break
 
             try:
-                response: Response = Request.parse(msg)
-                self._logger.debug(
-                    f"Received message from client {client.addr}: {response.type.code}"
-                )
+                # Get buffer for this client
+                with self._buffers_lock:
+                    buffer = self._client_buffers.get(client.conn)
 
-                # Auto-respond to PING
-                if response.type.code == PING.code:
-                    pong_request = Request(PONG, b"", request_id=response.request_id)
-                    self.sender.send(pong_request, client=client.conn)
-                    self._logger.debug(f"Auto-responded with PONG to client {client.addr}")
+                if buffer is None:
+                    self._logger.warning(f"No buffer found for client {client.addr}")
                     continue
 
-                # Check if someone is waiting for this response
-                with self._pending_requests_lock:
-                    is_pending = response.request_id in self._pending_requests
-                    if is_pending:
-                        queue = self._pending_requests[response.request_id]
+                # Add received data to buffer
+                buffer.add_data(msg)
 
-                if is_pending:
-                    queue.put(response)
+                # Extract all complete messages
+                messages = buffer.extract_messages()
+
+                # Process each message
+                for response in messages:
                     self._logger.debug(
-                        f"Delivered response {response.request_id} to waiting request"
+                        f"Received message from client {client.addr}: {response.type.code}"
                     )
-                else:
-                    # Normal callback
-                    if self.on_recv:
-                        try:
-                            self.on_recv(client, response)
-                            self._logger.debug(f"Called on_recv callback for client {client.addr}")
-                        except Exception as e:
-                            self._logger.error(
-                                f"Error in on_recv callback for client {client.addr}: {type(e).__name__}: {e}"
-                            )
+
+                    result = self.request_handler.handle(response, client)
+                    if isinstance(result, Exception):
+                        self._logger.error(f"Handler error for {client.addr}: {result}")
 
             except Exception as e:
                 self._logger.error(
-                    f"Error parsing message from client {client.addr}: {type(e).__name__}: {e}"
+                    f"Error processing messages from client {client.addr}: {type(e).__name__}: {e}"
                 )
 
     def close_client(self, client: ClientInfo) -> bool:
@@ -326,6 +343,12 @@ class Server:
             self._logger.error(
                 f"Error calling on_disconnect for client {client.addr}: {type(e).__name__}: {e}"
             )
+
+        # Clean up buffer (redundant safety)
+        with self._buffers_lock:
+            if client.conn in self._client_buffers:
+                del self._client_buffers[client.conn]
+                self._logger.debug(f"Cleaned up buffer for client {client.addr} in close_client")
 
         try:
             client.conn.close()
@@ -394,7 +417,6 @@ class Server:
         Returns:
             Latency in milliseconds, or None if timeout
         """
-        from ..network.system_types import PING
 
         self._logger.debug(f"Pinging client {client.addr}")
         ping_request = Request(PING, b"")
@@ -409,19 +431,28 @@ class Server:
             return None
 
     def close_all(self) -> None:
-        """
-        Stop the server and close all connections.
-
-        - Stops the client acceptance loop
-        - Disconnects all clients
-        - Waits for threads to finish (timeout 0.1s)
-        - Closes the server socket
-        """
+        """Stop the server and close all connections."""
         self._logger.info("Shutting down server")
 
-        if self.start_th:
-            self.running = False
-            self._logger.debug("Stopping server main loop")
+        # Stop the main loop
+        self.running = False
+        self._logger.debug("Stopping server main loop")
+
+        # Close server socket FIRST (force accept() to fail)
+        try:
+            self.socket.close()
+            self._logger.info("Server socket closed")
+        except Exception as e:
+            self._logger.error(f"Error closing server socket: {e}")
+
+        # Wait for main thread to finish
+        if self.start_th and self.start_th.is_alive():
+            self._logger.debug("Waiting for main thread to finish...")
+            self.start_th.join(timeout=2.0)  # ← AJOUTE ÇA !
+            if self.start_th.is_alive():
+                self._logger.warning("Main thread did not finish in time")
+            else:
+                self._logger.debug("Main thread finished")
 
         # Close all clients
         with self._clients_lock:
@@ -432,26 +463,19 @@ class Server:
             try:
                 self.close_client(client)
             except Exception as e:
-                self._logger.error(f"Error closing client {client.addr}: {type(e).__name__}: {e}")
+                self._logger.error(f"Error closing client {client.addr}: {e}")
 
-        # Wait for threads to finish
+        # Wait for client threads
         with self._threads_lock:
             threads_to_join = list(self.threads)
             thread_count = len(threads_to_join)
 
         for _, thread in threads_to_join:
             try:
-                thread.join(0.01)
+                thread.join(0.1)  # Augmente le timeout si nécessaire
                 self._logger.debug(f"Thread {thread.name} joined")
             except Exception as e:
-                self._logger.error(f"Error joining thread {thread.name}: {type(e).__name__}: {e}")
-
-        # Close server socket
-        try:
-            self.socket.close()
-            self._logger.info("Server socket closed")
-        except Exception as e:
-            self._logger.error(f"Error closing server socket: {type(e).__name__}: {e}")
+                self._logger.error(f"Error joining thread {thread.name}: {e}")
 
         self._logger.info(
             f"Server shutdown complete. Closed {client_count} clients and {thread_count} threads"

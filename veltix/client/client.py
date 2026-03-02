@@ -3,13 +3,15 @@
 import dataclasses
 import socket
 import threading
-from queue import Empty, Queue
-from typing import Callable, Optional, Union
+from collections.abc import Callable
+from typing import Optional, Union
 
+from ..handler.request_handler import RequestHandler
 from ..logger.core import Logger
+from ..network.message_buffer import MessageBuffer
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
-from ..network.system_types import PING, PONG
+from ..network.system_types import PING
 from ..utils.events import Events
 from ..utils.network import recv
 
@@ -23,11 +25,13 @@ class ClientConfig:
         server_addr: Server address to connect to
         port: Server port to connect to
         buffer_size: Buffer size for receiving data in bytes
+        max_message_size: Maximum allowed message size in bytes (default: 10MB)
     """
 
     server_addr: str = "127.0.0.1"
     port: int = 8080
     buffer_size: int = 1024
+    max_message_size: int = 10 * 1024 * 1024  # 10 MB
 
 
 class Client:
@@ -46,9 +50,8 @@ class Client:
         """
         # Logger setup
         self._logger = Logger.get_instance()
-        
-        # Pending request/response tracking
-        self._pending_requests: dict[str, Queue] = {}
+
+        self._message_buffer = MessageBuffer(max_message_size=config.max_message_size)
 
         # Configuration
         self.config: ClientConfig = config
@@ -66,8 +69,12 @@ class Client:
 
         # Sender
         self.sender = Sender(mode=Mode.CLIENT, conn=self.socket)
-        
-        self._logger.debug(f"Client initialized for server {self.config.server_addr}:{self.config.port}")
+
+        self.request_handler = RequestHandler(sender=self.sender, mode=Mode.CLIENT)
+
+        self._logger.debug(
+            f"Client initialized for server {self.config.server_addr}:{self.config.port}"
+        )
 
     def set_callback(self, event: Union[str, Events], func: Callable) -> None:
         """
@@ -80,6 +87,7 @@ class Client:
         """
         if event == Events.ON_RECV or event == Events.ON_RECV.value:
             self.on_recv = func
+            self.request_handler.set_on_recv(func)
             self._logger.debug("Bound callback to ON_RECV event")
         else:
             self._logger.warning(f"Unknown event type for callback: {event}")
@@ -95,19 +103,22 @@ class Client:
             self._logger.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
             self.socket.connect((self.config.server_addr, self.config.port))
             self.is_connected = True
-            self._logger.info(f"Successfully connected to server {self.config.server_addr}:{self.config.port}")
+            self._logger.info(
+                f"Successfully connected to server {self.config.server_addr}:{self.config.port}"
+            )
 
             # Start message handler thread
-            self.thread_handler = threading.Thread(
-                target=self.handle_client, daemon=True
-            )
+            self.thread_handler = threading.Thread(target=self.handle_client, daemon=True)
             self.thread_handler.start()
+
             self._logger.debug("Started client message handler thread")
 
             return True
 
-        except (ConnectionRefusedError, socket.timeout) as e:
-            self._logger.error(f"Connection failed to {self.config.server_addr}:{self.config.port}: {type(e).__name__}")
+        except (TimeoutError, ConnectionRefusedError) as e:
+            self._logger.error(
+                f"Connection failed to {self.config.server_addr}:{self.config.port}: {type(e).__name__}"
+            )
             return False
         except Exception as e:
             self._logger.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
@@ -117,41 +128,35 @@ class Client:
         """Get the sender instance."""
         return self.sender
 
-    def send_and_wait(
-        self, request: Request, timeout: float = 5.0
-    ) -> Optional[Response]:
+    def send_and_wait(self, request: Request, timeout: float = 5.0) -> Optional[Response]:
         """
-        Send a request and wait for matching response.
+        Send a request and block until the matching response is received.
+
+        Registers the request queue before sending to avoid race conditions
+        where the response could arrive before wait() is called.
 
         Args:
             request: Request to send
-            timeout: Wait timeout in seconds
+            timeout: Maximum time to wait for response in seconds (default: 5.0)
 
         Returns:
-            Response or None if timeout/error
+            Response object if received within timeout, None if timeout or send failure
         """
-        response_queue: Queue = Queue(maxsize=1)
-        self._pending_requests[request.request_id] = response_queue
+        request_id = request.request_id
 
-        self._logger.debug(f"Sending request {request.request_id} to server")
+        self._logger.debug(f"Sending request {request_id} and waiting for response")
 
-        # Send request
+        # 1. Register before sending to avoid race condition
+        self.request_handler.register(request_id)
+
+        # 2. Send the request
         if not self.sender.send(request):
-            del self._pending_requests[request.request_id]
-            self._logger.error(f"Failed to send request {request.request_id}")
+            self._logger.error(f"Failed to send request {request_id}")
+            self.request_handler.unregister(request_id)
             return None
 
-        # Wait for response
-        try:
-            response = response_queue.get(timeout=timeout)
-            self._logger.debug(f"Received response {request.request_id} from server")
-            return response
-        except Empty:
-            self._logger.warning(f"Timeout waiting for response {request.request_id}")
-            return None
-        finally:
-            # Cleanup
-            self._pending_requests.pop(request.request_id, None)
+        # 3. Wait for the response
+        return self.request_handler.wait(request_id, timeout)
 
     def ping_server(self, timeout: float = 5.0) -> Optional[float]:
         """
@@ -182,7 +187,7 @@ class Client:
         Runs in a separate thread.
         """
         self._logger.debug("Starting client message handler")
-        
+
         while self.running:
             msg = recv(self.socket, self.config.buffer_size)
 
@@ -192,31 +197,21 @@ class Client:
                 break
 
             try:
-                response: Response = Request.parse(msg)
-                self._logger.debug(f"Received message from server: {response.type.code}")
+                # Add data to buffer
+                self._message_buffer.add_data(msg)
 
-                # Auto-respond to PING
-                if response.type.code == PING.code:
-                    pong_request = Request(PONG, b"", request_id=response.request_id)
-                    self.sender.send(pong_request)
-                    self._logger.debug("Auto-responded with PONG to server")
-                    continue
+                # Extract all complete messages
+                messages = self._message_buffer.extract_messages()
 
-                # Check for pending request
-                if response.request_id in self._pending_requests:
-                    self._pending_requests[response.request_id].put(response)
-                    self._logger.debug(f"Delivered response {response.request_id} to waiting request")
-                else:
-                    # Normal callback
-                    if self.on_recv:
-                        try:
-                            self.on_recv(response)
-                            self._logger.debug("Called on_recv callback")
-                        except Exception as e:
-                            self._logger.error(f"Error in on_recv callback: {type(e).__name__}: {e}")
+                # Process each message
+                for response in messages:
+                    self._logger.debug(f"Received message from server: {response.type.code}")
+                    self.request_handler.handle(response)
 
             except Exception as e:
-                self._logger.error(f"Error parsing message from server: {type(e).__name__}: {e}")
+                self._logger.error(
+                    f"Error processing messages from server: {type(e).__name__}: {e}"
+                )
 
     def disconnect(self) -> bool:
         """
@@ -233,11 +228,8 @@ class Client:
             self._logger.debug("Socket closed, connection state updated")
 
             # Wait for handler thread if not current thread
-            if (
-                self.thread_handler
-                and threading.current_thread() != self.thread_handler
-            ):
-                self.thread_handler.join(timeout=1.0)
+            if self.thread_handler and threading.current_thread() != self.thread_handler:
+                self.thread_handler.join(timeout=0.1)
                 self._logger.debug("Message handler thread joined")
 
             self._logger.info("Successfully disconnected from server")
