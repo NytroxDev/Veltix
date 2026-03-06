@@ -560,5 +560,5 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 - **GitHub:** [NytroxDev/Veltix](https://github.com/NytroxDev/Veltix)
 - **PyPI:** [pypi.org/project/veltix](https://pypi.org/project/veltix)
-- **Documentation:** Coming soon
+- **Documentation:** https://nytroxdev.github.io/Veltix/
 - **Discord:** [discord.gg/NrEjSHtfMp](https://discord.gg/NrEjSHtfMp)
