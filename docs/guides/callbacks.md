@@ -1,0 +1,49 @@
+# Callbacks & Events
+
+## Available events
+
+| Event           | Server signature                        | Client signature       |
+|-----------------|-----------------------------------------|------------------------|
+| `ON_CONNECT`    | `callback(client: ClientInfo)`          | `callback()`           |
+| `ON_RECV`       | `callback(client: ClientInfo, response: Response)` | `callback(response: Response)` |
+| `ON_DISCONNECT` | `callback(client: ClientInfo)`          | `callback()`           |
+
+## Server callbacks
+
+```python
+from veltix import Server, ServerConfig, Events
+
+server = Server(ServerConfig(host="0.0.0.0", port=8080))
+
+server.set_callback(Events.ON_CONNECT, lambda client: print(f"Connected: {client.addr}"))
+server.set_callback(Events.ON_RECV, lambda client, msg: print(msg.content.decode()))
+server.set_callback(Events.ON_DISCONNECT, lambda client: print(f"Disconnected: {client.addr}"))
+```
+
+## Client callbacks
+
+```python
+from veltix import Client, ClientConfig, Events
+
+client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
+
+client.set_callback(Events.ON_CONNECT, lambda: print("Handshake complete!"))
+client.set_callback(Events.ON_RECV, lambda response: print(response.content.decode()))
+client.set_callback(Events.ON_DISCONNECT, lambda: print("Disconnected"))
+```
+
+## Thread pool
+
+`on_recv` callbacks run in a dedicated thread pool (`CallbackExecutor`). This means:
+
+- A slow or blocking callback **never** delays message reception
+- Exceptions inside callbacks are caught and logged — they never crash the recv loop
+- Workers are configurable via `max_workers` in `ServerConfig` / `ClientConfig`
+
+```python
+# Increase workers for slow callbacks
+config = ServerConfig(host="0.0.0.0", port=8080, max_workers=8)
+```
+
+!!! warning
+    `on_connect` and `on_disconnect` run directly in the recv thread — keep them fast.
