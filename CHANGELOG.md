@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-06
+
+### Added
+
+- **Handshake Protocol**: Automatic HELLO/HELLO_ACK exchange on every new connection
+    - Server sends HELLO immediately after TCP connection is established
+    - Client automatically responds with HELLO_ACK — fully transparent to the developer
+    - Version compatibility check: `major.minor` must match, patch is ignored
+    - Incompatible versions are rejected before any application message is exchanged
+    - `ClientInfo.handshake_done` flag — always `True` when `on_connect` fires
+- **Version Payload**: Version string embedded in HELLO and HELLO_ACK frames
+    - Wire format: `[2B length][NB version UTF-8]`
+    - Both sides log `server version=X` / `client version=X` on successful handshake
+- **CallbackExecutor**: Thread pool for callback execution
+    - `on_recv` callbacks now run in a dedicated `ThreadPoolExecutor`
+    - Slow or blocking callbacks never delay message reception
+    - Exceptions inside callbacks are caught and logged — they never crash the recv loop
+    - Configurable via `max_workers` in `ServerConfig` / `ClientConfig` (default: 4)
+- **Blocking `connect()`**: Client `connect()` now blocks until the handshake completes
+    - Safe to send messages immediately after `connect()` returns
+    - Configurable timeout via `ClientConfig.handshake_timeout` (default: 5.0s)
+    - Returns `False` if handshake times out or connection is refused
+- **`on_connect` / `on_disconnect` callbacks on Client**
+    - `on_connect` fires after the handshake is complete, not at raw TCP connect time
+    - `on_disconnect` fires when the server closes the connection
+- **`version.py`**: Dedicated version module
+    - `__version__` lives in `veltix/version.py` — importable without circular imports
+    - `__init__.py` re-exports it as before
+
+### Changed
+
+- **`ServerConfig`**: Added `handshake_timeout` and `max_workers` fields
+- **`ClientConfig`**: Added `handshake_timeout` and `max_workers` fields
+- **`ClientInfo`**: Added `handshake_done: bool` slot — initialized to `False`, set to `True` after HELLO_ACK is
+  received
+- **`handle_client()` (Server)**: Handshake is now driven inside the recv loop
+    - HELLO is sent before entering the loop
+    - HELLO_ACK arrives naturally as the first message and is routed via `pending_requests`
+    - No extra thread or blocking `wait()` call needed
+- **`handle_client()` (Client)**: `on_connect` now fires after handshake, not at thread start
+- **`RequestHandler`**: Callback dispatch now goes through `CallbackExecutor` instead of direct call
+
+### Fixed
+
+- Race condition where client could send application messages before server was ready to route them
+- `on_connect` firing before handshake was complete
+
+### Internal
+
+- `HandshakeHandler` unit-tested independently (encode/decode, version check, compatibility)
+- `CallbackExecutor` unit-tested independently (non-blocking submit, exception isolation)
+- Test suite split from one 800-line file into 12 focused files (69 tests total)
+- `HELLO` / `HELLO_ACK` system types: codes 10 and 11
+
+### Notes
+
+- No breaking changes to public API
+- `on_connect` now fires slightly later (after handshake) — this is intentional and correct behavior
+
 ## [1.3.0] - 2026-02-24
 
 ### Added

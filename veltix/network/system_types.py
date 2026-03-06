@@ -8,7 +8,8 @@ PONG = MessageType(1, "pong", "Response to PING request")
 HEARTBEAT = MessageType(2, "heartbeat", "Keep-alive message")
 
 # Connection management (10-19)
-HELLO = MessageType(10, "hello", "Initial handshake")
+HELLO = MessageType(10, "hello", "Initial handshake — server → client")
+HELLO_ACK = MessageType(11, "hello_ack", "Handshake acknowledgment — client → server")
 
 # Error messages (20-29)
 ERROR = MessageType(20, "error", "Generic error message")

@@ -18,9 +18,11 @@ def recv(conn: socket.socket, buf_size: int = 1024) -> Optional[bytes]:
         Received data as bytes, or None if connection closed or error occurred
     """
     logger = Logger.get_instance()
-    
+
     try:
-        logger.debug(f"Attempting to receive data from socket {conn.getpeername() if hasattr(conn, 'getpeername') else 'unknown'} with buffer size {buf_size}")
+        logger.trace(
+            f"Attempting to receive data from socket {conn.getpeername() if hasattr(conn, 'getpeername') else 'unknown'} with buffer size {buf_size}"
+        )
         data = conn.recv(buf_size)
         if not data:  # Connection closed cleanly
             logger.info("Connection closed cleanly by peer")

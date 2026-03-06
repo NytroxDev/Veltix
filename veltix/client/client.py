@@ -4,6 +4,7 @@ import dataclasses
 import socket
 import threading
 from collections.abc import Callable
+from threading import Event
 from typing import Optional, Union
 
 from ..handler.request_handler import RequestHandler
@@ -11,8 +12,8 @@ from ..logger.core import Logger
 from ..network.message_buffer import MessageBuffer
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
-from ..network.system_types import PING
-from ..utils.events import Events
+from ..network.system_types import HELLO, PING
+from ..utils.events import Events, events
 from ..utils.network import recv
 
 
@@ -26,12 +27,17 @@ class ClientConfig:
         port: Server port to connect to
         buffer_size: Buffer size for receiving data in bytes
         max_message_size: Maximum allowed message size in bytes (default: 10MB)
+        handshake_timeout: Maximum time to wait for handshake completion in seconds (default: 5.0)
+        max_workers: Number of worker threads for callback execution (default: 4).
+                     Increase if your on_recv callback is slow or blocking.
     """
 
     server_addr: str = "127.0.0.1"
     port: int = 8080
     buffer_size: int = 1024
     max_message_size: int = 10 * 1024 * 1024  # 10 MB
+    handshake_timeout: float = 5.0
+    max_workers: int = 4
 
 
 class Client:
@@ -39,6 +45,7 @@ class Client:
     TCP client for Veltix protocol.
 
     Connects to a Veltix server and handles bidirectional communication.
+    connect() blocks until the handshake is complete before returning.
     """
 
     def __init__(self, config: ClientConfig) -> None:
@@ -59,18 +66,25 @@ class Client:
         # Socket
         self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        # Event callback
+        # Event callbacks
         self.on_recv: Optional[Callable[[Response], None]] = None
+        self.on_connect: Optional[Callable[[], None]] = None
+        self.on_disconnect: Optional[Callable[[], None]] = None
 
         # Connection state
         self.is_connected: bool = False
         self.running: bool = True
         self.thread_handler: Optional[threading.Thread] = None
 
+        # Blocks connect() until the handshake resolves
+        self._handshake_done: Event = Event()
+
         # Sender
         self.sender = Sender(mode=Mode.CLIENT, conn=self.socket)
 
-        self.request_handler = RequestHandler(sender=self.sender, mode=Mode.CLIENT)
+        self.request_handler = RequestHandler(
+            sender=self.sender, mode=Mode.CLIENT, max_workers=config.max_workers
+        )
 
         self._logger.debug(
             f"Client initialized for server {self.config.server_addr}:{self.config.port}"
@@ -83,21 +97,31 @@ class Client:
         Args:
             event: Event type (Events enum or string)
             func: Callback function
-                - ON_RECV: func(msg: Response)
+                - ON_RECV:       func(msg: Response)
+                - ON_CONNECT:    func()
+                - ON_DISCONNECT: func()
         """
-        if event == Events.ON_RECV or event == Events.ON_RECV.value:
-            self.on_recv = func
-            self.request_handler.set_on_recv(func)
-            self._logger.debug("Bound callback to ON_RECV event")
-        else:
-            self._logger.warning(f"Unknown event type for callback: {event}")
+        for event_ in events:
+            if event == event_ or event == event_.value:
+                setattr(self, event_.value, func)
+
+                if event_ == Events.ON_RECV:
+                    self.request_handler.set_on_recv(func)
+
+                self._logger.debug(f"Bound callback to event: {event_.value}")
+                return
+
+        self._logger.warning(f"Unknown event type for binding: {event}")
 
     def connect(self) -> bool:
         """
         Connect to the server and start listening.
 
+        Blocks until the handshake is complete (or times out) before returning,
+        so the caller can safely send messages immediately after connect().
+
         Returns:
-            True if connection succeeded, False otherwise
+            True if connection and handshake succeeded, False otherwise
         """
         try:
             self._logger.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
@@ -112,6 +136,16 @@ class Client:
             self.thread_handler.start()
 
             self._logger.debug("Started client message handler thread")
+
+            # Block until handshake is complete or timeout
+            handshake_success = self._handshake_done.wait(timeout=self.config.handshake_timeout)
+
+            if not handshake_success:
+                self._logger.error(
+                    f"Handshake timeout after {self.config.handshake_timeout}s — disconnecting"
+                )
+                self.disconnect()
+                return False
 
             return True
 
@@ -184,7 +218,8 @@ class Client:
         """
         Handle communication with the server.
 
-        Runs in a separate thread.
+        Runs in a separate thread. Signals _handshake_done once the first
+        HELLO is processed, unblocking connect().
         """
         self._logger.debug("Starting client message handler")
 
@@ -193,20 +228,34 @@ class Client:
 
             if msg is None:
                 self._logger.info("Server disconnected")
+                # Unblock connect() in case we disconnect during handshake
+                self._handshake_done.set()
                 self.disconnect()
                 break
 
             try:
-                # Add data to buffer
                 self._message_buffer.add_data(msg)
-
-                # Extract all complete messages
                 messages = self._message_buffer.extract_messages()
 
-                # Process each message
                 for response in messages:
                     self._logger.debug(f"Received message from server: {response.type.code}")
                     self.request_handler.handle(response)
+
+                    # Unblock connect() once the HELLO has been handled
+                    if not self._handshake_done.is_set() and response.type == HELLO:
+                        self._handshake_done.set()
+                        self._handshake_done.set()
+                        self._logger.debug("Handshake complete, connect() unblocked")
+
+                        # Fire on_connect now that handshake is done
+                        if self.on_connect:
+                            try:
+                                self.on_connect()
+                                self._logger.debug("Called on_connect callback")
+                            except Exception as e:
+                                self._logger.error(
+                                    f"Error in on_connect callback: {type(e).__name__}: {e}"
+                                )
 
             except Exception as e:
                 self._logger.error(
@@ -231,6 +280,14 @@ class Client:
             if self.thread_handler and threading.current_thread() != self.thread_handler:
                 self.thread_handler.join(timeout=0.1)
                 self._logger.debug("Message handler thread joined")
+
+            # Fire on_disconnect
+            if self.on_disconnect:
+                try:
+                    self.on_disconnect()
+                    self._logger.debug("Called on_disconnect callback")
+                except Exception as e:
+                    self._logger.error(f"Error in on_disconnect callback: {type(e).__name__}: {e}")
 
             self._logger.info("Successfully disconnected from server")
             return True

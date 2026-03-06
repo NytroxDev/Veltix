@@ -109,11 +109,6 @@ class Request:
         # Capture receive time as early as possible
         received_at = int(time.time() * 1000)
 
-        # Validate minimum size
-        if len(data) < 62:
-            logger.error(f"Parse error: Data too short: {len(data)} bytes (minimum 62)")
-            raise RequestError(f"Data too short: {len(data)} bytes (minimum 62)")
-
         # Split header and content
         header = data[:62]
         content = data[62:]
