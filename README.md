@@ -1,4 +1,3 @@
-
 # Veltix
 
 A modern, lightweight TCP networking library for Python — simple enough for beginners, solid enough for production.
@@ -11,7 +10,7 @@ A modern, lightweight TCP networking library for Python — simple enough for be
 
 Veltix provides a clean abstraction layer over TCP sockets, handling the low-level complexity so you can focus on your
 application logic. It ships with message integrity verification, a structured binary protocol, request/response
-correlation, and production-ready logging — all with zero external dependencies.
+correlation, automatic connection handshake, and production-ready logging — all with zero external dependencies.
 
 **Performance highlights:** 50k+ msg/s throughput • 0.011ms average latency • 148KB idle memory • 100% success rate
 
@@ -45,13 +44,13 @@ and protocol design from scratch. Heavier frameworks like Twisted introduce stee
 trees.
 
 Veltix sits in between: a focused library that handles the hard parts — connection management, message integrity,
-threading, and request correlation — while keeping the API surface small and the codebase readable.
+threading, handshake, and request correlation — while keeping the API surface small and the codebase readable.
 
 **Designed for:**
 
 - Developers who want structured TCP communication without dealing with `asyncio` internals
 - Teams that need a maintainable, dependency-free networking layer in production
-- Real-time multiplayer games and simulations
+- Real-time applications and simulations
 - Rapid prototyping of client/server applications
 - Custom protocol experimentation
 
@@ -65,6 +64,8 @@ threading, and request correlation — while keeping the API surface small and t
 - **Custom binary protocol** — Lightweight framing with TCP stream handling
 - **Zero dependencies** — Pure Python standard library only
 - **Multi-threaded** — Concurrent client handling out of the box
+- **Automatic handshake** — HELLO/HELLO_ACK with version compatibility check on every connection
+- **Thread-safe callbacks** — `on_recv` runs in a thread pool, slow callbacks never block reception
 - **Request/Response pattern** — `send_and_wait()` with configurable timeout
 - **Built-in ping/pong** — Bidirectional latency measurement
 - **Integrated logger** — Colorized, file-rotating, thread-safe logging
@@ -181,7 +182,7 @@ def on_message(response: Response):
 
 
 client.set_callback(Events.ON_RECV, on_message)
-client.connect()
+client.connect()  # Blocks until handshake is complete — safe to send immediately
 
 msg = Request(CHAT, b"Hello Server!")
 sender.send(msg)
@@ -306,7 +307,6 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
 
 def on_message(client, response):
-    # Return the same request_id to correlate the response
     reply = Request(response.type, response.content, request_id=response.request_id)
     server.get_sender().send(reply, client=client.conn)
 
@@ -393,6 +393,30 @@ server.set_callback(Events.ON_RECV, lambda client, msg: print(f"Message from {cl
 server.set_callback(Events.ON_DISCONNECT, lambda client: print(f"Disconnected: {client.addr}"))
 ```
 
+### Client Callbacks
+
+```python
+from veltix import Client, ClientConfig, Events
+
+client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
+
+client.set_callback(Events.ON_CONNECT, lambda: print("Connected and handshake complete!"))
+client.set_callback(Events.ON_RECV, lambda response: print(response.content.decode()))
+client.set_callback(Events.ON_DISCONNECT, lambda: print("Disconnected"))
+
+client.connect()
+```
+
+### Configuring the Thread Pool
+
+```python
+from veltix import ServerConfig, ClientConfig
+
+# Increase workers for high-concurrency workloads with slow callbacks
+server_config = ServerConfig(host="0.0.0.0", port=8080, max_workers=8)
+client_config = ClientConfig(server_addr="127.0.0.1", port=8080, max_workers=8)
+```
+
 ### Broadcasting
 
 ```python
@@ -408,42 +432,43 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 
 ## Comparison
 
-| Feature            | Veltix | `socket` | `asyncio` | Twisted |
-|--------------------|:------:|:--------:|:---------:|:-------:|
-| Simple API         |   ✓    |    ✗     |     ~     |    ✗    |
-| High Performance   |   ✓    |    ~     |     ✓     |    ~    |
-| Zero dependencies  |   ✓    |    ✓     |     ✓     |    ✗    |
-| Custom protocol    |   ✓    |    ✗     |     ✗     |    ~    |
-| Message integrity  |   ✓    |    ✗     |     ✗     |    ✗    |
-| Multi-threading    |   ✓    |    ✗     |     ✗     |    ✓    |
-| Request/Response   |   ✓    |    ✗     |     ~     |    ✓    |
-| Built-in ping/pong |   ✓    |    ✗     |     ✗     |    ✗    |
-| Integrated logger  |   ✓    |    ✗     |     ~     |    ✓    |
+| Feature                | Veltix | `socket` | `asyncio` | Twisted |
+|------------------------|:------:|:--------:|:---------:|:-------:|
+| Simple API             |   ✓    |    ✗     |     ~     |    ✗    |
+| High Performance       |   ✓    |    ~     |     ✓     |    ~    |
+| Zero dependencies      |   ✓    |    ✓     |     ✓     |    ✗    |
+| Custom protocol        |   ✓    |    ✗     |     ✗     |    ~    |
+| Message integrity      |   ✓    |    ✗     |     ✗     |    ✗    |
+| Multi-threading        |   ✓    |    ✗     |     ✗     |    ✓    |
+| Request/Response       |   ✓    |    ✗     |     ~     |    ✓    |
+| Built-in ping/pong     |   ✓    |    ✗     |     ✗     |    ✗    |
+| Automatic handshake    |   ✓    |    ✗     |     ✗     |    ✗    |
+| Non-blocking callbacks |   ✓    |    ✗     |     ✓     |    ✓    |
+| Integrated logger      |   ✓    |    ✗     |     ~     |    ✓    |
 
 ---
 
 ## Roadmap
 
-### v1.3.0 — Request Handling ✓ *(Released March 2026)*
+### v1.4.0 — Handshake & Callbacks ✓ *(Released March 2026)*
 
-- RequestHandler architecture
-- Unified message routing for Server and Client
-- MessageBuffer for TCP stream handling
-- Performance optimizations (50k+ msg/s)
+- HELLO/HELLO_ACK handshake with version compatibility check
+- Thread pool for non-blocking callback execution (`CallbackExecutor`)
+- Blocking `connect()` — safe to send immediately after connecting
+- `on_connect` / `on_disconnect` callbacks on Client
 
-### v1.4.0 — Handshake Protocol *(April 2026)*
+### v1.5.0 — Routing *(April 2026)*
 
-- HELLO/HELLO_ACK messages
-- Connection handshake and version negotiation
-- Client authentication foundation
+- Decorator-based message routing (`@server.route(MY_TYPE)`)
+- Per-type handlers as an alternative to the global `on_recv`
 
-### v1.5.0 — Plugin System *(May 2026)*
+### v1.6.0 — Plugin System *(May 2026)*
 
-- Extensible MessageType with on_compile/on_parse
-- Built-in plugins for common patterns
-- Community plugin ecosystem
+- Extensible plugin architecture
+- `Request.from_plugin()` factory
+- `CallbackManager` base class for plugin developers
 
-### v1.6.0 — Event Loop *(June 2026)*
+### v1.7.0 — Event Loop *(June 2026)*
 
 - Selectors-based async I/O
 - Replace daemon threads
@@ -463,11 +488,20 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 
 ## Migration Guide
 
+### v1.3.0 → v1.4.0
+
+No breaking changes to public API.
+
+- `on_connect` (server-side) now fires after the handshake is complete — `client.handshake_done` is always `True` when
+  it fires.
+- `connect()` (client-side) now blocks until the handshake is done. It is safe to send messages immediately after it
+  returns.
+- New `ClientConfig` fields: `handshake_timeout` (default: `5.0`), `max_workers` (default: `4`)
+- New `ServerConfig` fields: `handshake_timeout` (default: `5.0`), `max_workers` (default: `4`)
+
 ### v1.2.x → v1.3.0
 
-No breaking changes to public API. Internal refactoring with RequestHandler for improved architecture.
-
-Optional: If you were directly accessing internal `_pending_requests`, this has moved to `RequestHandler`.
+No breaking changes to public API.
 
 ### v1.1.x → v1.2.0
 
@@ -482,11 +516,6 @@ from veltix import Events
 
 server.set_callback(Events.ON_RECV, callback)
 ```
-
-### v1.2.0 → v1.2.1
-
-No breaking changes. This release fixes race conditions in multi-threaded client handling and adds the `ON_DISCONNECT`
-event and `Request.respond()` helper.
 
 ---
 

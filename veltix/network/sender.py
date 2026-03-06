@@ -79,7 +79,7 @@ class Sender:
         self,
         data: Request,
         list_of_client: list[socket],
-        except_clients: list[socket] = None,
+        except_clients: Optional[list[socket]] = None,
     ) -> bool:
         """
         Broadcast data to multiple clients (SERVER mode only).

@@ -5,8 +5,6 @@ A simple, zero-dependency TCP networking library with message integrity
 and request/response patterns.
 """
 
-__version__ = "1.3.0"
-
 from .client.client import Client, ClientConfig
 from .exceptions import MessageTypeError, RequestError, SenderError, VeltixError
 from .logger.config import LoggerConfig
@@ -14,10 +12,11 @@ from .logger.core import Logger
 from .logger.levels import LogLevel
 from .network.request import Request, Response
 from .network.sender import Mode, Sender
-from .network.system_types import PING, PONG
+from .network.system_types import HELLO, HELLO_ACK, PING, PONG
 from .network.types import MessageType
 from .server.server import ClientInfo, Server, ServerConfig
 from .utils.events import Events
+from .version import __version__
 
 __all__ = [
     # Version
@@ -38,6 +37,8 @@ __all__ = [
     # System types
     "PING",
     "PONG",
+    "HELLO",
+    "HELLO_ACK",
     # Utils
     "Events",
     # Logger

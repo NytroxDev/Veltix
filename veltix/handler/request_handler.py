@@ -5,10 +5,12 @@ from queue import Empty, Queue
 from threading import Lock
 from typing import Optional, Union
 
+from veltix.handler.callback_executor import CallbackExecutor
+from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.logger.core import Logger
 from veltix.network.request import Request, Response
 from veltix.network.sender import Sender
-from veltix.network.system_types import PING, PONG
+from veltix.network.system_types import HELLO, PING, PONG
 from veltix.utils.mode import Mode
 
 
@@ -18,40 +20,42 @@ class RequestHandler:
 
     This class centralizes all message handling logic including:
     - Automatic PING/PONG responses
+    - Automatic HELLO/HELLO_ACK handshake (client side)
     - Request/response correlation for send_and_wait()
-    - Callback routing per message type
+    - Callback routing per message type — executed in a thread pool
+      so slow callbacks never block the recv loop
 
     Thread-safe for concurrent message handling.
     Works in both SERVER and CLIENT modes.
     """
 
-    def __init__(self, sender: Sender, mode: Union[Mode, str]):
+    def __init__(self, sender: Sender, mode: Union[Mode, str], max_workers: int = 4):
         """
         Initialize the request handler.
 
         Args:
             sender: Sender instance for outgoing messages
             mode: Operation mode (Mode.SERVER or Mode.CLIENT)
+            max_workers: Number of worker threads for callback execution (default: 4)
         """
-        # Callback for unhandled messages
         self.on_recv = None
-
-        # Store operation mode
         self.mode = mode
-
-        # Cache server/client mode check for performance
         self.is_server = self.mode == Mode.SERVER
 
-        # Logger instance
         self._logger = Logger.get_instance()
         self._logger.trace(f"RequestHandler initialized in {mode} mode")
 
-        # Sender for outgoing messages
         self.sender = sender
 
+        # Handshake handler — created once, used for HELLO/HELLO_ACK routing
+        self.handshake_handler = HandshakeHandler(sender=sender, mode=mode)
+
+        # Callback executor — runs on_recv in a thread pool
+        self._executor = CallbackExecutor(max_workers=max_workers)
+
         # Pending requests waiting for responses (request_id -> Queue)
-        self._pending_requests: dict[str, Queue] = {}
-        self._pending_requests_lock = Lock()
+        self.pending_requests: dict[str, Queue] = {}
+        self.pending_requests_lock = Lock()
 
         self._logger.debug("RequestHandler ready to handle messages")
 
@@ -61,8 +65,9 @@ class RequestHandler:
 
         Processing order:
         1. Auto-respond to PING messages
-        2. Deliver to pending request if waiting (send_and_wait)
-        3. Call registered callback
+        2. Auto-handle HELLO (client side only) — respond with HELLO_ACK
+        3. Deliver to pending request if waiting (send_and_wait / HELLO_ACK on server)
+        4. Submit on_recv callback to the executor (non-blocking)
 
         Args:
             response: Incoming response to handle
@@ -72,62 +77,55 @@ class RequestHandler:
             True if handled successfully, Exception if error occurred
         """
         try:
-            # Determine message source for logging
             source = f"client {client.addr}" if self.is_server else "server"
             self._logger.trace(f"Handling message type {response.type.name} from {source}")
 
             # Auto-respond to PING
             if response.type == PING:
                 self._logger.debug(f"Received PING from {source}, auto-responding with PONG")
-
-                # Create PONG response with matching request_id
                 pong_request = Request(PONG, b"", request_id=response.request_id)
 
-                # Send PONG based on mode
                 if self.is_server:
-                    # Server mode: send to specific client
                     self.sender.send(pong_request, client=client.conn)
                 else:
-                    # Client mode: send to server
                     self.sender.send(pong_request)
 
                 self._logger.debug(f"Auto-responded with PONG to {source}")
                 return True
 
+            # Auto-handle HELLO (client side only)
+            if response.type == HELLO and not self.is_server:
+                self._logger.debug("Received HELLO from server, auto-responding with HELLO_ACK")
+
+                ok = self.handshake_handler.handle_hello(response)
+                if ok:
+                    self.handshake_handler.send_hello_ack(response.request_id)
+                else:
+                    self._logger.warning("[Handshake] HELLO invalid — dropping connection")
+
+                return True
+
             # Check if someone is waiting for this response (send_and_wait)
-            with self._pending_requests_lock:
-                is_pending = response.request_id in self._pending_requests
+            with self.pending_requests_lock:
+                is_pending = response.request_id in self.pending_requests
                 if is_pending:
-                    queue = self._pending_requests[response.request_id]
+                    queue = self.pending_requests[response.request_id]
                     self._logger.trace(f"Response {response.request_id} matches pending request")
 
             if is_pending:
-                # Deliver response to waiting thread
                 queue.put(response)
                 self._logger.debug(f"Delivered response {response.request_id} to waiting request")
             else:
-                # No one waiting, call normal callback
                 if self.on_recv:
-                    self._logger.trace(f"Dispatching to on_recv callback for {source}")
-                    try:
-                        # Callback signature differs based on mode
-                        if self.is_server:
-                            # Server mode: callback(client, response)
-                            self.on_recv(client, response)
-                        else:
-                            # Client mode: callback(response) only
-                            self.on_recv(response)
-
-                        self._logger.debug(f"Called on_recv callback for {source}")
-                    except Exception as e:
-                        self._logger.error(
-                            f"Error in on_recv callback for {source}: {type(e).__name__}: {e}"
-                        )
+                    self._logger.trace(f"Submitting on_recv callback for {source}")
+                    if self.is_server:
+                        self._executor.submit(self.on_recv, client, response)
+                    else:
+                        self._executor.submit(self.on_recv, response)
                 else:
                     self._logger.warning(f"No callback registered for message from {source}")
 
         except Exception as e:
-            # Handle unexpected errors gracefully
             source = f"client {client.addr}" if (self.is_server and client) else "server"
             self._logger.critical(f"Unexpected error handling message from {source}: {e}")
             return e
@@ -149,8 +147,8 @@ class RequestHandler:
         """
         queue = Queue(maxsize=1)
 
-        with self._pending_requests_lock:
-            self._pending_requests[request_id] = queue
+        with self.pending_requests_lock:
+            self.pending_requests[request_id] = queue
             self._logger.trace(f"Registered pending request {request_id}")
 
         return queue
@@ -159,13 +157,11 @@ class RequestHandler:
         """
         Unregister a pending request, discarding its queue.
 
-        Should be called if the request could not be sent after register().
-
         Args:
             request_id: Unique request identifier to unregister
         """
-        with self._pending_requests_lock:
-            self._pending_requests.pop(request_id, None)
+        with self.pending_requests_lock:
+            self.pending_requests.pop(request_id, None)
             self._logger.trace(f"Unregistered pending request {request_id}")
 
     def wait(self, request_id: str, timeout: float = 5.0) -> Optional[Response]:
@@ -185,8 +181,8 @@ class RequestHandler:
         """
         self._logger.debug(f"Waiting for response {request_id} (timeout: {timeout}s)")
 
-        with self._pending_requests_lock:
-            queue = self._pending_requests.get(request_id)
+        with self.pending_requests_lock:
+            queue = self.pending_requests.get(request_id)
 
         if queue is None:
             self._logger.error(
@@ -203,9 +199,9 @@ class RequestHandler:
             self._logger.warning(f"Timeout waiting for response {request_id} after {timeout}s")
             return None
         finally:
-            with self._pending_requests_lock:
-                if request_id in self._pending_requests:
-                    del self._pending_requests[request_id]
+            with self.pending_requests_lock:
+                if request_id in self.pending_requests:
+                    del self.pending_requests[request_id]
                     self._logger.trace(f"Cleaned up pending request {request_id}")
 
     def set_on_recv(self, callback: Callable):
@@ -219,3 +215,11 @@ class RequestHandler:
         """
         self.on_recv = callback
         self._logger.debug("Default on_recv callback registered")
+
+    def shutdown(self) -> None:
+        """
+        Shutdown the executor gracefully.
+
+        Should be called when the server/client is shutting down.
+        """
+        self._executor.shutdown()
