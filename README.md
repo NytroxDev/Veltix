@@ -10,7 +10,8 @@ A modern, lightweight TCP networking library for Python — simple enough for be
 
 Veltix provides a clean abstraction layer over TCP sockets, handling the low-level complexity so you can focus on your
 application logic. It ships with message integrity verification, a structured binary protocol, request/response
-correlation, automatic connection handshake, and production-ready logging — all with zero external dependencies.
+correlation, automatic connection handshake, decorator-based message routing, auto-reconnect, and production-ready
+logging — all with zero external dependencies.
 
 **Performance highlights:** 50k+ msg/s throughput • 0.011ms average latency • 148KB idle memory • 100% success rate
 
@@ -44,7 +45,7 @@ and protocol design from scratch. Heavier frameworks like Twisted introduce stee
 trees.
 
 Veltix sits in between: a focused library that handles the hard parts — connection management, message integrity,
-threading, handshake, and request correlation — while keeping the API surface small and the codebase readable.
+threading, handshake, routing, and request correlation — while keeping the API surface small and the codebase readable.
 
 **Designed for:**
 
@@ -65,10 +66,13 @@ threading, handshake, and request correlation — while keeping the API surface 
 - **Zero dependencies** — Pure Python standard library only
 - **Multi-threaded** — Concurrent client handling out of the box
 - **Automatic handshake** — HELLO/HELLO_ACK with version compatibility check on every connection
-- **Thread-safe callbacks** — `on_recv` runs in a thread pool, slow callbacks never block reception
+- **Thread-safe callbacks** — All callbacks run in a thread pool, slow handlers never block reception
+- **Message routing** — `@server.route(MY_TYPE)` / `@client.route(MY_TYPE)` decorators for per-type handlers
+- **Auto-reconnect** — Configurable retry with `DisconnectState` callbacks
 - **Request/Response pattern** — `send_and_wait()` with configurable timeout
 - **Built-in ping/pong** — Bidirectional latency measurement
 - **Integrated logger** — Colorized, file-rotating, thread-safe logging
+- **Performance modes** — `LOW` / `BALANCED` / `HIGH` presets for CPU/reactivity trade-off
 - **Memory Efficient** — 148KB idle server, 52KB per client
 - **Extensible** — Custom message types and event callbacks
 - **Defensive design** — Strict validation and controlled failure handling
@@ -363,6 +367,119 @@ server.close_all()
 
 ## Advanced Features
 
+### Message Routing
+
+Use `@server.route()` and `@client.route()` to handle specific message types directly, without a global `on_recv`.
+Routes take priority over `on_recv` and run in the thread pool.
+
+```python
+from veltix import Server, ServerConfig, MessageType, Response
+from veltix.server.server import ClientInfo
+
+CHAT = MessageType(code=200, name="chat")
+STATUS = MessageType(code=201, name="status")
+
+server = Server(ServerConfig(host="0.0.0.0", port=8080))
+
+
+@server.route(CHAT)
+def on_chat(response: Response, client: ClientInfo):
+    print(f"[{client.addr[0]}] {response.content.decode()}")
+
+
+@server.route(STATUS)
+def on_status(response: Response, client: ClientInfo):
+    print(f"Status from {client.addr[0]}: {response.content.decode()}")
+
+
+server.start()
+```
+
+```python
+from veltix import Client, ClientConfig, MessageType, Response
+
+CHAT = MessageType(code=200, name="chat")
+
+client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
+
+
+@client.route(CHAT)
+def on_chat(response: Response, client=None):
+    print(f"Server: {response.content.decode()}")
+
+
+client.connect()
+```
+
+Routes can also be registered programmatically:
+
+```python
+server.request_handler.register_route(CHAT, on_chat)
+server.request_handler.unregister_route(CHAT)
+```
+
+### Auto-Reconnect
+
+Enable automatic reconnection by setting `retry` in `ClientConfig`. The `on_disconnect` callback receives a
+`DisconnectState` with full context at every attempt.
+
+```python
+from veltix import Client, ClientConfig, Events
+from veltix.client.client import DisconnectState
+
+client = Client(ClientConfig(
+    server_addr="127.0.0.1",
+    port=8080,
+    retry=5,  # number of reconnection attempts
+    retry_delay=1.0,  # seconds between attempts
+))
+
+
+def on_disconnect(state: DisconnectState):
+    if state.permanent:
+        print(f"Permanently disconnected — reason: {state.reason.name}")
+    else:
+        print(f"Retrying... attempt {state.attempt}/{state.retry_max}")
+
+
+client.set_callback(Events.ON_DISCONNECT, on_disconnect)
+client.connect()
+
+# Cancel retries at any time
+client.stop_retry()
+
+# Force a new attempt, optionally overriding retry_max
+client.retry(max=10)
+```
+
+### Performance Mode
+
+```python
+from veltix import ServerConfig, ClientConfig
+from veltix.utils.performance_mode import PerformanceMode
+
+# LOW    — socket timeout 1.0s, minimal CPU
+# BALANCED — socket timeout 0.5s, default
+# HIGH   — socket timeout 0.1s, fast disconnection detection
+
+server = Server(ServerConfig(host="0.0.0.0", port=8080, performance_mode=PerformanceMode.HIGH))
+client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, performance_mode=PerformanceMode.HIGH))
+```
+
+### Buffer Size
+
+```python
+from veltix import ServerConfig, ClientConfig
+from veltix.utils.performance_mode import BufferSize
+
+# SMALL  — 1KB  (default)
+# MEDIUM — 8KB
+# LARGE  — 64KB
+# HUGE   — 1MB
+
+server = Server(ServerConfig(host="0.0.0.0", port=8080, buffer_size=BufferSize.LARGE))
+```
+
 ### Custom Message Types
 
 Message type codes are divided into ranges by convention:
@@ -397,12 +514,13 @@ server.set_callback(Events.ON_DISCONNECT, lambda client: print(f"Disconnected: {
 
 ```python
 from veltix import Client, ClientConfig, Events
+from veltix.client.client import DisconnectState
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 
 client.set_callback(Events.ON_CONNECT, lambda: print("Connected and handshake complete!"))
 client.set_callback(Events.ON_RECV, lambda response: print(response.content.decode()))
-client.set_callback(Events.ON_DISCONNECT, lambda: print("Disconnected"))
+client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected — permanent={state.permanent}"))
 
 client.connect()
 ```
@@ -443,6 +561,8 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 | Request/Response       |   ✓    |    ✗     |     ~     |    ✓    |
 | Built-in ping/pong     |   ✓    |    ✗     |     ✗     |    ✗    |
 | Automatic handshake    |   ✓    |    ✗     |     ✗     |    ✗    |
+| Message routing        |   ✓    |    ✗     |     ✗     |    ~    |
+| Auto-reconnect         |   ✓    |    ✗     |     ~     |    ✓    |
 | Non-blocking callbacks |   ✓    |    ✗     |     ✓     |    ✓    |
 | Integrated logger      |   ✓    |    ✗     |     ~     |    ✓    |
 
@@ -457,10 +577,12 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 - Blocking `connect()` — safe to send immediately after connecting
 - `on_connect` / `on_disconnect` callbacks on Client
 
-### v1.5.0 — Routing *(April 2026)*
+### v1.5.0 — Routing & Reconnect ✓ *(Released March 2026)*
 
-- Decorator-based message routing (`@server.route(MY_TYPE)`)
-- Per-type handlers as an alternative to the global `on_recv`
+- Decorator-based message routing (`@server.route(MY_TYPE)`, `@client.route(MY_TYPE)`)
+- Auto-reconnect with configurable retry and `DisconnectState` callbacks
+- `PerformanceMode` presets for CPU/reactivity trade-off
+- `BufferSize` presets for common buffer configurations
 
 ### v1.6.0 — Plugin System *(May 2026)*
 
@@ -487,6 +609,22 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 ---
 
 ## Migration Guide
+
+### v1.4.0 → v1.5.0
+
+**Breaking change:** `on_disconnect` on the client now receives a `DisconnectState` argument.
+
+```python
+# Before (v1.4.0)
+client.set_callback(Events.ON_DISCONNECT, lambda: print("Disconnected"))
+
+# After (v1.5.0)
+client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected — permanent={state.permanent}"))
+```
+
+New optional fields in `ClientConfig`: `retry`, `retry_delay`, `performance_mode`, `buffer_size`.
+
+New optional fields in `ServerConfig`: `performance_mode`, `buffer_size`.
 
 ### v1.3.0 → v1.4.0
 

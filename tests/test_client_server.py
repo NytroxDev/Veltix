@@ -2,8 +2,6 @@
 
 import time
 
-import pytest
-
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 
 
@@ -84,7 +82,7 @@ class TestClientServer:
 
         disconnected = []
         client = Client(ClientConfig(server_addr="127.0.0.1", port=19984))
-        client.set_callback(Events.ON_DISCONNECT, lambda: disconnected.append(True))
+        client.set_callback(Events.ON_DISCONNECT, lambda state: disconnected.append(True))
         client.connect()
         client.disconnect()
 
@@ -123,6 +121,7 @@ class TestClientServer:
             def make_callback(index):
                 def callback(response):
                     messages_received[index].append(response.content)
+
                 return callback
 
             client.set_callback(Events.ON_RECV, make_callback(i))
@@ -134,8 +133,7 @@ class TestClientServer:
 
         msg_type = MessageType(code=2301, name="broadcast_test")
         server.get_sender().broadcast(
-            Request(msg_type, b"Broadcast to all"),
-            server.get_all_clients_sockets()
+            Request(msg_type, b"Broadcast to all"), server.get_all_clients_sockets()
         )
 
         time.sleep(0.5)
@@ -162,6 +160,7 @@ class TestClientServer:
             def make_callback(index):
                 def callback(response):
                     messages_received[index].append(response.content)
+
                 return callback
 
             client.set_callback(Events.ON_RECV, make_callback(i))
@@ -176,7 +175,7 @@ class TestClientServer:
         server.get_sender().broadcast(
             Request(msg_type, b"Not for everyone"),
             server.get_all_clients_sockets(),
-            except_clients=[exclude_socket]
+            except_clients=[exclude_socket],
         )
 
         time.sleep(0.5)

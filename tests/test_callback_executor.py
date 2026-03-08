@@ -2,8 +2,6 @@
 
 import time
 
-import pytest
-
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 from veltix.handler.callback_executor import CallbackExecutor
 
@@ -110,8 +108,9 @@ class TestCallbackExecutorIntegration:
     def test_client_max_workers_configurable(self):
         """max_workers from ClientConfig should be passed to executor."""
         import socket
-        from veltix.network.sender import Sender, Mode
+
         from veltix.handler.request_handler import RequestHandler
+        from veltix.network.sender import Mode, Sender
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sender = Sender(mode=Mode.CLIENT, conn=sock)

@@ -5,6 +5,96 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-03-07
+
+### Added
+
+- **Message Routing**: Decorator-based per-type message handlers
+    - `@server.route(MY_TYPE)` and `@client.route(MY_TYPE)` decorators
+    - Routes take priority over the global `on_recv` callback
+    - `request_handler.register_route(type_, func)` and `unregister_route(type_)` for programmatic control
+    - Route callbacks run in the thread pool — slow handlers never block the recv loop
+    - Server route signature: `func(response: Response, client: ClientInfo)`
+    - Client route signature: `func(response: Response, client=None)`
+- **Auto-Reconnect**: Automatic reconnection on initial failure and mid-session disconnection
+    - `ClientConfig.retry` — number of reconnection attempts (default: `0` = disabled)
+    - `ClientConfig.retry_delay` — seconds between attempts (default: `1.0`)
+    - `client.stop_retry()` — cancel pending retries, fires `on_disconnect(permanent=True)`
+    - `client.retry(max=N)` — force a new attempt, optionally override `retry_max`
+    - Reconnection preserves all registered callbacks and routes
+- **DisconnectState**: Rich disconnect info passed to `on_disconnect` callback
+    - `permanent: bool` — `True` when retries are exhausted or `stop_retry()` was called
+    - `attempt: int` — current retry attempt number
+    - `retry_max: int` — configured maximum
+    - `reason: DisconnectReason` — `SERVER_CLOSED`, `ERROR`, or `MANUAL`
+- **PerformanceMode**: Tunable timing presets for CPU/reactivity trade-off
+    - `PerformanceMode.LOW` — socket timeout 1.0s, minimal CPU usage
+    - `PerformanceMode.BALANCED` — socket timeout 0.5s, default
+    - `PerformanceMode.HIGH` — socket timeout 0.1s, fast disconnection detection
+    - `PerformanceMode.AUTO` — reserved for future dynamic adjustment
+    - Configurable via `ServerConfig.performance_mode` and `ClientConfig.performance_mode`
+- **BufferSize**: Enum presets for common buffer sizes
+    - `BufferSize.SMALL` — 1KB (default)
+    - `BufferSize.MEDIUM` — 8KB
+    - `BufferSize.LARGE` — 64KB
+    - `BufferSize.HUGE` — 1MB
+    - `buffer_size` fields in `ServerConfig` / `ClientConfig` still accept any custom integer
+
+### Changed
+
+- **`on_disconnect` callback signature (Client)**: Now receives a `DisconnectState` argument
+    - Before: `func()`
+    - After: `func(state: DisconnectState)`
+- **`network.recv()`**: Replaced `Optional[bytes]` return with `RecvResult`
+    - `result.ok` — data received normally
+    - `result.timed_out` — socket timeout, connection still alive
+    - `result.disconnected` — peer closed or fatal error
+    - Eliminates the ambiguity between timeout and real disconnection
+- **`ServerConfig`**: Added `performance_mode` and `buffer_size` (now `BufferSize.SMALL` default)
+- **`ClientConfig`**: Added `performance_mode`, `retry`, `retry_delay`, and `buffer_size` (now `BufferSize.SMALL`
+  default)
+- **`Server._handle_client()`**: Uses `RecvResult` — no more `if msg is None` ambiguity
+- **`Client._handle_client()`**: Uses `RecvResult` — reconnect loop triggered on `result.disconnected`
+
+### Breaking Changes
+
+- **`on_disconnect` on Client** now receives a `DisconnectState` argument — update all existing callbacks:
+
+```python
+# Before (v1.4.0)
+client.set_callback(Events.ON_DISCONNECT, lambda: print("Disconnected"))
+
+# After (v1.5.0)
+client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected — permanent={state.permanent}"))
+```
+
+### Migration Guide
+
+#### v1.4.0 → v1.5.0
+
+Update all `ON_DISCONNECT` callbacks on the client side to accept a `DisconnectState` argument.
+
+New optional fields in `ClientConfig`:
+
+- `retry` (default: `0`) — set to a positive integer to enable auto-reconnect
+- `retry_delay` (default: `1.0`)
+- `performance_mode` (default: `PerformanceMode.BALANCED`)
+- `buffer_size` (default: `BufferSize.SMALL`)
+
+New optional field in `ServerConfig`:
+
+- `performance_mode` (default: `PerformanceMode.BALANCED`)
+- `buffer_size` (default: `BufferSize.SMALL`)
+
+### Internal
+
+- `utils/performance_mode.py` — `PerformanceMode` enum and `PerformanceModeSettings` dataclass
+- `utils/network.py` — `RecvResult`, `RecvStatus` replacing bare `Optional[bytes]`
+- `handler/request_handler.py` — `_routes` dict, `register_route()`, `unregister_route()`
+- Test suite expanded with `test_reconnect.py` (9 tests) and `test_routing.py` (10 tests)
+
+---
+
 ## [1.4.0] - 2026-03-06
 
 ### Added

@@ -55,6 +55,8 @@ nav:
       - Client: guides/client.md
       - Messages: guides/messages.md
       - Callbacks & Events: guides/callbacks.md
+      - Routing: guides/routing.md
+      - Auto-Reconnect: guides/reconnect.md
       - Logger: guides/logger.md
   - API Reference:
       - Server: api/server.md

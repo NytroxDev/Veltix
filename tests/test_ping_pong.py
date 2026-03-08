@@ -2,8 +2,6 @@
 
 import time
 
-import pytest
-
 from veltix import Client, ClientConfig, Server, ServerConfig
 
 
@@ -31,9 +29,7 @@ class TestPingPong:
 
         def on_connect(client_info):
             server.ping_client_async(
-                client_info,
-                lambda latency: ping_results.append(latency),
-                timeout=2.0
+                client_info, lambda latency: ping_results.append(latency), timeout=2.0
             )
 
         server.set_callback("on_connect", on_connect)

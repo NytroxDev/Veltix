@@ -1,7 +1,5 @@
 """Tests for MessageBuffer — TCP stream handling (v1.3.0)."""
 
-import pytest
-
 from veltix import MessageType, Request
 from veltix.network.message_buffer import MessageBuffer
 
