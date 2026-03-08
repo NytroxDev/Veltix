@@ -1,7 +1,5 @@
 """Tests for Logger functionality."""
 
-import pytest
-
 from veltix import Logger, LoggerConfig, LogLevel
 
 

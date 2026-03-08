@@ -1,7 +1,5 @@
 """Tests for error handling and exceptions."""
 
-import pytest
-
 from veltix import (
     Client,
     ClientConfig,

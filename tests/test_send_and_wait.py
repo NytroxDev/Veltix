@@ -2,8 +2,6 @@
 
 import time
 
-import pytest
-
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 
 
@@ -11,8 +9,8 @@ class TestSendAndWait:
     def test_client_send_and_wait(self):
         server = Server(ServerConfig(host="127.0.0.1", port=19990))
 
-        def on_message(client_info, response):
-            echo = Request(response.type, response.content, request_id=response.request_id)
+        def on_message(client_info, response2):
+            echo = Request(response2.type, response2.content, request_id=response2.request_id)
             server.get_sender().send(echo, client=client_info.conn)
 
         server.set_callback(Events.ON_RECV, on_message)
@@ -40,8 +38,8 @@ class TestSendAndWait:
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=19989))
 
-        def on_message(response):
-            echo = Request(response.type, response.content, request_id=response.request_id)
+        def on_message(response2):
+            echo = Request(response2.type, response2.content, request_id=response2.request_id)
             client.get_sender().send(echo)
 
         client.set_callback(Events.ON_RECV, on_message)

@@ -11,7 +11,8 @@
 
 ## Why Veltix?
 
-Working directly with Python's `socket` module forces you to handle framing, integrity, threading, and protocol design from scratch. Veltix handles all of that for you.
+Working directly with Python's `socket` module forces you to handle framing, integrity, threading, and protocol design
+from scratch. Veltix handles all of that for you.
 
 ```python
 # Server
@@ -30,9 +31,12 @@ client.get_sender().send(Request(MY_TYPE, b"Hello!"))
 - ✅ **Zero dependencies** — pure Python stdlib
 - ✅ **Automatic handshake** — HELLO/HELLO_ACK with version compatibility check
 - ✅ **Message integrity** — SHA-256 on every message
-- ✅ **Non-blocking callbacks** — thread pool for `on_recv`
+- ✅ **Message routing** — `@server.route(MY_TYPE)` / `@client.route(MY_TYPE)` decorators
+- ✅ **Auto-reconnect** — configurable retry with `DisconnectState` callbacks
+- ✅ **Non-blocking callbacks** — thread pool for all user callbacks
 - ✅ **Request/Response** — `send_and_wait()` with timeout
 - ✅ **Built-in ping/pong** — bidirectional latency measurement
+- ✅ **Performance modes** — `LOW` / `BALANCED` / `HIGH` presets
 - ✅ **Production-ready logger** — colorized, file-rotating, thread-safe
 
 ## Quick links
