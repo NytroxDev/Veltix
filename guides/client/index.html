@@ -682,6 +682,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#callbacks" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -719,6 +730,17 @@
     <span class="md-ellipsis">
       
         Ping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auto-reconnect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-reconnect
       
     </span>
   </a>
@@ -788,6 +810,62 @@
     
   
     Callbacks & Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reconnect/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auto-Reconnect
   
 
     
@@ -1251,6 +1329,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#callbacks" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1295,6 +1384,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#auto-reconnect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-reconnect
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#disconnecting" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1327,49 +1427,88 @@
 
 <h1 id="client-guide">Client Guide<a class="headerlink" href="#client-guide" title="Permanent link">&para;</a></h1>
 <h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">ClientConfig</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">ClientConfig</span><span class="p">,</span> <span class="n">PerformanceMode</span><span class="p">,</span> <span class="n">BufferSize</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ClientConfig</span><span class="p">(</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">server_addr</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>  <span class="c1"># Server address</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span>                 <span class="c1"># Server port</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">buffer_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>          <span class="c1"># Receive buffer size in bytes</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span>  <span class="c1"># Server port</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">buffer_size</span><span class="o">=</span><span class="n">BufferSize</span><span class="o">.</span><span class="n">SMALL</span><span class="p">,</span>  <span class="c1"># Receive buffer size (default: 1KB)</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">max_message_size</span><span class="o">=</span><span class="mi">10</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span>  <span class="c1"># 10MB max message size</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">handshake_timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>     <span class="c1"># Handshake timeout in seconds</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">max_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>             <span class="c1"># Thread pool size for callbacks</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">handshake_timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>  <span class="c1"># Handshake timeout in seconds</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">max_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>  <span class="c1"># Thread pool size for callbacks</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">retry</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Reconnection attempts (0 = disabled)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">retry_delay</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># Seconds between attempts</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">performance_mode</span><span class="o">=</span><span class="n">PerformanceMode</span><span class="o">.</span><span class="n">BALANCED</span><span class="p">,</span>  <span class="c1"># CPU/reactivity trade-off</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">)</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="connecting">Connecting<a class="headerlink" href="#connecting" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">success</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>connect()</code> blocks until the handshake is complete. It is always safe to send messages immediately after it returns <code>True</code>.</p>
 </div>
-<h2 id="callbacks">Callbacks<a class="headerlink" href="#callbacks" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Events</span>
+<p><code>connect()</code> blocks until the handshake is complete. It is always safe to send messages immediately after it returns
+<code>True</code>.</p>
+<h2 id="routing">Routing<a class="headerlink" href="#routing" title="Permanent link">&para;</a></h2>
+<p>Use <code>@client.route()</code> to handle specific message types directly. Routes take priority over <code>on_recv</code> and run in the
+thread pool.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessageType</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_CONNECT</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Connected!&quot;</span><span class="p">))</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_RECV</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">response</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()))</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Disconnected&quot;</span><span class="p">))</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chat&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nd">@client</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Server: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
+<p>Routes can also be registered and removed programmatically:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">client</span><span class="o">.</span><span class="n">request_handler</span><span class="o">.</span><span class="n">register_route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="n">on_chat</span><span class="p">)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">client</span><span class="o">.</span><span class="n">request_handler</span><span class="o">.</span><span class="n">unregister_route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="callbacks">Callbacks<a class="headerlink" href="#callbacks" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Events</span><span class="p">,</span> <span class="n">DisconnectState</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_CONNECT</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Connected!&quot;</span><span class="p">))</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_RECV</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">response</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()))</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Disconnected — permanent=</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">permanent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+</div>
+<p>Use <code>@client.route()</code> for per-type handlers. <code>on_recv</code> is the fallback for unrouted messages.</p>
 <h2 id="sending-messages">Sending messages<a class="headerlink" href="#sending-messages" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">client</span><span class="o">.</span><span class="n">get_sender</span><span class="p">()</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">client</span><span class="o">.</span><span class="n">get_sender</span><span class="p">()</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="send-and-wait">Send and wait<a class="headerlink" href="#send-and-wait" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">send_and_wait</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">if</span> <span class="n">response</span><span class="p">:</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">latency</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Timeout&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">send_and_wait</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">if</span> <span class="n">response</span><span class="p">:</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">latency</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Timeout&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="ping">Ping<a class="headerlink" href="#ping" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">latency</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">ping_server</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">latency</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">ping_server</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
 </code></pre></div>
+<h2 id="auto-reconnect">Auto-reconnect<a class="headerlink" href="#auto-reconnect" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">ClientConfig</span><span class="p">(</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">server_addr</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">retry</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>  <span class="c1"># number of reconnection attempts</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">retry_delay</span><span class="o">=</span><span class="mf">1.0</span>  <span class="c1"># seconds between attempts</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="p">))</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># Cancel retries at any time</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="n">client</span><span class="o">.</span><span class="n">stop_retry</span><span class="p">()</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="c1"># Force a new attempt, optionally overriding retry_max</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="n">client</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="nb">max</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div>
+<p>See the <a href="../reconnect/">Auto-Reconnect guide</a> for full details.</p>
 <h2 id="disconnecting">Disconnecting<a class="headerlink" href="#disconnecting" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">client</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">client</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
 </code></pre></div>
 
 
