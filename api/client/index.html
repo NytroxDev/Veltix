@@ -679,6 +679,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/routing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/reconnect/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auto-Reconnect
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/logger/" class="md-nav__link">
         
   
@@ -882,10 +938,43 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#veltix.client.client.Client.stop_retry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;stop_retry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#veltix.client.client.Client.retry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;retry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#veltix.client.client.Client.set_callback" class="md-nav__link">
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_callback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#veltix.client.client.Client.route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;route
       
     </span>
   </a>
@@ -930,17 +1019,6 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;ping_server
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.client.client.Client.handle_client" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;handle_client
       
     </span>
   </a>
@@ -1291,10 +1369,43 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#veltix.client.client.Client.stop_retry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;stop_retry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#veltix.client.client.Client.retry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;retry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#veltix.client.client.Client.set_callback" class="md-nav__link">
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_callback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#veltix.client.client.Client.route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;route
       
     </span>
   </a>
@@ -1339,17 +1450,6 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;ping_server
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.client.client.Client.handle_client" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;handle_client
       
     </span>
   </a>
@@ -1423,7 +1523,12 @@
 
         <p>TCP client for Veltix protocol.</p>
 <p>Connects to a Veltix server and handles bidirectional communication.
-connect() blocks until the handshake is complete before returning.</p>
+connect() blocks until the handshake is complete before returning,
+so it is always safe to send messages immediately after connect() returns True.</p>
+<p>If retry &gt; 0, the client automatically attempts to reconnect both on
+initial connection failure and on mid-session disconnections.
+The on_disconnect callback receives a DisconnectState at each attempt,
+letting the caller display progress or cancel retries via stop_retry().</p>
 
 
 
@@ -1487,11 +1592,84 @@ connect() blocks until the handshake is complete before returning.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Client configuration</p>
+                <p>Client configuration.</p>
               </div>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="veltix.client.client.Client.stop_retry" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">stop_retry</span>
+
+
+<a href="#veltix.client.client.Client.stop_retry" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">stop_retry</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Cancel all pending reconnection attempts.</p>
+<p>If a retry loop is running, it will stop after the current attempt
+and fire on_disconnect with permanent=True.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="veltix.client.client.Client.retry" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">retry</span>
+
+
+<a href="#veltix.client.client.Client.retry" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">retry</span><span class="p">(</span><span class="n">max_</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Force an immediate reconnection attempt, even if retry_max was reached.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>max_</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Override retry_max for this session (optional).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -1515,7 +1693,7 @@ connect() blocks until the handshake is complete before returning.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Set a callback function to a client event.</p>
+        <p>Bind a callback function to a client event.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1538,7 +1716,7 @@ connect() blocks until the handshake is complete before returning.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Event type (Events enum or string)</p>
+                <p>Event type (Events enum or string).</p>
               </div>
             </td>
             <td>
@@ -1554,14 +1732,95 @@ connect() blocks until the handshake is complete before returning.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Callback function
-- ON_RECV:       func(msg: Response)
+                <p>Callback function:
+- ON_RECV:       func(response: Response)
 - ON_CONNECT:    func()
-- ON_DISCONNECT: func()</p>
+- ON_DISCONNECT: func(state: DisconnectState)</p>
               </div>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="veltix.client.client.Client.route" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">route</span>
+
+
+<a href="#veltix.client.client.Client.route" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">route</span><span class="p">(</span><span class="n">type_</span><span class="p">:</span> <span class="n">MessageType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Decorator to register a route callback for a specific message type.</p>
+
+
+<details class="usage" open>
+  <summary>Usage</summary>
+  <p>@client.route(MY_TYPE)
+def on_my_type(response: Response, client=None) -&gt; None:
+    ...</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>type_</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            veltix.network.types.MessageType" href="../types/#veltix.network.types.MessageType">MessageType</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Message type to intercept.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="collections.abc.Callable">Callable</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Decorator function.</p>
+              </div>
             </td>
           </tr>
       </tbody>
@@ -1585,9 +1844,11 @@ connect() blocks until the handshake is complete before returning.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Connect to the server and start listening.</p>
+        <p>Connect to the server and start the message handler thread.</p>
 <p>Blocks until the handshake is complete (or times out) before returning,
-so the caller can safely send messages immediately after connect().</p>
+so it is safe to send messages immediately after this returns True.</p>
+<p>If the connection fails and retry &gt; 0, automatically retries up to
+config.retry times with config.retry_delay seconds between attempts.</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -1605,7 +1866,7 @@ so the caller can safely send messages immediately after connect().</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>True if connection and handshake succeeded, False otherwise</p>
+                <p>True if connection and handshake succeeded, False otherwise.</p>
               </div>
             </td>
           </tr>
@@ -1630,7 +1891,7 @@ so the caller can safely send messages immediately after connect().</p>
 
     <div class="doc doc-contents ">
 
-        <p>Get the sender instance.</p>
+        <p>Return the sender instance.</p>
 
 
     </div>
@@ -1651,7 +1912,7 @@ so the caller can safely send messages immediately after connect().</p>
     <div class="doc doc-contents ">
 
         <p>Send a request and block until the matching response is received.</p>
-<p>Registers the request queue before sending to avoid race conditions
+<p>The request queue is registered before sending to avoid a race condition
 where the response could arrive before wait() is called.</p>
 
 
@@ -1675,7 +1936,7 @@ where the response could arrive before wait() is called.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Request to send</p>
+                <p>Request to send.</p>
               </div>
             </td>
             <td>
@@ -1691,7 +1952,7 @@ where the response could arrive before wait() is called.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Maximum time to wait for response in seconds (default: 5.0)</p>
+                <p>Maximum time to wait for a response in seconds (default: 5.0).</p>
               </div>
             </td>
             <td>
@@ -1722,7 +1983,7 @@ where the response could arrive before wait() is called.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Response object if received within timeout, None if timeout or send failure</p>
+                <p>Matching Response, or None on timeout or send failure.</p>
               </div>
             </td>
           </tr>
@@ -1747,7 +2008,7 @@ where the response could arrive before wait() is called.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Ping server and measure latency.</p>
+        <p>Ping the server and measure round-trip latency.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1770,7 +2031,7 @@ where the response could arrive before wait() is called.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Timeout in seconds</p>
+                <p>Maximum time to wait for pong in seconds (default: 5.0).</p>
               </div>
             </td>
             <td>
@@ -1796,34 +2057,12 @@ where the response could arrive before wait() is called.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Latency in milliseconds, or None if timeout</p>
+                <p>Latency in milliseconds, or None on timeout.</p>
               </div>
             </td>
           </tr>
       </tbody>
     </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="veltix.client.client.Client.handle_client" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">handle_client</span>
-
-
-<a href="#veltix.client.client.Client.handle_client" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">handle_client</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Handle communication with the server.</p>
-<p>Runs in a separate thread. Signals _handshake_done once the first
-HELLO is processed, unblocking connect().</p>
 
 
     </div>
@@ -1843,7 +2082,8 @@ HELLO is processed, unblocking connect().</p>
 
     <div class="doc doc-contents ">
 
-        <p>Disconnect from the server.</p>
+        <p>Disconnect from the server and clean up resources.</p>
+<p>Fires on_disconnect with reason=MANUAL and permanent=True.</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -1861,7 +2101,7 @@ HELLO is processed, unblocking connect().</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>True if disconnection succeeded, False otherwise</p>
+                <p>True if disconnection succeeded, False on unexpected error.</p>
               </div>
             </td>
           </tr>
@@ -1920,7 +2160,7 @@ HELLO is processed, unblocking connect().</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Server address to connect to</p>
+                <p>Server address to connect to.</p>
               </div>
             </td>
           </tr>
@@ -1931,7 +2171,7 @@ HELLO is processed, unblocking connect().</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Server port to connect to</p>
+                <p>Server port to connect to.</p>
               </div>
             </td>
           </tr>
@@ -1942,7 +2182,9 @@ HELLO is processed, unblocking connect().</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Buffer size for receiving data in bytes</p>
+                <p>Buffer size for receiving data in bytes.
+              Use BufferSize enum for common presets (default: BufferSize.SMALL).
+              Can also be set to any custom integer value.</p>
               </div>
             </td>
           </tr>
@@ -1953,7 +2195,7 @@ HELLO is processed, unblocking connect().</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Maximum allowed message size in bytes (default: 10MB)</p>
+                <p>Maximum allowed message size in bytes (default: 10MB).</p>
               </div>
             </td>
           </tr>
@@ -1964,7 +2206,7 @@ HELLO is processed, unblocking connect().</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Maximum time to wait for handshake completion in seconds (default: 5.0)</p>
+                <p>Maximum time to wait for handshake completion (default: 5.0s).</p>
               </div>
             </td>
           </tr>
@@ -1976,7 +2218,41 @@ HELLO is processed, unblocking connect().</p>
             <td>
               <div class="doc-md-description">
                 <p>Number of worker threads for callback execution (default: 4).
-         Increase if your on_recv callback is slow or blocking.</p>
+              Increase if your on_recv callback is slow or blocking.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="veltix.client.client.ClientConfig.retry">retry</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of reconnection attempts on failure (default: 0 = disabled).
+              Applies both to the initial connect() and to mid-session disconnections.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="veltix.client.client.ClientConfig.retry_delay">retry_delay</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Seconds to wait between reconnection attempts (default: 1.0).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="veltix.client.client.ClientConfig.performance_mode">performance_mode</span></code></td>
+            <td>
+                  <code><span title="veltix.utils.performance_mode.PerformanceMode">PerformanceMode</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Controls internal timing parameters (default: BALANCED).</p>
               </div>
             </td>
           </tr>
