@@ -1,25 +1,30 @@
+# client.py
 """TCP client implementation for Veltix."""
 
 import dataclasses
-import socket
 import threading
 import time
 from collections.abc import Callable
 from enum import Enum, auto
 from threading import Event
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..handler.request_handler import RequestHandler
+from ..internal.buffer_size import BufferSize
+from ..internal.events import Events, events
+from ..internal.network import recv
+from ..internal.performance_mode import PerformanceMode, get_settings
 from ..logger.core import Logger
 from ..network.message_buffer import MessageBuffer
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import HELLO, PING
 from ..network.types import MessageType
-from ..utils.buffer_size import BufferSize
-from ..utils.events import Events, events
-from ..utils.network import recv
-from ..utils.performance_mode import PerformanceMode, get_settings
+from ..socket.core import SocketCore
+from ..socket.threading_socket import ThreadingSocket
+
+if TYPE_CHECKING:
+    from ..socket.base_socket import BaseSocket
 
 # ============================================================================
 # DISCONNECT STATE
@@ -72,19 +77,19 @@ class ClientConfig:
     TCP client configuration.
 
     Attributes:
-        server_addr:      Server address to connect to.
-        port:             Server port to connect to.
-        buffer_size:      Buffer size for receiving data in bytes.
-                          Use BufferSize enum for common presets (default: BufferSize.SMALL).
-                          Can also be set to any custom integer value.
-        max_message_size: Maximum allowed message size in bytes (default: 10MB).
+        server_addr:       Server address to connect to.
+        port:              Server port to connect to.
+        buffer_size:       Buffer size for receiving data in bytes.
+                           Use BufferSize enum for common presets (default: BufferSize.SMALL).
+                           Can also be set to any custom integer value.
+        max_message_size:  Maximum allowed message size in bytes (default: 10MB).
         handshake_timeout: Maximum time to wait for handshake completion (default: 5.0s).
-        max_workers:      Number of worker threads for callback execution (default: 4).
-                          Increase if your on_recv callback is slow or blocking.
-        retry:            Number of reconnection attempts on failure (default: 0 = disabled).
-                          Applies both to the initial connect() and to mid-session disconnections.
-        retry_delay:      Seconds to wait between reconnection attempts (default: 1.0).
-        performance_mode: Controls internal timing parameters (default: BALANCED).
+        max_workers:       Number of worker threads for callback execution (default: 4).
+                           Increase if your on_recv callback is slow or blocking.
+        retry:             Number of reconnection attempts on failure (default: 0 = disabled).
+                           Applies both to the initial connect() and to mid-session disconnections.
+        retry_delay:       Seconds to wait between reconnection attempts (default: 1.0).
+        performance_mode:  Controls internal timing parameters (default: BALANCED).
     """
 
     server_addr: str = "127.0.0.1"
@@ -96,6 +101,7 @@ class ClientConfig:
     retry: int = 0
     retry_delay: float = 1.0
     performance_mode: PerformanceMode = PerformanceMode.BALANCED
+    socket_core: SocketCore = SocketCore.THREADING
 
 
 # ============================================================================
@@ -105,7 +111,7 @@ class ClientConfig:
 
 class Client:
     """
-    TCP client for Veltix protocol.
+    TCP client for the Veltix protocol.
 
     Connects to a Veltix server and handles bidirectional communication.
     connect() blocks until the handshake is complete before returning,
@@ -126,25 +132,19 @@ class Client:
         """
         self._logger = Logger.get_instance()
         self.config: ClientConfig = config
-
-        # Resolve performance mode settings once
         self._perf = get_settings(config.performance_mode)
 
-        # Event callbacks — set via set_callback()
         self.on_recv: Optional[Callable[[Response], None]] = None
         self.on_connect: Optional[Callable[[], None]] = None
         self.on_disconnect: Optional[Callable[[DisconnectState], None]] = None
 
-        # Connection state
         self.is_connected: bool = False
         self.running: bool = True
         self.thread_handler: Optional[threading.Thread] = None
 
-        # Retry state
         self._fail_count: int = 0
         self._stop_retry_flag: bool = False
 
-        # Internal components — re-created on reconnect via _reset()
         self._init_components()
 
         self._logger.debug(
@@ -158,7 +158,7 @@ class Client:
 
     def _init_components(self) -> None:
         """Initialize (or re-initialize) all internal components."""
-        self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket: BaseSocket = ThreadingSocket()
         self.socket.settimeout(self._perf.socket_timeout)
         self.sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket)
         self.request_handler: RequestHandler = RequestHandler(
@@ -183,7 +183,6 @@ class Client:
         self.running = True
         self._init_components()
 
-        # Re-bind on_recv to the new request_handler
         if self.on_recv:
             self.request_handler.set_on_recv(self.on_recv)
 
@@ -260,10 +259,8 @@ class Client:
             if self.connect():
                 return True
 
-            # Attempt failed — notify caller
             self._fire_on_disconnect(permanent=False, reason=reason)
 
-        # All attempts exhausted or stop_retry() called
         self._fire_on_disconnect(permanent=True, reason=reason)
         return False
 
@@ -478,12 +475,10 @@ class Client:
             result = recv(self.socket, self.config.buffer_size)
 
             if result.timed_out:
-                # Socket timeout — connection still alive, loop again
                 continue
 
             if result.disconnected:
                 if not self.running:
-                    # Manual disconnect() was called — on_disconnect already fired
                     break
 
                 self._logger.info("Server disconnected")
@@ -497,7 +492,6 @@ class Client:
                 )
 
                 if self.config.retry != 0 and not self._stop_retry_flag:
-                    # Fire initial on_disconnect before starting retry loop
                     self._fire_on_disconnect(permanent=False, reason=reason)
                     self._reconnect_loop(reason)
                 else:
@@ -505,7 +499,6 @@ class Client:
 
                 break
 
-            # result.ok — process received data
             try:
                 self._message_buffer.add_data(result.data)
 

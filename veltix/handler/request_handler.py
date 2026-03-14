@@ -12,7 +12,7 @@ from veltix.network.request import Request, Response
 from veltix.network.sender import Sender
 from veltix.network.system_types import HELLO, PING, PONG
 from veltix.network.types import MessageType
-from veltix.utils.mode import Mode
+from veltix.internal.mode import Mode
 
 
 class RequestHandler:

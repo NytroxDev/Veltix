@@ -19,12 +19,12 @@ def main():
 
     # Callback when client connects
     def on_connect(client: ClientInfo):
-        print(f"[+] Client connected: {client.addr[0]}:{client.addr[1]}")
+        print(f"[+] Client connected: {client.ip}:{client.port}")
 
     # Callback when message received
     def on_message(client: ClientInfo, response: Response):
         original = response.content.decode("utf-8")
-        print(f"[{client.addr[0]}] Received: {original}")
+        print(f"[{client.ip}] Received: {original}")
 
         # Echo back
         echo_msg = f"Echo: {original}"
@@ -33,9 +33,9 @@ def main():
         result = sender.send(reply, client=client.conn)
 
         if result:
-            print(f"[{client.addr[0]}] Sent: {echo_msg}")
+            print(f"[{client.ip}] Sent: {echo_msg}")
         else:
-            print(f"[{client.addr[0]}] Failed to send echo")
+            print(f"[{client.ip}] Failed to send echo")
 
     # Bind callbacks
     server.set_callback(Events.ON_CONNECT, on_connect)

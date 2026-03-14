@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "veltix"
-version = "1.5.0"
+version = "1.6.0"
 description = "A simple, zero-dependency TCP networking library with message integrity and request/response patterns"
 readme = "README.md"
 license = { text = "MIT" }
@@ -24,7 +24,7 @@ keywords = [
     "messaging",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -56,6 +56,12 @@ test = [
     "pytest-cov>=4.0",
     "pytest-asyncio>=0.21.0",
 ]
+benchmark = [
+    "psutil>=5.9.0",
+]
+
+[project.scripts]
+veltix-benchmark = "veltix.benchmark:main"
 
 [project.urls]
 Homepage = "https://github.com/NytroxDev/Veltix"

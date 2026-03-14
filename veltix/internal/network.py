@@ -1,10 +1,11 @@
+# network.py
 """Network utility functions."""
 
-import socket
 from enum import Enum, auto
 from typing import Optional
 
-from veltix.logger.core import Logger
+from ..logger.core import Logger
+from ..socket.base_socket import BaseSocket
 
 
 class RecvStatus(Enum):
@@ -60,43 +61,42 @@ class RecvResult:
         return f"RecvResult({self.status.name})"
 
 
-# Pre-built sentinels for no-data cases — avoids allocating objects in the hot loop
 _TIMEOUT_RESULT = RecvResult(RecvStatus.TIMEOUT)
 _CLOSED_RESULT = RecvResult(RecvStatus.CLOSED)
 _ERROR_RESULT = RecvResult(RecvStatus.ERROR)
 
 
-def recv(conn: socket.socket, buf_size: int = 1024) -> RecvResult:
+def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
     """
     Receive data from a socket with explicit status reporting.
 
     The socket MUST have a timeout set via settimeout() for TIMEOUT
     to be returned correctly. Without a timeout, this call blocks indefinitely.
 
-    Usage in a recv loop:
+    Usage in a recv loop::
 
         while running:
             result = recv(conn, buf_size)
 
             if result.timed_out:
-                continue                 # connection alive, nothing to read yet
+                continue
 
             if result.disconnected:
                 handle_disconnect()
                 break
 
-            process(result.data)         # result.ok is True here
+            process(result.data)
 
     Args:
-        conn: Socket to receive from. Must have settimeout() set.
-        buf_size: Maximum number of bytes to read per call (default: 1024)
+        conn:     Socket to receive from. Must have settimeout() set.
+        buf_size: Maximum number of bytes to read per call (default: 1024).
 
     Returns:
         RecvResult with one of:
-            OK      — data received, result.data contains the bytes
-            TIMEOUT — timed out, connection still alive, loop again
-            CLOSED  — peer closed the connection cleanly
-            ERROR   — fatal error, connection is gone
+            OK      — data received, result.data contains the bytes.
+            TIMEOUT — timed out, connection still alive, loop again.
+            CLOSED  — peer closed the connection cleanly.
+            ERROR   — fatal error, connection is gone.
     """
     logger = Logger.get_instance()
 
@@ -104,15 +104,13 @@ def recv(conn: socket.socket, buf_size: int = 1024) -> RecvResult:
         data = conn.recv(buf_size)
 
         if not data:
-            # recv() returned b"" — TCP FIN received, peer closed cleanly
             logger.debug("Connection closed cleanly by peer")
             return _CLOSED_RESULT
 
         logger.debug(f"Received {len(data)} bytes")
         return RecvResult(RecvStatus.OK, data)
 
-    except socket.timeout:
-        # Expected with settimeout() — not an error, caller should loop again
+    except TimeoutError:
         return _TIMEOUT_RESULT
 
     except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
@@ -120,7 +118,6 @@ def recv(conn: socket.socket, buf_size: int = 1024) -> RecvResult:
         return _ERROR_RESULT
 
     except OSError as e:
-        # Covers bad file descriptor (socket closed locally) and other OS errors
         logger.debug(f"OSError on recv: {e}")
         return _ERROR_RESULT
 

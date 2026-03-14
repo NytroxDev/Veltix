@@ -1,11 +1,11 @@
 """Message sending functionality for Veltix."""
 
-from socket import socket
 from typing import Optional, Union
 
 from ..exceptions import SenderError
 from ..logger.core import Logger
-from ..utils.mode import Mode
+from ..socket.base_socket import BaseSocket
+from ..internal.mode import Mode
 from .request import Request
 
 
@@ -17,7 +17,7 @@ class Sender:
     SERVER mode (multiple client connections).
     """
 
-    def __init__(self, mode: Union[Mode, str], conn: Optional[socket] = None) -> None:
+    def __init__(self, mode: Union[Mode, str], conn: Optional[BaseSocket] = None) -> None:
         """
         Initialize the sender.
 
@@ -28,7 +28,6 @@ class Sender:
         Raises:
             SenderError: If CLIENT mode without connection
         """
-        # Logger setup
         self._logger = Logger.get_instance()
 
         if mode == Mode.CLIENT and conn is None:
@@ -37,20 +36,20 @@ class Sender:
 
         self.mode = mode
         self.is_client = mode == Mode.CLIENT
-        self.conn: Optional[socket] = conn
+        self.conn: Optional[BaseSocket] = conn
 
         self._logger.debug(f"Sender initialized in {mode.value} mode")
 
-    def send(self, data: Request, client: Optional[socket] = None) -> bool:
+    def send(self, data: Request, client: Optional[BaseSocket] = None) -> bool:
         """
         Send a request to a client or server.
 
         Args:
-            data: Request object to send
-            client: Target client socket (required for SERVER mode, ignored for CLIENT)
+            data:   Request object to send.
+            client: Target client socket (required for SERVER mode, ignored for CLIENT).
 
         Returns:
-            True if send succeeded, False otherwise
+            True if send succeeded, False otherwise.
         """
         target = self.conn if self.is_client else client
 
@@ -63,9 +62,10 @@ class Sender:
 
         try:
             compiled_data = data.compile()
-            target.sendall(compiled_data)
+            target.send(compiled_data)
             self._logger.debug(
-                f"Sent {len(compiled_data)} bytes via {self.mode.value} (request_id: {data.request_id})"
+                f"Sent {len(compiled_data)} bytes via {self.mode.value} "
+                f"(request_id: {data.request_id})"
             )
             return True
         except (ConnectionResetError, BrokenPipeError) as e:
@@ -78,19 +78,19 @@ class Sender:
     def broadcast(
         self,
         data: Request,
-        list_of_client: list[socket],
-        except_clients: Optional[list[socket]] = None,
+        list_of_client: list[BaseSocket],
+        except_clients: Optional[list[BaseSocket]] = None,
     ) -> bool:
         """
         Broadcast data to multiple clients (SERVER mode only).
 
         Args:
-            data: Request object to broadcast
-            list_of_client: List of client sockets
-            except_clients: List of client sockets to exclude from broadcast
+            data:            Request object to broadcast.
+            list_of_client:  List of client sockets to send to.
+            except_clients:  List of client sockets to exclude from broadcast.
 
         Returns:
-            True if ALL sends succeeded, False if ANY failed
+            True if ALL sends succeeded, False if ANY failed.
         """
         if self.is_client:
             self._logger.error("Broadcast not available in CLIENT mode")
@@ -98,13 +98,11 @@ class Sender:
 
         if not list_of_client:
             self._logger.debug("Broadcast called with empty client list")
-            return True  # No clients = vacuous success
+            return True
 
         self._logger.debug(
             f"Broadcasting to {len(list_of_client)} clients (request_id: {data.request_id})"
         )
-
-        # Convert except_clients to set for O(1) lookup
 
         except_set = set(except_clients) if except_clients else set()
         results = []
@@ -114,11 +112,7 @@ class Sender:
         for i, client in enumerate(list_of_client):
             if client in except_set:
                 except_count += 1
-                try:
-                    peer = client.getpeername()
-                    self._logger.debug(f"Excluding client {peer} from broadcast")
-                except OSError:
-                    self._logger.debug("Excluding client from broadcast")
+                self._logger.debug("Excluding client from broadcast")
                 continue
 
             success = self.send(data=data, client=client)
@@ -131,7 +125,8 @@ class Sender:
         success_rate = (total_sent - failed_count) / total_sent if total_sent > 0 else 1.0
 
         self._logger.info(
-            f"Broadcast completed: {total_sent - failed_count}/{total_sent} successful ({success_rate:.1%}) - {except_count} excluded"
+            f"Broadcast completed: {total_sent - failed_count}/{total_sent} successful "
+            f"({success_rate:.1%}) - {except_count} excluded"
         )
 
         return all(results)

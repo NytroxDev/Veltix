@@ -6,7 +6,7 @@ from ..logger.core import Logger
 from ..network.request import Request, Response
 from ..network.sender import Sender
 from ..network.system_types import HELLO, HELLO_ACK
-from ..utils.mode import Mode
+from ..internal.mode import Mode
 from ..version import __version__
 
 

@@ -5,6 +5,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-03-14
+
+### Added
+
+- **Socket Abstraction Layer**: Universal socket interface via `BaseSocket` Protocol
+    - `BaseSocket` — `typing.Protocol` defining the universal socket contract
+    - `ThreadingSocket` — current threading implementation behind the abstraction
+    - `SocketCore` enum — selects the socket backend at config time
+    - `SocketCore.THREADING` — default, one thread per client (current behavior)
+    - `SocketCore.ASYNC` — reserved for v1.7.0 (selectors-based)
+    - `SocketCore.RUST` — reserved for v3.0.0 (Tokio via PyO3)
+    - Switching backends requires zero changes to application code
+    - `Server` and `Client` no longer import the `socket` module directly
+- **Client Tags**: Arbitrary metadata on connected clients
+    - `client.add_tag(name, value=None)` — attach a tag, returns `False` if already exists
+    - `client.has_tag(name)` — check for a single tag
+    - `client.has_all_tags(names)` — check all tags are present (AND)
+    - `client.has_any_tags(names)` — check at least one tag is present (OR)
+    - `client.get_tag(name)` — retrieve the value associated with a tag
+    - `client.remove_tag(name)` — remove a tag, returns `False` if not found
+    - `client.clear_tags()` — remove all tags
+    - Tags are stored in a `dict[str, Any]` — O(1) lookup, minimal memory overhead
+- **`veltix.utils`**: New public utilities module
+    - `format_bytes(size)` — human-readable byte formatting (`148_000` → `"144.5 KB"`)
+    - `encode_utf8(data)` — encode `str` or `bytes` to UTF-8 bytes
+    - `decode_utf8(data)` — decode UTF-8 bytes to `str`
+    - `encode_json(data)` — encode any object to JSON bytes
+    - `decode_json(data)` — decode JSON bytes to Python object
+    - All utilities exported from `veltix` directly
+- **Benchmark JSON export**: `python benchmark.py --save results.json`
+    - Saves full results with system info (Python version, CPU, RAM, OS)
+    - Structured for future community leaderboard support
+
+### Changed
+
+- **`ServerConfig.max_connection`**: Default changed from `2` to `-1` (unlimited)
+- **`ServerConfig` / `ClientConfig`**: New `socket_core` field (default: `SocketCore.THREADING`)
+- **`ClientInfo`**: Migrated from manual `__slots__` to `@dataclasses.dataclass(slots=True)`
+    - Fixes `ValueError: 'tags' in __slots__ conflicts with class variable`
+    - `tags` field uses `dataclasses.field(default_factory=dict)`
+- **`server/` module**: Split into `server.py`, `config.py`, `client_info.py`
+    - `server.py` reduced from 630 lines to ~370 lines
+    - Each file has a single responsibility
+- **`utils/` → `internal/`**: Internal utilities moved to `veltix/internal/`
+    - `veltix/utils/` is now the public utilities module
+- **`Sender`**: Migrated from `socket.socket` to `BaseSocket`
+    - `sendall()` replaced by `send()` — consistent with `BaseSocket` interface
+- **`network.recv()`**: Accepts `BaseSocket` instead of `socket.socket`
+    - `socket.timeout` replaced by `TimeoutError` (Python 3.10+ native)
+
+### Fixed
+
+- **`RuntimeError: cannot join current thread`**: Fixed in `Server.close_client()`
+    - `close_client()` is often called from within the client thread itself
+    - Added `thread != threading.current_thread()` guard before `join()`
+    - Eliminated flood of error logs during `close_all()` with many clients
+
+### Internal
+
+- `veltix/socket/base_socket.py` — `BaseSocket` Protocol with `@runtime_checkable`
+- `veltix/socket/threading_socket.py` — `ThreadingSocket` implementation
+- `veltix/socket/core.py` — `SocketCore` enum
+- `veltix/socket/__init__.py` — module exports
+- `veltix/server/client_info.py` — `ClientInfo` with tags
+- `veltix/server/config.py` — `ServerConfig`
+- `veltix/utils/encoding.py` — encoding helpers
+- `veltix/utils/format_size.py` — `format_bytes`
+
+### Notes
+
+- No breaking changes to public API
+- Throughput slightly lower than v1.5.0 due to the `BaseSocket` abstraction layer overhead
+- Performance will be recovered and exceeded in v1.7.0 with `SocketCore.ASYNC`
+
+---
+
 ## [1.5.0] - 2026-03-07
 
 ### Added
