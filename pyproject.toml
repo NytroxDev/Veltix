@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "veltix"
-version = "1.6.0"
+version = "1.6.1"
 description = "A simple, zero-dependency TCP networking library with message integrity and request/response patterns"
 readme = "README.md"
 license = { text = "MIT" }
