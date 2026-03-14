@@ -1521,7 +1521,7 @@
 
 
 
-        <p>TCP client for Veltix protocol.</p>
+        <p>TCP client for the Veltix protocol.</p>
 <p>Connects to a Veltix server and handles bidirectional communication.
 connect() blocks until the handshake is complete before returning,
 so it is always safe to send messages immediately after connect() returns True.</p>
@@ -1712,7 +1712,7 @@ and fire on_disconnect with permanent=True.</p>
                 <code>event</code>
             </td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="veltix.utils.events.Events">Events</span>]</code>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="veltix.internal.events.Events">Events</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2183,8 +2183,8 @@ where the response could arrive before wait() is called.</p>
             <td>
               <div class="doc-md-description">
                 <p>Buffer size for receiving data in bytes.
-              Use BufferSize enum for common presets (default: BufferSize.SMALL).
-              Can also be set to any custom integer value.</p>
+               Use BufferSize enum for common presets (default: BufferSize.SMALL).
+               Can also be set to any custom integer value.</p>
               </div>
             </td>
           </tr>
@@ -2218,7 +2218,7 @@ where the response could arrive before wait() is called.</p>
             <td>
               <div class="doc-md-description">
                 <p>Number of worker threads for callback execution (default: 4).
-              Increase if your on_recv callback is slow or blocking.</p>
+               Increase if your on_recv callback is slow or blocking.</p>
               </div>
             </td>
           </tr>
@@ -2230,7 +2230,7 @@ where the response could arrive before wait() is called.</p>
             <td>
               <div class="doc-md-description">
                 <p>Number of reconnection attempts on failure (default: 0 = disabled).
-              Applies both to the initial connect() and to mid-session disconnections.</p>
+               Applies both to the initial connect() and to mid-session disconnections.</p>
               </div>
             </td>
           </tr>
@@ -2248,7 +2248,7 @@ where the response could arrive before wait() is called.</p>
           <tr class="doc-section-item">
             <td><code><span title="veltix.client.client.ClientConfig.performance_mode">performance_mode</span></code></td>
             <td>
-                  <code><span title="veltix.utils.performance_mode.PerformanceMode">PerformanceMode</span></code>
+                  <code><span title="veltix.internal.performance_mode.PerformanceMode">PerformanceMode</span></code>
             </td>
             <td>
               <div class="doc-md-description">
