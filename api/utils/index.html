@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://nytroxdev.github.io/Veltix/api/exceptions/">
+        <link rel="canonical" href="https://nytroxdev.github.io/Veltix/api/utils/">
       
       
-        <link rel="prev" href="../utils/">
+        <link rel="prev" href="../logger/">
       
       
-        <link rel="next" href="../../changelog/">
+        <link rel="next" href="../exceptions/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Exceptions - Veltix</title>
+        <title>Utilities - Veltix</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#exceptions" class="md-skip">
+        <a href="#utilities" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Exceptions
+              Utilities
             
           </span>
         </div>
@@ -1104,34 +1104,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../utils/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Utilities
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1151,7 +1123,7 @@
   <span class="md-ellipsis">
     
   
-    Exceptions
+    Utilities
   
 
     
@@ -1169,7 +1141,7 @@
   <span class="md-ellipsis">
     
   
-    Exceptions
+    Utilities
   
 
     
@@ -1195,22 +1167,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#veltix.exceptions" class="md-nav__link">
+  <a href="#veltix.utils.encoding" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;exceptions
+        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;encoding
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" exceptions">
+    <nav class="md-nav" aria-label=" encoding">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.VeltixError" class="md-nav__link">
+  <a href="#veltix.utils.encoding.encode_utf8" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;VeltixError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;encode_utf8
       
     </span>
   </a>
@@ -1218,10 +1190,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.MessageTypeError" class="md-nav__link">
+  <a href="#veltix.utils.encoding.decode_utf8" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;MessageTypeError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;decode_utf8
       
     </span>
   </a>
@@ -1229,10 +1201,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.SenderError" class="md-nav__link">
+  <a href="#veltix.utils.encoding.encode_json" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SenderError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;encode_json
       
     </span>
   </a>
@@ -1240,32 +1212,38 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.RequestError" class="md-nav__link">
+  <a href="#veltix.utils.encoding.decode_json" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RequestError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;decode_json
       
     </span>
   </a>
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.NetworkError" class="md-nav__link">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#veltix.utils.format_size" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;NetworkError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;format_size
       
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label=" format_size">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.TimeoutError" class="md-nav__link">
+  <a href="#veltix.utils.format_size.format_bytes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;TimeoutError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;format_bytes
       
     </span>
   </a>
@@ -1281,6 +1259,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1347,22 +1353,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#veltix.exceptions" class="md-nav__link">
+  <a href="#veltix.utils.encoding" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;exceptions
+        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;encoding
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" exceptions">
+    <nav class="md-nav" aria-label=" encoding">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.VeltixError" class="md-nav__link">
+  <a href="#veltix.utils.encoding.encode_utf8" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;VeltixError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;encode_utf8
       
     </span>
   </a>
@@ -1370,10 +1376,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.MessageTypeError" class="md-nav__link">
+  <a href="#veltix.utils.encoding.decode_utf8" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;MessageTypeError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;decode_utf8
       
     </span>
   </a>
@@ -1381,10 +1387,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.SenderError" class="md-nav__link">
+  <a href="#veltix.utils.encoding.encode_json" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SenderError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;encode_json
       
     </span>
   </a>
@@ -1392,32 +1398,38 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.RequestError" class="md-nav__link">
+  <a href="#veltix.utils.encoding.decode_json" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RequestError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;decode_json
       
     </span>
   </a>
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.NetworkError" class="md-nav__link">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#veltix.utils.format_size" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;NetworkError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;format_size
       
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label=" format_size">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#veltix.exceptions.TimeoutError" class="md-nav__link">
+  <a href="#veltix.utils.format_size.format_bytes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;TimeoutError
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;format_bytes
       
     </span>
   </a>
@@ -1449,23 +1461,22 @@
   
 
 
-<h1 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h1>
+<h1 id="utilities">Utilities<a class="headerlink" href="#utilities" title="Permanent link">&para;</a></h1>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<h2 id="veltix.exceptions" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">veltix.exceptions</span>
+<h2 id="veltix.utils.encoding" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">veltix.utils.encoding</span>
 
 
-<a href="#veltix.exceptions" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#veltix.utils.encoding" class="headerlink" title="Permanent link">&para;</a></h2>
 
     <div class="doc doc-contents first">
 
-        <p>Veltix exception hierarchy.</p>
-<p>All Veltix exceptions inherit from VeltixError for easy catching.</p>
+        <p>Encoding utilities for message serialization.</p>
 
 
 
@@ -1486,192 +1497,210 @@
 
 
 
-<div class="doc doc-object doc-class">
+
+<div class="doc doc-object doc-function">
 
 
+<h3 id="veltix.utils.encoding.encode_utf8" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">encode_utf8</span>
 
-<h3 id="veltix.exceptions.VeltixError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">VeltixError</span>
 
-
-<a href="#veltix.exceptions.VeltixError" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<a href="#veltix.utils.encoding.encode_utf8" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">encode_utf8</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="Exception">Exception</span></code></p>
 
-
-
-        <p>Base exception class for all Veltix framework errors.</p>
-
-
-
-
-
-
-
+        <p>Encode string or bytes to UTF-8.</p>
 
 
     </div>
 
 </div>
 
-<div class="doc doc-object doc-class">
+<div class="doc doc-object doc-function">
 
 
+<h3 id="veltix.utils.encoding.decode_utf8" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">decode_utf8</span>
 
-<h3 id="veltix.exceptions.MessageTypeError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">MessageTypeError</span>
 
-
-<a href="#veltix.exceptions.MessageTypeError" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<a href="#veltix.utils.encoding.decode_utf8" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">decode_utf8</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
 
-
-
-        <p>Raised when a message type operation is invalid.</p>
-
-
-
-
-
-
-
+        <p>Decode UTF-8 bytes to string.</p>
 
 
     </div>
 
 </div>
 
-<div class="doc doc-object doc-class">
+<div class="doc doc-object doc-function">
 
 
+<h3 id="veltix.utils.encoding.encode_json" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">encode_json</span>
 
-<h3 id="veltix.exceptions.SenderError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">SenderError</span>
 
-
-<a href="#veltix.exceptions.SenderError" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<a href="#veltix.utils.encoding.encode_json" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">encode_json</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
 
-
-
-        <p>Raised when a sender operation fails.</p>
-
-
-
-
-
-
-
+        <p>Encode data to JSON bytes.</p>
 
 
     </div>
 
 </div>
 
-<div class="doc doc-object doc-class">
+<div class="doc doc-object doc-function">
 
 
+<h3 id="veltix.utils.encoding.decode_json" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">decode_json</span>
 
-<h3 id="veltix.exceptions.RequestError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">RequestError</span>
 
-
-<a href="#veltix.exceptions.RequestError" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<a href="#veltix.utils.encoding.decode_json" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">decode_json</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
 
-
-
-        <p>Raised when request parsing or compilation fails.</p>
-
-
-
-
-
-
-
+        <p>Decode JSON bytes to Python object.</p>
 
 
     </div>
 
 </div>
 
-<div class="doc doc-object doc-class">
 
 
-
-<h3 id="veltix.exceptions.NetworkError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">NetworkError</span>
-
-
-<a href="#veltix.exceptions.NetworkError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when a network operation fails.</p>
-
-
-
-
-
-
-
-
+  </div>
 
     </div>
 
 </div>
 
-<div class="doc doc-object doc-class">
+<div class="doc doc-object doc-module">
 
 
 
-<h3 id="veltix.exceptions.TimeoutError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">TimeoutError</span>
+<h2 id="veltix.utils.format_size" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">veltix.utils.format_size</span>
 
 
-<a href="#veltix.exceptions.TimeoutError" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#veltix.utils.format_size" class="headerlink" title="Permanent link">&para;</a></h2>
 
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="veltix.utils.format_size.format_bytes" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">format_bytes</span>
+
+
+<a href="#veltix.utils.format_size.format_bytes" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">format_bytes</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
+
+        <p>Format a byte count into a human-readable string.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>size</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Size in bytes.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-        <p>Raised when an operation times out.</p>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Human-readable string (e.g. '148 KB', '3.07 MB').</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-
-
-
-
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">format_bytes</span><span class="p">(</span><span class="mi">148</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">&#39;148 B&#39;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">format_bytes</span><span class="p">(</span><span class="mi">148_000</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">&#39;144.5 KB&#39;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">format_bytes</span><span class="p">(</span><span class="mi">3_000_000</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">&#39;2.86 MB&#39;</span>
+</code></pre></div>
 
 
     </div>
 
 </div>
-
 
 
 
