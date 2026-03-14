@@ -1378,7 +1378,7 @@ SERVER mode (multiple client connections).</p>
 
 
 <a href="#veltix.network.sender.Sender.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__init__</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">conn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">socket</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__init__</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">conn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseSocket</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1402,7 +1402,7 @@ SERVER mode (multiple client connections).</p>
                 <code>mode</code>
             </td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="veltix.utils.mode.Mode">Mode</span>, <span title="str">str</span>]</code>
+                  <code><span title="typing.Union">Union</span>[<span title="veltix.internal.mode.Mode">Mode</span>, <span title="str">str</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1418,7 +1418,7 @@ SERVER mode (multiple client connections).</p>
                 <code>conn</code>
             </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="socket.socket">socket</span>]</code>
+                  <code><span title="typing.Optional">Optional</span>[<span title="veltix.socket.base_socket.BaseSocket">BaseSocket</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1468,7 +1468,7 @@ SERVER mode (multiple client connections).</p>
 
 
 <a href="#veltix.network.sender.Sender.send" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">send</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">socket</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">send</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseSocket</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1496,7 +1496,7 @@ SERVER mode (multiple client connections).</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Request object to send</p>
+                <p>Request object to send.</p>
               </div>
             </td>
             <td>
@@ -1508,11 +1508,11 @@ SERVER mode (multiple client connections).</p>
                 <code>client</code>
             </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="socket.socket">socket</span>]</code>
+                  <code><span title="typing.Optional">Optional</span>[<span title="veltix.socket.base_socket.BaseSocket">BaseSocket</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Target client socket (required for SERVER mode, ignored for CLIENT)</p>
+                <p>Target client socket (required for SERVER mode, ignored for CLIENT).</p>
               </div>
             </td>
             <td>
@@ -1538,7 +1538,7 @@ SERVER mode (multiple client connections).</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>True if send succeeded, False otherwise</p>
+                <p>True if send succeeded, False otherwise.</p>
               </div>
             </td>
           </tr>
@@ -1558,7 +1558,7 @@ SERVER mode (multiple client connections).</p>
 
 
 <a href="#veltix.network.sender.Sender.broadcast" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">broadcast</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">list_of_client</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">socket</span><span class="p">],</span> <span class="n">except_clients</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">socket</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">broadcast</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">list_of_client</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseSocket</span><span class="p">],</span> <span class="n">except_clients</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">BaseSocket</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1586,7 +1586,7 @@ SERVER mode (multiple client connections).</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Request object to broadcast</p>
+                <p>Request object to broadcast.</p>
               </div>
             </td>
             <td>
@@ -1598,11 +1598,11 @@ SERVER mode (multiple client connections).</p>
                 <code>list_of_client</code>
             </td>
             <td>
-                  <code><span title="list">list</span>[<span title="socket.socket">socket</span>]</code>
+                  <code><span title="list">list</span>[<span title="veltix.socket.base_socket.BaseSocket">BaseSocket</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>List of client sockets</p>
+                <p>List of client sockets to send to.</p>
               </div>
             </td>
             <td>
@@ -1614,11 +1614,11 @@ SERVER mode (multiple client connections).</p>
                 <code>except_clients</code>
             </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="list">list</span>[<span title="socket.socket">socket</span>]]</code>
+                  <code><span title="typing.Optional">Optional</span>[<span title="list">list</span>[<span title="veltix.socket.base_socket.BaseSocket">BaseSocket</span>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>List of client sockets to exclude from broadcast</p>
+                <p>List of client sockets to exclude from broadcast.</p>
               </div>
             </td>
             <td>
@@ -1644,7 +1644,7 @@ SERVER mode (multiple client connections).</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>True if ALL sends succeeded, False if ANY failed</p>
+                <p>True if ALL sends succeeded, False if ANY failed.</p>
               </div>
             </td>
           </tr>
