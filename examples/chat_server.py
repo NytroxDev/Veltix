@@ -24,7 +24,7 @@ def main():
 
     # Callback when client connects
     def on_connect(client: ClientInfo):
-        addr = f"{client.addr[0]}:{client.addr[1]}"
+        addr = f"{client.ip}:{client.port}"
         client_names[client.conn] = addr
 
         print(f"[+] {addr} joined the chat")

@@ -2,15 +2,19 @@
 Veltix Benchmark Suite
 ======================
 Measures memory footprint, latency, FPS server simulation, burst throughput,
-and concurrent stress. Results are printed in a README-ready format.
+and concurrent stress. Results are printed in a README-ready format and can
+optionally be saved as JSON for sharing or uploading to the Veltix leaderboard.
 
 Usage
 -----
-    # Run all benchmarks (default)
+    # Run all benchmarks
     python benchmark.py
 
     # Run specific benchmarks
     python benchmark.py --only memory latency burst
+
+    # Save results to JSON
+    python benchmark.py --save results.json
 
     # Adjust parameters
     python benchmark.py --latency-iterations 5000 --stress-clients 200
@@ -22,13 +26,16 @@ from __future__ import annotations
 
 import argparse
 import gc
+import json
 import os
+import platform
 import statistics
 import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from typing import Optional
 
 try:
@@ -48,6 +55,7 @@ from veltix import (
     Request,
     Server,
     ServerConfig,
+    format_bytes,
 )
 
 # ── Silence library logs so benchmark output stays clean ──────────────────────
@@ -63,21 +71,13 @@ CHAT_MSG = MessageType(405, "chat_msg")  # 128 B – chat packet
 # ── psutil process handle ──────────────────────────────────────────────────────
 _proc = psutil.Process(os.getpid())
 
-# ── Terminal width used for decorators ────────────────────────────────────────
+# ── Terminal width ─────────────────────────────────────────────────────────────
 _WIDTH = 72
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Utilities
+# Terminal helpers
 # ══════════════════════════════════════════════════════════════════════════════
-
-
-def ram_kb() -> float:
-    return _proc.memory_info().rss / 1_024
-
-
-def ram_mb() -> float:
-    return ram_kb() / 1_024
 
 
 def _sep(char: str = "─", width: int = _WIDTH) -> None:
@@ -92,8 +92,39 @@ def _header(title: str) -> None:
 
 
 def _row(label: str, value: str, width: int = 36) -> None:
-    """Print a consistently aligned key/value line."""
     print(f"  {label:<{width}}: {value}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Memory helpers
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _ram_bytes() -> int:
+    return _proc.memory_info().rss
+
+
+def _ram_kb() -> float:
+    return _ram_bytes() / 1_024
+
+
+def _ram_mb() -> float:
+    return _ram_kb() / 1_024
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Internal helpers
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _incr(counter: list[int], lock: threading.Lock) -> None:
+    with lock:
+        counter[0] += 1
+
+
+def _append_ts(ts_list: list[float], lock: threading.Lock) -> None:
+    with lock:
+        ts_list.append(time.perf_counter())
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -110,8 +141,6 @@ class LatencyStats:
     def add(self, value: Optional[float]) -> None:
         if value is not None:
             self._samples.append(value)
-
-    # ── read-only properties ───────────────────────────────────────────────────
 
     @property
     def count(self) -> int:
@@ -151,6 +180,18 @@ class LatencyStats:
     def stdev(self) -> float:
         return statistics.stdev(self._samples) if len(self._samples) > 1 else 0.0
 
+    def to_dict(self) -> dict:
+        return {
+            "count": self.count,
+            "avg_ms": round(self.avg, 4),
+            "p50_ms": round(self.median, 4),
+            "p95_ms": round(self.p95, 4),
+            "p99_ms": round(self.p99, 4),
+            "min_ms": round(self.min, 4),
+            "max_ms": round(self.max, 4),
+            "stdev_ms": round(self.stdev, 4),
+        }
+
 
 @dataclass
 class MemoryResult:
@@ -159,6 +200,15 @@ class MemoryResult:
     client_cost_kb: float
     ram_10_clients_kb: float
     ram_50_clients_kb: float
+
+    def to_dict(self) -> dict:
+        return {
+            "baseline_kb": round(self.baseline_kb, 1),
+            "server_idle_kb": round(self.server_idle_kb, 1),
+            "client_cost_kb": round(self.client_cost_kb, 1),
+            "ram_10_clients_kb": round(self.ram_10_clients_kb, 1),
+            "ram_50_clients_kb": round(self.ram_50_clients_kb, 1),
+        }
 
 
 @dataclass
@@ -173,6 +223,19 @@ class FpsResult:
     ram_delta_mb: float
     errors: int
 
+    def to_dict(self) -> dict:
+        return {
+            "players": self.players,
+            "tick_rate": self.tick_rate,
+            "duration_s": round(self.duration_s, 3),
+            "total_sent": self.total_sent,
+            "total_recv": self.total_recv,
+            "msg_per_sec": round(self.msg_per_sec, 1),
+            "success_rate": round(self.success_rate, 2),
+            "ram_delta_mb": round(self.ram_delta_mb, 2),
+            "errors": self.errors,
+        }
+
 
 @dataclass
 class BurstResult:
@@ -183,6 +246,17 @@ class BurstResult:
     data_mbps: float
     success_rate: float
     duration_s: float
+
+    def to_dict(self) -> dict:
+        return {
+            "count": self.count,
+            "payload_bytes": self.payload_bytes,
+            "send_throughput": round(self.send_throughput, 1),
+            "recv_throughput": round(self.recv_throughput, 1),
+            "data_mbps": round(self.data_mbps, 3),
+            "success_rate": round(self.success_rate, 2),
+            "duration_s": round(self.duration_s, 3),
+        }
 
 
 @dataclass
@@ -196,6 +270,18 @@ class StressResult:
     duration_s: float
     ram_delta_mb: float
 
+    def to_dict(self) -> dict:
+        return {
+            "num_clients": self.num_clients,
+            "msgs_per_client": self.msgs_per_client,
+            "total_sent": self.total_sent,
+            "total_recv": self.total_recv,
+            "success_rate": round(self.success_rate, 2),
+            "throughput": round(self.throughput, 1),
+            "duration_s": round(self.duration_s, 3),
+            "ram_delta_mb": round(self.ram_delta_mb, 2),
+        }
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Benchmark 1 – Baseline memory footprint
@@ -206,17 +292,20 @@ def bench_memory(port: int = 20_001) -> MemoryResult:
     _header("① BASELINE MEMORY FOOTPRINT")
 
     gc.collect()
-    baseline = ram_kb()
-    _row("Python process baseline", f"{baseline:>10,.1f} KB")
+    baseline = _ram_kb()
+    _row("Python process baseline", format_bytes(int(baseline * 1_024)))
 
     # ── bare server ────────────────────────────────────────────────────────────
-    server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=200))
+    server = Server(ServerConfig(host="127.0.0.1", port=port))
     server.start()
     time.sleep(0.3)
     gc.collect()
-    server_ram = ram_kb()
+    server_ram = _ram_kb()
     server_cost = server_ram - baseline
-    _row("Idle server (0 clients)", f"{server_ram:>10,.1f} KB  (+{server_cost:.1f} KB)")
+    _row(
+        "Idle server (0 clients)",
+        f"{format_bytes(int(server_ram * 1_024))}  (+{format_bytes(int(server_cost * 1_024))})",
+    )
 
     # ── first 10 clients ──────────────────────────────────────────────────────
     clients: list[Client] = []
@@ -224,18 +313,18 @@ def bench_memory(port: int = 20_001) -> MemoryResult:
 
     for _ in range(10):
         gc.collect()
-        before = ram_kb()
+        before = _ram_kb()
         c = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         c.connect()
         time.sleep(0.05)
         gc.collect()
-        costs.append(ram_kb() - before)
+        costs.append(_ram_kb() - before)
         clients.append(c)
 
     avg_cost = statistics.mean(costs)
-    ram_10 = ram_kb()
-    _row("Cost per client (avg)", f"{avg_cost:>10,.1f} KB")
-    _row("Server + 10 clients", f"{ram_10:>10,.1f} KB")
+    ram_10 = _ram_kb()
+    _row("Cost per client (avg)", format_bytes(int(avg_cost * 1_024)))
+    _row("Server + 10 clients", format_bytes(int(ram_10 * 1_024)))
 
     # ── scale to 50 clients ───────────────────────────────────────────────────
     for _ in range(40):
@@ -246,8 +335,8 @@ def bench_memory(port: int = 20_001) -> MemoryResult:
 
     time.sleep(0.5)
     gc.collect()
-    ram_50 = ram_kb()
-    _row("Server + 50 clients", f"{ram_50:>10,.1f} KB  ({ram_50 / 1_024:.1f} MB)")
+    ram_50 = _ram_kb()
+    _row("Server + 50 clients", format_bytes(int(ram_50 * 1_024)))
 
     for c in clients:
         c.disconnect()
@@ -271,7 +360,7 @@ def bench_memory(port: int = 20_001) -> MemoryResult:
 def bench_latency(iterations: int = 2_000, port: int = 20_002) -> LatencyStats:
     _header("② PING / PONG LATENCY")
 
-    server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=5))
+    server = Server(ServerConfig(host="127.0.0.1", port=port))
     server.start()
     time.sleep(0.3)
 
@@ -279,7 +368,7 @@ def bench_latency(iterations: int = 2_000, port: int = 20_002) -> LatencyStats:
     client.connect()
     time.sleep(0.2)
 
-    # warmup – discard results
+    # warmup — discard results
     for _ in range(20):
         client.ping_server(timeout=2.0)
 
@@ -315,21 +404,21 @@ def bench_latency(iterations: int = 2_000, port: int = 20_002) -> LatencyStats:
 
 def bench_fps(
     num_players: int = 64,
-    tick_rate: int = 100,
+    tick_rate: int = 64,
     duration_s: float = 5.0,
     port: int = 20_003,
 ) -> FpsResult:
     """
     Simulates a realistic FPS server:
       - Every player sends PLAYER_MOVE each tick (32 B)
-      - ~10 % of players send PLAYER_SHOOT each tick (16 B)
+      - ~10% of players send PLAYER_SHOOT each tick (16 B)
     """
     _header(f"③ FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)")
 
     recv_count = [0]
     lock = threading.Lock()
 
-    server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=num_players + 10))
+    server = Server(ServerConfig(host="127.0.0.1", port=port))
     server.set_callback(Events.ON_RECV, lambda _c, _m: _incr(recv_count, lock))
     server.start()
     time.sleep(0.5)
@@ -345,7 +434,7 @@ def bench_fps(
     print(" done")
 
     gc.collect()
-    ram_before = ram_mb()
+    ram_before = _ram_mb()
     tick_interval = 1.0 / tick_rate
     total_sent = errors = 0
 
@@ -371,12 +460,11 @@ def bench_fps(
     actual = time.perf_counter() - t0
     time.sleep(0.5)
     gc.collect()
-    ram_after = ram_mb()
+    ram_after = _ram_mb()
 
     recv = recv_count[0]
     success = recv / total_sent * 100 if total_sent else 0.0
     msg_per_sec = total_sent / actual
-    bandwidth = (total_sent * 32) / actual / 1_048_576
 
     _row("Players", str(num_players))
     _row("Tick rate", f"{tick_rate} Hz")
@@ -385,7 +473,6 @@ def bench_fps(
     _row("Messages recv", f"{recv:,}")
     _row("Success rate", f"{success:.1f}%")
     _row("Throughput", f"{msg_per_sec:,.0f} msg/s")
-    _row("Bandwidth", f"{bandwidth:.2f} MB/s (approx)")
     _row("RAM delta", f"{ram_after - ram_before:+.1f} MB")
     _row("Errors", str(errors))
 
@@ -414,7 +501,7 @@ def bench_fps(
 
 def bench_burst(
     count: int = 10_000,
-    payload_size: int = 30,
+    payload_size: int = 64,
     port: int = 20_004,
 ) -> BurstResult:
     _header(f"④ BURST THROUGHPUT  ({count:,} msgs × {payload_size} B)")
@@ -422,7 +509,7 @@ def bench_burst(
     received_ts: list[float] = []
     lock = threading.Lock()
 
-    server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=5))
+    server = Server(ServerConfig(host="127.0.0.1", port=port))
     server.set_callback(
         Events.ON_RECV,
         lambda _c, _m: _append_ts(received_ts, lock),
@@ -455,7 +542,7 @@ def bench_burst(
     success = recv_count / count * 100
 
     _row("Messages", f"{count:,}")
-    _row("Payload size", f"{payload_size} B")
+    _row("Payload size", format_bytes(payload_size))
     _row("Send throughput", f"{send_throughput:,.0f} msg/s")
     _row("Recv throughput", f"{recv_throughput:,.0f} msg/s")
     _row("Data throughput", f"{data_mbps:.2f} MB/s")
@@ -492,7 +579,7 @@ def bench_stress(
     recv_count = [0]
     lock = threading.Lock()
 
-    server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=num_clients + 10))
+    server = Server(ServerConfig(host="127.0.0.1", port=port))
     server.set_callback(Events.ON_RECV, lambda _c, _m: _incr(recv_count, lock))
     server.start()
     time.sleep(0.5)
@@ -509,7 +596,7 @@ def bench_stress(
 
     total_msgs = num_clients * msgs_per_client
     gc.collect()
-    ram_before = ram_mb()
+    ram_before = _ram_mb()
 
     def _blast(c: Client) -> None:
         for _ in range(msgs_per_client):
@@ -530,7 +617,7 @@ def bench_stress(
 
     elapsed = time.perf_counter() - t0
     gc.collect()
-    ram_after = ram_mb()
+    ram_after = _ram_mb()
 
     recv = recv_count[0]
     success = recv / total_msgs * 100
@@ -566,8 +653,6 @@ def bench_stress(
 # README-ready summary table
 # ══════════════════════════════════════════════════════════════════════════════
 
-_COL = 45  # right column start (inside the table)
-
 
 def _trow(label: str, value: str) -> None:
     print(f"│  {label:<21}│  {value:<43}│")
@@ -593,9 +678,9 @@ def print_summary(
     if mem:
         _tdivider()
         _trow("MEMORY", "")
-        _trow("Idle server", f"{mem.server_idle_kb:,.0f} KB")
-        _trow("Per client", f"{mem.client_cost_kb:.1f} KB")
-        _trow("50 clients total", f"{mem.ram_50_clients_kb / 1_024:.1f} MB")
+        _trow("Idle server", format_bytes(int(mem.server_idle_kb * 1_024)))
+        _trow("Per client", format_bytes(int(mem.client_cost_kb * 1_024)))
+        _trow("50 clients total", format_bytes(int(mem.ram_50_clients_kb * 1_024)))
 
     if lat:
         _tdivider()
@@ -639,18 +724,48 @@ def print_summary(
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Internal helpers
+# JSON export
 # ══════════════════════════════════════════════════════════════════════════════
 
 
-def _incr(counter: list[int], lock: threading.Lock) -> None:
-    with lock:
-        counter[0] += 1
+def build_json(
+    mem: Optional[MemoryResult],
+    lat: Optional[LatencyStats],
+    fps64: Optional[FpsResult],
+    fps128: Optional[FpsResult],
+    burst: Optional[BurstResult],
+    stress: Optional[StressResult],
+) -> dict:
+    """Build a JSON-serializable dict from benchmark results."""
+    return {
+        "veltix_version": veltix.__version__,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "system": {
+            "python": sys.version.split()[0],
+            "cpu_logical": psutil.cpu_count(logical=True),
+            "cpu_physical": psutil.cpu_count(logical=False),
+            "cpu_model": platform.processor() or "unknown",
+            "ram_gb": round(psutil.virtual_memory().total / 1_073_741_824, 1),
+            "os": sys.platform,
+            "os_version": platform.version(),
+            "machine": platform.machine(),
+        },
+        "results": {
+            "memory": mem.to_dict() if mem else None,
+            "latency": lat.to_dict() if lat else None,
+            "fps_64": fps64.to_dict() if fps64 else None,
+            "fps_128": fps128.to_dict() if fps128 else None,
+            "burst": burst.to_dict() if burst else None,
+            "stress": stress.to_dict() if stress else None,
+        },
+    }
 
 
-def _append_ts(ts_list: list[float], lock: threading.Lock) -> None:
-    with lock:
-        ts_list.append(time.perf_counter())
+def save_json(data: dict, path: str) -> None:
+    """Save benchmark results to a JSON file."""
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    print(f"\n  ✓ Results saved to {path}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -673,16 +788,22 @@ def parse_args() -> argparse.Namespace:
         default=ALL_BENCHMARKS,
         help="Run only the specified benchmarks",
     )
+    p.add_argument(
+        "--save",
+        metavar="FILE",
+        default=None,
+        help="Save results to a JSON file (e.g. results.json)",
+    )
 
     # Per-benchmark knobs
     p.add_argument("--latency-iterations", type=int, default=2_000, metavar="N")
     p.add_argument("--fps-players", type=int, default=64, metavar="N")
-    p.add_argument("--fps-tick-rate", type=int, default=100, metavar="HZ")
+    p.add_argument("--fps-tick-rate", type=int, default=64, metavar="HZ")
     p.add_argument("--fps-duration", type=float, default=5.0, metavar="S")
     p.add_argument("--fps2-players", type=int, default=128, metavar="N")
-    p.add_argument("--fps2-tick-rate", type=int, default=50, metavar="HZ")
+    p.add_argument("--fps2-tick-rate", type=int, default=20, metavar="HZ")
     p.add_argument("--burst-count", type=int, default=10_000, metavar="N")
-    p.add_argument("--burst-payload", type=int, default=30, metavar="BYTES")
+    p.add_argument("--burst-payload", type=int, default=64, metavar="BYTES")
     p.add_argument("--stress-clients", type=int, default=100, metavar="N")
     p.add_argument("--stress-msgs", type=int, default=100, metavar="N")
     return p.parse_args()
@@ -700,8 +821,7 @@ def main() -> None:
     _row("Python", sys.version.split()[0])
     _row(
         "CPU",
-        f"{psutil.cpu_count(logical=True)} logical cores  "
-        f"({psutil.cpu_count(logical=False)} physical)",
+        f"{psutil.cpu_count(logical=True)} logical cores  ({psutil.cpu_count(logical=False)} physical)",
     )
     _row("RAM", f"{psutil.virtual_memory().total / 1_073_741_824:.1f} GB")
     _row("OS", sys.platform)
@@ -713,12 +833,17 @@ def main() -> None:
     fps128 = None
     if "fps" in run:
         fps64 = bench_fps(args.fps_players, args.fps_tick_rate, args.fps_duration)
-        fps128 = bench_fps(args.fps2_players, args.fps2_tick_rate, args.fps_duration)
+        fps128 = bench_fps(args.fps2_players, args.fps2_tick_rate, args.fps_duration, port=20_006)
     burst = bench_burst(args.burst_count, args.burst_payload) if "burst" in run else None
     stress = bench_stress(args.stress_clients, args.stress_msgs) if "stress" in run else None
 
     # ── summary ────────────────────────────────────────────────────────────────
     print_summary(mem, lat, fps64, fps128, burst, stress)
+
+    # ── JSON export ────────────────────────────────────────────────────────────
+    if args.save:
+        data = build_json(mem, lat, fps64, fps128, burst, stress)
+        save_json(data, args.save)
 
 
 if __name__ == "__main__":

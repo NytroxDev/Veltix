@@ -1,7 +1,5 @@
 """TCP server implementation for Veltix."""
 
-import dataclasses
-import socket
 import threading
 import time
 from collections.abc import Callable
@@ -9,81 +7,43 @@ from threading import Lock
 from typing import Optional, Union
 
 from ..handler.request_handler import RequestHandler
+from ..internal.events import Events, events
+from ..internal.network import recv
+from ..internal.performance_mode import get_settings
 from ..logger.core import Logger
 from ..network.message_buffer import MessageBuffer
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
-from ..utils.buffer_size import BufferSize
-from ..utils.events import Events, events
-from ..utils.network import recv
-from ..utils.performance_mode import PerformanceMode, get_settings
-
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
-
-
-@dataclasses.dataclass
-class ServerConfig:
-    """
-    TCP server configuration.
-
-    Attributes:
-        host:             Server listening address (default: '0.0.0.0')
-        port:             Server listening port (default: 8080)
-        buffer_size:      Buffer size for receiving data in bytes.
-                          Use BufferSize enum for common presets (default: BufferSize.SMALL).
-                          Can also be set to any custom integer value.
-        max_connection:   Maximum number of simultaneous connections (default: 2)
-        max_message_size: Maximum allowed message size in bytes (default: 10MB)
-        handshake_timeout: Maximum time to wait for handshake completion in seconds (default: 5.0)
-        max_workers:      Number of worker threads for callback execution (default: 4).
-                          Increase if your on_recv callback is slow or blocking.
-        performance_mode: Controls internal timing parameters (default: BALANCED).
-    """
-
-    host: str = "0.0.0.0"
-    port: int = 8080
-    buffer_size: int = BufferSize.SMALL
-    max_connection: int = 2
-    max_message_size: int = 10 * 1024 * 1024  # 10 MB
-    handshake_timeout: float = 5.0
-    max_workers: int = 4
-    performance_mode: PerformanceMode = PerformanceMode.BALANCED
-
-
-# ============================================================================
-# CLIENT INFO
-# ============================================================================
-
-
-@dataclasses.dataclass
-class ClientInfo:
-    """
-    Information about a connected client.
-
-    Attributes:
-        conn:           Socket connection to the client.
-        addr:           Client address (host, port).
-        thread_id:      Internal thread identifier.
-        handshake_done: Whether the handshake has been completed.
-    """
-
-    __slots__ = ("conn", "addr", "thread_id", "handshake_done")
-
-    conn: socket.socket
-    addr: socket._RetAddress
-    thread_id: int
-    handshake_done: bool
-
-
-# ============================================================================
-# SERVER
-# ============================================================================
+from ..network.types import MessageType
+from ..socket.base_socket import BaseSocket
+from .client_info import ClientInfo
+from .config import ServerConfig
 
 
 class Server:
+    """
+    TCP server for the Veltix protocol.
+
+    Accepts incoming client connections, drives the HELLO/HELLO_ACK handshake,
+    and dispatches received messages through the request handler.
+
+    Each client runs in a dedicated thread. Slow callbacks never block
+    message reception — all user-defined handlers execute in a thread pool
+    managed by the underlying RequestHandler.
+
+    Usage::
+
+        config = ServerConfig(host="0.0.0.0", port=8080)
+        server = Server(config)
+
+        def on_message(client: ClientInfo, response: Response) -> None:
+            server.get_sender().send(Request(CHAT, b"Hello"), client=client.conn)
+
+        server.set_callback(Events.ON_RECV, on_message)
+        server.start()
+    """
+
     __slots__ = (
         "_logger",
         "_perf",
@@ -117,7 +77,7 @@ class Server:
         self._logger = Logger.get_instance()
         self._perf = get_settings(config.performance_mode)
 
-        self._client_buffers: dict[socket.socket, MessageBuffer] = {}
+        self._client_buffers: dict[BaseSocket, MessageBuffer] = {}
         self._buffers_lock = Lock()
 
         self.clients: list[ClientInfo] = []
@@ -141,9 +101,7 @@ class Server:
             self.sender, mode=Mode.SERVER, max_workers=config.max_workers
         )
 
-        self.socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.settimeout(0.5)  # accept() timeout — allows close_all() to exit cleanly
+        self.socket: BaseSocket = self.config.socket_core.value()
         self.socket.bind((self.config.host, self.config.port))
 
         self._logger.info(f"Server initialized on {self.config.host}:{self.config.port}")
@@ -206,7 +164,7 @@ class Server:
         """Return the sender instance for sending data to clients."""
         return self.sender
 
-    def get_all_clients_sockets(self) -> list[socket.socket]:
+    def get_all_clients_sockets(self) -> list[BaseSocket]:
         """Return a list of all connected client sockets."""
         with self._clients_lock:
             return [client.conn for client in self.clients]
@@ -309,7 +267,7 @@ class Server:
                 with self._clients_lock:
                     current_count = len(self.clients)
 
-                if current_count >= self.config.max_connection:
+                if 0 < self.config.max_connection <= current_count:
                     time.sleep(0.1)
                     continue
 
@@ -338,7 +296,6 @@ class Server:
             except TimeoutError:
                 continue
             except OSError:
-                # Socket closed by close_all() — exit cleanly
                 return
             except Exception as e:
                 if self.running:
@@ -406,18 +363,14 @@ class Server:
         """
         self._logger.debug(f"Starting to handle client {client.addr}")
 
-        # Set the performance-mode timeout on the client socket
         client.conn.settimeout(self._perf.socket_timeout)
 
-        # Create message buffer for this client
         with self._buffers_lock:
             self._client_buffers[client.conn] = MessageBuffer(
                 max_message_size=self.config.max_message_size
             )
             self._logger.debug(f"Created message buffer for client {client.addr}")
 
-        # Send HELLO before entering the recv loop
-        # HELLO_ACK will arrive naturally as the first message
         handshake_request_id, hello = self.request_handler.handshake_handler.prepare_hello()
         self.request_handler.register(handshake_request_id)
         self.request_handler.handshake_handler.send_hello(hello, client.conn)
@@ -426,19 +379,15 @@ class Server:
             result = recv(client.conn, self.config.buffer_size)
 
             if result.timed_out:
-                # Connection still alive — loop again
                 continue
 
             if result.disconnected:
                 self._logger.info(f"Client {client.addr} disconnected")
-
                 with self._buffers_lock:
                     self._client_buffers.pop(client.conn, None)
-
                 self.close_client(client)
                 break
 
-            # result.ok — process received data
             try:
                 with self._buffers_lock:
                     buffer = self._client_buffers.get(client.conn)
@@ -459,7 +408,6 @@ class Server:
                     if isinstance(handler_result, Exception):
                         self._logger.error(f"Handler error for {client.addr}: {handler_result}")
 
-                    # Check if handshake just completed
                     if not client.handshake_done:
                         with self.request_handler.pending_requests_lock:
                             queue = self.request_handler.pending_requests.get(handshake_request_id)
@@ -498,7 +446,6 @@ class Server:
         Returns:
             True if the client was found and removed, False otherwise.
         """
-        # Fire on_disconnect first
         if self.on_disconnect:
             try:
                 self.on_disconnect(client)
@@ -507,20 +454,17 @@ class Server:
                     f"Error in on_disconnect for {client.addr}: {type(e).__name__}: {e}"
                 )
 
-        # Clean up buffer
         with self._buffers_lock:
             if client.conn in self._client_buffers:
                 del self._client_buffers[client.conn]
                 self._logger.debug(f"Cleaned up buffer for client {client.addr}")
 
-        # Close socket
         try:
             client.conn.close()
             self._logger.debug(f"Closed connection for client {client.addr}")
         except Exception as e:
             self._logger.warning(f"Error closing socket for {client.addr}: {type(e).__name__}: {e}")
 
-        # Remove from client list
         with self._clients_lock:
             if client not in self.clients:
                 self._logger.warning(f"Client {client.addr} not found in client list")
@@ -528,11 +472,11 @@ class Server:
             self.clients.remove(client)
             remaining = len(self.clients)
 
-        # Join client thread
         try:
             with self._threads_lock:
+                current = threading.current_thread()
                 for id_th, thread in self.threads:
-                    if thread.is_alive() and id_th == client.thread_id:
+                    if id_th == client.thread_id and thread != current:
                         thread.join(timeout=self._perf.socket_timeout + 0.1)
         except Exception as e:
             self._logger.error(f"Error joining thread for {client.addr}: {type(e).__name__}: {e}")

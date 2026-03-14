@@ -13,7 +13,7 @@ application logic. It ships with message integrity verification, a structured bi
 correlation, automatic connection handshake, decorator-based message routing, auto-reconnect, and production-ready
 logging — all with zero external dependencies.
 
-**Performance highlights:** 50k+ msg/s throughput • 0.011ms average latency • 148KB idle memory • 100% success rate
+**Performance highlights:** 55k+ msg/s throughput • 0.011ms average latency • 84KB idle memory • 100% success rate
 
 ---
 
@@ -60,7 +60,7 @@ threading, handshake, routing, and request correlation — while keeping the API
 ## Features
 
 - **Simple API** — Get a working client/server in under 30 lines
-- **High Performance** — 50k+ messages/second, 0.011ms latency
+- **High Performance** — 55k+ messages/second, 0.011ms latency
 - **Message integrity** — Built-in SHA-256 payload verification
 - **Custom binary protocol** — Lightweight framing with TCP stream handling
 - **Zero dependencies** — Pure Python standard library only
@@ -73,7 +73,8 @@ threading, handshake, routing, and request correlation — while keeping the API
 - **Built-in ping/pong** — Bidirectional latency measurement
 - **Integrated logger** — Colorized, file-rotating, thread-safe logging
 - **Performance modes** — `LOW` / `BALANCED` / `HIGH` presets for CPU/reactivity trade-off
-- **Memory Efficient** — 148KB idle server, 52KB per client
+- **Socket abstraction** — Swappable socket backends via `SocketCore` (Threading now, Selectors and Rust coming)
+- **Client tags** — Attach arbitrary metadata to connected clients
 - **Extensible** — Custom message types and event callbacks
 - **Defensive design** — Strict validation and controlled failure handling
 
@@ -81,51 +82,54 @@ threading, handshake, routing, and request correlation — while keeping the API
 
 ## Performance
 
-> Benchmarked on Python 3.14.2 — 12-core CPU, 30.5 GB RAM, Linux. All tests run locally (loopback).
+> Benchmarked on Python 3.14.3 — 12-core CPU, 30.5 GB RAM, Linux. All tests run locally (loopback).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    VELTIX PERFORMANCE RESULTS                       │
 ├─────────────────────┬───────────────────────────────────────────────┤
 │  MEMORY             │                                               │
-│  Idle server        │     148 KB                                    │
-│  Per client         │    52.4 KB                                    │
-│  50 clients total   │    29.6 MB                                    │
+│  Idle server        │      84 KB                                    │
+│  Per client         │      78 KB                                    │
+│  50 clients total   │    28.89 MB                                   │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  LATENCY (local)    │                                               │
-│  Average            │   0.012 ms                                    │
+│  Average            │   0.011 ms                                    │
 │  P95                │   0.000 ms                                    │
 │  P99                │   1.000 ms                                    │
 │  Max                │   1.000 ms                                    │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  FPS SIMULATION     │                                               │
-│  64 players @64Hz   │   4,489 msg/s  –  100% success               │
+│  64 players @64Hz   │   4,490 msg/s  –  100% success               │
 │  128 players @20Hz  │   2,813 msg/s  –  100% success               │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  BURST THROUGHPUT   │                                               │
-│  Send               │  67,236 msg/s                                 │
-│  Receive            │  50,304 msg/s                                 │
-│  Data               │    3.07 MB/s                                  │
+│  Send               │  55,606 msg/s                                 │
+│  Receive            │  43,497 msg/s                                 │
+│  Data               │    2.65 MB/s                                  │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  CONCURRENT STRESS  │                                               │
-│  100 clients        │  40,402 msg/s  –  100% success               │
+│  100 clients        │  33,482 msg/s  –  100% success               │
 └─────────────────────┴───────────────────────────────────────────────┘
 ```
 
-**Ping/Pong** — 2,000 iterations, 100% success rate, 22,222 ping/s throughput.
+**Ping/Pong** — 2,000 iterations, 100% success rate, 23,181 ping/s throughput.
 
 **FPS simulation** — Veltix sustains a full 64-player game server at 64 tick/s and a 128-player server at 20 tick/s with
 zero message loss.
 
-**Burst throughput** — 10,000 × 64-byte messages processed in 0.199s.
+**Burst throughput** — 10,000 × 64-byte messages processed in 0.230s.
 
 **Concurrent stress** — 100 simultaneous clients each firing 100 messages; all 10,000 delivered with 100% success in
-0.248s.
+0.299s.
 
 To run the benchmark suite yourself:
 
 ```bash
 python benchmark.py
+
+# Save results to JSON for sharing
+python benchmark.py --save results.json
 ```
 
 ---
@@ -374,7 +378,7 @@ Routes take priority over `on_recv` and run in the thread pool.
 
 ```python
 from veltix import Server, ServerConfig, MessageType, Response
-from veltix.server.server import ClientInfo
+from veltix.server.client_info import ClientInfo
 
 CHAT = MessageType(code=200, name="chat")
 STATUS = MessageType(code=201, name="status")
@@ -418,6 +422,65 @@ server.request_handler.register_route(CHAT, on_chat)
 server.request_handler.unregister_route(CHAT)
 ```
 
+### Client Tags
+
+Attach arbitrary metadata to connected clients for tracking, filtering, or access control.
+
+```python
+from veltix import Server, ServerConfig, ClientInfo, Events
+
+server = Server(ServerConfig(host="0.0.0.0", port=8080))
+
+
+def on_connect(client: ClientInfo):
+    client.add_tag("guest")
+
+
+def on_message(client: ClientInfo, response):
+    if client.has_tag("guest"):
+        # Authenticate and upgrade
+        client.remove_tag("guest")
+        client.add_tag("authenticated", value="admin")
+
+    if client.has_all_tags(["authenticated", "admin"]):
+        print(f"Admin message from {client.addr[0]}")
+
+
+server.set_callback(Events.ON_CONNECT, on_connect)
+server.set_callback(Events.ON_RECV, on_message)
+server.start()
+```
+
+Available tag methods on `ClientInfo`:
+
+```python
+client.add_tag("authenticated")  # Add a tag (returns False if already exists)
+client.add_tag("role", value="admin")  # Add a tag with a value
+client.has_tag("authenticated")  # Check for a single tag
+client.has_all_tags(["auth", "admin"])  # Check all tags are present (AND)
+client.has_any_tags(["admin", "mod"])  # Check at least one tag is present (OR)
+client.get_tag("role")  # Retrieve a tag value
+client.remove_tag("guest")  # Remove a tag
+client.clear_tags()  # Remove all tags
+```
+
+### Socket Backend
+
+Veltix abstracts the socket layer behind a `SocketCore` enum. The default is `THREADING` — future versions will add
+`ASYNC` (selectors-based, v1.7.0) and `RUST` (Tokio via PyO3, v3.0.0).
+
+```python
+from veltix import ServerConfig, ClientConfig, SocketCore
+
+# Default — one thread per client
+server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.THREADING))
+
+# Coming in v1.7.0 — selectors-based, same API
+# server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.ASYNC))
+```
+
+Switching backends requires no changes to application code.
+
 ### Auto-Reconnect
 
 Enable automatic reconnection by setting `retry` in `ClientConfig`. The `on_disconnect` callback receives a
@@ -449,14 +512,13 @@ client.connect()
 client.stop_retry()
 
 # Force a new attempt, optionally overriding retry_max
-client.retry(max=10)
+client.retry(max_=10)
 ```
 
 ### Performance Mode
 
 ```python
-from veltix import ServerConfig, ClientConfig
-from veltix.utils.performance_mode import PerformanceMode
+from veltix import ServerConfig, ClientConfig, PerformanceMode
 
 # LOW    — socket timeout 1.0s, minimal CPU
 # BALANCED — socket timeout 0.5s, default
@@ -469,8 +531,7 @@ client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, performance_mod
 ### Buffer Size
 
 ```python
-from veltix import ServerConfig, ClientConfig
-from veltix.utils.performance_mode import BufferSize
+from veltix import ServerConfig, ClientConfig, BufferSize
 
 # SMALL  — 1KB  (default)
 # MEDIUM — 8KB
@@ -546,6 +607,24 @@ sender.broadcast(message, server.get_all_clients_sockets())
 sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[client.conn])
 ```
 
+### Utilities
+
+```python
+from veltix import format_bytes, encode_json, decode_json, encode_utf8, decode_utf8
+
+# Human-readable byte formatting
+format_bytes(148_000)  # "144.5 KB"
+format_bytes(3_000_000)  # "2.86 MB"
+
+# JSON helpers
+data = encode_json({"key": "value"})  # bytes
+obj = decode_json(data)  # dict
+
+# UTF-8 helpers
+raw = encode_utf8("hello")  # bytes
+text = decode_utf8(raw)  # str
+```
+
 ---
 
 ## Comparison
@@ -565,6 +644,8 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 | Auto-reconnect         |   ✓    |    ✗     |     ~     |    ✓    |
 | Non-blocking callbacks |   ✓    |    ✗     |     ✓     |    ✓    |
 | Integrated logger      |   ✓    |    ✗     |     ~     |    ✓    |
+| Client tags            |   ✓    |    ✗     |     ✗     |    ✗    |
+| Swappable socket core  |   ✓    |    ✗     |     ✗     |    ✗    |
 
 ---
 
@@ -584,17 +665,28 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 - `PerformanceMode` presets for CPU/reactivity trade-off
 - `BufferSize` presets for common buffer configurations
 
-### v1.6.0 — Plugin System *(May 2026)*
+### v1.6.0 — Socket Abstraction & Tags ✓ *(Released March 2026)*
 
-- Extensible plugin architecture
-- `Request.from_plugin()` factory
-- `CallbackManager` base class for plugin developers
+- `BaseSocket` Protocol — universal socket interface
+- `ThreadingSocket` — current implementation behind clean abstraction
+- `SocketCore` enum — swappable socket backends with zero API changes
+- `ClientInfo` tags — arbitrary metadata on connected clients
+- `veltix.utils` — encoding helpers and `format_bytes`
+- `max_connection = -1` — unlimited connections by default
+- Benchmark suite with JSON export for community sharing
 
-### v1.7.0 — Event Loop *(June 2026)*
+### v1.7.0 — Selectors *(June 2026)*
 
-- Selectors-based async I/O
-- Replace daemon threads
-- Further performance improvements
+- `AsyncSocket` — selectors-based I/O, replaces one-thread-per-client
+- Same API, 4–8× throughput improvement expected
+- Switch via `SocketCore.ASYNC`
+
+### v1.8.0 — Plugin System *(August 2026)*
+
+- `VeltixBasePlugin` — extensible plugin architecture
+- Permission system for plugin event access
+- `server.register_plugin()` / `client.register_plugin()`
+- `server.attach(TYPE, plugin, mode)` — route message types to plugins
 
 ### v2.0.0 — Encryption *(September 2026)*
 
@@ -605,10 +697,22 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 
 - PyO3 bindings
 - 10–100× throughput improvement
+- `SocketCore.RUST`
 
 ---
 
 ## Migration Guide
+
+### v1.5.0 → v1.6.0
+
+No breaking changes to public API.
+
+- `ClientInfo` now has tag methods: `add_tag()`, `has_tag()`, `has_all_tags()`, `has_any_tags()`, `get_tag()`,
+  `remove_tag()`, `clear_tags()`
+- `ServerConfig.max_connection` default changed from `2` to `-1` (unlimited)
+- New `ServerConfig` / `ClientConfig` field: `socket_core` (default: `SocketCore.THREADING`)
+- `veltix.utils` now exports encoding helpers and `format_bytes`
+- Benchmark suite now supports `--save results.json`
 
 ### v1.4.0 → v1.5.0
 
