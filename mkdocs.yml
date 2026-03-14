@@ -64,10 +64,12 @@ nav:
       - Request & Response: api/request.md
       - Sender: api/sender.md
       - MessageType: api/types.md
+      - Socket: api/socket.md
       - RequestHandler: api/request_handler.md
       - HandshakeHandler: api/handshake_handler.md
       - CallbackExecutor: api/callback_executor.md
       - Logger: api/logger.md
+      - Utilities: api/utils.md
       - Exceptions: api/exceptions.md
   - Changelog: changelog.md
 
