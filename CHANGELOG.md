@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-04-12
+
+### Added
+
+- **Python 3.8 support**: Minimum supported runtime lowered to Python 3.8+
+    - Packaging metadata updated (`requires-python >=3.8`)
+    - Tooling targets aligned for Python 3.8 (Ruff, MyPy)
+    - Type annotation compatibility pass across client/server modules
+- **Client module split**:
+    - `veltix/client/config.py` — `ClientConfig` dataclass
+    - `veltix/client/disconnect.py` — `DisconnectReason`, `DisconnectState`
+    - `veltix/client/reconnect_handler.py` — `ReconnectHandler` for retry logic
+    - Cleaner boundaries between API, state models, and reconnect flow
+- **Benchmark module relocation**: `benchmark.py` moved to `veltix/benchmark.py`
+
+### Fixed
+
+- **Client connect flow**:
+    - Prevented false "connected" state when underlying socket connect fails
+    - Connection refusal now fails fast instead of waiting full handshake timeout
+- **Reconnect loop stability**:
+    - Fixed reconnect recursion edge case that could stall reconnect tests
+    - Restored backward-compatible internal `_try_reconnect` path used by tests
+    - Fixed retry override bug in reconnect handler (`retry()` config update path)
+- **Disconnect handling**:
+    - Fixed missing `on_disconnect` attribute path on client
+    - Improved disconnect event propagation and `is_connected` state updates
+- **Server restart behavior in tests**:
+    - Improved shutdown/join behavior in `ThreadingSocket` to avoid transient port reuse races
+
+### Changed
+
+- **Protocol format optimized**:
+    - Header size reduced from 62 bytes to **22 bytes**
+    - `request_id` reduced from UUID string (16-byte encoded UUID) to **4 raw bytes**
+    - Payload integrity switched from **SHA-256** to **CRC32** (`4` bytes)
+    - `Request.parse()` / `Request.compile()` updated to the new binary layout
+- **Handshake compatibility policy**:
+    - Version check is now strict on full `major.minor.patch` match
+    - `1.4.3` and `1.4.5` are now considered incompatible
+- **Core socket implementation refactor**:
+    - `ThreadingSocket` now owns accept loop, client loop, framing, and callback dispatch integration
+    - `RequestHandler`, `Sender`, `MessageBuffer`, and `network.recv()` streamlined around the new flow
+
+### Breaking Changes
+
+- `Request.request_id` and `Response.request_id` are now `bytes` (4 bytes), not UUID strings.
+- Any code expecting textual UUID IDs must be migrated.
+- Wire protocol changed (header/hash/request_id layout). v1.6.2 is **not wire-compatible** with <= v1.6.0 peers.
+
+### Migration Guide
+
+- Custom request id:
+  - Before: `Request(T, b"x", request_id="my-id")`
+  - After: `Request(T, b"x", request_id=b"\x01\x02\x03\x04")`
+- Logging/display:
+  - Before: `response.request_id[:8]`
+  - After: `response.request_id.hex()[:8]`
+- Mixed versions:
+  - Upgrade client and server to v1.6.2 together.
+
+- **Runtime version export**:
+    - `veltix.version.__version__` now aligned to `1.6.2`
+
 ## [1.6.0] - 2026-03-14
 
 ### Added
@@ -53,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`Sender`**: Migrated from `socket.socket` to `BaseSocket`
     - `sendall()` replaced by `send()` — consistent with `BaseSocket` interface
 - **`network.recv()`**: Accepts `BaseSocket` instead of `socket.socket`
-    - `socket.timeout` replaced by `TimeoutError` (Python 3.10+ native)
+    - `socket.timeout` replaced by built-in `TimeoutError`
 
 ### Fixed
 

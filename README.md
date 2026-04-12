@@ -13,7 +13,8 @@ application logic. It ships with message integrity verification, a structured bi
 correlation, automatic connection handshake, decorator-based message routing, auto-reconnect, and production-ready
 logging — all with zero external dependencies.
 
-**Performance highlights:** 55k+ msg/s throughput • 0.011ms average latency • 84KB idle memory • 100% success rate
+**Performance highlights:** 110k+ msg/s throughput • 0.007ms average latency • 84KB idle memory • 64.4KB per client •
+100% success rate
 
 ---
 
@@ -60,8 +61,8 @@ threading, handshake, routing, and request correlation — while keeping the API
 ## Features
 
 - **Simple API** — Get a working client/server in under 30 lines
-- **High Performance** — 55k+ messages/second, 0.011ms latency
-- **Message integrity** — Built-in SHA-256 payload verification
+- **High Performance** — 110k+ messages/second, 0.007ms latency
+- **Message integrity** — Built-in CRC32 payload verification
 - **Custom binary protocol** — Lightweight framing with TCP stream handling
 - **Zero dependencies** — Pure Python standard library only
 - **Multi-threaded** — Concurrent client handling out of the box
@@ -90,38 +91,38 @@ threading, handshake, routing, and request correlation — while keeping the API
 ├─────────────────────┬───────────────────────────────────────────────┤
 │  MEMORY             │                                               │
 │  Idle server        │      84 KB                                    │
-│  Per client         │      78 KB                                    │
-│  50 clients total   │    28.89 MB                                   │
+│  Per client         │      64.4 KB                                  │
+│  50 clients total   │    24.95 MB                                   │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  LATENCY (local)    │                                               │
-│  Average            │   0.011 ms                                    │
+│  Average            │   0.007 ms                                    │
 │  P95                │   0.000 ms                                    │
-│  P99                │   1.000 ms                                    │
+│  P99                │   0.000 ms                                    │
 │  Max                │   1.000 ms                                    │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  FPS SIMULATION     │                                               │
-│  64 players @64Hz   │   4,490 msg/s  –  100% success               │
+│  64 players @64Hz   │   4,488 msg/s  –  100% success               │
 │  128 players @20Hz  │   2,813 msg/s  –  100% success               │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  BURST THROUGHPUT   │                                               │
-│  Send               │  55,606 msg/s                                 │
-│  Receive            │  43,497 msg/s                                 │
-│  Data               │    2.65 MB/s                                  │
+│  Send               │ 110,011 msg/s                                 │
+│  Receive            │  70,939 msg/s                                 │
+│  Data               │    4.33 MB/s                                  │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  CONCURRENT STRESS  │                                               │
-│  100 clients        │  33,482 msg/s  –  100% success               │
+│  100 clients        │  39,123 msg/s  –  100% success               │
 └─────────────────────┴───────────────────────────────────────────────┘
 ```
 
-**Ping/Pong** — 2,000 iterations, 100% success rate, 23,181 ping/s throughput.
+**Ping/Pong** — 2,000 iterations, 100% success rate, 34,903 ping/s throughput.
 
 **FPS simulation** — Veltix sustains a full 64-player game server at 64 tick/s and a 128-player server at 20 tick/s with
 zero message loss.
 
-**Burst throughput** — 10,000 × 64-byte messages processed in 0.230s.
+**Burst throughput** — 10,000 × 64-byte messages processed in 0.091s.
 
 **Concurrent stress** — 100 simultaneous clients each firing 100 messages; all 10,000 delivered with 100% success in
-0.299s.
+0.255s.
 
 To run the benchmark suite yourself:
 
@@ -140,7 +141,7 @@ python benchmark.py --save results.json
 pip install veltix
 ```
 
-**Requirements:** Python 3.10+, no additional dependencies.
+**Requirements:** Python 3.8+, no additional dependencies.
 
 ---
 
@@ -651,6 +652,17 @@ text = decode_utf8(raw)  # str
 
 ## Roadmap
 
+### v1.6.2 — Protocol Optimization & Stability *(April 2026)*
+
+- Optimized wire protocol (22-byte header, 4-byte request IDs, CRC32 integrity)
+- Client module split (`config.py`, `disconnect.py`, `reconnect_handler.py`)
+- Fixed reconnect flow on connection failures (no false "connected" state)
+- Fixed `on_disconnect` callback reliability and disconnect state handling
+- Fixed reconnection retry edge cases (`retry()` and internal reconnect loop)
+- Improved server restart stability in reconnect scenarios
+- Official minimum runtime lowered to **Python 3.8+**
+- Benchmark module relocated to `veltix/benchmark.py`
+
 ### v1.4.0 — Handshake & Callbacks ✓ *(Released March 2026)*
 
 - HELLO/HELLO_ACK handshake with version compatibility check
@@ -702,6 +714,18 @@ text = decode_utf8(raw)  # str
 ---
 
 ## Migration Guide
+
+### v1.6.0 → v1.6.2
+
+Breaking changes in protocol/API:
+
+- `request_id` is now `bytes` (4 bytes), not UUID string
+- Wire format changed (header/hash/request_id), upgrade both client/server together
+- Handshake version check now requires exact `major.minor.patch` match
+
+- Minimum supported Python version is now **3.8+**
+- Reconnect/disconnect behavior is more robust (faster fail on refused connections, reliable disconnect callbacks)
+- `retry()` and reconnect loop edge cases were fixed for better stability under flaky networks
 
 ### v1.5.0 → v1.6.0
 
@@ -773,7 +797,7 @@ Full examples are available in the [`examples/`](examples/) directory:
 
 ## Security
 
-Message integrity is enforced via SHA-256 payload verification on every message. If you discover a vulnerability, please
+Message integrity is enforced via CRC32 payload verification on every message. If you discover a vulnerability, please
 report it responsibly through our [Security Policy](SECURITY.md).
 
 ---

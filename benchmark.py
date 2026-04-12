@@ -38,11 +38,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
-try:
-    import psutil
-except ImportError:
-    print("ERROR: psutil is required.  pip install psutil", file=sys.stderr)
-    sys.exit(1)
+import psutil
 
 import veltix
 from veltix import (

@@ -5,7 +5,8 @@ A simple, zero-dependency TCP networking library with message integrity
 and request/response patterns.
 """
 
-from .client.client import Client, ClientConfig, DisconnectReason, DisconnectState
+from .client.client import Client, ClientConfig, DisconnectReason
+from .client.disconnect import DisconnectState
 from .exceptions import MessageTypeError, RequestError, SenderError, VeltixError
 from .internal.buffer_size import BufferSize
 from .internal.events import Events

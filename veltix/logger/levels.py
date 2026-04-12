@@ -1,5 +1,7 @@
 """Log levels for Veltix logger."""
 
+from __future__ import annotations
+
 from enum import IntEnum
 
 

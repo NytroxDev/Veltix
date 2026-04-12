@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "veltix"
-version = "1.6.1"
+version = "1.6.2"
 description = "A simple, zero-dependency TCP networking library with message integrity and request/response patterns"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 authors = [
     { name = "Nytrox", email = "nytrox.dev@gmail.com" }
 ]
@@ -29,6 +29,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -61,7 +63,7 @@ benchmark = [
 ]
 
 [project.scripts]
-veltix-benchmark = "veltix.benchmark:main"
+veltix-benchmark = "veltix.benchmark"
 
 [project.urls]
 Homepage = "https://github.com/NytroxDev/Veltix"
@@ -126,7 +128,7 @@ exclude_lines = [
 # Ruff configuration (linter)
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py38"
 src = ["veltix", "tests"]
 exclude = [
     ".git",
@@ -171,7 +173,7 @@ line-ending = "auto"
 
 # MyPy configuration (type checking)
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

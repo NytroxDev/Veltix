@@ -44,12 +44,12 @@ class TestHandshakeHandler:
 
     def test_check_version_compatible(self):
         handler = self._make_handler()
-        assert handler._check_version("1.4.0", "1.4.5") is True
-        assert handler._check_version("1.4.5", "1.4.0") is True
+        assert handler._check_version("1.4.0", "1.4.0") is True
 
-    def test_check_version_incompatible_minor(self):
+    def test_check_version_incompatible_patch(self):
         handler = self._make_handler()
-        assert handler._check_version("1.4.0", "1.3.0") is False
+        assert handler._check_version("1.4.3", "1.4.5") is False
+        assert handler._check_version("1.4.3", "1.4.2") is False
 
     def test_check_version_incompatible_major(self):
         handler = self._make_handler()
