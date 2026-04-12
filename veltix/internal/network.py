@@ -1,5 +1,6 @@
-# network.py
 """Network utility functions."""
+
+from __future__ import annotations
 
 from enum import Enum, auto
 from typing import Optional
@@ -9,15 +10,7 @@ from ..socket.base_socket import BaseSocket
 
 
 class RecvStatus(Enum):
-    """
-    Status of a recv() call.
-
-    Attributes:
-        OK:      Data received normally.
-        TIMEOUT: Socket timed out — connection still alive, caller should loop again.
-        CLOSED:  Peer closed the connection cleanly (TCP FIN received).
-        ERROR:   Fatal connection error (reset, aborted, OS error, etc.).
-    """
+    """Status of a recv() call."""
 
     OK = auto()
     TIMEOUT = auto()
@@ -26,13 +19,7 @@ class RecvStatus(Enum):
 
 
 class RecvResult:
-    """
-    Result of a recv() call.
-
-    Attributes:
-        status: The outcome of the recv call.
-        data:   Received bytes if status is OK, None otherwise.
-    """
+    """Result of a recv() call."""
 
     __slots__ = ("status", "data")
 
@@ -42,17 +29,14 @@ class RecvResult:
 
     @property
     def ok(self) -> bool:
-        """True if data was received normally."""
         return self.status == RecvStatus.OK
 
     @property
     def timed_out(self) -> bool:
-        """True if the socket timed out — connection is still alive."""
         return self.status == RecvStatus.TIMEOUT
 
     @property
     def disconnected(self) -> bool:
-        """True if the connection is gone (closed cleanly or fatal error)."""
         return self.status in (RecvStatus.CLOSED, RecvStatus.ERROR)
 
     def __repr__(self) -> str:
@@ -70,33 +54,8 @@ def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
     """
     Receive data from a socket with explicit status reporting.
 
-    The socket MUST have a timeout set via settimeout() for TIMEOUT
-    to be returned correctly. Without a timeout, this call blocks indefinitely.
-
-    Usage in a recv loop::
-
-        while running:
-            result = recv(conn, buf_size)
-
-            if result.timed_out:
-                continue
-
-            if result.disconnected:
-                handle_disconnect()
-                break
-
-            process(result.data)
-
-    Args:
-        conn:     Socket to receive from. Must have settimeout() set.
-        buf_size: Maximum number of bytes to read per call (default: 1024).
-
-    Returns:
-        RecvResult with one of:
-            OK      — data received, result.data contains the bytes.
-            TIMEOUT — timed out, connection still alive, loop again.
-            CLOSED  — peer closed the connection cleanly.
-            ERROR   — fatal error, connection is gone.
+    The socket must have a timeout set via settimeout() — without one,
+    this call blocks indefinitely and TIMEOUT is never returned.
     """
     logger = Logger.get_instance()
 
@@ -104,10 +63,8 @@ def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
         data = conn.recv(buf_size)
 
         if not data:
-            logger.debug("Connection closed cleanly by peer")
             return _CLOSED_RESULT
 
-        logger.debug(f"Received {len(data)} bytes")
         return RecvResult(RecvStatus.OK, data)
 
     except TimeoutError:

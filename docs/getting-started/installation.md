@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Python **3.10+**
+- Python **3.8+**
 - No additional dependencies
 
 ## Install from PyPI

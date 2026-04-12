@@ -1,112 +1,26 @@
 # client.py
 """TCP client implementation for Veltix."""
 
-import dataclasses
-import threading
-import time
-from collections.abc import Callable
-from enum import Enum, auto
 from threading import Event
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
-from ..internal.buffer_size import BufferSize
 from ..internal.events import Events, events
-from ..internal.network import recv
-from ..internal.performance_mode import PerformanceMode, get_settings
+from ..internal.performance_mode import get_settings
 from ..logger.core import Logger
-from ..network.message_buffer import MessageBuffer
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
-from ..network.system_types import HELLO, PING
+from ..network.system_types import PING
 from ..network.types import MessageType
-from ..socket.core import SocketCore
 from ..socket.threading_socket import ThreadingSocket
+from .config import ClientConfig
+from .disconnect import DisconnectReason
+from .reconnect_handler import ReconnectHandler
 
 if TYPE_CHECKING:
     from ..socket.base_socket import BaseSocket
 
-# ============================================================================
-# DISCONNECT STATE
-# ============================================================================
-
-
-class DisconnectReason(Enum):
-    """
-    Reason for a disconnection.
-
-    Attributes:
-        SERVER_CLOSED: Server closed the connection cleanly.
-        ERROR:         Fatal network error (reset, aborted, etc.).
-        MANUAL:        disconnect() was called manually by the user.
-    """
-
-    SERVER_CLOSED = auto()
-    ERROR = auto()
-    MANUAL = auto()
-
-
-@dataclasses.dataclass
-class DisconnectState:
-    """
-    State passed to the on_disconnect callback.
-
-    Attributes:
-        permanent:   True if the client has given up reconnecting.
-                     False if a reconnection attempt will follow.
-        attempt:     Current retry attempt number (0 = first disconnection,
-                     before any retry has been attempted).
-        retry_max:   Maximum number of retry attempts configured.
-        reason:      Why the disconnection occurred.
-    """
-
-    permanent: bool
-    attempt: int
-    retry_max: int
-    reason: DisconnectReason
-
-
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
-
-
-@dataclasses.dataclass
-class ClientConfig:
-    """
-    TCP client configuration.
-
-    Attributes:
-        server_addr:       Server address to connect to.
-        port:              Server port to connect to.
-        buffer_size:       Buffer size for receiving data in bytes.
-                           Use BufferSize enum for common presets (default: BufferSize.SMALL).
-                           Can also be set to any custom integer value.
-        max_message_size:  Maximum allowed message size in bytes (default: 10MB).
-        handshake_timeout: Maximum time to wait for handshake completion (default: 5.0s).
-        max_workers:       Number of worker threads for callback execution (default: 4).
-                           Increase if your on_recv callback is slow or blocking.
-        retry:             Number of reconnection attempts on failure (default: 0 = disabled).
-                           Applies both to the initial connect() and to mid-session disconnections.
-        retry_delay:       Seconds to wait between reconnection attempts (default: 1.0).
-        performance_mode:  Controls internal timing parameters (default: BALANCED).
-    """
-
-    server_addr: str = "127.0.0.1"
-    port: int = 8080
-    buffer_size: int = BufferSize.SMALL
-    max_message_size: int = 10 * 1024 * 1024  # 10 MB
-    handshake_timeout: float = 5.0
-    max_workers: int = 4
-    retry: int = 0
-    retry_delay: float = 1.0
-    performance_mode: PerformanceMode = PerformanceMode.BALANCED
-    socket_core: SocketCore = SocketCore.THREADING
-
-
-# ============================================================================
-# CLIENT
-# ============================================================================
+from ..socket.base_socket import SocketEvents
 
 
 class Client:
@@ -130,22 +44,25 @@ class Client:
         Args:
             config: Client configuration.
         """
+        self._handshake_done = None
+        self._message_buffer = None
+        self.request_handler = None
+        self.sender = None
+        self.socket = None
         self._logger = Logger.get_instance()
         self.config: ClientConfig = config
         self._perf = get_settings(config.performance_mode)
 
+        self._reconnect_handler = None
+
         self.on_recv: Optional[Callable[[Response], None]] = None
         self.on_connect: Optional[Callable[[], None]] = None
-        self.on_disconnect: Optional[Callable[[DisconnectState], None]] = None
+        self.on_disconnect: Optional[Callable] = None
 
         self.is_connected: bool = False
         self.running: bool = True
-        self.thread_handler: Optional[threading.Thread] = None
 
-        self._fail_count: int = 0
-        self._stop_retry_flag: bool = False
-
-        self._init_components()
+        self.init_components()
 
         self._logger.debug(
             f"Client initialized for {self.config.server_addr}:{self.config.port} "
@@ -156,9 +73,11 @@ class Client:
     # Internal initialization
     # -------------------------------------------------------------------------
 
-    def _init_components(self) -> None:
-        """Initialize (or re-initialize) all internal components."""
-        self.socket: BaseSocket = ThreadingSocket()
+    def init_components(self) -> None:
+        self.socket: BaseSocket = ThreadingSocket(
+            request_handler=None,
+            max_message_size=self.config.max_message_size,
+        )
         self.socket.settimeout(self._perf.socket_timeout)
         self.sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket)
         self.request_handler: RequestHandler = RequestHandler(
@@ -166,116 +85,62 @@ class Client:
             mode=Mode.CLIENT,
             max_workers=self.config.max_workers,
         )
-        self._message_buffer: MessageBuffer = MessageBuffer(
-            max_message_size=self.config.max_message_size
-        )
+        self.socket.request_handler = self.request_handler
         self._handshake_done: Event = Event()
 
-    def _reset(self) -> None:
-        """
-        Reset all internal state for a fresh reconnection attempt.
+        def _on_handshake_done():
+            self._handshake_done.set()
+            if self.on_connect:
+                self.on_connect()
 
-        Called automatically when a mid-session disconnection is detected
-        and retry is enabled.
-        """
-        self._logger.debug("Resetting client state for reconnection")
-        self.is_connected = False
-        self.running = True
-        self._init_components()
+        self.request_handler.on_handshake_done = _on_handshake_done
 
-        if self.on_recv:
-            self.request_handler.set_on_recv(self.on_recv)
+        def _on_socket_disconnect():
+            # Ignore disconnect events triggered by an explicit manual disconnect().
+            if not self.running:
+                return
 
-    # -------------------------------------------------------------------------
-    # Retry control
-    # -------------------------------------------------------------------------
+            self.is_connected = False
+            if self.config.retry > 0:
+                self._try_reconnect(DisconnectReason.SERVER_CLOSED)
+            else:
+                self._reconnect_handler.fire_on_disconnect(
+                    permanent=True, reason=DisconnectReason.SERVER_CLOSED
+                )
 
-    def stop_retry(self) -> None:
-        """
-        Cancel all pending reconnection attempts.
+        self.socket.set_callback(SocketEvents.DISCONNECT, _on_socket_disconnect)
 
-        If a retry loop is running, it will stop after the current attempt
-        and fire on_disconnect with permanent=True.
-        """
-        self._logger.info("stop_retry() called — cancelling reconnection attempts")
-        self._stop_retry_flag = True
-
-    def retry(self, max_: Optional[int] = None) -> None:
-        """
-        Force an immediate reconnection attempt, even if retry_max was reached.
-
-        Args:
-            max_: Override retry_max for this session (optional).
-        """
-        if max_ is not None:
-            self.config = dataclasses.replace(self.config, retry=max_)
-            self._logger.info(f"retry() called — new retry_max={max_}")
-        else:
-            self._logger.info("retry() called — forcing reconnection attempt")
-
-        self._stop_retry_flag = False
-        self._fail_count = 0
-        self._reset()
-        threading.Thread(target=self._reconnect_loop, daemon=True).start()
-
-    # -------------------------------------------------------------------------
-    # Internal retry logic
-    # -------------------------------------------------------------------------
-
-    def _fire_on_disconnect(self, permanent: bool, reason: DisconnectReason) -> None:
-        """Fire the on_disconnect callback with the current retry state."""
-        if self.on_disconnect:
-            state = DisconnectState(
-                permanent=permanent,
-                attempt=self._fail_count,
-                retry_max=self.config.retry,
-                reason=reason,
-            )
-            try:
+        def _on_disconnect(state):
+            if self.on_disconnect:
                 self.on_disconnect(state)
-            except Exception as e:
-                self._logger.error(f"Error in on_disconnect callback: {type(e).__name__}: {e}")
 
-    def _reconnect_loop(self, reason: DisconnectReason = DisconnectReason.SERVER_CLOSED) -> bool:
-        """
-        Attempt reconnection up to config.retry times.
-
-        Fires on_disconnect at each failed attempt with permanent=False,
-        and a final time with permanent=True if all attempts are exhausted
-        or stop_retry() was called.
-
-        Returns:
-            True if reconnection succeeded, False otherwise.
-        """
-        while not self._stop_retry_flag and self._fail_count < self.config.retry:
-            self._fail_count += 1
-            self._logger.info(
-                f"Reconnection attempt {self._fail_count}/{self.config.retry} "
-                f"in {self.config.retry_delay}s..."
+        if self._reconnect_handler is None:
+            self._reconnect_handler = ReconnectHandler(
+                config=self.config,
+                on_disconnect=_on_disconnect,
+                connect=lambda: self.connect(_from_retry=True),
+                on_recv=self.on_recv,
+                on_init=self.init_components,
+                set_running=self.set_running,
+                set_connected=self.set_connected,
+                request_handler=self.request_handler,
             )
-            time.sleep(self.config.retry_delay)
+        else:
+            self._reconnect_handler.refresh(
+                config=self.config,
+                connect=lambda: self.connect(_from_retry=True),
+                on_recv=self.on_recv,
+                on_init=self.init_components,
+                set_running=self.set_running,
+                set_connected=self.set_connected,
+                request_handler=self.request_handler,
+            )
 
-            self._reset()
-            if self.connect():
-                return True
+    def set_running(self, value: bool = True) -> None:
+        self.running = value
 
-            self._fire_on_disconnect(permanent=False, reason=reason)
-
-        self._fire_on_disconnect(permanent=True, reason=reason)
-        return False
-
-    def _try_reconnect(self, reason: DisconnectReason) -> bool:
-        """
-        Start the reconnect loop if retry is enabled.
-
-        Returns:
-            True if reconnection eventually succeeded, False otherwise.
-        """
-        if self.config.retry == 0:
-            self._fire_on_disconnect(permanent=True, reason=reason)
-            return False
-
-        return self._reconnect_loop(reason)
+    def set_connected(self, value: bool = True) -> None:
+        self.is_connected = value
 
     # -------------------------------------------------------------------------
     # Public API
@@ -326,7 +191,11 @@ class Client:
 
         return decorator
 
-    def connect(self) -> bool:
+    def _try_reconnect(self, reason: DisconnectReason) -> bool:
+        """Internal reconnect entrypoint used by connect() and tests."""
+        return self._reconnect_handler.try_reconnect(reason)
+
+    def connect(self, _from_retry: bool = False) -> bool:
         """
         Connect to the server and start the message handler thread.
 
@@ -341,16 +210,24 @@ class Client:
         """
         try:
             self._logger.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
-            self.socket.connect((self.config.server_addr, self.config.port))
+            connected = self.socket.connect(
+                self.config.server_addr,
+                self.config.port,
+                self.config.buffer_size,
+                self._perf.socket_timeout,
+            )
+            if not connected:
+                self._logger.error(
+                    f"Connection failed to {self.config.server_addr}:{self.config.port}"
+                )
+                return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
+
             self.is_connected = True
-            self._fail_count = 0
-            self._stop_retry_flag = False
+            self._reconnect_handler.init_connect()
             self._logger.info(
                 f"Successfully connected to server {self.config.server_addr}:{self.config.port}"
             )
 
-            self.thread_handler = threading.Thread(target=self._handle_client, daemon=True)
-            self.thread_handler.start()
             self._logger.debug("Started client message handler thread")
 
             handshake_ok = self._handshake_done.wait(timeout=self.config.handshake_timeout)
@@ -369,7 +246,7 @@ class Client:
                 f"Connection failed to {self.config.server_addr}:{self.config.port}: "
                 f"{type(e).__name__}"
             )
-            return self._try_reconnect(DisconnectReason.ERROR)
+            return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
         except Exception as e:
             self._logger.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
@@ -438,15 +315,13 @@ class Client:
             self._logger.info("Disconnecting from server")
             self.running = False
             self.is_connected = False
-            self._stop_retry_flag = True
+            self._reconnect_handler.stop_retry()
             self.socket.close()
             self._logger.debug("Socket closed")
 
-            if self.thread_handler and threading.current_thread() != self.thread_handler:
-                self.thread_handler.join(timeout=self._perf.socket_timeout + 0.1)
-                self._logger.debug("Message handler thread joined")
-
-            self._fire_on_disconnect(permanent=True, reason=DisconnectReason.MANUAL)
+            self._reconnect_handler.fire_on_disconnect(
+                permanent=True, reason=DisconnectReason.MANUAL
+            )
 
             self._logger.info("Successfully disconnected from server")
             return True
@@ -455,72 +330,20 @@ class Client:
             self._logger.error(f"Error during disconnection: {type(e).__name__}: {e}")
             return False
 
-    # -------------------------------------------------------------------------
-    # Internal message loop
-    # -------------------------------------------------------------------------
+    def stop_retry(self) -> None:
+        """Cancel all pending reconnection attempts."""
+        self._reconnect_handler.stop_retry()
 
-    def _handle_client(self) -> None:
+    def retry(self, max: Optional[int] = None) -> None:
         """
-        Receive and dispatch messages from the server.
+        Force reconnection attempts, optionally overriding retry count.
 
-        Runs in a dedicated background thread. Unblocks connect() once the
-        HELLO handshake message is processed.
-
-        On disconnection, fires on_disconnect and automatically attempts to
-        reconnect if retry > 0.
+        Args:
+            max: Override retry_max for this session.
         """
-        self._logger.debug("Client message handler started")
+        self._reconnect_handler.retry(max_=max)
 
-        while self.running:
-            result = recv(self.socket, self.config.buffer_size)
-
-            if result.timed_out:
-                continue
-
-            if result.disconnected:
-                if not self.running:
-                    break
-
-                self._logger.info("Server disconnected")
-                self._handshake_done.set()
-                self.is_connected = False
-
-                reason = (
-                    DisconnectReason.SERVER_CLOSED
-                    if result.status.name == "CLOSED"
-                    else DisconnectReason.ERROR
-                )
-
-                if self.config.retry != 0 and not self._stop_retry_flag:
-                    self._fire_on_disconnect(permanent=False, reason=reason)
-                    self._reconnect_loop(reason)
-                else:
-                    self._fire_on_disconnect(permanent=True, reason=reason)
-
-                break
-
-            try:
-                self._message_buffer.add_data(result.data)
-
-                for response in self._message_buffer.extract_messages():
-                    self._logger.debug(
-                        f"Received message from server: {response.type.name} "
-                        f"(code={response.type.code})"
-                    )
-                    self.request_handler.handle(response)
-
-                    if not self._handshake_done.is_set() and response.type == HELLO:
-                        self._handshake_done.set()
-                        self._logger.debug("Handshake complete — connect() unblocked")
-
-                        if self.on_connect:
-                            try:
-                                self.on_connect()
-                                self._logger.debug("Called on_connect callback")
-                            except Exception as e:
-                                self._logger.error(
-                                    f"Error in on_connect callback: {type(e).__name__}: {e}"
-                                )
-
-            except Exception as e:
-                self._logger.error(f"Error processing message from server: {type(e).__name__}: {e}")
+    @property
+    def _fail_count(self) -> int:
+        """Expose reconnect fail count for backward compatibility and tests."""
+        return self._reconnect_handler._fail_count

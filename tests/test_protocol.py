@@ -6,6 +6,7 @@ import uuid
 import pytest
 
 from veltix import MessageType, Request, RequestError
+from veltix.network.request import generate_random_id
 
 
 class TestProtocol:
@@ -13,7 +14,7 @@ class TestProtocol:
         content = b"Hello World"
         request = Request(test_message_type, content)
         compiled = request.compile()
-        assert len(compiled) == 62 + len(content)
+        assert len(compiled) == 22 + len(content)
         assert isinstance(compiled, bytes)
 
     def test_request_parse_roundtrip(self, test_message_type):
@@ -30,19 +31,20 @@ class TestProtocol:
     def test_request_id_auto_generation(self, test_message_type):
         request = Request(test_message_type, b"test")
         assert request.request_id is not None
-        assert "-" in request.request_id
+        assert isinstance(request.request_id, bytes)
+        assert len(request.request_id) == 4
 
     def test_request_id_custom(self, test_message_type):
-        custom_id = "my-custom-id-12345"
+        custom_id = b"\x01\x02\x03\x04"
         request = Request(test_message_type, b"test", request_id=custom_id)
         assert request.request_id == custom_id
 
     def test_request_id_preservation(self, test_message_type):
-        request_id = str(uuid.uuid4())
-        request = Request(test_message_type, b"test", request_id=request_id)
+        custom_id = generate_random_id().to_bytes(4, "big")
+        request = Request(test_message_type, b"test", request_id=custom_id)
         compiled = request.compile()
         response = Request.parse(compiled)
-        assert response.request_id == request_id
+        assert response.request_id == custom_id
 
     def test_hash_integrity_valid(self, test_message_type):
         request = Request(test_message_type, b"Valid content")
@@ -54,7 +56,7 @@ class TestProtocol:
         request = Request(test_message_type, b"Hello")
         compiled = request.compile()
         corrupted = bytearray(compiled)
-        corrupted[62] = (corrupted[62] + 1) % 256
+        corrupted[22] = (corrupted[22] + 1) % 256
         with pytest.raises(RequestError) as exc_info:
             Request.parse(bytes(corrupted))
         assert "Hash mismatch" in str(exc_info.value)

@@ -1,5 +1,7 @@
 """Logger configuration for Veltix."""
 
+from __future__ import annotations
+
 import dataclasses
 import sys
 from pathlib import Path
@@ -14,22 +16,22 @@ class LoggerConfig:
     Configuration for Veltix logger.
 
     Attributes:
-        level: Minimum log level to display (default: INFO)
-        enabled: Enable/disable all logging (default: True)
-        use_colors: Enable colored output for console (default: True)
-        show_timestamp: Show timestamp in logs (default: True)
-        show_caller: Show file:line information (default: True)
-        show_level: Show log level name (default: True)
+        level: Minimum log level to display
+        enabled: Enable/disable all logging
+        use_colors: Enable colored output for console
+        show_timestamp: Show timestamp in logs
+        show_caller: Show file:line information
+        show_level: Show log level name
 
         # File output
-        file_path: Path to log file (default: None = no file logging)
-        file_rotation_size: Max file size in bytes before rotation (default: 10MB)
-        file_backup_count: Number of backup files to keep (default: 5)
+        file_path: Path to log file
+        file_rotation_size: Max file size in bytes before rotation
+        file_backup_count: Number of backup files to keep
 
         # Advanced
-        stream: Output stream for console logs (default: stdout)
-        async_write: Use async file writing for performance (default: False)
-        buffer_size: Buffer size for async writes (default: 100)
+        stream: Output stream for console logs
+        async_write: Use async file writing for performance
+        buffer_size: Buffer size for async writes
     """
 
     # Basic settings

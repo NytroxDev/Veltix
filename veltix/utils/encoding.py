@@ -1,10 +1,10 @@
 """Encoding utilities for message serialization."""
 
 import json
-from typing import Any
+from typing import Any, Union
 
 
-def encode_utf8(data: str | bytes) -> bytes:
+def encode_utf8(data: Union[str, bytes]) -> bytes:
     """Encode string or bytes to UTF-8."""
     if isinstance(data, str):
         return data.encode("utf-8")

@@ -30,7 +30,7 @@ client.get_sender().send(Request(MY_TYPE, b"Hello!"))
 
 - ✅ **Zero dependencies** — pure Python stdlib
 - ✅ **Automatic handshake** — HELLO/HELLO_ACK with version compatibility check
-- ✅ **Message integrity** — SHA-256 on every message
+- ✅ **Message integrity** — CRC32 on every message
 - ✅ **Message routing** — `@server.route(MY_TYPE)` / `@client.route(MY_TYPE)` decorators
 - ✅ **Auto-reconnect** — configurable retry with `DisconnectState` callbacks
 - ✅ **Non-blocking callbacks** — thread pool for all user callbacks
