@@ -127,10 +127,14 @@ zero message loss.
 To run the benchmark suite yourself:
 
 ```bash
-python benchmark.py
+# Run all benchmarks
+python -m veltix.benchmark
+
+# Run specific benchmarks
+python -m veltix.benchmark --only memory latency burst
 
 # Save results to JSON for sharing
-python benchmark.py --save results.json
+python -m veltix.benchmark --save results.json
 ```
 
 ---
@@ -651,6 +655,12 @@ text = decode_utf8(raw)  # str
 ---
 
 ## Roadmap
+
+### v1.6.3 — Benchmark Refactor *(April 2026)* ✓
+
+- Full benchmark module refactor into a clean, reusable package (`veltix/benchmark/`)
+- Extended result models with leak detection, tick accuracy, pipeline drain, and per-client throughput metrics
+- Run via `python -m veltix.benchmark`
 
 ### v1.6.2 — Protocol Optimization & Stability *(April 2026)*
 

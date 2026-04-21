@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-04-21
+
+### Added
+
+- **Benchmark module refactor** — split into a clean, reusable package under `veltix/benchmark/`
+    - `benchmark/__init__.py` — module docstring and public entry points
+    - `benchmark/__main__.py` — `python -m veltix.benchmark` entry point
+    - `benchmark/cli.py` — CLI argument parsing and main orchestrator
+    - `benchmark/config.py` — message types, port constants, terminal width
+    - `benchmark/models.py` — `LatencyStats`, `MemoryResult`, `FpsResult`, `BurstResult`, `StressResult`
+    - `benchmark/display.py` — terminal rendering and README-ready summary table
+    - `benchmark/export.py` — JSON build/export for results
+    - `benchmark/utils.py` — `ram_kb()`, `ram_mb()` helpers
+    - `benchmark/benches/memory.py` — memory footprint benchmark with leak detection
+    - `benchmark/benches/latency.py` — ping/pong latency with full statistics
+    - `benchmark/benches/fps.py` — FPS server simulation with tick accuracy metrics
+    - `benchmark/benches/burst.py` — burst throughput with pipeline drain metrics
+    - `benchmark/benches/stress.py` — concurrent stress with per-client throughput
+
+### Changed
+
+- **`MemoryResult`**: Extended with per-client cost distribution (avg, min, max, median, stdev) and leak detection
+    - Measures cost at both cold start (first 10 clients) and warm scale (10→50 clients)
+    - Reports RSS after full teardown with explicit leak delta
+- **`FpsResult`**: Extended with tick accuracy metrics (actual tick rate, avg/min/max/stdev tick duration, budget %, overrun count)
+- **`BurstResult`**: Extended with pipeline drain latency percentiles and jitter
+- **`StressResult`**: Extended with timing breakdown (send phase, drain time, time-to-first-recv) and per-client throughput distribution
+
+### Internal
+
+- `benchmark.py` removed from project root (replaced by the package)
+- Entry point updated: `veltix-benchmark` now resolves to `benchmark.cli:main`
+
 ## [1.6.2] - 2026-04-12
 
 ### Added
