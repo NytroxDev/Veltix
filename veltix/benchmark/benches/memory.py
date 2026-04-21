@@ -1,0 +1,119 @@
+"""
+benches/memory.py
+-----------------
+Benchmark 1 — Baseline memory footprint.
+
+Measures:
+  - Python process baseline RSS before any veltix object is created
+  - Idle server overhead (RSS delta after server.start())
+  - Per-client cost: avg, min, max, median, stdev over the first 10 clients
+  - Total RSS with 10 and 50 connected clients
+  - RSS after full teardown (detects leaks — should be close to baseline)
+"""
+
+from __future__ import annotations
+
+import gc
+import statistics
+import time
+
+from veltix import Client, ClientConfig, Server, ServerConfig, format_bytes
+
+from ..config import PORT_MEMORY
+from ..display import header, row
+from ..models import MemoryResult
+from ..utils import ram_kb, ram_mb
+
+
+def run(port: int = PORT_MEMORY) -> MemoryResult:
+    header("① BASELINE MEMORY FOOTPRINT")
+
+    # ── Baseline ──────────────────────────────────────────────────────────────
+    gc.collect()
+    baseline = ram_kb()
+    row("Python process baseline", format_bytes(int(baseline * 1_024)))
+
+    # ── Idle server ───────────────────────────────────────────────────────────
+    server = Server(ServerConfig(host="127.0.0.1", port=port))
+    server.start()
+    time.sleep(0.3)
+    gc.collect()
+    server_ram = ram_kb()
+    server_cost = server_ram - baseline
+    row(
+        "Idle server (0 clients)",
+        f"{format_bytes(int(server_ram * 1_024))}  (+{format_bytes(int(server_cost * 1_024))})",
+    )
+
+    # ── First 10 clients — detailed per-client cost ───────────────────────────
+    clients: list[Client] = []
+    costs: list[float] = []
+
+    for _ in range(10):
+        gc.collect()
+        before = ram_kb()
+        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+        c.connect()
+        time.sleep(0.05)
+        gc.collect()
+        costs.append(ram_kb() - before)
+        clients.append(c)
+
+    ram_10 = ram_kb()
+
+    cost_avg = statistics.mean(costs)
+    cost_min = min(costs)
+    cost_max = max(costs)
+    cost_median = statistics.median(costs)
+    cost_stdev = statistics.stdev(costs) if len(costs) > 1 else 0.0
+
+    row("Cost per client — avg", format_bytes(int(cost_avg * 1_024)))
+    row("Cost per client — min", format_bytes(int(cost_min * 1_024)))
+    row("Cost per client — max", format_bytes(int(cost_max * 1_024)))
+    row("Cost per client — median", format_bytes(int(cost_median * 1_024)))
+    row("Cost per client — stdev", format_bytes(int(cost_stdev * 1_024)))
+    row("Server + 10 clients", format_bytes(int(ram_10 * 1_024)))
+
+    # ── Scale to 50 clients ───────────────────────────────────────────────────
+    for _ in range(40):
+        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+        c.connect()
+        time.sleep(0.01)
+        clients.append(c)
+
+    time.sleep(0.5)
+    gc.collect()
+    ram_50 = ram_kb()
+    row("Server + 50 clients", format_bytes(int(ram_50 * 1_024)))
+
+    # ── Derived: cost per client at scale (10→50) ─────────────────────────────
+    scale_cost = (ram_50 - ram_10) / 40
+    row("Cost per client (10→50 avg)", format_bytes(int(scale_cost * 1_024)))
+
+    # ── Teardown + leak detection ─────────────────────────────────────────────
+    for c in clients:
+        c.disconnect()
+    server.close_all()
+    time.sleep(0.5)
+    gc.collect()
+
+    ram_after = ram_kb()
+    leak = ram_after - baseline
+    row(
+        "RSS after full teardown",
+        f"{format_bytes(int(ram_after * 1_024))}  (leak delta: {format_bytes(int(abs(leak) * 1_024))}{'  ✓' if leak < 512 else '  ⚠ possible leak'})",
+    )
+
+    return MemoryResult(
+        baseline_kb=baseline,
+        server_idle_kb=server_cost,
+        client_cost_kb=cost_avg,
+        client_cost_min_kb=cost_min,
+        client_cost_max_kb=cost_max,
+        client_cost_median_kb=cost_median,
+        client_cost_stdev_kb=cost_stdev,
+        ram_10_clients_kb=ram_10,
+        ram_50_clients_kb=ram_50,
+        ram_after_teardown_kb=ram_after,
+        leak_kb=leak,
+    )
