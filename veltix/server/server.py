@@ -11,7 +11,7 @@ from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 from ..network.types import MessageType
-from ..socket.base_socket import BaseSocket, SocketEvents
+from ..socket_core.base_socket import BaseSocket, SocketEvents
 from .client_info import ClientInfo
 from .config import ServerConfig
 
@@ -88,10 +88,10 @@ class Server:
 
     @property
     def clients(self) -> list:
-        return self.socket.clients
+        return self.socket.client_manager.get_all_clients()
 
     def get_all_clients_sockets(self) -> list:
-        return [client.conn for client in self.socket.clients]
+        return [entry.info.conn for entry in self.socket.client_manager.get_all_clients()]
 
     def set_callback(self, event: Union[str, Events], func: Callable) -> None:
         """

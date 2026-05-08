@@ -7,7 +7,7 @@ from typing import Optional, Union
 from ..exceptions import SenderError
 from ..internal.mode import Mode
 from ..logger.core import Logger
-from ..socket.base_socket import BaseSocket
+from ..socket_core.base_socket import BaseSocket
 from .request import Request
 
 

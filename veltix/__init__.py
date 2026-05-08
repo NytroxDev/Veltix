@@ -19,7 +19,7 @@ from .network.sender import Mode, Sender
 from .network.system_types import HELLO, HELLO_ACK, PING, PONG
 from .network.types import MessageType
 from .server.server import ClientInfo, Server, ServerConfig
-from .socket.core import SocketCore
+from .socket_core.core import SocketCore
 from .utils.encoding import decode_json, decode_utf8, encode_json, encode_utf8
 from .utils.format_size import format_bytes
 from .version import __version__

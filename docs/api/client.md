@@ -2,8 +2,8 @@
 
 ::: veltix.client.client.Client
 
-::: veltix.client.client.ClientConfig
+::: veltix.client.config.ClientConfig
 
-::: veltix.client.client.DisconnectState
+::: veltix.client.disconnect.DisconnectState
 
-::: veltix.client.client.DisconnectReason
+::: veltix.client.disconnect.DisconnectReason

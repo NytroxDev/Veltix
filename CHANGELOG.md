@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-05-07
+
+### Added
+
+- **`ClientsManager`** — new centralized, thread-safe client management layer (`veltix/socket_core/managers/`)
+    - `ClientEntry` dataclass with `id`, `info` (ClientInfo), and `buffer` (MessageBuffer)
+    - `add_client()`, `remove_client()`, `get_client()`, `get_all_clients()`, `count()` methods
+    - `iter_on_clients()` for safe concurrent iteration
+    - `has_client_id()` / `has_client_info()` for efficient lookup
+- **`close_client()` method** in `ThreadingSocket` — accepts `ClientEntry` or client ID (int)
+
+### Changed
+
+- **Socket module restructured**: `veltix/socket/` → `veltix/socket_core/`
+    - All imports updated across client, server, and internal modules
+- **`ThreadingSocket`**: Replaced manual client list + buffer dict with `ClientsManager`
+    - Removed `_clients_lock`, `_buffers_lock`, `_client_buffers` — unified through `ClientEntry.buffer`
+    - `_handle_server_client()` now operates on `client_id` (int) and resolves via `ClientsManager`
+    - `_close_server_client()` accepts `ClientEntry` instead of `ClientInfo`
+- **`Server.clients` property**: Now returns `list[ClientEntry]` (access client data via `.info`)
+- **`BaseSocket` Protocol**: Cleanly declares `client_manager` as class attribute (no `__init__` body)
+
+### Internal
+
+- `veltix/socket/` → `veltix/socket_core/` — directory renamed
+- `veltix/socket_core/managers/clients_manager.py` — new module
+- `benchmark.py` cleanup: removed from VCS tracking, root-level `benchmark.py` dropped
+- Tests aligned with new `ClientEntry` API (`server.clients[0].info.*`)
+
 ## [1.6.3] - 2026-04-21
 
 ### Added

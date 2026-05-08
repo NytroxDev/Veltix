@@ -12,15 +12,15 @@ from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 from ..network.types import MessageType
-from ..socket.threading_socket import ThreadingSocket
+from ..socket_core.threading_socket import ThreadingSocket
 from .config import ClientConfig
 from .disconnect import DisconnectReason
 from .reconnect_handler import ReconnectHandler
 
 if TYPE_CHECKING:
-    from ..socket.base_socket import BaseSocket
+    from ..socket_core.base_socket import BaseSocket
 
-from ..socket.base_socket import SocketEvents
+from ..socket_core.base_socket import SocketEvents
 
 
 class Client:

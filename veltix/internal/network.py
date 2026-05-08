@@ -6,7 +6,7 @@ from enum import Enum, auto
 from typing import Optional
 
 from ..logger.core import Logger
-from ..socket.base_socket import BaseSocket
+from ..socket_core.base_socket import BaseSocket
 
 
 class RecvStatus(Enum):

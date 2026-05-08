@@ -656,6 +656,14 @@ text = decode_utf8(raw)  # str
 
 ## Roadmap
 
+### v1.6.4 — ClientsManager & Socket Restructure *(May 2026)* ✓
+
+- Centralized `ClientsManager` with thread-safe `ClientEntry` (id + info + buffer)
+- Socket module restructured: `veltix/socket/` → `veltix/socket_core/`
+- `_close_server_client()` now operates on `ClientEntry` instead of `ClientInfo`
+- `close_client()` method with `ClientEntry` / int ID support
+- Cleaner `BaseSocket` Protocol definition
+
 ### v1.6.3 — Benchmark Refactor *(April 2026)* ✓
 
 - Full benchmark module refactor into a clean, reusable package (`veltix/benchmark/`)

@@ -3,6 +3,8 @@
 from enum import Enum
 from typing import Callable, Protocol, runtime_checkable
 
+from .managers.clients_manager import ClientsManager
+
 
 class SocketEvents(Enum):
     CONNECT = "connect"
@@ -12,6 +14,8 @@ class SocketEvents(Enum):
 
 @runtime_checkable
 class BaseSocket(Protocol):
+    client_manager: ClientsManager
+
     def set_callback(self, event: SocketEvents, callback: Callable) -> bool: ...
     def send(self, data: bytes) -> bool: ...
     def close(self) -> bool: ...

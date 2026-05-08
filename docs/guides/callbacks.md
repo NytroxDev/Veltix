@@ -27,7 +27,7 @@ server.set_callback(Events.ON_DISCONNECT, lambda client: print(f"Disconnected: {
 
 ```python
 from veltix import Client, ClientConfig, Events
-from veltix.client.client import DisconnectState
+from veltix.client.disconnect import DisconnectState
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 
