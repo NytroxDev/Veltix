@@ -733,6 +733,25 @@ text = decode_utf8(raw)  # str
 
 ## Migration Guide
 
+### v1.6.3 → v1.6.4
+
+No breaking changes to public API.
+
+`server.clients` now returns `list[ClientEntry]` instead of `list[ClientInfo]`:
+
+```python
+# Before
+client = server.clients[0]
+client.conn             # raw socket
+
+# After
+entry = server.clients[0]
+entry.info.conn             # client connection
+entry.info.handshake_done   # handshake status
+entry.buffer                # MessageBuffer
+entry.id                    # client ID
+```
+
 ### v1.6.0 → v1.6.2
 
 Breaking changes in protocol/API:
