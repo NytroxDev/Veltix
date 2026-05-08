@@ -756,6 +756,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1095,17 +1151,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.__init__" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__init__
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#veltix.handler.handshake_handler.HandshakeHandler.prepare_hello" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1359,17 +1404,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.__init__" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__init__
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#veltix.handler.handshake_handler.HandshakeHandler.prepare_hello" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1468,24 +1502,9 @@
 
 
         <p>Handles the HELLO / HELLO_ACK exchange for a single connection.</p>
+<p>SERVER: prepare_hello() → send_hello() → handle_hello_ack()
+CLIENT: handle_hello() → send_hello_ack()</p>
 
-
-<details class="server-side" open>
-  <summary>SERVER side</summary>
-  <ol>
-<li>prepare_hello()    — creates HELLO request (call before register()!)</li>
-<li>send_hello()       — sends the prepared HELLO</li>
-<li>handle_hello_ack() — validates the HELLO_ACK</li>
-</ol>
-</details>
-
-<details class="client-side" open>
-  <summary>CLIENT side</summary>
-  <ol>
-<li>handle_hello()     — receives and validates the HELLO</li>
-<li>send_hello_ack()   — sends HELLO_ACK back to the server</li>
-</ol>
-</details>
 
 
 
@@ -1510,109 +1529,19 @@
 <div class="doc doc-object doc-function">
 
 
-<h3 id="veltix.handler.handshake_handler.HandshakeHandler.__init__" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">__init__</span>
-
-
-<a href="#veltix.handler.handshake_handler.HandshakeHandler.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__init__</span><span class="p">(</span><span class="n">sender</span><span class="p">:</span> <span class="n">Sender</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Mode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Initialize the handshake handler.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>sender</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            veltix.network.sender.Sender" href="../sender/#veltix.network.sender.Sender">Sender</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Sender instance for outgoing messages</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>mode</code>
-            </td>
-            <td>
-                  <code><span title="veltix.internal.mode.Mode">Mode</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Mode.SERVER or Mode.CLIENT</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
 <h3 id="veltix.handler.handshake_handler.HandshakeHandler.prepare_hello" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">prepare_hello</span>
 
 
 <a href="#veltix.handler.handshake_handler.HandshakeHandler.prepare_hello" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">prepare_hello</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Request</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">prepare_hello</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Request</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>SERVER: Prepare a HELLO request without sending it.</p>
+        <p>Prepare a HELLO request without sending it.</p>
 <p>Must be called BEFORE register() and send_hello() to avoid the race
 condition where HELLO_ACK arrives before the queue is registered.</p>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="tuple">tuple</span>[<span title="str">str</span>, <a class="autorefs autorefs-internal" title="            veltix.network.request.Request" href="../request/#veltix.network.request.Request">Request</a>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>(request_id, hello_request) — register request_id, then call send_hello()</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
 
 
     </div>
@@ -1632,54 +1561,7 @@ condition where HELLO_ACK arrives before the queue is registered.</p>
 
     <div class="doc doc-contents ">
 
-        <p>SERVER: Send a previously prepared HELLO request.</p>
-<p>Must be called AFTER register() to avoid race conditions.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>hello</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            veltix.network.request.Request" href="../request/#veltix.network.request.Request">Request</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The Request object returned by prepare_hello()</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>client_conn</code>
-            </td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Raw socket of the target client (server mode only)</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Send a previously prepared HELLO. Must be called AFTER register().</p>
 
 
     </div>
@@ -1699,66 +1581,7 @@ condition where HELLO_ACK arrives before the queue is registered.</p>
 
     <div class="doc doc-contents ">
 
-        <p>SERVER: Validate an incoming HELLO_ACK from the client.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>response</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            veltix.network.request.Response
-
-
-  
-      dataclass
-  " href="../request/#veltix.network.request.Response">Response</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Incoming HELLO_ACK Response object</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>True if handshake accepted, False otherwise</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Validate an incoming HELLO_ACK from the client.</p>
 
 
     </div>
@@ -1778,66 +1601,7 @@ condition where HELLO_ACK arrives before the queue is registered.</p>
 
     <div class="doc doc-contents ">
 
-        <p>CLIENT: Validate an incoming HELLO from the server.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>response</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="            veltix.network.request.Response
-
-
-  
-      dataclass
-  " href="../request/#veltix.network.request.Response">Response</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Incoming HELLO Response object</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="bool">bool</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>True if HELLO is valid, False otherwise</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Validate an incoming HELLO from the server.</p>
 
 
     </div>
@@ -1852,43 +1616,12 @@ condition where HELLO_ACK arrives before the queue is registered.</p>
 
 
 <a href="#veltix.handler.handshake_handler.HandshakeHandler.send_hello_ack" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">send_hello_ack</span><span class="p">(</span><span class="n">request_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">send_hello_ack</span><span class="p">(</span><span class="n">request_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>CLIENT: Send HELLO_ACK back to the server.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>request_id</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The request_id from the received HELLO — used for correlation</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Send HELLO_ACK back to the server.</p>
 
 
     </div>
