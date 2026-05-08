@@ -58,6 +58,8 @@ nav:
       - Routing: guides/routing.md
       - Auto-Reconnect: guides/reconnect.md
       - Logger: guides/logger.md
+      - Migration: guides/migration.md
+      - Advanced: guides/advanced.md
   - API Reference:
       - Server: api/server.md
       - Client: api/client.md

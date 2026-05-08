@@ -2,7 +2,7 @@ import dataclasses
 
 from ..internal.buffer_size import BufferSize
 from ..internal.performance_mode import PerformanceMode
-from ..socket.core import SocketCore
+from ..socket_core.core import SocketCore
 
 
 @dataclasses.dataclass

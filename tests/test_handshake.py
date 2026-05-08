@@ -75,7 +75,7 @@ class TestHandshakeIntegration:
 
         assert result is True
         assert client.is_connected
-        assert server.clients[0].handshake_done is True
+        assert server.clients[0].info.handshake_done is True
 
         client.disconnect()
         server.close_all()
@@ -89,7 +89,7 @@ class TestHandshakeIntegration:
         client.connect()
         time.sleep(0.1)
 
-        assert server.clients[0].handshake_done is True
+        assert server.clients[0].info.handshake_done is True
 
         client.disconnect()
         server.close_all()
@@ -135,7 +135,7 @@ class TestHandshakeIntegration:
         time.sleep(0.1)
 
         for client_info in server.clients:
-            assert client_info.handshake_done is True
+            assert client_info.info.handshake_done is True
 
         for client in clients:
             client.disconnect()

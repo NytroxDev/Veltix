@@ -62,8 +62,7 @@ If all attempts are exhausted:
 ## Full example
 
 ```python
-from veltix import Client, ClientConfig, Events
-from veltix.client.client import DisconnectState
+from veltix import Client, ClientConfig, Events, DisconnectState
 
 client = Client(ClientConfig(
     server_addr="127.0.0.1",

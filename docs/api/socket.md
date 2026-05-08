@@ -1,7 +1,7 @@
 # Socket
 
-::: veltix.socket.core.SocketCore
+::: veltix.socket_core.core.SocketCore
 
-::: veltix.socket.base_socket.BaseSocket
+::: veltix.socket_core.base_socket.BaseSocket
 
-::: veltix.socket.threading_socket.ThreadingSocket
+::: veltix.socket_core.threading_socket.ThreadingSocket

@@ -171,7 +171,7 @@ class TestClientServer:
         time.sleep(0.2)
 
         msg_type = MessageType(code=2302, name="selective_broadcast")
-        exclude_socket = server.clients[0].conn
+        exclude_socket = server.clients[0].info.conn
         server.get_sender().broadcast(
             Request(msg_type, b"Not for everyone"),
             server.get_all_clients_sockets(),

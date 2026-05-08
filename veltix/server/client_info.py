@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from ..socket.base_socket import BaseSocket
+    from ..socket_core.base_socket import BaseSocket
 
 
 class ClientInfo:

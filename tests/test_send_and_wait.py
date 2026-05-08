@@ -48,7 +48,7 @@ class TestSendAndWait:
 
         msg_type = MessageType(code=2304, name="server_echo")
         request = Request(msg_type, b"Server to client")
-        response = server.send_and_wait(request, server.clients[0], timeout=2.0)
+        response = server.send_and_wait(request, server.clients[0].info, timeout=2.0)
 
         assert response is not None
         assert response.content == b"Server to client"
