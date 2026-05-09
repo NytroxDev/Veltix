@@ -39,6 +39,19 @@ logging — all with zero external dependencies.
 
 ---
 
+## Built with Veltix
+
+Projects using Veltix in production:
+
+- **[Nexo](https://github.com/NytroxDev/Nexo)** — Fast LAN file transfer tool CLI + GUI.
+  Uses Veltix's TCP server, client tags, route decorators, and `send_and_wait()` for
+  reliable chunked file transfers with concurrent connection handling.
+
+> Built something with Veltix ? [Open a PR](https://github.com/NytroxDev/Veltix/pulls)
+> or [start a discussion](https://github.com/NytroxDev/Veltix/discussions) to add your project.
+
+---
+
 ## Why Veltix
 
 Working directly with Python's `socket` module or `asyncio` forces you to manage framing, concurrency, error handling,
@@ -742,14 +755,14 @@ No breaking changes to public API.
 ```python
 # Before
 client = server.clients[0]
-client.conn             # raw socket
+client.conn  # raw socket
 
 # After
 entry = server.clients[0]
-entry.info.conn             # client connection
-entry.info.handshake_done   # handshake status
-entry.buffer                # MessageBuffer
-entry.id                    # client ID
+entry.info.conn  # client connection
+entry.info.handshake_done  # handshake status
+entry.buffer  # MessageBuffer
+entry.id  # client ID
 ```
 
 ### v1.6.0 → v1.6.2
