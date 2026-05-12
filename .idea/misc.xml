@@ -5,8 +5,4 @@
     <option name="sdkName" value="Python 3.14" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.14 (Veltix)" project-jdk-type="Python SDK" />
-  <component name="RuffConfiguration">
-    <option name="enabled" value="true" />
-    <option name="executableDiscoveryMode" value="PATH" />
-  </component>
 </project>

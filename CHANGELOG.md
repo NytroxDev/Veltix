@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.5] - 2026-05-11
+
+### Added
+
+- **`close_client()` method** in `Server` — forcefully close a specific client connection
+    - Accepts `ClientInfo` or client ID (int) via `id_` parameter
+    - Both paths route through `socket.close_client()` — socket closed + `ON_DISCONNECT` triggered
+- **`get_clients_by_tag()` method** in `ClientsManager` — thread-safe tag-based client filtering
+    - Accepts a tag name and optional value for exact matching
+    - Returns `list[ClientEntry]`
+- **`to_sockets()` method** in `ClientsManager` — converts `list[ClientEntry]` to `list[BaseSocket]`
+- **`get_clients_by_tag()` method** in `Server` — high-level wrapper over `ClientsManager.get_clients_by_tag()`
+    - Returns sockets directly — no access to internal `socket.client_manager` required
+
+### Fixed
+
+- **`close_client()` via ID** in previous implementation called `client_manager.remove_client()` directly — socket was
+  not closed and `ON_DISCONNECT` was never triggered. Now correctly routes through `socket.close_client()`
+
 ## [1.6.4] - 2026-05-07
 
 ### Added
@@ -58,9 +77,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`MemoryResult`**: Extended with per-client cost distribution (avg, min, max, median, stdev) and leak detection
     - Measures cost at both cold start (first 10 clients) and warm scale (10→50 clients)
     - Reports RSS after full teardown with explicit leak delta
-- **`FpsResult`**: Extended with tick accuracy metrics (actual tick rate, avg/min/max/stdev tick duration, budget %, overrun count)
+- **`FpsResult`**: Extended with tick accuracy metrics (actual tick rate, avg/min/max/stdev tick duration, budget %,
+  overrun count)
 - **`BurstResult`**: Extended with pipeline drain latency percentiles and jitter
-- **`StressResult`**: Extended with timing breakdown (send phase, drain time, time-to-first-recv) and per-client throughput distribution
+- **`StressResult`**: Extended with timing breakdown (send phase, drain time, time-to-first-recv) and per-client
+  throughput distribution
 
 ### Internal
 
@@ -120,13 +141,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Migration Guide
 
 - Custom request id:
-  - Before: `Request(T, b"x", request_id="my-id")`
-  - After: `Request(T, b"x", request_id=b"\x01\x02\x03\x04")`
+    - Before: `Request(T, b"x", request_id="my-id")`
+    - After: `Request(T, b"x", request_id=b"\x01\x02\x03\x04")`
 - Logging/display:
-  - Before: `response.request_id[:8]`
-  - After: `response.request_id.hex()[:8]`
+    - Before: `response.request_id[:8]`
+    - After: `response.request_id.hex()[:8]`
 - Mixed versions:
-  - Upgrade client and server to v1.6.2 together.
+    - Upgrade client and server to v1.6.2 together.
 
 - **Runtime version export**:
     - `veltix.version.__version__` now aligned to `1.6.2`
