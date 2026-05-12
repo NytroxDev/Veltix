@@ -1,5 +1,5 @@
 """TCP server implementation for Veltix."""
-
+import socket
 import threading
 from typing import Callable, Optional, Union
 
@@ -148,7 +148,7 @@ class Server:
         return self.sender
 
     def send_and_wait(
-        self, request: Request, client: ClientInfo, timeout: float = 5.0
+            self, request: Request, client: ClientInfo, timeout: float = 5.0
     ) -> Optional[Response]:
         """
         Send a request to a client and block until the matching response is received.
@@ -195,10 +195,10 @@ class Server:
         return None
 
     def ping_client_async(
-        self,
-        client: ClientInfo,
-        callback: Callable[[Optional[float]], None],
-        timeout: float = 5.0,
+            self,
+            client: ClientInfo,
+            callback: Callable[[Optional[float]], None],
+            timeout: float = 5.0,
     ) -> None:
         """
         Ping a client asynchronously and call callback with the result.
@@ -217,6 +217,27 @@ class Server:
                 callback(None)
 
         threading.Thread(target=_ping, daemon=True).start()
+
+    def close_client(self, client: ClientInfo, id_: int = None) -> bool:
+        """Forcefully close a specific client connection."""
+        if id_:
+            return self.socket.close_client(id_)
+
+        if not client:
+            return False
+
+        entry = next(
+            (e for e in self.socket.client_manager.get_all_clients() if e.info == client),
+            None
+        )
+        if not entry:
+            return False
+        return self.socket.close_client(entry)
+
+    def get_clients_sockets_by_tag(self, tag: str, value=None) -> list[socket.socket]:
+        """Get all clients that have a specific tag, optionally matching a value."""
+        entries = self.socket.client_manager.get_clients_by_tag(tag, value)
+        return self.socket.client_manager.to_sockets(entries)
 
     # -------------------------------------------------------------------------
     # Server lifecycle

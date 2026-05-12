@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 from collections.abc import Callable
 from threading import Lock
 from typing import Optional
@@ -62,3 +63,15 @@ class ClientsManager:
     def count(self) -> int:
         with self._clients_lock:
             return len(self.clients)
+
+    def get_clients_by_tag(self, tag: str, value=None) -> list[ClientEntry]:
+        """Get all clients that have a specific tag, optionally matching a value."""
+        with self._clients_lock:
+            if value is None:
+                return [e for e in self.clients.values() if e.info.has_tag(tag)]
+            return [e for e in self.clients.values() if e.info.get_tag(tag) == value]
+
+    @staticmethod
+    def to_sockets(entries: list[ClientEntry]) -> list[socket.socket]:
+        """Convert a list of ClientEntry to a list of sockets (entry.info.conn)."""
+        return [e.info.conn for e in entries]

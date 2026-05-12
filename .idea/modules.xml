@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Veltix.iml" filepath="$PROJECT_DIR$/.idea/Veltix.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/veltix.iml" filepath="$PROJECT_DIR$/.idea/veltix.iml" />
     </modules>
   </component>
 </project>

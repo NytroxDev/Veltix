@@ -669,6 +669,13 @@ text = decode_utf8(raw)  # str
 
 ## Roadmap
 
+### v1.6.5 — Client Management & Tag Filtering *(May 2026)* ✓
+
+- `close_client()` exposed on `Server` — accepts `ClientInfo` or client ID
+- `get_clients_by_tag()` on `Server` and `ClientsManager` — thread-safe tag-based filtering
+- `to_sockets()` on `ClientsManager` — converts `list[ClientEntry]` to sockets
+- Fixed `close_client()` via ID — socket now properly closed and `ON_DISCONNECT` triggered
+
 ### v1.6.4 — ClientsManager & Socket Restructure *(May 2026)* ✓
 
 - Centralized `ClientsManager` with thread-safe `ClientEntry` (id + info + buffer)
@@ -745,6 +752,16 @@ text = decode_utf8(raw)  # str
 ---
 
 ## Migration Guide
+
+### v1.6.4 → v1.6.5
+
+No breaking changes to public API.
+
+New methods on `Server`:
+
+- `server.close_client(client)` — close a client by `ClientInfo`
+- `server.close_client(client=None, id_=client_id)` — close a client by ID
+- `server.get_clients_by_tag("role", value="admin")` — returns filtered sockets directly
 
 ### v1.6.3 → v1.6.4
 
