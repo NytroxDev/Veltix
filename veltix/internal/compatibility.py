@@ -68,7 +68,7 @@ class Version:
         Raises:
             ValueError: If the string is not a valid version.
         """
-        version_str = version_str.removeprefix("v")
+        version_str = version_str[1:] if version_str.startswith("v") else version_str
         return Version(*[int(part) for part in version_str.split(".")[:3]])
 
     def is_compatible(self, other: Version) -> Optional[bool]:
