@@ -1,5 +1,6 @@
 """Integration tests for Client and Server."""
 
+import threading
 import time
 
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
@@ -110,10 +111,12 @@ class TestClientServer:
     def test_broadcasting(self):
         server = Server(ServerConfig(host="127.0.0.1", port=19995, max_connection=3))
         server.start()
-        time.sleep(0.1)
 
         clients = []
         messages_received = [[], [], []]
+        clients_ready = threading.Event()
+        ready_count = [0]
+        ready_lock = threading.Lock()
 
         for i in range(3):
             client = Client(ClientConfig(server_addr="127.0.0.1", port=19995))
@@ -125,11 +128,24 @@ class TestClientServer:
                 return callback
 
             client.set_callback(Events.ON_RECV, make_callback(i))
+
+            # Track when client is actually connected
+            def make_ready_callback(idx):
+                def callback():
+                    with ready_lock:
+                        ready_count[0] += 1
+                        if ready_count[0] == 3:
+                            clients_ready.set()
+
+                return callback
+
+            client.set_callback(Events.ON_CONNECT, make_ready_callback(i))
             client.connect()
             clients.append(client)
-            time.sleep(0.1)
 
-        time.sleep(0.3)
+        # Wait for ALL 3 clients to be ready (max 10 seconds)
+        if not clients_ready.wait(timeout=10):
+            raise TimeoutError("Not all clients connected in time")
 
         msg_type = MessageType(code=2301, name="broadcast_test")
         server.get_sender().broadcast(
