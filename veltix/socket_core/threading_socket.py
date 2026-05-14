@@ -263,8 +263,8 @@ class ThreadingSocket(BaseSocket):
     def close_all(self) -> bool:
         try:
             self.running = False
-            self.client_manager.iter_on_clients(self._close_server_client)
             self._sock.close()
+            self.client_manager.iter_on_clients(self._close_server_client)
             if self.start_th and self.start_th != threading.current_thread():
                 self.start_th.join(timeout=0.2)
             return True
