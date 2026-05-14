@@ -173,10 +173,15 @@ class TestAutoReconnect:
 
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
         server2.start()
-        time.sleep(3.0)
 
-        # on_connect should have fired twice (initial + reconnect)
-        assert len(received) >= 2
+        # Wait for reconnect with timeout
+        start = time.time()
+        while time.time() - start < 15:
+            if len(received) >= 2:
+                break
+            time.sleep(0.1)
+
+        assert len(received) >= 2, f"Expected 2+ callbacks, got {len(received)}"
 
         client.disconnect()
         server2.close_all()
