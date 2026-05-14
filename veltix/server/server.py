@@ -1,8 +1,9 @@
 """TCP server implementation for Veltix."""
 
-import socket
+from __future__ import annotations
+
 import threading
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.events import Events, events
@@ -11,10 +12,14 @@ from ..logger.core import Logger
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
-from ..network.types import MessageType
 from ..socket_core.base_socket import BaseSocket, SocketEvents
-from .client_info import ClientInfo
-from .config import ServerConfig
+
+if TYPE_CHECKING:
+    import socket
+
+    from ..network.types import MessageType
+    from .client_info import ClientInfo
+    from .config import ServerConfig
 
 
 class Server:
