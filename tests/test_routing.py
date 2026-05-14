@@ -4,7 +4,7 @@ import time
 
 from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig
 from veltix.network.request import Response
-from veltix.server.server import ClientInfo
+from veltix.server.client_info import ClientInfo
 
 
 class TestServerRouting:
