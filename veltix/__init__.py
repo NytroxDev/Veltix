@@ -19,7 +19,9 @@ from .network.request import Request, Response
 from .network.sender import Mode, Sender
 from .network.system_types import HELLO, HELLO_ACK, PING, PONG
 from .network.types import MessageType
-from .server.server import ClientInfo, Server, ServerConfig
+from .server.client_info import ClientInfo
+from .server.config import ServerConfig
+from .server.server import Server
 from .socket_core.core import SocketCore
 from .utils.encoding import decode_json, decode_utf8, encode_json, encode_utf8
 from .utils.format_size import format_bytes
