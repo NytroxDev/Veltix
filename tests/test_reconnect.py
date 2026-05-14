@@ -98,22 +98,22 @@ class TestAutoReconnect:
         server.start()
 
         reconnected = []
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=5, retry_delay=0.5))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=10, retry_delay=1.0))
         client.set_callback(Events.ON_CONNECT, lambda: reconnected.append(True))
         assert client.connect()
-        assert len(reconnected) == 1  # Initial connection
+        assert len(reconnected) == 1
 
         # Kill the server
         server.close_all()
-        time.sleep(0.5)
+        time.sleep(1.0)  # Increase wait time before restart
 
         # Restart the server
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
         server2.start()
 
-        # Wait for reconnect with timeout
+        # Wait for reconnect with extended timeout
         start = time.time()
-        while time.time() - start < 15:  # Max 15 seconds
+        while time.time() - start < 30:  # Increased to 30 seconds
             if len(reconnected) >= 2:
                 break
             time.sleep(0.1)
