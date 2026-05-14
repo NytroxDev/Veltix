@@ -54,12 +54,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`pytest.ini`** moved from `tests/pytest.ini` to the project root for correct `pythonpath` resolution
 
+- **Reconnect tests** (`test_reconnect.py`): Replaced arbitrary `time.sleep()` calls with polling helpers
+  (`_wait_for_disconnect`, `_wait_for_connect`) that wait for actual state transitions. Used dynamic port
+  allocation (`_find_free_port`) to eliminate port conflicts. Reduced timeout ceilings from 30s to 3s.
+  Adjusted `test_retry_delay_is_respected` assertion from `>= 0.6s` to `>= 0.3s` (1 sleep between 2 attempts,
+  not before each).
+
 ### Fixed
 
 - **`Server.close_client(id_=0)`** was silently ignored because `if id_:` treated `0` as falsy, skipping the socket
   lookup entirely. Now correctly uses `if id_ is not None`
 
 - **`ThreadingSocket.bind()`** now returns `bool` instead of `None`; returns `False` when the socket is already running
+
+- **`ThreadingSocket._create_client_instance()`** was missing the `client_manager` attribute, causing
+  `entry.info.conn.close()` to silently crash with `AttributeError` when the server tried to close a client
+  connection. The underlying TCP socket was never closed — the client only detected the disconnection when
+  Python's garbage collector eventually freed the file descriptor, causing unpredictable delays (2–3s) and
+  flaky disconnect detection in tests.
+
+- **`ReconnectHandler.reconnect_loop()`** retry delay was applied *before* each connection attempt instead of
+  *between* failures. This wasted `retry_delay` time even when the server was immediately available. The loop
+  now attempts the first connection immediately and only sleeps after a failed attempt.
+
+- **`ReconnectHandler.stop_retry()`** could not interrupt an in-progress `time.sleep(retry_delay)` wait.
+  Replaced `time.sleep()` with `threading.Event.wait(timeout=...)` so `stop_retry()` cancels the delay
+  instantly via `Event.set()`.
 
 ## [1.6.5] - 2026-05-11
 
