@@ -13,7 +13,7 @@ application logic. It ships with message integrity verification, a structured bi
 correlation, automatic connection handshake, decorator-based message routing, auto-reconnect, and production-ready
 logging — all with zero external dependencies.
 
-**Performance highlights:** 110k+ msg/s throughput • 0.007ms average latency • 84KB idle memory • 64.4KB per client •
+**Performance highlights:** 53k msg/s concurrent stress • 0.004ms avg latency • 84KB idle server •
 100% success rate
 
 ---
@@ -79,7 +79,7 @@ threading, handshake, routing, and request correlation — while keeping the API
 - **Custom binary protocol** — Lightweight framing with TCP stream handling
 - **Zero dependencies** — Pure Python standard library only
 - **Multi-threaded** — Concurrent client handling out of the box
-- **Automatic handshake** — HELLO/HELLO_ACK with version compatibility check on every connection
+- **Automatic handshake** — HELLO/HELLO_ACK with version compatibility check on every connection (`Version` + `COMPATIBILITY` table)
 - **Thread-safe callbacks** — All callbacks run in a thread pool, slow handlers never block reception
 - **Message routing** — `@server.route(MY_TYPE)` / `@client.route(MY_TYPE)` decorators for per-type handlers
 - **Auto-reconnect** — Configurable retry with `DisconnectState` callbacks
@@ -96,7 +96,7 @@ threading, handshake, routing, and request correlation — while keeping the API
 
 ## Performance
 
-> Benchmarked on Python 3.14.3 — 12-core CPU, 30.5 GB RAM, Linux. All tests run locally (loopback).
+> Benchmarked on Python 3.14.4 — 12-core CPU, 30.5 GB RAM, Linux. All tests run locally (loopback).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -104,38 +104,38 @@ threading, handshake, routing, and request correlation — while keeping the API
 ├─────────────────────┬───────────────────────────────────────────────┤
 │  MEMORY             │                                               │
 │  Idle server        │      84 KB                                    │
-│  Per client         │      64.4 KB                                  │
-│  50 clients total   │    24.95 MB                                   │
+│  Per client         │      65.6 KB                                  │
+│  50 clients total   │    23.95 MB                                   │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  LATENCY (local)    │                                               │
-│  Average            │   0.007 ms                                    │
+│  Average            │   0.004 ms                                    │
 │  P95                │   0.000 ms                                    │
 │  P99                │   0.000 ms                                    │
 │  Max                │   1.000 ms                                    │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  FPS SIMULATION     │                                               │
-│  64 players @64Hz   │   4,488 msg/s  –  100% success               │
+│  64 players @64Hz   │   4,490 msg/s  –  100% success               │
 │  128 players @20Hz  │   2,813 msg/s  –  100% success               │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  BURST THROUGHPUT   │                                               │
-│  Send               │ 110,011 msg/s                                 │
-│  Receive            │  70,939 msg/s                                 │
-│  Data               │    4.33 MB/s                                  │
+│  Send               │  73,964 msg/s                                 │
+│  Receive            │  53,976 msg/s                                 │
+│  Data               │    3.29 MB/s                                  │
 ├─────────────────────┼───────────────────────────────────────────────┤
 │  CONCURRENT STRESS  │                                               │
-│  100 clients        │  39,123 msg/s  –  100% success               │
+│  100 clients        │  52,655 msg/s  –  100% success               │
 └─────────────────────┴───────────────────────────────────────────────┘
 ```
 
-**Ping/Pong** — 2,000 iterations, 100% success rate, 34,903 ping/s throughput.
+**Ping/Pong** — 2,000 iterations, 100% success rate, 46,280 ping/s throughput.
 
-**FPS simulation** — Veltix sustains a full 64-player game server at 64 tick/s and a 128-player server at 20 tick/s with
-zero message loss.
+**FPS simulation** — Veltix sustains a full 64-player game server at 64 tick/s (~63.8 actual, 0 overruns) and a
+128-player server at 20 tick/s with zero message loss.
 
-**Burst throughput** — 10,000 × 64-byte messages processed in 0.091s.
+**Burst throughput** — 10,000 × 64-byte messages processed in 0.185s, 100% delivery.
 
 **Concurrent stress** — 100 simultaneous clients each firing 100 messages; all 10,000 delivered with 100% success in
-0.255s.
+0.190s.
 
 To run the benchmark suite yourself:
 
@@ -669,6 +669,14 @@ text = decode_utf8(raw)  # str
 
 ## Roadmap
 
+### v1.6.6 — Version Compatibility & Test Coverage *(May 2026)* ✓
+
+- `Version` class + `COMPATIBILITY` table — declarative per-version wire compatibility policy
+- Handshake version check refactored: `split_version()` → `Version.is_compatible()` with lookup table
+- Circular imports resolved via `TYPE_CHECKING` across 7 modules
+- Fixed `Server.close_client(id_=0)` bug (falsy `id_` check)
+- +97 new tests across 7 test files (compatibility, client tags, clients manager, utils, sender, error handling)
+
 ### v1.6.5 — Client Management & Tag Filtering *(May 2026)* ✓
 
 - `close_client()` exposed on `Server` — accepts `ClientInfo` or client ID
@@ -725,25 +733,25 @@ text = decode_utf8(raw)  # str
 - `max_connection = -1` — unlimited connections by default
 - Benchmark suite with JSON export for community sharing
 
-### v1.7.0 — Selectors *(June 2026)*
+### v1.7.0 — Selectors *(June 2026)* ⏳
 
 - `AsyncSocket` — selectors-based I/O, replaces one-thread-per-client
 - Same API, 4–8× throughput improvement expected
 - Switch via `SocketCore.ASYNC`
 
-### v1.8.0 — Plugin System *(August 2026)*
+### v1.8.0 — Plugin System *(August 2026)* ⏳
 
 - `VeltixBasePlugin` — extensible plugin architecture
 - Permission system for plugin event access
 - `server.register_plugin()` / `client.register_plugin()`
 - `server.attach(TYPE, plugin, mode)` — route message types to plugins
 
-### v2.0.0 — Encryption *(September 2026)*
+### v2.0.0 — Encryption *(September 2026)* ⏳
 
 - End-to-end encryption: ChaCha20 + X25519 + Ed25519
 - Automatic key exchange and perfect forward secrecy
 
-### v3.0.0 — Rust Core *(2027)*
+### v3.0.0 — Rust Core *(2027)* ⏳
 
 - PyO3 bindings
 - 10–100× throughput improvement
@@ -752,6 +760,28 @@ text = decode_utf8(raw)  # str
 ---
 
 ## Migration Guide
+
+### v1.6.5 → v1.6.6
+
+No breaking changes to public API.
+
+**New public exports:**
+
+```python
+from veltix import Version, COMPATIBILITY
+
+# Parse and compare versions
+v = Version.from_str("v1.6.6")
+v.is_compatible(Version(1, 6, 6))  # True — same version
+
+# Inspect or extend the compatibility table
+COMPATIBILITY[Version(1, 6, 6)]  # [Version(1, 6, 6)]
+```
+
+`Version` and `COMPATIBILITY` are purely additive — nothing changes in your existing handshake or connection flow.
+
+**Fixed:** `close_client(id_=0)` now works correctly. In v1.6.5, `id_=0` was treated as `False` and the lookup was
+skipped. If you were passing `id_=0` explicitly, upgrade to get correct behavior.
 
 ### v1.6.4 → v1.6.5
 

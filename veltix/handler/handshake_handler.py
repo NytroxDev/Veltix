@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING
 
+from ..internal.compatibility import Version
 from ..internal.mode import Mode
 from ..logger.core import Logger
 from ..network.request import Request, Response
-from ..network.sender import Sender
 from ..network.system_types import HELLO, HELLO_ACK
 from ..version import __version__
+
+if TYPE_CHECKING:
+    from ..network.sender import Sender
 
 
 class HandshakeHandler:
@@ -25,6 +28,10 @@ class HandshakeHandler:
         self.mode = mode
         self.is_server = mode == Mode.SERVER
         self._logger = Logger.get_instance()
+        self.version = Version.from_str(__version__)
+        self._logger.debug(
+            f"[Handshake] {self.mode.name.lower()} handshake handler initialized (version={__version__})"
+        )
 
     # ── Encode / decode ───────────────────────────────────────────────────────
 
@@ -34,24 +41,9 @@ class HandshakeHandler:
         return len(version_bytes).to_bytes(2, "big") + version_bytes
 
     @staticmethod
-    def _decode_hello(payload: bytes) -> str:
+    def _decode_hello(payload: bytes) -> Version:
         length = int.from_bytes(payload[0:2], "big")
-        return payload[2 : 2 + length].decode("utf-8")
-
-    def split_version(self, version: str) -> Optional[tuple[int, int, int]]:
-        try:
-            major, minor, patch = map(int, version.split("."))
-            return major, minor, patch
-        except Exception as err:
-            self._logger.error(f"Version decoding error: {err}")
-            return None
-
-    def _check_version(self, server_version: str, client_version: str) -> bool:
-        sv = self.split_version(server_version)
-        cv = self.split_version(client_version)
-        if sv is None or cv is None:
-            return False
-        return sv == cv
+        return Version.from_str(payload[2 : 2 + length].decode("utf-8"))
 
     # ── Server ────────────────────────────────────────────────────────────────
 
@@ -81,9 +73,9 @@ class HandshakeHandler:
             return False
 
         client_version = self._decode_hello(response.content)
-        if not self._check_version(__version__, client_version):
+        if not self.version.is_compatible(client_version):
             self._logger.warning(
-                f"[Handshake] Version mismatch — server={__version__}, client={client_version}"
+                f"[Handshake] Version mismatch — server={self.version}, client={client_version}"
             )
             return False
 
@@ -99,9 +91,9 @@ class HandshakeHandler:
             return False
 
         server_version = self._decode_hello(response.content)
-        if not self._check_version(server_version, __version__):
+        if not self.version.is_compatible(server_version):
             self._logger.warning(
-                f"[Handshake] Version mismatch — server={server_version}, client={__version__}"
+                f"[Handshake] Version mismatch — server={server_version}, client={self.version}"
             )
             return False
 

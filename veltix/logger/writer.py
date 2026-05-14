@@ -7,9 +7,10 @@ import contextlib
 import threading
 import time
 from collections import deque
-from typing import Optional, TextIO
+from typing import TYPE_CHECKING, Optional, TextIO
 
-from .config import LoggerConfig
+if TYPE_CHECKING:
+    from .config import LoggerConfig
 
 
 class Writer:
@@ -73,10 +74,8 @@ class Writer:
 
     def write(self, message: str) -> None:
         if self.config.stream:
-            try:
+            with contextlib.suppress(Exception):
                 print(message, file=self.config.stream)
-            except Exception:
-                pass
 
         if self.config.file_path:
             if self.config.async_write:
