@@ -106,7 +106,7 @@ class TestAutoReconnect:
 
         # Kill the server
         server.close_all()
-        time.sleep(0.2)
+        time.sleep(0.5)  # Increase delay to allow port to be released
 
         # Restart the server
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
