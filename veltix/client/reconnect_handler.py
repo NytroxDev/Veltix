@@ -1,6 +1,5 @@
 import dataclasses
 import threading
-import time
 from typing import Callable, Optional
 
 from veltix.handler.request_handler import RequestHandler
@@ -29,6 +28,7 @@ class ReconnectHandler:
         self.on_recv = on_recv
         self._fail_count = 0
         self._stop_retry_flag = False
+        self._stop_event = threading.Event()
         self.config = config
         self._on_disconnect = on_disconnect
         self._connect = connect
@@ -56,6 +56,7 @@ class ReconnectHandler:
     def init_connect(self):
         self._fail_count = 0
         self._stop_retry_flag = False
+        self._stop_event.clear()
 
     def fire_on_disconnect(self, permanent: bool, reason: DisconnectReason) -> None:
         """Fire the on_disconnect callback with the current retry state."""
@@ -75,6 +76,9 @@ class ReconnectHandler:
         """
         Attempt reconnection up to config.retry times.
 
+        Each attempt is made immediately. On failure, waits retry_delay
+        before the next attempt. The wait is interruptible via stop_retry().
+
         Fires on_disconnect at each failed attempt with permanent=False,
         and a final time with permanent=True if all attempts are exhausted
         or stop_retry() was called.
@@ -84,17 +88,20 @@ class ReconnectHandler:
         """
         while not self._stop_retry_flag and self._fail_count < self.config.retry:
             self._fail_count += 1
-            self._logger.info(
-                f"Reconnection attempt {self._fail_count}/{self.config.retry} "
-                f"in {self.config.retry_delay}s..."
-            )
-            time.sleep(self.config.retry_delay)
+            self._logger.info(f"Reconnection attempt {self._fail_count}/{self.config.retry}...")
 
             self.reset()
             if self._connect():
                 return True
 
             self.fire_on_disconnect(permanent=False, reason=reason)
+
+            if self._fail_count >= self.config.retry:
+                break
+
+            self._logger.info(f"Next attempt in {self.config.retry_delay}s...")
+            if self._stop_event.wait(timeout=self.config.retry_delay):
+                break
 
         self.fire_on_disconnect(permanent=True, reason=reason)
         return False
@@ -121,6 +128,7 @@ class ReconnectHandler:
         """
         self._logger.info("stop_retry() called — cancelling reconnection attempts")
         self._stop_retry_flag = True
+        self._stop_event.set()
 
     def retry(self, max_: Optional[int] = None) -> None:
         """
@@ -136,6 +144,7 @@ class ReconnectHandler:
             self._logger.info("retry() called — forcing reconnection attempt")
 
         self._stop_retry_flag = False
+        self._stop_event.clear()
         self._fail_count = 0
         self.reset()
         threading.Thread(target=self.reconnect_loop, daemon=True).start()

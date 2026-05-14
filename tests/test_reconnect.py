@@ -1,9 +1,37 @@
 """Tests for auto-reconnect functionality — v1.5.0."""
 
+import socket
 import threading
 import time
 
 from veltix import Client, ClientConfig, Events, Server, ServerConfig
+
+
+def _find_free_port() -> int:
+    """Return a free TCP port on localhost to avoid conflicts."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def _wait_for_disconnect(client: Client, timeout: float = 2.0) -> bool:
+    """Wait up to `timeout` seconds for the client to detect a disconnection."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if not client.is_connected:
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def _wait_for_connect(client: Client, timeout: float = 2.0) -> bool:
+    """Wait up to `timeout` seconds for the client to (re)connect."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if client.is_connected:
+            return True
+        time.sleep(0.05)
+    return False
 
 
 class TestRetryInitial:
@@ -28,7 +56,7 @@ class TestRetryInitial:
 
     def test_retry_succeeds_when_server_starts_late(self):
         """Client should connect successfully if server starts during retry window."""
-        port = 17997
+        port = _find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
 
         attempt_count = []  # track attempts before reset
@@ -61,7 +89,7 @@ class TestRetryInitial:
 
     def test_fail_count_resets_after_success(self):
         """_fail_count should be reset to 0 after a successful connection."""
-        port = 17996
+        port = _find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
 
         def start_late():
@@ -85,47 +113,50 @@ class TestRetryInitial:
         client.connect()
         elapsed = time.time() - start
 
-        # 2 retries × 0.3s = at least 0.6s
-        assert elapsed >= 0.6
+        # 2 attempts × 1 sleep of 0.3s between them
+        assert elapsed >= 0.3
 
 
 class TestAutoReconnect:
     """Tests for automatic reconnection after mid-session disconnection."""
 
     def test_auto_reconnect_after_server_restart(self):
-        port = 17990
+        port = _find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
         reconnected = []
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=10, retry_delay=1.0))
+        client = Client(
+            ClientConfig(
+                server_addr="127.0.0.1",
+                port=port,
+                retry=10,
+                retry_delay=0.1,
+            )
+        )
         client.set_callback(Events.ON_CONNECT, lambda: reconnected.append(True))
         assert client.connect()
         assert len(reconnected) == 1
 
         # Kill the server
         server.close_all()
-        time.sleep(1.0)  # Increase wait time before restart
+
+        # Wait for client to detect the disconnection
+        assert _wait_for_disconnect(client), "Client did not detect disconnection in time"
 
         # Restart the server
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
         server2.start()
 
-        # Wait for reconnect with extended timeout
-        start = time.time()
-        while time.time() - start < 30:  # Increased to 30 seconds
-            if len(reconnected) >= 2:
-                break
-            time.sleep(0.1)
-
-        assert client.is_connected
+        # Wait for reconnect
+        assert _wait_for_connect(client, timeout=3.0), "Client did not reconnect in time"
         assert len(reconnected) >= 2, f"Expected 2+ reconnects, got {len(reconnected)}"
 
         client.disconnect()
         server2.close_all()
 
     def test_on_disconnect_fires_on_server_crash(self):
-        port = 17989
+        port = _find_free_port()
 
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
@@ -136,13 +167,13 @@ class TestAutoReconnect:
         client.connect()
 
         server.close_all()
-        time.sleep(2.0)  # 0.3 → 1.0
+        assert _wait_for_disconnect(client), "Client did not detect disconnection in time"
 
         assert len(disconnected) == 1
 
     def test_no_auto_reconnect_when_retry_disabled(self):
         """With retry=0, client should not reconnect after disconnection."""
-        port = 17988
+        port = _find_free_port()
 
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
@@ -151,36 +182,40 @@ class TestAutoReconnect:
         client.connect()
 
         server.close_all()
-        time.sleep(3.0)
-
+        # Client should still detect the disconnection (socket reset)
+        assert _wait_for_disconnect(client), "Client did not detect disconnection in time"
+        # But should stay disconnected (no auto-reconnect with retry=0)
+        time.sleep(0.3)
         assert not client.is_connected
 
     def test_reconnect_preserves_callbacks(self):
         """Callbacks should still work after a reconnection."""
-        port = 17987
+        port = _find_free_port()
 
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
         received = []
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=5, retry_delay=0.3))
+        client = Client(
+            ClientConfig(
+                server_addr="127.0.0.1",
+                port=port,
+                retry=5,
+                retry_delay=0.1,
+            )
+        )
         client.set_callback(Events.ON_CONNECT, lambda: received.append("connected"))
         client.connect()
 
         # Kill and restart
         server.close_all()
-        time.sleep(0.3)
+        assert _wait_for_disconnect(client), "Client did not detect disconnection in time"
 
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
         server2.start()
 
-        # Wait for reconnect with timeout
-        start = time.time()
-        while time.time() - start < 15:
-            if len(received) >= 2:
-                break
-            time.sleep(0.1)
-
+        # Wait for reconnect
+        assert _wait_for_connect(client, timeout=3.0), "Client did not reconnect in time"
         assert len(received) >= 2, f"Expected 2+ callbacks, got {len(received)}"
 
         client.disconnect()

@@ -64,6 +64,7 @@ class ThreadingSocket(BaseSocket):
         conn.request_handler = request_handler
         conn.max_message_size = max_message_size
         conn.running = False
+        conn.client_manager = ClientsManager(max_message_size)
         conn.on_connect = None
         conn.on_disconnect = None
         conn.on_recv = None
