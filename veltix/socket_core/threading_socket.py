@@ -101,9 +101,9 @@ class ThreadingSocket(BaseSocket):
 
     # ── Server ────────────────────────────────────────────────────────────────
 
-    def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> None:
+    def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:
         if self.running:
-            return
+            return False
         self.running = True
         self._sock.bind((host, port))
         self.start_th = threading.Thread(
@@ -112,6 +112,7 @@ class ThreadingSocket(BaseSocket):
             daemon=True,
         )
         self.start_th.start()
+        return True
 
     def _accept_loop(
         self, host: str, port: int, max_client: int, buffer_size: int, timeout: float

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import SenderError
 from ..internal.mode import Mode
 from ..logger.core import Logger
-from ..socket_core.base_socket import BaseSocket
-from .request import Request
+
+if TYPE_CHECKING:
+    from ..socket_core.base_socket import BaseSocket
+    from .request import Request
 
 
 class Sender:

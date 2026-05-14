@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.6] - 2026-05-14
+
+### Added
+
+- **`Version` class** in `veltix.internal.compatibility` : now exported publicly as `veltix.Version`
+    - `Version.from_str("v1.6.6")` parses version strings with optional `v` prefix
+    - `version.is_compatible(other)` performs a lookup-based compatibility check returning `True`, `False`, or `None` (
+      unknown version)
+    - Hashable, usable as dict key in the compatibility table
+    - `__str__` returns `"1.6.6"`, `__repr__` returns `"Version(1.6.6)"`
+
+- **`COMPATIBILITY` table** in `veltix.internal.compatibility` : now exported publicly as `veltix.COMPATIBILITY`
+    - Declarative `dict[Version, list[Version]]` : each version explicitly declares its compatible peers
+    - Default policy: strict self-compatibility (`v1.6.6` is only compatible with `v1.6.6`)
+    - Replaces the previous hardcoded equality check in `HandshakeHandler`
+
+- **Comprehensive test coverage** bringing the total test suite to 208 tests
+    - `test_compatibility.py` : 17 tests covering `Version` parsing, hashing, compatibility checks, and the
+      `COMPATIBILITY` table
+    - `test_client_tags.py` : 22 tests covering the full `ClientInfo` tag API (`add_tag`, `has_tag`, `has_all_tags`,
+      `has_any_tags`, `get_tag`, `remove_tag`, `clear_tags`)
+    - `test_clients_manager.py` : 20 tests covering `ClientsManager` and `ClientEntry` (CRUD, tag filtering, thread
+      safety)
+    - `test_utils.py` : 22 tests covering `format_bytes`, `encode_utf8`, `decode_utf8`, `encode_json`, `decode_json`
+    - `test_sender.py` : expanded from 2 to 18 tests (send, broadcast, error handling, mock socket)
+    - `test_error_handling.py` : expanded from 2 to 16 tests (exception hierarchy, parse errors, network failures)
+
+- **GitHub Actions CI workflow** (`.github/workflows/ci.yml`)
+    - Version consistency check: blocks push if `version.py` and `pyproject.toml` are out of sync
+    - Test matrix on Python 3.8, 3.10, 3.12, and 3.14 in parallel
+    - Ruff lint check on every push
+
+### Changed
+
+- **`HandshakeHandler` version check refactored** to use `Version` and `COMPATIBILITY`
+    - Removed `split_version()` and `_check_version()` string-based methods
+    - Handler now stores `self.version = Version.from_str(__version__)` on init
+    - `_decode_hello()` now returns a `Version` object instead of a raw string
+    - Version mismatch logs now display structured `Version` representations
+
+- **Lazy `TYPE_CHECKING` imports** introduced across 7 modules (`handshake_handler.py`, `request_handler.py`,
+  `sender.py`, `clients_manager.py`, `network.py`, `formatter.py`, `writer.py`) to resolve circular import issues at
+  runtime
+
+- **`Writer.write()`** simplified exception suppression using `contextlib.suppress(Exception)` instead of bare
+  try/except pass
+
+- **`pytest.ini`** moved from `tests/pytest.ini` to the project root for correct `pythonpath` resolution
+
+### Fixed
+
+- **`Server.close_client(id_=0)`** was silently ignored because `if id_:` treated `0` as falsy, skipping the socket
+  lookup entirely. Now correctly uses `if id_ is not None`
+
+- **`ThreadingSocket.bind()`** now returns `bool` instead of `None`; returns `False` when the socket is already running
+
 ## [1.6.5] - 2026-05-11
 
 ### Added

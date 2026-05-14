@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-import socket
-from collections.abc import Callable
 from threading import Lock
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from ...network.message_buffer import MessageBuffer
-from ...server.client_info import ClientInfo
+
+if TYPE_CHECKING:
+    import socket
+    from collections.abc import Callable
+
+    from ...server.client_info import ClientInfo
 
 
 class ClientEntry:

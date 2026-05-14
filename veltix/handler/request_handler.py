@@ -4,16 +4,18 @@ from __future__ import annotations
 
 from queue import Empty, Queue
 from threading import Lock
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.callback_executor import CallbackExecutor
 from ..handler.handshake_handler import HandshakeHandler
 from ..internal.mode import Mode
 from ..logger.core import Logger
 from ..network.request import Request, Response
-from ..network.sender import Sender
 from ..network.system_types import HELLO, PING, PONG
-from ..network.types import MessageType
+
+if TYPE_CHECKING:
+    from ..network.sender import Sender
+    from ..network.types import MessageType
 
 
 class RequestHandler:

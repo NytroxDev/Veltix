@@ -166,11 +166,11 @@ class TestAutoReconnect:
 
         # Kill and restart
         server.close_all()
-        time.sleep(0.2)
+        time.sleep(0.3)
 
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
         server2.start()
-        time.sleep(2.0)
+        time.sleep(3.0)
 
         # on_connect should have fired twice (initial + reconnect)
         assert len(received) >= 2

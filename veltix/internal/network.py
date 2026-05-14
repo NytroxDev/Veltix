@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from ..logger.core import Logger
-from ..socket_core.base_socket import BaseSocket
+
+if TYPE_CHECKING:
+    from ..socket_core.base_socket import BaseSocket
 
 
 class RecvStatus(Enum):

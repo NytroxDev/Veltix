@@ -9,6 +9,7 @@ from .client.client import Client, ClientConfig, DisconnectReason
 from .client.disconnect import DisconnectState
 from .exceptions import MessageTypeError, RequestError, SenderError, VeltixError
 from .internal.buffer_size import BufferSize
+from .internal.compatibility import COMPATIBILITY, Version
 from .internal.events import Events
 from .internal.performance_mode import PerformanceMode
 from .logger.config import LoggerConfig
@@ -27,6 +28,9 @@ from .version import __version__
 __all__ = [
     # Version
     "__version__",
+    # Compatibility
+    "Version",
+    "COMPATIBILITY",
     # Client
     "Client",
     "ClientConfig",

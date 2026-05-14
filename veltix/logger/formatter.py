@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from .levels import LogLevel
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class Formatter:

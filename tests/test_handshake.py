@@ -1,76 +1,102 @@
-"""Tests for HELLO/HELLO_ACK handshake — v1.4.0."""
+"""Tests for HELLO/HELLO_ACK handshake — updated for v1.6.6 refacto."""
 
+import socket
 import time
+
+import pytest
 
 from veltix import Client, ClientConfig, Events, Server, ServerConfig
 from veltix.handler.handshake_handler import HandshakeHandler
+from veltix.internal.compatibility import Version
 from veltix.network.sender import Mode, Sender
 from veltix.version import __version__
 
 
-class TestHandshakeHandler:
-    """Unit tests for HandshakeHandler encode/decode/version logic."""
+# ── Fixture ───────────────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _make_handler():
-        import socket
+def make_handler(mode: Mode = Mode.CLIENT) -> HandshakeHandler:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sender = Sender(mode=Mode.CLIENT, conn=sock)
+    return HandshakeHandler(sender=sender, mode=mode)
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sender = Sender(mode=Mode.CLIENT, conn=sock)
-        return HandshakeHandler(sender=sender, mode=Mode.CLIENT)
 
+# ── Encode / decode ───────────────────────────────────────────────────────────
+
+class TestHandshakeEncoding:
     def test_encode_decode_roundtrip(self):
-        handler = self._make_handler()
+        handler = make_handler()
         encoded = handler._encode_hello()
         decoded = handler._decode_hello(encoded)
-        assert decoded == __version__
+        assert decoded == Version.from_str(__version__)
 
-    def test_encode_hello_format(self):
-        """Verify wire format: [2B length][NB version]."""
+    def test_encode_hello_wire_format(self):
+        """Wire format: [2B length][NB version UTF-8]."""
         encoded = HandshakeHandler._encode_hello()
         length = int.from_bytes(encoded[0:2], "big")
-        version_bytes = encoded[2 : 2 + length]
+        version_bytes = encoded[2: 2 + length]
         assert version_bytes.decode("utf-8") == __version__
 
-    def test_split_version_valid(self):
-        handler = self._make_handler()
-        result = handler.split_version("1.4.0")
-        assert result == (1, 4, 0)
+    def test_decode_returns_version_object(self):
+        handler = make_handler()
+        encoded = handler._encode_hello()
+        decoded = handler._decode_hello(encoded)
+        assert isinstance(decoded, Version)
 
-    def test_split_version_invalid(self):
-        handler = self._make_handler()
-        result = handler.split_version("not_a_version")
-        assert result is None
+    def test_decode_correct_components(self):
+        handler = make_handler()
+        encoded = handler._encode_hello()
+        decoded = handler._decode_hello(encoded)
+        expected = Version.from_str(__version__)
+        assert decoded.major == expected.major
+        assert decoded.minor == expected.minor
+        assert decoded.patch == expected.patch
 
-    def test_check_version_compatible(self):
-        handler = self._make_handler()
-        assert handler._check_version("1.4.0", "1.4.0") is True
 
-    def test_check_version_incompatible_patch(self):
-        handler = self._make_handler()
-        assert handler._check_version("1.4.3", "1.4.5") is False
-        assert handler._check_version("1.4.3", "1.4.2") is False
+# ── Version stored on handler ─────────────────────────────────────────────────
 
-    def test_check_version_incompatible_major(self):
-        handler = self._make_handler()
-        assert handler._check_version("1.4.0", "2.4.0") is False
+class TestHandshakeVersion:
+    def test_handler_stores_version(self):
+        handler = make_handler()
+        assert isinstance(handler.version, Version)
+        assert handler.version == Version.from_str(__version__)
 
-    def test_check_version_invalid_string(self):
-        handler = self._make_handler()
-        assert handler._check_version("1.4.0", "invalid") is False
+    def test_server_handler_stores_version(self):
+        handler = make_handler(Mode.SERVER)
+        assert handler.version == Version.from_str(__version__)
 
+    def test_is_server_flag(self):
+        server_handler = make_handler(Mode.SERVER)
+        client_handler = make_handler(Mode.CLIENT)
+        assert server_handler.is_server is True
+        assert client_handler.is_server is False
+
+
+# ── Compatibility check ───────────────────────────────────────────────────────
+
+class TestHandshakeCompatibility:
+    def test_compatible_versions_accepted(self):
+        """Same version should be accepted."""
+        handler = make_handler()
+        assert handler.version.is_compatible(Version.from_str(__version__)) is True
+
+    def test_incompatible_version_rejected(self):
+        """Different patch version should be rejected."""
+        handler = make_handler()
+        other = Version(handler.version.major, handler.version.minor, handler.version.patch + 1)
+        # Only check if other is registered — if not, returns None (falsy)
+        result = handler.version.is_compatible(other)
+        assert not result  # False or None — both mean reject
+
+
+# ── Integration ───────────────────────────────────────────────────────────────
 
 class TestHandshakeIntegration:
-    """Integration tests for the full handshake flow."""
-
     def test_handshake_completes_on_connect(self):
-        """connect() should block until handshake is done."""
         server = Server(ServerConfig(host="127.0.0.1", port=18999))
         server.start()
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=18999))
         result = client.connect()
-
         time.sleep(0.1)
 
         assert result is True
@@ -81,7 +107,6 @@ class TestHandshakeIntegration:
         server.close_all()
 
     def test_handshake_done_flag_on_client_info(self):
-        """ClientInfo.handshake_done should be True after connection."""
         server = Server(ServerConfig(host="127.0.0.1", port=18998))
         server.start()
 
@@ -95,7 +120,6 @@ class TestHandshakeIntegration:
         server.close_all()
 
     def test_on_connect_fires_after_handshake(self):
-        """on_connect should only fire after handshake is complete."""
         server = Server(ServerConfig(host="127.0.0.1", port=18997))
         handshake_states = []
 
@@ -116,13 +140,11 @@ class TestHandshakeIntegration:
         server.close_all()
 
     def test_handshake_timeout_returns_false(self):
-        """connect() should return False if no server responds."""
         client = Client(ClientConfig(server_addr="127.0.0.1", port=11112, handshake_timeout=1.0))
         result = client.connect()
         assert result is False
 
     def test_multiple_clients_all_handshake(self):
-        """All clients should complete the handshake."""
         server = Server(ServerConfig(host="127.0.0.1", port=18996, max_connection=3))
         server.start()
 
@@ -134,8 +156,8 @@ class TestHandshakeIntegration:
 
         time.sleep(0.1)
 
-        for client_info in server.clients:
-            assert client_info.info.handshake_done is True
+        for entry in server.clients:
+            assert entry.info.handshake_done is True
 
         for client in clients:
             client.disconnect()
