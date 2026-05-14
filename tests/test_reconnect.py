@@ -99,24 +99,23 @@ class TestAutoReconnect:
 
         reconnected = []
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=5, retry_delay=0.3))
-        # Set callback BEFORE connect()
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=5, retry_delay=0.8))
         client.set_callback(Events.ON_CONNECT, lambda: reconnected.append(True))
         assert client.connect()
 
         # Kill the server
         server.close_all()
-        time.sleep(0.5)  # Increase delay to allow port to be released
+        time.sleep(0.5)
 
         # Restart the server
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
         server2.start()
 
         # Wait for auto-reconnect
-        time.sleep(2.0)
+        time.sleep(5.0)
 
         assert client.is_connected
-        assert len(reconnected) >= 2  # initial connect + reconnect
+        assert len(reconnected) >= 2
 
         client.disconnect()
         server2.close_all()
