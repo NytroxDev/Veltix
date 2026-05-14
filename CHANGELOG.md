@@ -81,6 +81,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Replaced `time.sleep()` with `threading.Event.wait(timeout=...)` so `stop_retry()` cancels the delay
   instantly via `Event.set()`.
 
+- **`ThreadingSocket.close_all()`** closed client connections before closing the listening socket,
+  creating a window where a reconnecting client could attach to the dying server's still-open
+  listener. The connection appeared to succeed (TCP handshake completed) but the server's handler
+  thread was already stopped, so no handshake occurred — `ON_CONNECT` never fired. Now closes the
+  listening socket first, so rogue reconnections get a clean `ConnectionRefusedError`.
+
 ## [1.6.5] - 2026-05-11
 
 ### Added
