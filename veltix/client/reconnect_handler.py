@@ -34,7 +34,8 @@ class ReconnectHandler:
         self._stop_retry_flag = False
         self._stop_event = threading.Event()
 
-    def init_connect(self):
+    def init_connect(self) -> None:
+        """Reset retry state after a successful connection."""
         self._fail_count = 0
         self._stop_retry_flag = False
         self._stop_event.clear()
@@ -91,6 +92,9 @@ class ReconnectHandler:
     def try_reconnect(self, reason: DisconnectReason) -> bool:
         """
         Start the reconnect loop if retry is enabled.
+
+        When ``config.retry == 0``, fires ``on_disconnect`` with
+        ``permanent=True`` immediately without attempting a connection.
 
         Returns:
             True if reconnection eventually succeeded, False otherwise.
@@ -150,5 +154,6 @@ class ReconnectHandler:
             request_handler.set_on_recv(on_recv)
 
     @property
-    def stop_retry_flag(self):
+    def stop_retry_flag(self) -> bool:
+        """Whether reconnection attempts have been cancelled."""
         return self._stop_retry_flag
