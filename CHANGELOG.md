@@ -87,6 +87,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   thread was already stopped, so no handshake occurred — `ON_CONNECT` never fired. Now closes the
   listening socket first, so rogue reconnections get a clean `ConnectionRefusedError`.
 
+- **Reconnect tests** (`test_reconnect.py`): even with `close_all` ordering fixed, a brief kernel
+  race (SO_REUSEADDR) could let a phantom TCP connect succeed against the dying port.
+  `is_connected=True` was set before the handshake, making `_wait_for_connect` return a false
+  positive. Added `_wait_for_reconnect()` that polls the actual ON_CONNECT callback count, and
+  reduced `handshake_timeout` to 1s so phantom attempts fail fast.
+
 ## [1.6.5] - 2026-05-11
 
 ### Added
