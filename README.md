@@ -669,13 +669,14 @@ text = decode_utf8(raw)  # str
 
 ## Roadmap
 
-### v1.6.6 — Version Compatibility & Test Coverage *(May 2026)* ✓
+### v1.6.6 — Version Compatibility, Reconnect Stability & Test Coverage *(May 2026)* ✓
 
 - `Version` class + `COMPATIBILITY` table — declarative per-version wire compatibility policy
 - Handshake version check refactored: `split_version()` → `Version.is_compatible()` with lookup table
-- Circular imports resolved via `TYPE_CHECKING` across 7 modules
-- Fixed `Server.close_client(id_=0)` bug (falsy `id_` check)
-- +97 new tests across 7 test files (compatibility, client tags, clients manager, utils, sender, error handling)
+- **3 reconnect core fixes**: missing `client_manager` in per-client sockets (disconnect took 2–3s), retry delay applied before attempts instead of between, `stop_retry()` not interruptible
+- **`close_all()` ordering fix**: listening socket closed before client connections to prevent phantom reconnects
+- +111 new tests (compatibility, client tags, clients manager, utils, sender, error handling, reconnect stability)
+- CI: test matrix on Python 3.8–3.14
 
 ### v1.6.5 — Client Management & Tag Filtering *(May 2026)* ✓
 
@@ -782,6 +783,12 @@ COMPATIBILITY[Version(1, 6, 6)]  # [Version(1, 6, 6)]
 
 **Fixed:** `close_client(id_=0)` now works correctly. In v1.6.5, `id_=0` was treated as `False` and the lookup was
 skipped. If you were passing `id_=0` explicitly, upgrade to get correct behavior.
+
+**Reconnect stability:** Three root-cause fixes make auto-reconnect deterministic:
+- Disconnect detection is now immediate (<0.5s) instead of relying on GC (2–3s random delay)
+- `retry_delay` is applied between failures, not before every attempt — reconnects start immediately
+- `stop_retry()` can interrupt an in-progress delay instantly
+- Server restarts no longer cause phantom reconnections to the dying listener
 
 ### v1.6.4 → v1.6.5
 
