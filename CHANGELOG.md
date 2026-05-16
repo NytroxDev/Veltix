@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.6.6] - 2026-05-14
+## [1.6.6] - 2026-05-16
 
 ### Added
 
@@ -35,7 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GitHub Actions CI workflow** (`.github/workflows/ci.yml`)
     - Version consistency check: blocks push if `version.py` and `pyproject.toml` are out of sync
     - Test matrix on Python 3.8, 3.10, 3.12, and 3.14 in parallel
-    - Ruff lint check on every push
 
 ### Changed
 
