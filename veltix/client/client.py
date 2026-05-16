@@ -14,7 +14,7 @@ from ..network.system_types import PING
 from ..network.types import MessageType
 from ..socket_core.threading_socket import ThreadingSocket
 from .config import ClientConfig
-from .disconnect import DisconnectReason
+from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
 
 if TYPE_CHECKING:
@@ -110,37 +110,34 @@ class Client:
 
         self.socket.set_callback(SocketEvents.DISCONNECT, _on_socket_disconnect)
 
-        def _on_disconnect(state):
-            if self.on_disconnect:
-                self.on_disconnect(state)
-
         if self._reconnect_handler is None:
-            self._reconnect_handler = ReconnectHandler(
-                config=self.config,
-                on_disconnect=_on_disconnect,
-                connect=lambda: self.connect(_from_retry=True),
-                on_recv=self.on_recv,
-                on_init=self.init_components,
-                set_running=self.set_running,
-                set_connected=self.set_connected,
-                request_handler=self.request_handler,
-            )
-        else:
-            self._reconnect_handler.refresh(
-                config=self.config,
-                connect=lambda: self.connect(_from_retry=True),
-                on_recv=self.on_recv,
-                on_init=self.init_components,
-                set_running=self.set_running,
-                set_connected=self.set_connected,
-                request_handler=self.request_handler,
-            )
+            self._reconnect_handler = ReconnectHandler(context=self)
 
-    def set_running(self, value: bool = True) -> None:
+    # -------------------------------------------------------------------------
+    # Context API
+    # -------------------------------------------------------------------------
+
+    def context_connect(self) -> bool:
+        return self.connect(_from_retry=True)
+
+    def context_on_disconnect(self, state: DisconnectState) -> None:
+        if self.on_disconnect:
+            self.on_disconnect(state)
+
+    def context_init(self) -> None:
+        self.init_components()
+
+    def context_set_running(self, value: bool) -> None:
         self.running = value
 
-    def set_connected(self, value: bool = True) -> None:
+    def context_set_connected(self, value: bool) -> None:
         self.is_connected = value
+
+    def context_get_request_handler(self) -> Optional[RequestHandler]:
+        return self.request_handler
+
+    def context_get_on_recv(self) -> Optional[Callable]:
+        return self.on_recv
 
     # -------------------------------------------------------------------------
     # Public API
@@ -334,14 +331,14 @@ class Client:
         """Cancel all pending reconnection attempts."""
         self._reconnect_handler.stop_retry()
 
-    def retry(self, max: Optional[int] = None) -> None:
+    def retry(self, max_: Optional[int] = None) -> None:
         """
         Force reconnection attempts, optionally overriding retry count.
 
         Args:
-            max: Override retry_max for this session.
+            max_: Override retry_max for this session.
         """
-        self._reconnect_handler.retry(max_=max)
+        self._reconnect_handler.retry(max_=max_)
 
     @property
     def _fail_count(self) -> int:
