@@ -10,10 +10,11 @@ from ..handler.callback_executor import CallbackExecutor
 from ..handler.handshake_handler import HandshakeHandler
 from ..internal.mode import Mode
 from ..logger.core import Logger
-from ..network.request import Request, Response
-from ..network.system_types import HELLO, PING, PONG
+from .rules import ALL_RULES
+from .rules_manager import MessageContext, RulesManager
 
 if TYPE_CHECKING:
+    from ..network.request import Response
     from ..network.sender import Sender
     from ..network.types import MessageType
 
@@ -47,6 +48,14 @@ class RequestHandler:
         self._routes: dict[MessageType, Callable] = {}
         self.on_handshake_done: Optional[Callable] = None
 
+        self.rules_manager = RulesManager()
+
+        self.init_rules_manager()
+
+    def init_rules_manager(self):
+        for rule in ALL_RULES:
+            self.rules_manager.add_rule(rule)
+
     def handle(self, response: Response, client=None) -> Union[Exception, bool]:
         """
         Handle an incoming message with full routing logic.
@@ -54,48 +63,8 @@ class RequestHandler:
         Returns True if handled successfully, Exception on unexpected error.
         """
         try:
-            source = f"client {client.addr}" if self.is_server else "server"
-
-            if response.type == PING:
-                pong = Request(PONG, b"", request_id=response.request_id)
-                self.sender.send(pong, client=client.conn) if self.is_server else self.sender.send(
-                    pong
-                )
-                return True
-
-            if response.type == HELLO and not self.is_server:
-                ok = self.handshake_handler.handle_hello(response)
-                if ok:
-                    self.handshake_handler.send_hello_ack(response.request_id)
-                    if self.on_handshake_done:
-                        try:
-                            self.on_handshake_done()
-                        except Exception as e:
-                            self._logger.error(f"Error in on_handshake_done: {e}")
-                else:
-                    self._logger.warning("[Handshake] HELLO invalid — dropping connection")
-                return True
-
-            with self.pending_requests_lock:
-                is_pending = response.request_id in self.pending_requests
-                if is_pending:
-                    queue = self.pending_requests[response.request_id]
-                    queue.put(response)
-                    return True
-
-            if response.type in self._routes:
-                if self.is_server:
-                    self._executor.submit(self._routes[response.type], response, client)
-                else:
-                    self._executor.submit(self._routes[response.type], response)
-            elif self.on_recv:
-                if self.is_server:
-                    self._executor.submit(self.on_recv, client, response)
-                else:
-                    self._executor.submit(self.on_recv, response)
-            else:
-                self._logger.warning(f"No handler registered for message from {source}")
-
+            ctx = MessageContext(response, self, client, self.is_server)
+            self.rules_manager.process(ctx)
         except Exception as e:
             source = f"client {client.addr}" if (self.is_server and client) else "server"
             self._logger.critical(f"Unexpected error handling message from {source}: {e}")

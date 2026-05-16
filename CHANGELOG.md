@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.7] - 2026-05-20
+
+### Added
+
+- **`ClientContext` Protocol** in `veltix.client.reconnect_handler`
+    - `ReconnectHandler` now accepts a single `context: ClientContext` instead of 8 individual callbacks
+    - `Client` implements `ClientContext` natively via `context_*` methods
+    - `refresh()` removed : no more stale lambda captures after `init_components()`
+    - `init_components()` no longer has side effects on `ReconnectHandler`
+
+- **Rules system** in `veltix.handler`
+    - `Rule` ABC with `can_handle(context)` and `handle(context)` : extend to add custom dispatch logic
+    - `RulesManager` : ordered rule pipeline, stops at first match
+    - `MessageContext` dataclass : encapsulates `response`, `handler`, `client`, `is_server`
+    - Built-in rules in priority order : `PingRule`, `HelloRule`, `PendingRequestRule`, `RouteRule`, `OnRecvRule`,
+      `UnhandledRule`
+    - `RequestHandler.handle()` reduced to a single `rules_manager.process(ctx)` call
+
+### Changed
+
+- **`RequestHandler.handle()`** refactored : monolithic `if/elif` chain replaced by the Rules pipeline
+- **`ReconnectHandler`** constructor simplified from 8 parameters to `context: ClientContext`
+- **`init_components()`** in `Client` no longer rebuilds `ReconnectHandler` on every call : instantiated once, never
+  refreshed
+
+### Removed
+
+- **`ReconnectHandler.refresh()`** : made obsolete by `ClientContext` Protocol
+- **`set_running()`** and **`set_connected()`** standalone methods on `Client` : replaced by `context_set_running()` and
+  `context_set_connected()`
+
+### Documentation
+
+- README rewritten : new pitch, cleaner structure, external files for roadmap, performance, and migration
+- `ROADMAP.md` created : full version history and planned releases
+- `PERFORMANCE.md` created : detailed benchmark results and methodology
+- `docs/index.md` updated : aligned with new README
+- `docs/guides/migration.md` updated : added v1.6.6 to v1.6.7 section
+
 ## [1.6.6] - 2026-05-16
 
 ### Added
