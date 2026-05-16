@@ -45,10 +45,6 @@ class Client:
             config: Client configuration.
         """
         self._handshake_done = None
-        self._message_buffer = None
-        self.request_handler = None
-        self.sender = None
-        self.socket = None
         self._logger = Logger.get_instance()
         self.config: ClientConfig = config
         self._perf = get_settings(config.performance_mode)
@@ -74,6 +70,7 @@ class Client:
     # -------------------------------------------------------------------------
 
     def init_components(self) -> None:
+        """(Re)initialise all internal components (socket, sender, handler)."""
         self.socket: BaseSocket = ThreadingSocket(
             request_handler=None,
             max_message_size=self.config.max_message_size,
@@ -101,42 +98,44 @@ class Client:
                 return
 
             self.is_connected = False
-            if self.config.retry > 0:
-                self._try_reconnect(DisconnectReason.SERVER_CLOSED)
-            else:
-                self._reconnect_handler.fire_on_disconnect(
-                    permanent=True, reason=DisconnectReason.SERVER_CLOSED
-                )
-
-        self.socket.set_callback(SocketEvents.DISCONNECT, _on_socket_disconnect)
+            self._try_reconnect(DisconnectReason.SERVER_CLOSED)
 
         if self._reconnect_handler is None:
             self._reconnect_handler = ReconnectHandler(context=self)
+
+        self.socket.set_callback(SocketEvents.DISCONNECT, _on_socket_disconnect)
 
     # -------------------------------------------------------------------------
     # Context API
     # -------------------------------------------------------------------------
 
     def context_connect(self) -> bool:
+        """Connect from within a retry context (suppresses own reconnect)."""
         return self.connect(_from_retry=True)
 
     def context_on_disconnect(self, state: DisconnectState) -> None:
+        """Forward disconnect state to the public on_disconnect callback."""
         if self.on_disconnect:
             self.on_disconnect(state)
 
     def context_init(self) -> None:
+        """Reinitialise components before a reconnection attempt."""
         self.init_components()
 
     def context_set_running(self, value: bool) -> None:
+        """Set whether the client is considered running."""
         self.running = value
 
     def context_set_connected(self, value: bool) -> None:
+        """Set the connection flag without triggering side effects."""
         self.is_connected = value
 
     def context_get_request_handler(self) -> Optional[RequestHandler]:
+        """Return the current request handler instance."""
         return self.request_handler
 
     def context_get_on_recv(self) -> Optional[Callable]:
+        """Return the current on_recv callback."""
         return self.on_recv
 
     # -------------------------------------------------------------------------
