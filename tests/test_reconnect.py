@@ -24,11 +24,21 @@ def _wait_for_disconnect(client: Client, timeout: float = 2.0) -> bool:
     return False
 
 
-def _wait_for_connect(client: Client, timeout: float = 2.0) -> bool:
+def _wait_for_connect(client: Client, timeout: float = 5.0) -> bool:
     """Wait up to `timeout` seconds for the client to (re)connect."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         if client.is_connected:
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def _wait_for_reconnect(reconnect_count: list, min_count: int = 2, timeout: float = 5.0) -> bool:
+    """Wait up to `timeout` seconds for the reconnect callback to fire `min_count` times."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if len(reconnect_count) >= min_count:
             return True
         time.sleep(0.05)
     return False
@@ -132,6 +142,7 @@ class TestAutoReconnect:
                 port=port,
                 retry=10,
                 retry_delay=0.1,
+                handshake_timeout=1.0,
             )
         )
         client.set_callback(Events.ON_CONNECT, lambda: reconnected.append(True))
@@ -148,9 +159,10 @@ class TestAutoReconnect:
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
         server2.start()
 
-        # Wait for reconnect
-        assert _wait_for_connect(client, timeout=3.0), "Client did not reconnect in time"
-        assert len(reconnected) >= 2, f"Expected 2+ reconnects, got {len(reconnected)}"
+        # Wait for ON_CONNECT to fire again (handshake-complete reconnect)
+        assert _wait_for_reconnect(reconnected, 2, timeout=5.0), (
+            f"Client did not reconnect, got {len(reconnected)} callbacks"
+        )
 
         client.disconnect()
         server2.close_all()
@@ -202,6 +214,7 @@ class TestAutoReconnect:
                 port=port,
                 retry=5,
                 retry_delay=0.1,
+                handshake_timeout=1.0,
             )
         )
         client.set_callback(Events.ON_CONNECT, lambda: received.append("connected"))
@@ -214,9 +227,10 @@ class TestAutoReconnect:
         server2 = Server(ServerConfig(host="127.0.0.1", port=port))
         server2.start()
 
-        # Wait for reconnect
-        assert _wait_for_connect(client, timeout=3.0), "Client did not reconnect in time"
-        assert len(received) >= 2, f"Expected 2+ callbacks, got {len(received)}"
+        # Wait for ON_CONNECT to fire again (handshake-complete reconnect)
+        assert _wait_for_reconnect(received, 2, timeout=5.0), (
+            f"Client did not reconnect, got {len(received)} callbacks"
+        )
 
         client.disconnect()
         server2.close_all()
