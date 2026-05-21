@@ -1,6 +1,6 @@
 # Migration Guide
 
-## v1.6.6 → v1.6.7
+## v1.6.6 → v1.6.8
 
 No breaking changes to public API.
 

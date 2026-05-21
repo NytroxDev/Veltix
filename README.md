@@ -41,7 +41,7 @@ so you can focus on your application logic.
 
 Projects using Veltix in production:
 
-- **[Nexo](https://github.com/NytroxDev/Nexo)** — Fast LAN file transfer tool CLI + GUI.
+- **[Nexo](https://github.com/NytroxDev/Nexo)** : Fast LAN file transfer tool CLI + GUI.
   Uses Veltix's TCP server, client tags, route decorators, and `send_and_wait()` for
   reliable chunked file transfers with concurrent connection handling.
 
@@ -185,7 +185,7 @@ python client.py  # In a separate terminal
 
 `Version` class, reconnect stability fixes, +111 tests, CI on Python 3.8-3.14
 
-### v1.6.7 : Architecture Refactor *(May 2026)* : Released
+### v1.6.8 : Architecture Refactor *(May 2026)* : Released
 
 `ClientContext` Protocol, Rules system for `RequestHandler`, README rewrite
 

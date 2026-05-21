@@ -60,7 +60,7 @@
 - +111 new tests
 - CI on Python 3.8 / 3.10 / 3.12 / 3.14
 
-### v1.6.7 : Architecture Refactor *(May 2026)*
+### v1.6.8 : Architecture Refactor *(May 2026)*
 
 - `ClientContext` Protocol : replaces callback soup in `ReconnectHandler`
 - Rules system for `RequestHandler` : scalable, readable message dispatch
