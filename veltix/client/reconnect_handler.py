@@ -33,6 +33,7 @@ class ReconnectHandler:
         self._fail_count = 0
         self._stop_retry_flag = False
         self._stop_event = threading.Event()
+        self._retry_thread: Optional[threading.Thread] = None
 
     def init_connect(self) -> None:
         """Reset retry state after a successful connection."""
@@ -125,9 +126,17 @@ class ReconnectHandler:
         """
         Force an immediate reconnection attempt, even if retry_max was reached.
 
+        If a reconnect loop is already running, this call is ignored
+        and a warning is logged.
+
         Args:
             max_: Override retry_max for this session (optional).
         """
+
+        if self._retry_thread and self._retry_thread.is_alive():
+            self._logger.warning("retry() ignoré : une boucle de reconnexion est déjà active")
+            return
+
         if max_ is not None:
             self._context.config = dataclasses.replace(self._context.config, retry=max_)
             self._logger.info(f"retry() called — new retry_max={max_}")
@@ -138,7 +147,8 @@ class ReconnectHandler:
         self._stop_event.clear()
         self._fail_count = 0
         self.reset()
-        threading.Thread(target=self.reconnect_loop, daemon=True).start()
+        self._retry_thread = threading.Thread(target=self.reconnect_loop, daemon=True)
+        self._retry_thread.start()
 
     def reset(self) -> None:
         """
