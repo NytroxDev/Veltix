@@ -164,10 +164,12 @@ class ThreadingSocket(BaseSocket):
             except TimeoutError:
                 continue
             except OSError:
+                self.running = False
                 return
             except Exception as e:
                 if self.running:
                     self._logger.error(f"Accept error: {type(e).__name__}: {e}")
+                self.running = False
                 return
 
     def _handle_server_client(self, client_id: int, buffer_size: int, timeout: float) -> None:
