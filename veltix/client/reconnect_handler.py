@@ -96,6 +96,10 @@ class ReconnectHandler:
         When ``config.retry == 0``, fires ``on_disconnect`` with
         ``permanent=True`` immediately without attempting a connection.
 
+        When ``config.retry > 0``, fires ``on_disconnect`` with
+        ``permanent=False`` for the initial disconnection, then enters
+        the reconnect loop.
+
         Returns:
             True if reconnection eventually succeeded, False otherwise.
         """
@@ -103,6 +107,7 @@ class ReconnectHandler:
             self.fire_on_disconnect(permanent=True, reason=reason)
             return False
 
+        self.fire_on_disconnect(permanent=False, reason=reason)
         return self.reconnect_loop(reason)
 
     def stop_retry(self) -> None:
