@@ -13,7 +13,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection  
 so you can focus on your application logic.
 
-**53k msg/s** • **0.004ms latency** • **84KB idle** • **100% success rate**
+**52k msg/s** • **0.006ms latency** • **212KB idle** • **100% success rate**
 
 ---
 
@@ -108,15 +108,15 @@ custom protocols, IPC, remote tooling, file transfer.
 
 ## Performance
 
-> Benchmarked on Python 3.14 — 12-core CPU, 30.5 GB RAM, Linux (loopback).
+> Benchmarked on Python 3.14.5 — 12-core CPU, 30.5 GB RAM, Linux (loopback).
 
 | Metric                             | Result                                |
 |------------------------------------|---------------------------------------|
-| Concurrent stress (100 clients)    | 52,655 msg/s — 100% success           |
-| Burst throughput                   | 73,964 msg/s send / 53,976 msg/s recv |
-| Average latency                    | 0.004ms                               |
-| Idle server memory                 | 84 KB                                 |
-| FPS simulation (64 players @ 64Hz) | 4,490 msg/s — 100% success            |
+| Concurrent stress (100 clients)    | 38,985 msg/s — 100% success           |
+| Burst throughput                   | 52,377 msg/s send / 41,496 msg/s recv |
+| Average latency                    | 0.006 ms                              |
+| Idle server memory                 | 212 KB                                |
+| FPS simulation (64 players @ 64Hz) | 4,488 msg/s — 100% success            |
 
 Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
 ---
@@ -190,6 +190,10 @@ python client.py  # In a separate terminal
 
 `ClientContext` Protocol, Rules system for `RequestHandler`, README rewrite
 
+### v1.6.9 : Reconnect Stability & Cleanup *(June 2026)* : Released
+
+8 bug fixes across reconnect path + code quality cleanups
+
 ### v1.7.0 : Selectors *(June 2026)* : Planned
 
 `AsyncSocket` : selectors-based I/O, same API, 4-8x throughput improvement
@@ -235,7 +239,7 @@ python client.py  # In a separate terminal
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
 
 - Bug reports : [Open an issue](https://github.com/NytroxDev/Veltix/issues)
-- Discussions : [Join the Discord](https://discord.gg/NrEjSHtfMp)
+- Discussions : [Join the Discord](https://discord.gg/jwjEV5eze7)
 - Pull requests : Follow the contribution guide
 
 ---
@@ -251,4 +255,4 @@ MIT License : see [LICENSE](LICENSE) for details.
 - GitHub : [NytroxDev/Veltix](https://github.com/NytroxDev/Veltix)
 - PyPI : [pypi.org/project/veltix](https://pypi.org/project/veltix)
 - Documentation : https://nytroxdev.github.io/Veltix/
-- Discord : [discord.gg/NrEjSHtfMp](https://discord.gg/NrEjSHtfMp)
+- Discord : [discord.gg/jwjEV5eze7](https://discord.gg/jwjEV5eze7)

@@ -70,14 +70,14 @@ custom protocols, IPC, remote tooling, file transfer.
 
 ## Performance
 
-> Benchmarked on Python 3.14.4 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
+> Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
 
 | Metric                          | Result                      |
 |---------------------------------|-----------------------------|
-| Concurrent stress (100 clients) | 52,930 msg/s : 100% success |
-| Burst send                      | 90,999 msg/s                |
-| Average latency                 | 0.005 ms                    |
-| Idle server memory              | 84 KB                       |
+| Concurrent stress (100 clients) | 38,985 msg/s : 100% success |
+| Burst send                      | 52,377 msg/s                |
+| Average latency                 | 0.006 ms                    |
+| Idle server memory              | 212 KB                      |
 
 Full details : [Performance](../PERFORMANCE.md)
 
@@ -95,4 +95,4 @@ Full details : [Performance](../PERFORMANCE.md)
 - [Changelog](changelog.md)
 - [GitHub](https://github.com/NytroxDev/Veltix)
 - [PyPI](https://pypi.org/project/veltix)
-- [Discord](https://discord.gg/NrEjSHtfMp)
+- [Discord](https://discord.gg/jwjEV5eze7)
