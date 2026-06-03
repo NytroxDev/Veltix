@@ -23,7 +23,7 @@ class ClientEntry:
 
 class ClientsManager:
     def __init__(self, max_message_size: Optional[int] = None):
-        self.max_message_size = max_message_size
+        self.max_message_size = max_message_size or (10 * 1024 * 1024)
         self.clients: dict[int, ClientEntry] = {}
         self._clients_lock = Lock()
         self.id_count = 0
