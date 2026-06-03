@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.9] - 2026-06-03
+
+### Fixed
+
+- **Routes preserved across reconnection** — `ReconnectHandler.reset()` was re-creating the
+  `RequestHandler` without re-registering existing routes, silently losing all `@client.route()`
+  handlers after automatic reconnection. Now saves and restores them.
+
+- **`MessageBuffer(None)` TypeError** — `ClientsManager` passed `None` as `max_message_size`
+  to `MessageBuffer` when no argument was given, overriding the 10 MB default and causing
+  `extract_messages()` to crash with `TypeError`. Now falls back to 10 MB when `None`.
+
+- **Initial `on_disconnect` not fired when `retry > 0`** — `try_reconnect()` skipped the
+  initial `on_disconnect(permanent=False)` event when auto-reconnect was enabled, diverging
+  from documented behaviour. Now fires the initial disconnection event before entering the
+  reconnect loop.
+
+- **`retry()` could start parallel reconnect loops** — calling `client.retry()` multiple
+  times launched concurrent threads, each competing to reconnect. Now guards against
+  overlapping loops via a thread reference + `is_alive()` check.
+
+- **`thread_handler` never joined in `close_all()`** — `close_all()` (aliased as `close()`
+  for client mode) joined `start_th` but not `thread_handler`, leaving the receive thread
+  alive until the socket error forced it out. Now joins `thread_handler` with proper
+  `None` guard and `current_thread` check.
+
+- **Missing attributes in `_create_client_instance()`** — server-side client socket
+  instances created via `_create_client_instance()` were missing `start_th`, `threads`,
+  `_threads_lock`, `n_th`, `_n_th_lock`, and `thread_handler`, causing silent
+  `AttributeError` in `close_all()`. All attributes are now properly initialized.
+
+- **Stale `running=True` on `_accept_loop` exception** — when `_accept_loop` exited on
+  `OSError` or unexpected exception, `self.running` remained `True`, making the server
+  appear active. Now sets `self.running = False` before each early return.
+
+### Changed
+
+- **Time source for latency timestamps** — `Request.parse()` and `Request.compile()` now
+  use `time.monotonic()` instead of `time.time()` to avoid negative latency readings when
+  the system clock is adjusted (NTP).
+
+### Removed
+
+- **Dead `ping_result` attribute** from `Server` — was declared in `__slots__` and
+  initialized to `None` but never read or written.
+
+- **Redundant `_handshake_done` initialisation** in `Client.__init__()` — was set to `None`
+  then immediately overwritten by `init_components()`. Now initialised as `Event()` directly.
+
+- **Magic number `settimeout(0.5)`** in `ThreadingSocket.__init__()` — this value was
+  immediately overwritten by subsequent `settimeout()` calls from the performance mode
+  settings.
+
+### Internal
+
+- **Guarded `psutil` import** in `benchmark/cli.py` — now wrapped in `try/except ImportError`
+  with a clear message instructing users to install `veltix[benchmark]`.
+
 ## [1.6.8] - 2026-05-20
 
 ### Added

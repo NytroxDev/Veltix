@@ -52,7 +52,6 @@ class Server:
         "on_recv",
         "on_connect",
         "on_disconnect",
-        "ping_result",
         "sender",
         "request_handler",
         "socket",
@@ -69,7 +68,6 @@ class Server:
         self._perf = get_settings(config.performance_mode)
 
         self.config: ServerConfig = config
-        self.ping_result: Optional[Response] = None
 
         self.sender = Sender(mode=Mode.SERVER)
         self.request_handler = RequestHandler(

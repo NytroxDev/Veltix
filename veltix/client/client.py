@@ -44,7 +44,7 @@ class Client:
         Args:
             config: Client configuration.
         """
-        self._handshake_done = None
+        self._handshake_done: Event = Event()
         self._logger = Logger.get_instance()
         self.config: ClientConfig = config
         self._perf = get_settings(config.performance_mode)
@@ -83,7 +83,6 @@ class Client:
             max_workers=self.config.max_workers,
         )
         self.socket.request_handler = self.request_handler
-        self._handshake_done: Event = Event()
 
         def _on_handshake_done():
             self._handshake_done.set()
