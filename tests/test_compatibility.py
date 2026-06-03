@@ -85,21 +85,25 @@ class TestVersionIsCompatible:
         # Temporarily add a cross-compatible entry to test the mechanism
         v1 = Version(1, 6, 6)
         v2 = Version(1, 6, 5)
-        COMPATIBILITY[v1] = [v1, v2]
-        assert v1.is_compatible(v2) is True
-        # Restore
-        COMPATIBILITY[v1] = [v1]
+        original = COMPATIBILITY.get(v1, [])
+        try:
+            COMPATIBILITY[v1] = [v1, v2]
+            assert v1.is_compatible(v2) is True
+        finally:
+            COMPATIBILITY[v1] = original
 
 
 class TestCompatibilityTable:
     def test_current_version_in_table(self):
         """Current version should always be in the compatibility table."""
         from veltix.version import __version__
+
         current = Version.from_str(__version__)
         assert current in COMPATIBILITY
 
     def test_current_version_compatible_with_itself(self):
         """Current version should be compatible with itself."""
         from veltix.version import __version__
+
         current = Version.from_str(__version__)
         assert current.is_compatible(current) is True
