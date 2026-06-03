@@ -66,6 +66,13 @@
 - Rules system for `RequestHandler` : scalable, readable message dispatch
 - README rewrite + documentation restructure
 
+### v1.6.9 : Reconnect Stability & Cleanup *(June 2026)*
+
+- 8 bug fixes across the reconnect path (routes lost, thread_handler not joined, etc.)
+- Switched latency timestamps from `time.time()` to `time.monotonic()`
+- Removed dead code : `ping_result`, redundant `_handshake_done`, magic `settimeout(0.5)`
+- Guarded `psutil` import in benchmark CLI
+
 ---
 
 ## Planned
