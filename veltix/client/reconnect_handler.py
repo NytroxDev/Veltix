@@ -144,14 +144,20 @@ class ReconnectHandler:
         the on_recv callback to the request handler.
         """
         self._logger.debug("Resetting client state for reconnection")
+        old_handler = self._context.context_get_request_handler()
+        old_routes = dict(old_handler._routes) if old_handler else {}
+
         self._context.context_set_connected(False)
         self._context.context_set_running(True)
         self._context.context_init()
 
         on_recv = self._context.context_get_on_recv()
         request_handler = self._context.context_get_request_handler()
-        if on_recv and request_handler:
-            request_handler.set_on_recv(on_recv)
+        if request_handler:
+            if on_recv:
+                request_handler.set_on_recv(on_recv)
+            for type_, func in old_routes.items():
+                request_handler.register_route(type_, func)
 
     @property
     def stop_retry_flag(self) -> bool:
