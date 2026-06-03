@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "veltix"
-version = "1.6.8"
+version = "1.6.9"
 description = "The high-level TCP library Python never had — sync, thread-friendly, zero dependencies"
 readme = "README.md"
 license = { text = "MIT" }
@@ -71,7 +71,7 @@ Repository = "https://github.com/NytroxDev/Veltix"
 Documentation = "https://nytroxdev.github.io/Veltix/"
 Issues = "https://github.com/NytroxDev/Veltix/issues"
 Changelog = "https://github.com/NytroxDev/Veltix/blob/main/CHANGELOG.md"
-Discord = "https://discord.gg/NrEjSHtfMp"
+Discord = "https://discord.gg/jwjEV5eze7"
 
 # Setuptools configuration
 [tool.setuptools]

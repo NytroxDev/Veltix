@@ -62,7 +62,7 @@ class Request:
         if len(data) > max_message_size:
             raise RequestError(f"Message too large: {len(data)} bytes (maximum {max_message_size})")
 
-        received_at = int(time.time() * 1000)
+        received_at = int(time.monotonic() * 1000)
 
         header = data[:22]
         content = data[22:]
@@ -98,7 +98,7 @@ class Request:
             raise RequestError(f"Content too large: {size} bytes (max: {max_size})")
 
         hash_value = zlib.crc32(self.content).to_bytes(4, "big")
-        timestamp_ms = int(time.time() * 1000)
+        timestamp_ms = int(time.monotonic() * 1000)
 
         header = _HEADER_STRUCT.pack(
             self.type.code,
