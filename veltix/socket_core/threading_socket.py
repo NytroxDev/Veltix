@@ -68,6 +68,12 @@ class ThreadingSocket(BaseSocket):
         conn.on_connect = None
         conn.on_disconnect = None
         conn.on_recv = None
+        conn.start_th = None
+        conn.thread_handler = None
+        conn.threads = {}
+        conn._threads_lock = threading.Lock()
+        conn.n_th = 0
+        conn._n_th_lock = threading.Lock()
         return conn
 
     # ── Shared helpers ────────────────────────────────────────────────────────
@@ -267,11 +273,14 @@ class ThreadingSocket(BaseSocket):
             self.client_manager.iter_on_clients(self._close_server_client)
             if self.start_th and self.start_th != threading.current_thread():
                 self.start_th.join(timeout=0.2)
+            if self.thread_handler and self.thread_handler != threading.current_thread():
+                self.thread_handler.join(timeout=0.2)
             return True
         except Exception:
             return False
 
-    close = close_all
+    def close(self) -> bool:
+        return self.close_all()
 
     # ── Client ────────────────────────────────────────────────────────────────
 
