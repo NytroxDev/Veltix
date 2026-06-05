@@ -206,7 +206,7 @@ class Client:
                 self.config.server_addr,
                 self.config.port,
                 self.config.buffer_size,
-                self._perf.socket_timeout,
+                0.5,
             )
             if not connected:
                 self._logger.error(
