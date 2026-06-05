@@ -269,6 +269,7 @@ class Server:
         self._logger.info("Shutting down server")
 
         try:
+            self.request_handler.shutdown(wait=False)
             self.socket.close()
             self._logger.info("Server socket closed")
         except Exception as e:

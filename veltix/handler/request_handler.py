@@ -130,5 +130,5 @@ class RequestHandler:
         self._routes.pop(type_)
         return True
 
-    def shutdown(self) -> None:
-        self._executor.shutdown()
+    def shutdown(self, wait: bool = True) -> None:
+        self._executor.shutdown(wait=wait)

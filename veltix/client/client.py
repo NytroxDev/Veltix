@@ -313,6 +313,7 @@ class Client:
             self.running = False
             self.is_connected = False
             self._reconnect_handler.stop_retry()
+            self.request_handler.shutdown(wait=False)
             self.socket.close()
             self._logger.debug("Socket closed")
 
