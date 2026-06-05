@@ -46,7 +46,6 @@ class Server:
 
     __slots__ = (
         "_logger",
-        "_perf",
         "config",
         "on_recv",
         "on_connect",
