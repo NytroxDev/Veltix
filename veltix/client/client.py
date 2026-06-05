@@ -1,6 +1,7 @@
 # client.py
 """TCP client implementation for Veltix."""
 
+import time
 from threading import Event
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
@@ -285,11 +286,15 @@ class Client:
             Latency in milliseconds, or None on timeout.
         """
         self._logger.debug("Pinging server")
-        response = self.send_and_wait(Request(PING, b""), timeout=timeout)
+        request = Request(PING, b"")
+        t_send = time.perf_counter()
+        response = self.send_and_wait(request, timeout=timeout)
+        t_recv = time.perf_counter()
 
         if response:
-            self._logger.info(f"Ping: {response.latency:.2f}ms")
-            return response.latency
+            rtt = (t_recv - t_send) * 1000
+            self._logger.info(f"Ping: {rtt:.2f}ms")
+            return rtt
 
         self._logger.warning("Ping timed out")
         return None

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
@@ -185,11 +186,15 @@ class Server:
             Latency in milliseconds, or None on timeout.
         """
         self._logger.debug(f"Pinging client {client.addr}")
-        response = self.send_and_wait(Request(PING, b""), client, timeout=timeout)
+        request = Request(PING, b"")
+        t_send = time.perf_counter()
+        response = self.send_and_wait(request, client, timeout=timeout)
+        t_recv = time.perf_counter()
 
         if response:
-            self._logger.info(f"Ping {client.addr}: {response.latency:.2f}ms")
-            return response.latency
+            rtt = (t_recv - t_send) * 1000
+            self._logger.info(f"Ping {client.addr}: {rtt:.2f}ms")
+            return rtt
 
         self._logger.warning(f"Ping timeout for client {client.addr}")
         return None
