@@ -64,7 +64,7 @@ class RouteRule(Rule):
         self._logger.debug(f"Dispatching to registered route for type {context.response.type}")
         if context.is_server:
             context.handler._executor.submit(
-                context.handler._routes[context.response.type], context.response, context.client
+                context.handler._routes[context.response.type], context.client, context.response
             )
         else:
             context.handler._executor.submit(

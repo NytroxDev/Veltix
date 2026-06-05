@@ -38,12 +38,12 @@ STATUS = MessageType(code=201, name="status")
 
 
 @server.route(CHAT)
-def on_chat(response, client):
+def on_chat(client, response):
     print(f"[{client.addr[0]}] {response.content.decode()}")
 
 
 @server.route(STATUS)
-def on_status(response, client):
+def on_status(client, response):
     print(f"Status from {client.addr[0]}: {response.content.decode()}")
 ```
 

@@ -127,7 +127,7 @@ class Server:
 
         Usage:
             @server.route(MY_TYPE)
-            def on_my_type(response: Response, client: ClientInfo) -> None:
+            def on_my_type(client: ClientInfo, response: Response) -> None:
                 ...
 
         Args:
