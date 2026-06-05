@@ -1,7 +1,6 @@
 import dataclasses
 
 from ..internal.buffer_size import BufferSize
-from ..internal.performance_mode import PerformanceMode
 from ..socket_core.core import SocketCore
 
 
@@ -21,7 +20,6 @@ class ServerConfig:
         handshake_timeout: Maximum time to wait for handshake completion in seconds (default: 5.0).
         max_workers:       Number of worker threads for callback execution (default: 4).
                            Increase if your on_recv callback is slow or blocking.
-        performance_mode:  Controls internal timing parameters (default: BALANCED).
         socket_core:       Socket implementation to use (default: THREADING).
                            Switch to ASYNC (v1.7.0) or RUST (v3.0.0) without changing
                            any other code.
@@ -34,5 +32,4 @@ class ServerConfig:
     max_message_size: int = 10 * 1024 * 1024  # 10 MB
     handshake_timeout: float = 5.0
     max_workers: int = 4
-    performance_mode: PerformanceMode = PerformanceMode.BALANCED
     socket_core: SocketCore = SocketCore.THREADING

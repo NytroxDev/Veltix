@@ -4,7 +4,6 @@
 import dataclasses
 
 from ..internal.buffer_size import BufferSize
-from ..internal.performance_mode import PerformanceMode
 from ..socket_core.core import SocketCore
 
 
@@ -26,7 +25,6 @@ class ClientConfig:
         retry:             Number of reconnection attempts on failure (default: 0 = disabled).
                            Applies both to the initial connect() and to mid-session disconnections.
         retry_delay:       Seconds to wait between reconnection attempts (default: 1.0).
-        performance_mode:  Controls internal timing parameters (default: BALANCED).
     """
 
     server_addr: str = "127.0.0.1"
@@ -37,5 +35,4 @@ class ClientConfig:
     max_workers: int = 4
     retry: int = 0
     retry_delay: float = 1.0
-    performance_mode: PerformanceMode = PerformanceMode.BALANCED
     socket_core: SocketCore = SocketCore.THREADING
