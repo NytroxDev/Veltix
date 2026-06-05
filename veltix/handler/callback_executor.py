@@ -25,6 +25,6 @@ class CallbackExecutor:
 
         self._executor.submit(_safe_run)
 
-    def shutdown(self) -> None:
-        """Shutdown the executor, waiting for in-progress callbacks to complete."""
-        self._executor.shutdown(wait=True)
+    def shutdown(self, wait: bool = True) -> None:
+        """Shutdown the executor, optionally waiting for in-progress callbacks."""
+        self._executor.shutdown(wait=wait)
