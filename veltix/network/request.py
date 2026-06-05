@@ -36,7 +36,13 @@ class Response:
 
     @property
     def latency(self) -> int:
-        """Round-trip latency in ms. Assumes synchronized clocks."""
+        """
+        Round-trip latency in ms.
+
+        Only valid when the sender and receiver share the same process
+        (e.g. single-process testing). For cross-process RTT, use the
+        timing built into ping_server() / ping_client() instead.
+        """
         return self.received_at - self.timestamp
 
 
