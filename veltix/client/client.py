@@ -59,8 +59,7 @@ class Client:
         self.init_components()
 
         self._logger.debug(
-            f"Client initialized for {self.config.server_addr}:{self.config.port} "
-            f"[{config.performance_mode.name}]"
+            f"Client initialized for {self.config.server_addr}:{self.config.port}"
         )
 
     # -------------------------------------------------------------------------

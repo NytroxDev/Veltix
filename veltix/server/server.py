@@ -80,8 +80,7 @@ class Server:
         self._logger.info(f"Server initialized on {self.config.host}:{self.config.port}")
         self._logger.debug(
             f"Server config: buffer_size={self.config.buffer_size}, "
-            f"max_connections={self.config.max_connection}, "
-            f"performance_mode={config.performance_mode.name}"
+            f"max_connections={self.config.max_connection}"
         )
 
     # -------------------------------------------------------------------------
