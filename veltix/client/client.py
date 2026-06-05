@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.events import Events, events
-from ..internal.performance_mode import get_settings
 from ..logger.core import Logger
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
@@ -47,7 +46,6 @@ class Client:
         self._handshake_done: Event = Event()
         self._logger = Logger.get_instance()
         self.config: ClientConfig = config
-        self._perf = get_settings(config.performance_mode)
 
         self._reconnect_handler = None
 
@@ -75,7 +73,7 @@ class Client:
             request_handler=None,
             max_message_size=self.config.max_message_size,
         )
-        self.socket.settimeout(self._perf.socket_timeout)
+        self.socket.settimeout(0.5)
         self.sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket)
         self.request_handler: RequestHandler = RequestHandler(
             sender=self.sender,

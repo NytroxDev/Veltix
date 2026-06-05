@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.events import Events, events
-from ..internal.performance_mode import get_settings
 from ..logger.core import Logger
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
@@ -65,7 +64,6 @@ class Server:
             config: Server configuration.
         """
         self._logger = Logger.get_instance()
-        self._perf = get_settings(config.performance_mode)
 
         self.config: ServerConfig = config
 
@@ -260,7 +258,7 @@ class Server:
             port=self.config.port,
             max_client=self.config.max_connection,
             buffer_size=self.config.buffer_size,
-            timeout=self._perf.socket_timeout,
+            timeout=0.5,
         )
 
     def close_all(self) -> None:

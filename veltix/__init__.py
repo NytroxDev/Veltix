@@ -11,7 +11,6 @@ from .exceptions import MessageTypeError, RequestError, SenderError, VeltixError
 from .internal.buffer_size import BufferSize
 from .internal.compatibility import COMPATIBILITY, Version
 from .internal.events import Events
-from .internal.performance_mode import PerformanceMode
 from .logger.config import LoggerConfig
 from .logger.core import Logger
 from .logger.levels import LogLevel
@@ -62,7 +61,6 @@ __all__ = [
     "encode_utf8",
     "format_bytes",
     "Events",
-    "PerformanceMode",
     "BufferSize",
     # Logger
     "Logger",
