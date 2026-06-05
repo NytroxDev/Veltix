@@ -112,6 +112,7 @@ class ThreadingSocket(BaseSocket):
             return False
         self.running = True
         self._sock.bind((host, port))
+        self._sock.listen()
         self.start_th = threading.Thread(
             target=self._accept_loop,
             args=(host, port, max_client, buffer_size, timeout),
@@ -123,7 +124,6 @@ class ThreadingSocket(BaseSocket):
     def _accept_loop(
         self, host: str, port: int, max_client: int, buffer_size: int, timeout: float
     ) -> None:
-        self._sock.listen()
         self._sock.settimeout(timeout)
         self._logger.info(f"Server listening on {host}:{port}")
 
