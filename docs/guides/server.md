@@ -3,7 +3,7 @@
 ## Configuration
 
 ```python
-from veltix import Server, ServerConfig, PerformanceMode, BufferSize
+from veltix import Server, ServerConfig, BufferSize
 
 config = ServerConfig(
     host="0.0.0.0",  # Listening address
@@ -13,7 +13,6 @@ config = ServerConfig(
     max_message_size=10 * 1024 * 1024,  # 10MB max message size
     handshake_timeout=5.0,  # Handshake timeout in seconds
     max_workers=4,  # Thread pool size for callbacks
-    performance_mode=PerformanceMode.BALANCED,  # CPU/reactivity trade-off
 )
 
 server = Server(config)

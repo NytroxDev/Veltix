@@ -3,7 +3,7 @@
 ## Configuration
 
 ```python
-from veltix import Client, ClientConfig, PerformanceMode, BufferSize
+from veltix import Client, ClientConfig, BufferSize
 
 config = ClientConfig(
     server_addr="127.0.0.1",  # Server address
@@ -14,7 +14,6 @@ config = ClientConfig(
     max_workers=4,  # Thread pool size for callbacks
     retry=0,  # Reconnection attempts (0 = disabled)
     retry_delay=1.0,  # Seconds between attempts
-    performance_mode=PerformanceMode.BALANCED,  # CPU/reactivity trade-off
 )
 
 client = Client(config)

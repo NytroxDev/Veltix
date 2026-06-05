@@ -87,9 +87,9 @@ client.set_callback(Events.ON_DISCONNECT, lambda: print("Disconnected"))
 client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected — permanent={state.permanent}"))
 ```
 
-New optional fields in `ClientConfig`: `retry`, `retry_delay`, `performance_mode`, `buffer_size`.
+New optional fields in `ClientConfig`: `retry`, `retry_delay`, `buffer_size`.
 
-New optional fields in `ServerConfig`: `performance_mode`, `buffer_size`.
+New optional fields in `ServerConfig`: `buffer_size`.
 
 ## v1.3.0 → v1.4.0
 

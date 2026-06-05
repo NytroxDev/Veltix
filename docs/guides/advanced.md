@@ -69,19 +69,6 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.T
 
 Switching backends requires no changes to application code.
 
-## Performance Mode
-
-```python
-from veltix import ServerConfig, ClientConfig, PerformanceMode
-
-# LOW       — socket timeout 1.0s, minimal CPU
-# BALANCED  — socket timeout 0.5s, default
-# HIGH      — socket timeout 0.1s, fast disconnection detection
-
-server = Server(ServerConfig(host="0.0.0.0", port=8080, performance_mode=PerformanceMode.HIGH))
-client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, performance_mode=PerformanceMode.HIGH))
-```
-
 ## Buffer Size
 
 ```python
