@@ -14,7 +14,7 @@ so you can focus on your application logic.
 
 ```python
 @server.route(CHAT)
-def on_chat(response: Response, client: ClientInfo):
+def on_chat(client: ClientInfo, response: Response):
     print(f"{client.addr}: {response.content.decode()}")
 ```
 

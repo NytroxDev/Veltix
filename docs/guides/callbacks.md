@@ -46,7 +46,7 @@ CHAT = MessageType(code=200, name="chat")
 
 
 @server.route(CHAT)
-def on_chat(response, client):
+def on_chat(client, response):
     ...  # only called for CHAT messages
 
 

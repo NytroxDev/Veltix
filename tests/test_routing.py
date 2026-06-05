@@ -19,7 +19,7 @@ class TestServerRouting:
         received = []
 
         @server.route(test_message_type)
-        def on_msg(response: Response, client: ClientInfo):
+        def on_msg(client: ClientInfo, response: Response):
             received.append(response)
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
@@ -44,7 +44,7 @@ class TestServerRouting:
         fallback = []
 
         @server.route(test_message_type)
-        def on_msg(response: Response, client: ClientInfo):
+        def on_msg(client: ClientInfo, response: Response):
             routed.append(True)
 
         server.set_callback(Events.ON_RECV, lambda c, r: fallback.append(True))
@@ -97,7 +97,7 @@ class TestServerRouting:
         routed = []
 
         @server.route(test_message_type)
-        def on_msg(response: Response, client: ClientInfo):
+        def on_msg(client: ClientInfo, response: Response):
             routed.append(True)
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
@@ -115,8 +115,8 @@ class TestServerRouting:
         """Registering the same type twice should return False."""
         server = Server(ServerConfig(host="127.0.0.1", port=18104))
 
-        result1 = server.request_handler.register_route(test_message_type, lambda r, c: None)
-        result2 = server.request_handler.register_route(test_message_type, lambda r, c: None)
+        result1 = server.request_handler.register_route(test_message_type, lambda c, r: None)
+        result2 = server.request_handler.register_route(test_message_type, lambda c, r: None)
 
         assert result1 is True
         assert result2 is False
@@ -133,7 +133,7 @@ class TestServerRouting:
         fallback = []
 
         @server.route(test_message_type)
-        def on_msg(response: Response, client: ClientInfo):
+        def on_msg(client: ClientInfo, response: Response):
             routed.append(True)
 
         server.set_callback(Events.ON_RECV, lambda c, r: fallback.append(True))
@@ -173,11 +173,11 @@ class TestServerRouting:
         received_b = []
 
         @server.route(test_message_type)
-        def on_a(response: Response, client: ClientInfo):
+        def on_a(client: ClientInfo, response: Response):
             received_a.append(True)
 
         @server.route(type_b)
-        def on_b(response: Response, client: ClientInfo):
+        def on_b(client: ClientInfo, response: Response):
             received_b.append(True)
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
