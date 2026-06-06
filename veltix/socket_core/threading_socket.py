@@ -42,6 +42,7 @@ class ThreadingSocket(BaseSocket):
 
         self.max_message_size = max_message_size
         self.request_handler = request_handler
+        self.handshake_timeout: float = 5.0
         self._logger = Logger.get_instance()
 
         self._sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -182,8 +183,21 @@ class ThreadingSocket(BaseSocket):
         self.request_handler.register(handshake_request_id)
         self.request_handler.handshake_handler.send_hello(hello, entry.info.conn)
 
+        conn_time = time.monotonic()
+
         while self.running:
             result = recv(entry.info.conn, buffer_size)
+
+            if result.timed_out:
+                if (
+                    not entry.info.handshake_done
+                    and time.monotonic() - conn_time > self.handshake_timeout
+                ):
+                    self._logger.warning(f"Handshake timeout for {entry.info.addr}")
+                    self._close_server_client(entry)
+                    break
+                continue
+
             if not self._process_server_message(result, entry, handshake_request_id):
                 break
 

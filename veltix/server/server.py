@@ -75,6 +75,7 @@ class Server:
         self.socket: BaseSocket = self.config.socket_core.value(
             request_handler=self.request_handler, max_message_size=self.config.max_message_size
         )
+        self.socket.handshake_timeout = self.config.handshake_timeout
         self.socket.set_callback(SocketEvents.RECV, self.request_handler.handle)
 
         self._logger.info(f"Server initialized on {self.config.host}:{self.config.port}")
