@@ -53,8 +53,18 @@ class PendingRequestRule(Rule):
             queue.put(context.response)
 
     def can_handle(self, context: MessageContext) -> bool:
+        return False
+
+    def try_handle(self, context: MessageContext) -> bool:
         with context.handler.pending_requests_lock:
-            return context.response.request_id in context.handler.pending_requests
+            queue = context.handler.pending_requests.get(context.response.request_id)
+        if queue is None:
+            return False
+        queue.put(context.response)
+        self._logger.debug(
+            f"Routing response to pending request (request_id={context.response.request_id})"
+        )
+        return True
 
 
 class RouteRule(Rule):

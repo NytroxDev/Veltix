@@ -28,11 +28,10 @@ class RulesManager:
 
     def process(self, context: MessageContext) -> bool:
         for rule in self._rules:
-            if rule.can_handle(context):
+            if rule.try_handle(context):
                 self._logger.debug(
                     f"{rule.__class__.__name__} handling message type {context.response.type}"
                 )
-                rule.handle(context)
                 return True
         self._logger.debug(f"No rule matched for message type {context.response.type}")
         return False
@@ -48,3 +47,9 @@ class Rule(ABC):
 
     @abstractmethod
     def handle(self, context: MessageContext) -> None: ...
+
+    def try_handle(self, context: MessageContext) -> bool:
+        if self.can_handle(context):
+            self.handle(context)
+            return True
+        return False
