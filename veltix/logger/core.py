@@ -44,9 +44,9 @@ class Logger:
         self._initialized = True
 
     @classmethod
-    def get_instance(cls, config: Optional[LoggerConfig] = None) -> Logger:
-        """Get or create the singleton instance."""
-        return cls(config)
+    def get_instance(cls) -> Logger:
+        """Get or create the singleton instance (config is one-shot at first creation)."""
+        return cls()
 
     @classmethod
     def reset_instance(cls) -> None:
