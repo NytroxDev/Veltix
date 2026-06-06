@@ -9,6 +9,7 @@ from .disconnect import DisconnectReason, DisconnectState
 
 if TYPE_CHECKING:
     from veltix.handler.request_handler import RequestHandler
+    from veltix.socket_core.base_socket import BaseSocket
 
     from .config import ClientConfig
 
@@ -24,6 +25,7 @@ class ClientContext(Protocol):
     def context_set_connected(self, value: bool) -> None: ...
     def context_get_request_handler(self) -> Optional[RequestHandler]: ...
     def context_get_on_recv(self) -> Optional[Callable]: ...
+    def context_get_socket(self) -> Optional[BaseSocket]: ...
 
 
 class ReconnectHandler:
@@ -76,6 +78,13 @@ class ReconnectHandler:
 
             self.reset()
             if self._context.context_connect():
+                if self._stop_retry_flag:
+                    self._logger.info("Reconnection cancelled during connect")
+                    sock = self._context.context_get_socket()
+                    if sock:
+                        sock.close()
+                    self._context.context_set_connected(False)
+                    return False
                 return True
 
             self.fire_on_disconnect(permanent=False, reason=reason)
