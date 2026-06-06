@@ -114,8 +114,7 @@ def run(iterations: int = 2_000, port: int = PORT_LATENCY) -> LatencyStats:
 
     _histogram(samples_raw)
 
-    # Attach extra fields for JSON export
-    stats._jitter = jitter
-    stats._throughput = throughput
+    stats.jitter_ms = jitter
+    stats.throughput = throughput
 
     return stats

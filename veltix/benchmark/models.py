@@ -17,6 +17,8 @@ class LatencyStats:
     """Accumulates latency samples and exposes common percentile statistics."""
 
     _samples: list[float] = field(default_factory=list, repr=False)
+    jitter_ms: float = 0.0
+    throughput: float = 0.0
 
     def add(self, value: Optional[float]) -> None:
         if value is not None:
@@ -70,6 +72,8 @@ class LatencyStats:
             "min_ms": round(self.min, 4),
             "max_ms": round(self.max, 4),
             "stdev_ms": round(self.stdev, 4),
+            "jitter_ms": round(self.jitter_ms, 3),
+            "throughput": round(self.throughput, 1),
         }
 
 
