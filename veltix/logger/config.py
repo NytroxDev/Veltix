@@ -56,3 +56,7 @@ class LoggerConfig:
         """Validate and normalize configuration."""
         if self.file_path:
             self.file_path = Path(self.file_path)
+        if self.file_rotation_size <= 0:
+            raise ValueError(f"file_rotation_size must be positive, got {self.file_rotation_size}")
+        if self.file_backup_count <= 0:
+            raise ValueError(f"file_backup_count must be positive, got {self.file_backup_count}")
