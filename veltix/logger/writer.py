@@ -107,28 +107,29 @@ class Writer:
             print(f"⚠️  Error writing to log file: {e}")
 
     def _rotate_file(self) -> None:
-        try:
-            if self._file_handle:
-                self._file_handle.close()
+        with self._lock:
+            try:
+                if self._file_handle:
+                    self._file_handle.close()
 
-            base_path = self.config.file_path
-            oldest = base_path.with_suffix(f"{base_path.suffix}.{self.config.file_backup_count}")
-            if oldest.exists():
-                oldest.unlink()
+                base_path = self.config.file_path
+                oldest = base_path.with_suffix(f"{base_path.suffix}.{self.config.file_backup_count}")
+                if oldest.exists():
+                    oldest.unlink()
 
-            for i in range(self.config.file_backup_count - 1, 0, -1):
-                old_path = base_path.with_suffix(f"{base_path.suffix}.{i}")
-                new_path = base_path.with_suffix(f"{base_path.suffix}.{i + 1}")
-                if old_path.exists():
-                    old_path.rename(new_path)
+                for i in range(self.config.file_backup_count - 1, 0, -1):
+                    old_path = base_path.with_suffix(f"{base_path.suffix}.{i}")
+                    new_path = base_path.with_suffix(f"{base_path.suffix}.{i + 1}")
+                    if old_path.exists():
+                        old_path.rename(new_path)
 
-            if base_path.exists():
-                base_path.rename(base_path.with_suffix(f"{base_path.suffix}.1"))
+                if base_path.exists():
+                    base_path.rename(base_path.with_suffix(f"{base_path.suffix}.1"))
 
-            self._file_handle = open(base_path, "a", encoding="utf-8", buffering=8192)
-            self._current_size = 0
-        except Exception as e:
-            print(f"⚠️  Error rotating log file: {e}")
+                self._file_handle = open(base_path, "a", encoding="utf-8", buffering=8192)
+                self._current_size = 0
+            except Exception as e:
+                print(f"⚠️  Error rotating log file: {e}")
 
     def _cleanup(self) -> None:
         if self._flush_thread:
