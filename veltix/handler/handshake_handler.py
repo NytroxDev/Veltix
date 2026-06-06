@@ -42,7 +42,11 @@ class HandshakeHandler:
 
     @staticmethod
     def _decode_hello(payload: bytes) -> Version:
+        if len(payload) < 2:
+            raise ValueError("Payload too short for length prefix")
         length = int.from_bytes(payload[0:2], "big")
+        if len(payload) < 2 + length:
+            raise ValueError(f"Payload too short: need {2 + length}, got {len(payload)}")
         return Version.from_str(payload[2 : 2 + length].decode("utf-8"))
 
     # ── Server ────────────────────────────────────────────────────────────────
