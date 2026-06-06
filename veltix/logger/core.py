@@ -55,23 +55,23 @@ class Logger:
             cls._instance = None
 
     def _log(self, level: LogLevel, message: str) -> None:
-        if not self.config.enabled or level < self.config.level:
-            return
-
-        caller = self._get_caller_info() if self.config.show_caller else None
-        timestamp = datetime.now() if self.config.show_timestamp else None
-
-        formatted = self._formatter.format(
-            level=level,
-            message=message,
-            caller=caller,
-            timestamp=timestamp,
-            show_timestamp=self.config.show_timestamp,
-            show_caller=self.config.show_caller,
-            show_level=self.config.show_level,
-        )
-
         with self._lock:
+            if not self.config.enabled or level < self.config.level:
+                return
+
+            caller = self._get_caller_info() if self.config.show_caller else None
+            timestamp = datetime.now() if self.config.show_timestamp else None
+
+            formatted = self._formatter.format(
+                level=level,
+                message=message,
+                caller=caller,
+                timestamp=timestamp,
+                show_timestamp=self.config.show_timestamp,
+                show_caller=self.config.show_caller,
+                show_level=self.config.show_level,
+            )
+
             self._writer.write(formatted)
             self._stats[level] += 1
 
@@ -112,13 +112,16 @@ class Logger:
         self._log(LogLevel.CRITICAL, message)
 
     def set_level(self, level: LogLevel) -> None:
-        self.config.level = level
+        with self._lock:
+            self.config.level = level
 
     def enable(self) -> None:
-        self.config.enabled = True
+        with self._lock:
+            self.config.enabled = True
 
     def disable(self) -> None:
-        self.config.enabled = False
+        with self._lock:
+            self.config.enabled = False
 
     def get_stats(self) -> dict[LogLevel, int]:
         with self._lock:
