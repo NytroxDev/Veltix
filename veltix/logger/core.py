@@ -33,20 +33,39 @@ class Logger:
         return cls._instance
 
     def __init__(self, config: Optional[LoggerConfig] = None) -> None:
-        if self._initialized:
+        if not self._initialized:
+            self._lock = threading.RLock()
+            self._initialized = True
+        elif config is not None:
+            self._lock.acquire()
+            try:
+                self.config = config
+                self._formatter = Formatter(use_colors=self.config.use_colors)
+                self._writer = Writer(self.config)
+                self._stats = dict.fromkeys(LogLevel, 0)
+            finally:
+                self._lock.release()
+            return
+        else:
             return
 
         self.config = config or LoggerConfig()
-        self._lock = threading.RLock()
         self._formatter = Formatter(use_colors=self.config.use_colors)
         self._writer = Writer(self.config)
         self._stats: dict[LogLevel, int] = dict.fromkeys(LogLevel, 0)
-        self._initialized = True
 
     @classmethod
-    def get_instance(cls) -> Logger:
-        """Get or create the singleton instance (config is one-shot at first creation)."""
-        return cls()
+    def get_instance(cls, config: Optional[LoggerConfig] = None) -> Logger:
+        """Get or create the singleton instance."""
+        return cls(config)
+
+    def configure(self, config: LoggerConfig) -> None:
+        """Reconfigure the logger with a new config (writer, formatter, stats reset)."""
+        with self._lock:
+            self.config = config
+            self._formatter = Formatter(use_colors=self.config.use_colors)
+            self._writer = Writer(self.config)
+            self._stats = dict.fromkeys(LogLevel, 0)
 
     @classmethod
     def reset_instance(cls) -> None:
