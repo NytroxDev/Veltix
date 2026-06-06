@@ -134,6 +134,10 @@ class Client:
         """Return the current on_recv callback."""
         return self.on_recv
 
+    def context_get_socket(self) -> Optional[BaseSocket]:
+        """Return the current socket instance."""
+        return self.socket
+
     # -------------------------------------------------------------------------
     # Public API
     # -------------------------------------------------------------------------
@@ -228,7 +232,8 @@ class Client:
                 self._logger.error(
                     f"Handshake timeout after {self.config.handshake_timeout}s — disconnecting"
                 )
-                self.disconnect()
+                if not _from_retry:
+                    self.disconnect()
                 return False
 
             return True
