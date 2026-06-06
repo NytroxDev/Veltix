@@ -60,6 +60,7 @@ class ThreadingSocket(BaseSocket):
         """Create a properly initialized client socket instance."""
         conn = cls.__new__(cls)
         conn._sock = sock
+        conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         conn._logger = logger
         conn.request_handler = request_handler
         conn.max_message_size = max_message_size
