@@ -70,3 +70,23 @@ class TestMessageBuffer:
         buf = MessageBuffer()
         messages = buf.extract_messages()
         assert messages == []
+
+    def test_corrupt_message_resync(self, test_message_type):
+        """Corrupt message should be skipped and stream should resync on next message."""
+        buf = MessageBuffer()
+
+        msg1 = Request(test_message_type, b"Valid").compile()
+        msg2_type = MessageType(
+            code=test_message_type.code + 500, name=f"buf_test_{test_message_type.code}"
+        )
+        msg2 = Request(msg2_type, b"After corrupt").compile()
+
+        # Corrupt the content of msg1 so CRC won't match
+        corrupt = bytearray(msg1)
+        corrupt[-1] ^= 0xFF  # flip last byte of content
+
+        buf.add_data(bytes(corrupt) + msg2)
+        messages = buf.extract_messages()
+
+        assert len(messages) == 1
+        assert messages[0].content == b"After corrupt"
