@@ -112,9 +112,9 @@ class ThreadingSocket(BaseSocket):
     def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:
         if self.running:
             return False
-        self.running = True
         self._sock.bind((host, port))
         self._sock.listen()
+        self.running = True
         self.start_th = threading.Thread(
             target=self._accept_loop,
             args=(host, port, max_client, buffer_size, timeout),
