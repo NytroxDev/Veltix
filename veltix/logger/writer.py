@@ -19,6 +19,7 @@ class Writer:
     def __init__(self, config: LoggerConfig) -> None:
         self.config = config
         self._lock = threading.RLock()
+        self._file_path = config.file_path
 
         self._file_handle: Optional[TextIO] = None
         self._current_size = 0
@@ -27,7 +28,7 @@ class Writer:
         self._flush_thread: Optional[threading.Thread] = None
         self._should_stop = threading.Event()
 
-        if config.file_path:
+        if self._file_path:
             self._init_file()
             if config.async_write:
                 self._init_async_writer()
@@ -36,13 +37,13 @@ class Writer:
 
     def _init_file(self) -> None:
         try:
-            self.config.file_path.parent.mkdir(parents=True, exist_ok=True)
-            self._file_handle = open(self.config.file_path, "a", encoding="utf-8", buffering=8192)
-            if self.config.file_path.exists():
-                self._current_size = self.config.file_path.stat().st_size
+            self._file_path.parent.mkdir(parents=True, exist_ok=True)
+            self._file_handle = open(self._file_path, "a", encoding="utf-8", buffering=8192)
+            if self._file_path.exists():
+                self._current_size = self._file_path.stat().st_size
         except (OSError, PermissionError) as e:
             print(f"⚠️  Failed to open log file: {e}")
-            self.config.file_path = None
+            self._file_path = None
 
     def _init_async_writer(self) -> None:
         self._buffer = deque(maxlen=self.config.buffer_size)
@@ -77,7 +78,7 @@ class Writer:
             with contextlib.suppress(Exception):
                 print(message, file=self.config.stream)
 
-        if self.config.file_path:
+        if self._file_path:
             if self.config.async_write:
                 self._write_to_buffer(message)
             else:
@@ -112,7 +113,7 @@ class Writer:
                 if self._file_handle:
                     self._file_handle.close()
 
-                base_path = self.config.file_path
+                base_path = self._file_path
                 oldest = base_path.with_suffix(f"{base_path.suffix}.{self.config.file_backup_count}")
                 if oldest.exists():
                     oldest.unlink()
