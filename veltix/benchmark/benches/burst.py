@@ -80,12 +80,12 @@ def run(
     data_mbps = (recv_count * payload_size) / total_elapsed / 1_048_576
     success = recv_count / count * 100
 
-    # ── Receive latency distribution ──────────────────────────────────────────
+    # ── Pipeline drain distribution ───────────────────────────────────────────
     # recv_ts[i] - t0 gives elapsed time (s) until the i-th message arrived
-    recv_latencies_ms: list[float] = []
+    drain_latencies_ms: list[float] = []
     if received_ts:
         sorted_ts = sorted(received_ts)
-        recv_latencies_ms = [(ts - t0) * 1_000 for ts in sorted_ts]
+        drain_latencies_ms = [(ts - t0) * 1_000 for ts in sorted_ts]
 
     def _pct(data: list[float], p: float) -> float:
         if not data:
@@ -93,10 +93,10 @@ def run(
         s = sorted(data)
         return s[int(len(s) * p / 100)]
 
-    lat_p50 = _pct(recv_latencies_ms, 50)
-    lat_p95 = _pct(recv_latencies_ms, 95)
-    lat_p99 = _pct(recv_latencies_ms, 99)
-    lat_max = max(recv_latencies_ms) if recv_latencies_ms else 0.0
+    lat_p50 = _pct(drain_latencies_ms, 50)
+    lat_p95 = _pct(drain_latencies_ms, 95)
+    lat_p99 = _pct(drain_latencies_ms, 99)
+    lat_max = max(drain_latencies_ms) if drain_latencies_ms else 0.0
 
     # ── Inter-arrival jitter ──────────────────────────────────────────────────
     if len(received_ts) >= 2:
@@ -143,9 +143,10 @@ def run(
         success_rate=success,
         duration_s=total_elapsed,
         send_duration_s=send_duration,
-        recv_lat_p50_ms=lat_p50,
-        recv_lat_p95_ms=lat_p95,
-        recv_lat_p99_ms=lat_p99,
-        recv_lat_max_ms=lat_max,
-        recv_jitter_ms=recv_jitter,
+        drain_p50_ms=lat_p50,
+        drain_p95_ms=lat_p95,
+        drain_p99_ms=lat_p99,
+        drain_max_ms=lat_max,
+        drain_jitter_ms=recv_jitter,
+        recv_gap_avg_ms=recv_gap_avg,
     )

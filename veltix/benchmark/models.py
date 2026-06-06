@@ -156,12 +156,13 @@ class BurstResult:
     success_rate: float
     duration_s: float
     send_duration_s: float
-    # Pipeline drain latency
-    recv_lat_p50_ms: float
-    recv_lat_p95_ms: float
-    recv_lat_p99_ms: float
-    recv_lat_max_ms: float
-    recv_jitter_ms: float
+    # Pipeline drain latency (time from send start to recv)
+    drain_p50_ms: float
+    drain_p95_ms: float
+    drain_p99_ms: float
+    drain_max_ms: float
+    drain_jitter_ms: float
+    recv_gap_avg_ms: float
 
     def to_dict(self) -> dict:
         return {
@@ -173,11 +174,12 @@ class BurstResult:
             "success_rate": round(self.success_rate, 2),
             "duration_s": round(self.duration_s, 3),
             "send_duration_s": round(self.send_duration_s, 3),
-            "recv_lat_p50_ms": round(self.recv_lat_p50_ms, 1),
-            "recv_lat_p95_ms": round(self.recv_lat_p95_ms, 1),
-            "recv_lat_p99_ms": round(self.recv_lat_p99_ms, 1),
-            "recv_lat_max_ms": round(self.recv_lat_max_ms, 1),
-            "recv_jitter_ms": round(self.recv_jitter_ms, 3),
+            "drain_p50_ms": round(self.drain_p50_ms, 1),
+            "drain_p95_ms": round(self.drain_p95_ms, 1),
+            "drain_p99_ms": round(self.drain_p99_ms, 1),
+            "drain_max_ms": round(self.drain_max_ms, 1),
+            "drain_jitter_ms": round(self.drain_jitter_ms, 3),
+            "recv_gap_avg_ms": round(self.recv_gap_avg_ms, 3),
         }
 
 
