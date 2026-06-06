@@ -36,7 +36,7 @@ class HelloRule(Rule):
         else:
             self._logger.warning("[Handshake] HELLO invalid — closing connection")
             if context.handler.sender.conn:
-                context.handler.sender.conn.close())
+                context.handler.sender.conn.close()
 
     def can_handle(self, context: MessageContext) -> bool:
         return context.response.type == HELLO and not context.is_server
