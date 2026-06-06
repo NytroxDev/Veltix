@@ -47,15 +47,17 @@ class MessageBuffer:
                 break
 
             message_data = bytes(self._buffer[:total_size])
-            self._buffer = self._buffer[total_size:]
 
             try:
                 response = Request.parse(message_data)
+                self._buffer = self._buffer[total_size:]
                 messages.append(response)
             except Exception as e:
                 self._logger.error(
-                    f"Failed to parse message ({len(message_data)} bytes): {type(e).__name__}: {e}"
+                    f"Failed to parse message ({len(message_data)} bytes): {type(e).__name__}: {e}. "
+                    f"Advancing buffer past corrupted message to resync."
                 )
+                self._buffer = self._buffer[total_size:]
 
         return messages
 
