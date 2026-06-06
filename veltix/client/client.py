@@ -12,7 +12,6 @@ from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 from ..network.types import MessageType
-from ..socket_core.threading_socket import ThreadingSocket
 from .config import ClientConfig
 from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
@@ -69,7 +68,7 @@ class Client:
 
     def init_components(self) -> None:
         """(Re)initialise all internal components (socket, sender, handler)."""
-        self.socket: BaseSocket = ThreadingSocket(
+        self.socket: BaseSocket = self.config.socket_core.value(
             request_handler=None,
             max_message_size=self.config.max_message_size,
         )
