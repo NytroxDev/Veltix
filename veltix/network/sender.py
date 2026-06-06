@@ -33,6 +33,9 @@ class Sender:
         """
         self._logger = Logger.get_instance()
 
+        if isinstance(mode, str):
+            mode = Mode(mode)
+
         if mode == Mode.CLIENT and conn is None:
             raise SenderError("CLIENT mode requires a socket connection")
 

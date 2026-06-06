@@ -33,6 +33,8 @@ class RequestHandler:
     """
 
     def __init__(self, mode: Union[Mode, str], max_workers: int = 4, sender: Sender = None) -> None:
+        if isinstance(mode, str):
+            mode = Mode(mode)
         self.on_recv = None
         self.mode = mode
         self.is_server = self.mode == Mode.SERVER
