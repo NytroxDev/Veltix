@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Optional
 from ...network.message_buffer import MessageBuffer
 
 if TYPE_CHECKING:
-    import socket
     from collections.abc import Callable
 
     from ...server.client_info import ClientInfo
+    from ...socket_core.base_socket import BaseSocket
 
 
 class ClientEntry:
@@ -75,6 +75,6 @@ class ClientsManager:
             return [e for e in self.clients.values() if e.info.get_tag(tag) == value]
 
     @staticmethod
-    def to_sockets(entries: list[ClientEntry]) -> list[socket.socket]:
+    def to_sockets(entries: list[ClientEntry]) -> list[BaseSocket]:
         """Convert a list of ClientEntry to a list of sockets (entry.info.conn)."""
         return [e.info.conn for e in entries]

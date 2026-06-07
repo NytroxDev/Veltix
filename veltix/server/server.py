@@ -15,8 +15,6 @@ from ..network.system_types import PING
 from ..socket_core.base_socket import BaseSocket, SocketEvents
 
 if TYPE_CHECKING:
-    import socket
-
     from ..network.types import MessageType
     from .client_info import ClientInfo
     from .config import ServerConfig
@@ -239,7 +237,7 @@ class Server:
             return False
         return self.socket.close_client(entry)
 
-    def get_clients_sockets_by_tag(self, tag: str, value=None) -> list[socket.socket]:
+    def get_clients_sockets_by_tag(self, tag: str, value=None) -> list[BaseSocket]:
         """Get all clients that have a specific tag, optionally matching a value."""
         entries = self.socket.client_manager.get_clients_by_tag(tag, value)
         return self.socket.client_manager.to_sockets(entries)
