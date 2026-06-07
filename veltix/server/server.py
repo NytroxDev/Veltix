@@ -89,8 +89,8 @@ class Server:
     # -------------------------------------------------------------------------
 
     @property
-    def clients(self) -> list:
-        return self.socket.client_manager.get_all_clients()
+    def clients(self) -> list[ClientInfo]:
+        return [e.info for e in self.socket.client_manager.get_all_clients()]
 
     def get_all_clients_sockets(self) -> list:
         return [entry.info.conn for entry in self.socket.client_manager.get_all_clients()]
