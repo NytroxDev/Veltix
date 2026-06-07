@@ -1488,12 +1488,11 @@
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Hello!&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x02\x03\x04</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="response">Response<a class="headerlink" href="#response" title="Permanent link">&para;</a></h2>
-<p>Responses are received in callbacks. They have the same fields as requests plus <code>latency</code>.</p>
+<p>Responses are received in callbacks. They have the same fields as requests.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>     <span class="c1"># message type name</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>       <span class="c1"># raw bytes payload</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="p">)</span>    <span class="c1"># 4-byte request id</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">latency</span><span class="p">)</span>       <span class="c1"># round-trip time in ms</span>
 </code></pre></div>
 
 

@@ -1860,7 +1860,7 @@ server.start()
 <details class="usage" open>
   <summary>Usage</summary>
   <p>@server.route(MY_TYPE)
-def on_my_type(response: Response, client: ClientInfo) -&gt; None:
+def on_my_type(client: ClientInfo, response: Response) -&gt; None:
     ...</p>
 </details>
 
@@ -2254,7 +2254,7 @@ def on_my_type(response: Response, client: ClientInfo) -&gt; None:
 
 
 <a href="#veltix.server.server.Server.get_clients_sockets_by_tag" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_clients_sockets_by_tag</span><span class="p">(</span><span class="n">tag</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_clients_sockets_by_tag</span><span class="p">(</span><span class="n">tag</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">BaseSocket</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2455,17 +2455,6 @@ def on_my_type(response: Response, client: ClientInfo) -&gt; None:
               <div class="doc-md-description">
                 <p>Number of worker threads for callback execution (default: 4).
                Increase if your on_recv callback is slow or blocking.</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><span title="veltix.server.config.ServerConfig.performance_mode">performance_mode</span></code></td>
-            <td>
-                  <code><span title="veltix.internal.performance_mode.PerformanceMode">PerformanceMode</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Controls internal timing parameters (default: BALANCED).</p>
               </div>
             </td>
           </tr>

@@ -889,17 +889,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#performance-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Performance Mode
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#buffer-size" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1441,17 +1430,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#performance-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Performance Mode
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#buffer-size" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1570,61 +1548,51 @@
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># server = Server(ServerConfig(host=&quot;0.0.0.0&quot;, port=8080, socket_core=SocketCore.ASYNC))</span>
 </code></pre></div>
 <p>Switching backends requires no changes to application code.</p>
-<h2 id="performance-mode">Performance Mode<a class="headerlink" href="#performance-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientConfig</span><span class="p">,</span> <span class="n">PerformanceMode</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># LOW       — socket timeout 1.0s, minimal CPU</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># BALANCED  — socket timeout 0.5s, default</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># HIGH      — socket timeout 0.1s, fast disconnection detection</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">performance_mode</span><span class="o">=</span><span class="n">PerformanceMode</span><span class="o">.</span><span class="n">HIGH</span><span class="p">))</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">ClientConfig</span><span class="p">(</span><span class="n">server_addr</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">performance_mode</span><span class="o">=</span><span class="n">PerformanceMode</span><span class="o">.</span><span class="n">HIGH</span><span class="p">))</span>
-</code></pre></div>
 <h2 id="buffer-size">Buffer Size<a class="headerlink" href="#buffer-size" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientConfig</span><span class="p">,</span> <span class="n">BufferSize</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># SMALL  — 1KB  (default)</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># MEDIUM — 8KB</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># LARGE  — 64KB</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># HUGE   — 1MB</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">buffer_size</span><span class="o">=</span><span class="n">BufferSize</span><span class="o">.</span><span class="n">LARGE</span><span class="p">))</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientConfig</span><span class="p">,</span> <span class="n">BufferSize</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># SMALL  — 1KB  (default)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># MEDIUM — 8KB</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># LARGE  — 64KB</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># HUGE   — 1MB</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">buffer_size</span><span class="o">=</span><span class="n">BufferSize</span><span class="o">.</span><span class="n">LARGE</span><span class="p">))</span>
 </code></pre></div>
 <h2 id="custom-message-types">Custom Message Types<a class="headerlink" href="#custom-message-types" title="Permanent link">&para;</a></h2>
 <p>Message type codes are divided into ranges by convention:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessageType</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># System messages (0–199)</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">PING</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;ping&quot;</span><span class="p">,</span> <span class="s2">&quot;System ping&quot;</span><span class="p">)</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># Application messages (200–499)</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;chat&quot;</span><span class="p">,</span> <span class="s2">&quot;Chat message&quot;</span><span class="p">)</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">FILE_TRANSFER</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">201</span><span class="p">,</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="s2">&quot;File transfer&quot;</span><span class="p">)</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="c1"># Plugin messages (500+)</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="n">CUSTOM</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s2">&quot;plugin&quot;</span><span class="p">,</span> <span class="s2">&quot;Custom plugin message&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessageType</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># System messages (0–199)</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">PING</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;ping&quot;</span><span class="p">,</span> <span class="s2">&quot;System ping&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># Application messages (200–499)</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;chat&quot;</span><span class="p">,</span> <span class="s2">&quot;Chat message&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">FILE_TRANSFER</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">201</span><span class="p">,</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="s2">&quot;File transfer&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="c1"># Plugin messages (500+)</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="n">CUSTOM</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s2">&quot;plugin&quot;</span><span class="p">,</span> <span class="s2">&quot;Custom plugin message&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="configuring-the-thread-pool">Configuring the Thread Pool<a class="headerlink" href="#configuring-the-thread-pool" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientConfig</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Increase workers for high-concurrency workloads with slow callbacks</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">server_config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">client_config</span> <span class="o">=</span> <span class="n">ClientConfig</span><span class="p">(</span><span class="n">server_addr</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientConfig</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># Increase workers for high-concurrency workloads with slow callbacks</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">server_config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">client_config</span> <span class="o">=</span> <span class="n">ClientConfig</span><span class="p">(</span><span class="n">server_addr</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="utilities">Utilities<a class="headerlink" href="#utilities" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_bytes</span><span class="p">,</span> <span class="n">encode_json</span><span class="p">,</span> <span class="n">decode_json</span><span class="p">,</span> <span class="n">encode_utf8</span><span class="p">,</span> <span class="n">decode_utf8</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Human-readable byte formatting</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">format_bytes</span><span class="p">(</span><span class="mi">148_000</span><span class="p">)</span>    <span class="c1"># &quot;144.5 KB&quot;</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">format_bytes</span><span class="p">(</span><span class="mi">3_000_000</span><span class="p">)</span>  <span class="c1"># &quot;2.86 MB&quot;</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># JSON helpers</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">data</span> <span class="o">=</span> <span class="n">encode_json</span><span class="p">({</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>  <span class="c1"># bytes</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="n">obj</span> <span class="o">=</span> <span class="n">decode_json</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>               <span class="c1"># dict</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="c1"># UTF-8 helpers</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="n">raw</span> <span class="o">=</span> <span class="n">encode_utf8</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>  <span class="c1"># bytes</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="n">text</span> <span class="o">=</span> <span class="n">decode_utf8</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>     <span class="c1"># str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_bytes</span><span class="p">,</span> <span class="n">encode_json</span><span class="p">,</span> <span class="n">decode_json</span><span class="p">,</span> <span class="n">encode_utf8</span><span class="p">,</span> <span class="n">decode_utf8</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Human-readable byte formatting</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">format_bytes</span><span class="p">(</span><span class="mi">148_000</span><span class="p">)</span>    <span class="c1"># &quot;144.5 KB&quot;</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">format_bytes</span><span class="p">(</span><span class="mi">3_000_000</span><span class="p">)</span>  <span class="c1"># &quot;2.86 MB&quot;</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># JSON helpers</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">data</span> <span class="o">=</span> <span class="n">encode_json</span><span class="p">({</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>  <span class="c1"># bytes</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="n">obj</span> <span class="o">=</span> <span class="n">decode_json</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>               <span class="c1"># dict</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="c1"># UTF-8 helpers</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="n">raw</span> <span class="o">=</span> <span class="n">encode_utf8</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>  <span class="c1"># bytes</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="n">text</span> <span class="o">=</span> <span class="n">decode_utf8</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>     <span class="c1"># str</span>
 </code></pre></div>
 
 

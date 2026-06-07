@@ -1424,7 +1424,8 @@
 <blockquote>
 <p>The high-level TCP library Python never had.</p>
 </blockquote>
-<p><a href="https://pypi.org/project/veltix/"><img alt="PyPI" src="https://img.shields.io/pypi/v/veltix?cacheSeconds=300" /></a>
+<p><a href="https://ghloc.vercel.app/NytroxDev/Veltix"><img alt="Lines of code" src="https://img.shields.io/endpoint?url=https://ghloc.vercel.app/api/NytroxDev/Veltix/badge" /></a>
+<a href="https://pypi.org/project/veltix/"><img alt="PyPI" src="https://img.shields.io/pypi/v/veltix?cacheSeconds=300" /></a>
 <a href="https://pypi.org/project/veltix/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/veltix?cacheSeconds=300" /></a>
 <a href="https://github.com/NytroxDev/Veltix/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/NytroxDev/Veltix?cacheSeconds=300" /></a>
 <a href="https://pepy.tech/projects/veltix"><img alt="Downloads" src="https://static.pepy.tech/personalized-badge/veltix?period=total&amp;units=NONE&amp;left_color=BLACK&amp;right_color=BLUE&amp;left_text=downloads" /></a></p>
@@ -1432,7 +1433,7 @@
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">ClientInfo</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">ClientInfo</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">):</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">client</span><span class="o">.</span><span class="n">addr</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 <hr />
@@ -1469,7 +1470,7 @@ custom protocols, IPC, remote tooling, file transfer.</p>
 <p><strong>Reliability</strong></p>
 <ul>
 <li>Auto-reconnect : configurable retry with <code>DisconnectState</code> callbacks</li>
-<li><code>LOW</code> / <code>BALANCED</code> / <code>HIGH</code> performance mode presets</li>
+<li><code>SMALL</code> / <code>MEDIUM</code> / <code>LARGE</code> buffer size presets</li>
 <li>Swappable socket backends via <code>SocketCore</code> (Threading now, Selectors in v1.7.0, Rust in v3.0.0)</li>
 </ul>
 <p><strong>Developer Experience</strong></p>
@@ -1480,7 +1481,7 @@ custom protocols, IPC, remote tooling, file transfer.</p>
 <hr />
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>Benchmarked on Python 3.14.4 : 12-core CPU, 30.5 GB RAM, Linux (loopback).</p>
+<p>Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).</p>
 </blockquote>
 <table>
 <thead>
@@ -1492,19 +1493,19 @@ custom protocols, IPC, remote tooling, file transfer.</p>
 <tbody>
 <tr>
 <td>Concurrent stress (100 clients)</td>
-<td>52,930 msg/s : 100% success</td>
+<td>32,073 msg/s : 100% success</td>
 </tr>
 <tr>
 <td>Burst send</td>
-<td>90,999 msg/s</td>
+<td>50,467 msg/s</td>
 </tr>
 <tr>
 <td>Average latency</td>
-<td>0.005 ms</td>
+<td>0.049 ms</td>
 </tr>
 <tr>
 <td>Idle server memory</td>
-<td>84 KB</td>
+<td>212 KB</td>
 </tr>
 </tbody>
 </table>
@@ -1522,7 +1523,7 @@ custom protocols, IPC, remote tooling, file transfer.</p>
 <li><a href="changelog/">Changelog</a></li>
 <li><a href="https://github.com/NytroxDev/Veltix">GitHub</a></li>
 <li><a href="https://pypi.org/project/veltix">PyPI</a></li>
-<li><a href="https://discord.gg/NrEjSHtfMp">Discord</a></li>
+<li><a href="https://discord.gg/jwjEV5eze7">Discord</a></li>
 </ul>
 
 

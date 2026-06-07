@@ -1082,6 +1082,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#veltix.client.client.Client.context_get_socket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;context_get_socket
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#veltix.client.client.Client.set_callback" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1679,6 +1690,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#veltix.client.client.Client.context_get_socket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;context_get_socket
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#veltix.client.client.Client.set_callback" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2093,6 +2115,26 @@ letting the caller display progress or cancel retries via stop_retry().</p>
     <div class="doc doc-contents ">
 
         <p>Return the current on_recv callback.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="veltix.client.client.Client.context_get_socket" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">context_get_socket</span>
+
+
+<a href="#veltix.client.client.Client.context_get_socket" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">context_get_socket</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseSocket</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the current socket instance.</p>
 
 
     </div>
@@ -2732,17 +2774,6 @@ where the response could arrive before wait() is called.</p>
             <td>
               <div class="doc-md-description">
                 <p>Seconds to wait between reconnection attempts (default: 1.0).</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code><span title="veltix.client.config.ClientConfig.performance_mode">performance_mode</span></code></td>
-            <td>
-                  <code><span title="veltix.internal.performance_mode.PerformanceMode">PerformanceMode</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Controls internal timing parameters (default: BALANCED).</p>
               </div>
             </td>
           </tr>
