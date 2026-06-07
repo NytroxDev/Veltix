@@ -23,7 +23,10 @@ class CallbackExecutor:
             except Exception as e:
                 self._logger.error(f"Error in callback {func.__name__}: {type(e).__name__}: {e}")
 
-        self._executor.submit(_safe_run)
+        try:
+            self._executor.submit(_safe_run)
+        except RuntimeError:
+            self._logger.error("Cannot submit callback: executor is shut down")
 
     def shutdown(self, wait: bool = True) -> None:
         """Shutdown the executor, optionally waiting for in-progress callbacks."""
