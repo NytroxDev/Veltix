@@ -69,6 +69,8 @@ class Sender:
             return True
         except (ConnectionResetError, BrokenPipeError) as e:
             self._logger.warning(f"Connection error during send: {type(e).__name__}")
+            if self.is_client:
+                self.conn = None
             return False
         except Exception as e:
             self._logger.error(f"Unexpected send error: {type(e).__name__}: {e}")
