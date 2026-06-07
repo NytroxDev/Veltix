@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import Optional
 
 from ..exceptions import MessageTypeError
@@ -11,21 +12,25 @@ class MessageTypeRegistry:
     """Registry mapping message codes to MessageType instances."""
 
     _registry: dict[int, MessageType] = {}
+    _lock: threading.Lock = threading.Lock()
 
     @classmethod
     def register(cls, msg_type: MessageType) -> None:
-        if msg_type.code in cls._registry:
-            existing = cls._registry[msg_type.code]
-            raise MessageTypeError(f"Code {msg_type.code} already registered as '{existing.name}'")
-        cls._registry[msg_type.code] = msg_type
+        with cls._lock:
+            if msg_type.code in cls._registry:
+                existing = cls._registry[msg_type.code]
+                raise MessageTypeError(f"Code {msg_type.code} already registered as '{existing.name}'")
+            cls._registry[msg_type.code] = msg_type
 
     @classmethod
     def get(cls, code: int) -> Optional[MessageType]:
-        return cls._registry.get(code)
+        with cls._lock:
+            return cls._registry.get(code)
 
     @classmethod
     def list_all(cls) -> list[MessageType]:
-        return list(cls._registry.values())
+        with cls._lock:
+            return list(cls._registry.values())
 
 
 class MessageType:
