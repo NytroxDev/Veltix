@@ -101,7 +101,7 @@ def run(port: int = PORT_MEMORY) -> MemoryResult:
     leak = ram_after - baseline
     row(
         "RSS after full teardown",
-        f"{format_bytes(int(ram_after * 1_024))}  (leak delta: {format_bytes(int(abs(leak) * 1_024))}{'  ✓' if leak < 512 else '  ⚠ possible leak'})",
+        f"{format_bytes(int(ram_after * 1_024))}  (leak delta: {'' if leak >= 0 else '-'}{format_bytes(int(abs(leak) * 1_024))}{'  ✓' if abs(leak) < 512 else '  ⚠ possible leak'})",
     )
 
     return MemoryResult(
