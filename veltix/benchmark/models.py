@@ -40,7 +40,7 @@ class LatencyStats:
         if not self._samples:
             return 0.0
         s = sorted(self._samples)
-        return s[int(len(s) * pct / 100)]
+        return s[min(int(len(s) * pct / 100), len(s) - 1)]
 
     @property
     def p95(self) -> float:
