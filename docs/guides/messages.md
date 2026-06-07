@@ -37,12 +37,11 @@ request = Request(CHAT, b"Hello!", request_id=b"\x01\x02\x03\x04")
 
 ## Response
 
-Responses are received in callbacks. They have the same fields as requests plus `latency`.
+Responses are received in callbacks. They have the same fields as requests.
 
 ```python
 def on_message(client, response):
     print(response.type.name)     # message type name
     print(response.content)       # raw bytes payload
     print(response.request_id)    # 4-byte request id
-    print(response.latency)       # round-trip time in ms
 ```
