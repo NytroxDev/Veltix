@@ -96,7 +96,7 @@ custom protocols, IPC, remote tooling, file transfer.
 **Reliability**
 
 - Auto-reconnect : configurable retry with `DisconnectState` callbacks
-- `LOW` / `BALANCED` / `HIGH` performance mode presets
+- `SMALL` / `MEDIUM` / `LARGE` buffer size presets
 - Swappable socket backends via `SocketCore` (Threading now, Selectors in v1.7.0, Rust in v3.0.0)
 
 **Developer Experience**

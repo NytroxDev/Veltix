@@ -58,7 +58,7 @@ message received
 
 ```python
 @server.route(CHAT)
-def on_chat(response, client):
+def on_chat(client, response):
     ...  # called for CHAT messages
 
 

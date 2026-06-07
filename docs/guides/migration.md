@@ -1,5 +1,74 @@
 # Migration Guide
 
+## v1.6.9 → v1.6.10
+
+**Breaking changes in public API :**
+
+### `PerformanceMode` removed
+
+`PerformanceMode` enum and `ServerConfig.performance_mode` / `ClientConfig.performance_mode` no longer exist. The socket
+timeout is now hardcoded. If you were setting a performance mode, remove that configuration.
+
+```python
+# Before (v1.6.9)
+from veltix import PerformanceMode
+
+config = ServerConfig(host="0.0.0.0", port=8080, performance_mode=PerformanceMode.HIGH)
+
+# After (v1.6.10) — just remove the parameter
+config = ServerConfig(host="0.0.0.0", port=8080)
+```
+
+### `@server.route` callback order flipped
+
+Server route callbacks now receive `(client, response)` instead of `(response, client)`. Client routes
+(`@client.route`) are unaffected — they still use `(response, client=None)`.
+
+```python
+# Before (v1.6.9)
+@server.route(CHAT)
+def on_chat(response, client):
+    ...
+
+# After (v1.6.10)
+@server.route(CHAT)
+def on_chat(client, response):
+    ...
+```
+
+### `Response.latency` and `Response.timestamp` removed
+
+The `latency` and `timestamp` fields have been removed from `Response`. Use `client.ping_server()` /
+`server.ping_client()` for latency measurement instead.
+
+```python
+# Before (v1.6.9)
+response = client.send_and_wait(request, timeout=5.0)
+print(f"{response.latency:.2f}ms")
+
+# After (v1.6.10)
+response = client.send_and_wait(request, timeout=5.0)
+print(f"Got: {response.content.decode()}")
+```
+
+### `server.clients` now returns `list[ClientInfo]`
+
+The `clients` property on `Server` now returns `list[ClientInfo]` directly instead of internal `ClientEntry` objects.
+Access patterns are simplified :
+
+```python
+# Before (v1.6.9)
+entry = server.clients[0]
+entry.info.conn         # client connection
+entry.info.addr         # client address
+
+# After (v1.6.10)
+client = server.clients[0]
+client.conn             # client connection (same)
+client.addr             # client address (same)
+client.handshake_done   # handshake status (same)
+```
+
 ## v1.6.6 → v1.6.8
 
 No breaking changes to public API.
@@ -34,6 +103,10 @@ entry.info.handshake_done  # handshake status
 entry.buffer  # MessageBuffer
 entry.id  # client ID
 ```
+
+!!! note
+    `ClientEntry` was replaced by `ClientInfo` in v1.6.10. See the **v1.6.9→v1.6.10** section above for the current access
+    pattern.
 
 ## v1.6.0 → v1.6.2
 

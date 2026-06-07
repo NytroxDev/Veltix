@@ -46,7 +46,7 @@ request = Request(ECHO, b"Hello!")
 response = client.send_and_wait(request, timeout=5.0)
 
 if response:
-    print(f"Got: {response.content.decode()} ({response.latency:.2f}ms)")
+    print(f"Got: {response.content.decode()}")
 else:
     print("Timeout")
 ```

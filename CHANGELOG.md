@@ -5,6 +5,280 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.10] - 2026-06-07
+
+### PerformanceMode Removal
+
+- **Removed `PerformanceMode` enum**: `PerformanceMode.LOW / BALANCED / HIGH / AUTO` and
+  `PerformanceModeSettings` dataclass deleted entirely. The socket timeout is now hardcoded
+  to **0.5 s** across all configurations, matching the old `BALANCED` preset.
+  - `ServerConfig.performance_mode` and `ClientConfig.performance_mode` no longer exist
+  - `ServerConfig.__slots__` cleaned up: `_perf` attribute removed
+  - All remaining `self._perf.socket_timeout` references replaced with `0.5`
+  - Docs and guides cleared of PerformanceMode mentions
+
+### Changed
+
+- **`@route` server callback order unified**: server route callbacks now receive
+  `(client, response)` as positional arguments, matching the `on_recv` signature.
+  Previously they received `(response, client)`: update any custom route handlers.
+
+- **Server callback type fixed**: `Server.clients` now returns `list[ClientInfo]`
+  instead of `list[ClientEntry]`, preserving the documented public API. Internal
+  `ClientEntry` objects are no longer exposed.
+
+### Fixed
+
+#### Protocol / MessageBuffer
+
+- **Mutable `RecvResult` singletons replaced**: `RecvResult` instances were previously
+  module-level singletons (`_OK`, `_TIMEOUT`, `_CLOSED`, `_ERROR`) shared across all
+  calls. A mutating caller could corrupt the state of concurrent readers. Now returns
+  a **new instance** on every `recv()` call.
+
+- **MessageBuffer data loss after parse failure**: when `Request.parse()` raised an
+  exception (corrupt message), `extract_messages()` silently discarded the message but
+  kept the buffer untouched, causing an infinite loop of the same failing parse.
+  Now **advances past the corrupt frame** (`buffer = buffer[total_size:]`) to resync
+  the stream.
+
+- **TOCTOU race in `PendingRequestRule`**: the rule checked `can_handle()` (lookup
+  in `pending_requests`) but by the time `handle()` ran another thread had consumed
+  the response, leaving the queue empty. Added `try_handle()` that atomically
+  checks-and-puts, and `PendingRequestRule.can_handle()` returns `False`: the rule
+  is now only invoked explicitly via `try_handle()`.
+
+- **String `mode` not normalised to `Mode` enum**: `RequestHandler` and `Sender`
+  accepted a raw `str` for `mode` but never converted it to `Mode`, causing `"client"`
+  vs `Mode.CLIENT` mismatches. Both now call `Mode(mode)` on init.
+
+#### Client / Reconnect
+
+- **Disconnect / reconnect race**: when `disconnect()` was called while a retry
+  thread was mid-`connect()`, two issues arose:
+  1. Handshake timeout in the retry thread triggered a nested `disconnect()` call.
+     Fixed by skipping `self.disconnect()` when `_from_retry=True`.
+  2. `connect()` could return `True` after `stop_retry()` was set. Fixed by checking
+     `_stop_retry_flag` after `context_connect()` returns, and closing the socket.
+  Also added `context_get_socket()` to `ClientContext` protocol.
+
+- **Client ignored `config.socket_core`**: `Client.connect()` always created a
+  `ThreadingSocket` regardless of `ClientConfig.socket_core`. Now uses
+  `self.config.socket_core.value()` like the server.
+
+- **Retry loop started parallel threads**: calling `client.retry()` multiple times
+  launched concurrent reconnect loops. Now guarded via `_retry_thread.is_alive()`.
+
+- **`thread_handler` never joined in `close_all()`**: server's `close_all()` joined
+  `start_th` but not `thread_handler`, leaving the receive thread alive until socket
+  error. Now joins `thread_handler` with `None` guard and `current_thread` check.
+
+- **Missing attrs in `_create_client_instance()`**: server-side client sockets created
+  via `_create_client_instance()` were missing `start_th`, `threads`, `_threads_lock`,
+  `n_th`, `_n_th_lock`, and `thread_handler`, causing `AttributeError` in `close_all()`.
+  All attributes now properly initialized.
+
+#### Server Lifecycle
+
+- **Race on server start**: `listen()` was called inside the accept thread, creating
+  a window where `bind()` returned before the socket was listening. Moved `listen()`
+  before the accept thread starts.
+
+- **Stale `running=True` on accept loop exit**: when `_accept_loop` exited on `OSError`,
+  `self.running` stayed `True`. Now sets `self.running = False` on every exit path.
+
+- **Thread pool not released**: `Server.close_all()` and `Client.disconnect()` neither
+  called `request_handler.shutdown()` nor released the `ThreadPoolExecutor`. Now calls
+  `shutdown(wait=False)` before closing the socket.
+
+- **`TCP_NODELAY` not set on accepted sockets**: server-side client sockets accepted
+  via `_accept_loop` did not have `TCP_NODELAY` enabled. Now applied in
+  `_create_client_instance()`.
+
+#### Handshake
+
+- **Invalid HELLO connection leak**: when the client received an invalid HELLO,
+  `HelloRule.handle()` logged a warning but did not close the connection. Now calls
+  `sender.conn.close()` after logging.
+
+- **Stray parenthesis in `HelloRule.close()`**: `HelloRule` was calling `close()` with
+  a trailing `()` inside the method call, causing a `TypeError`. Fixed.
+
+- **Missing bounds validation in `_decode_hello()`**: `_decode_hello()` read the
+  version length prefix and used it to slice the payload without checking the actual
+  payload length, causing an `IndexError` on truncated data. Added length validation.
+
+- **Client handshake timeout config ignored**: `ThreadingSocket._handle_server_client()`
+  used a hardcoded timeout instead of `self.handshake_timeout`. Now uses the config value.
+
+- **`BaseSocket` imported at runtime**: `Client.__init__()` imported `BaseSocket`
+  at the top level, causing circular import errors. Now imported inside the method.
+
+#### Logger
+
+- **`_rotate_file()` missing lock**: file rotation could race with concurrent writes
+  from other threads, writing to a closed file handle. Now fully locked.
+
+- **Logger config read/write race**: `_log()` read `self.config.*` without holding
+  the lock, so a concurrent `configure()` could change values mid-read. All config
+  reads are now inside `self._lock`.
+
+- **`get_instance()` accepted a misleading `config` param** then silently ignored it
+  on subsequent calls. Replaced with explicit `configure()` method and `config` param
+  on first call only.
+
+- **User `LoggerConfig.file_path` mutated**: `Writer.__init__()` assigned
+  `self.file_path = config.file_path` then replaced it with a `Path` object,
+  altering the caller's config. Now stores the internal copy as `self._file_path`.
+
+- **`file_rotation_size` / `file_backup_count` not validated**: negative or zero
+  values caused silent failures. Added `__post_init__` validation in `LoggerConfig`.
+
+#### Sender
+
+- **Socket not invalidated on `ConnectionResetError`/`BrokenPipeError`**: the
+  `Sender` caught these exceptions during `send()` but kept `self.conn` pointing
+  to the dead socket. Now sets `self.conn = None` when caught in CLIENT mode.
+
+#### Benchmark
+
+- **Off-by-one in percentile calculation**: `LatencyStats.percentile()` used
+  `int(len(s) * pct / 100)` as index, returning the 0th element for 0th percentile
+  and the n-1th for 100th, rather than clamping properly. Fixed with
+  `min(int(len(s) * pct / 100), len(s) - 1)`.
+
+- **Memory leak report used `abs()` delta**: the teardown delta was displayed as
+  `abs(leak)`, so negative values (memory freed below baseline) appeared identical
+  to positive leaks. Now displays the signed delta.
+
+- **Logger configured at module level**: `velix.benchmark.__main__` configured the
+  logger at import time, causing side effects on import. Moved into the `__main__`
+  guard.
+
+#### Types / Misc
+
+- **`MessageTypeRegistry.register()` not thread-safe**: concurrent `MessageType()`
+  construction could create duplicate code entries. Now locked with `threading.Lock()`.
+
+- **`Version.__repr__` used dots instead of commas**: `__repr__` returned
+  `Version(1.6.6)` (dots), making it look like a dotted version string rather
+  than distinct constructor arguments. Fixed to `Version(1, 6, 6)` (commas)
+  for clarity.
+
+- **RuntimeError on executor submit after shutdown**: `CallbackExecutor.submit()`
+  raised `RuntimeError` when called after `shutdown()`. Now caught and logged.
+
+- **`UnhandledRule.handle()` crashed on `None` client**: when `context.client` was
+  `None`, `getattr(context.client, "addr", ...)` failed. Now guarded.
+
+- **Return type annotations used `socket.socket` instead of `BaseSocket`** in
+  `Server` and `ClientsManager` method signatures. Fixed to `BaseSocket`.
+
+- **`Response.latency` and `Response.timestamp` fields removed**: these were calculated
+  from `time.time()` but never used by any internal path. Latency is measured by the
+  ping methods using `time.perf_counter()` directly.
+
+### Added
+
+- **`HEADER_SIZE` constant**: replaces the magic number `14` in `MessageBuffer` and
+  `Request.parse()` / `compile()`. Exported from `veltix.network.request`.
+
+- **`jitter_ms` and `throughput` fields on `LatencyStats`**: the benchmark latency
+  stats dataclass now carries these computed values, making them available for JSON
+  export via `to_dict()`.
+
+- **`recv_gap_avg_ms` on `BurstResult`**: the average gap between consecutive receives
+  (inter-arrival time), computed in the burst benchmark but previously not stored.
+
+- **`try_handle()` on `PendingRequestRule`**: new method that atomically checks and
+  dispatches to a pending request queue, eliminating the TOCTOU race window.
+
+- **`context_get_socket()` on `ClientContext` protocol**: allows the reconnect handler
+  to close the socket when cancelling a mid-connect retry.
+
+### Changed
+
+- **Burst benchmark metric rename**: `recv_lat_p50/95/99/max/jitter` renamed to
+  `drain_p50/95/99/max/jitter` and `recv_lat_jitter` to `drain_jitter_ms`, reflecting
+  that these measure pipeline drain latency, not network latency.
+
+- **Ping RTT measurement**: `ping_server()` and `ping_client()` now use
+  `time.perf_counter()` instead of `time.time()`, avoiding negative latency readings
+  from NTP clock adjustments.
+
+### Internal
+
+- **`RecvResult` is no longer a singleton**: every `recv()` call returns a fresh
+  instance.
+- **Logger `_stats` dict uses `dict.fromkeys(LogLevel, 0)`**: ensures all log levels
+  are present in stats even if never logged.
+
+### Tests
+
+- **`test_message_buffer.py`**: added `test_resync_after_corrupt_message` verifying
+  that `extract_messages()` advances past a corrupt frame and continues parsing.
+- **`test_compatibility.py`**: `test_platform_internals` ensures compatibility table
+  is restored after temporary modification (test isolation fix).
+
+### Documentation
+
+- **Performance metrics updated** for Python 3.14.5 with revised benchmark results.
+- **All PerformanceMode references removed** from migration guides and docs.
+
+### Migration Guide
+
+#### v1.6.9 → v1.6.10
+
+##### PerformanceMode removed
+
+`PerformanceMode` enum and `ServerConfig.performance_mode` / `ClientConfig.performance_mode` no longer exist.
+The socket timeout is now hardcoded to **0.5 s** (equivalent to the old `BALANCED` preset).
+
+```python
+# Before (v1.6.9)
+from veltix import PerformanceMode
+from veltix import ServerConfig
+
+config = ServerConfig(host="0.0.0.0", port=8080, performance_mode=PerformanceMode.HIGH)
+
+# After (v1.6.10) — remove the parameter entirely
+config = ServerConfig(host="0.0.0.0", port=8080)
+```
+
+##### `@route` server callback order
+
+Server route callbacks now receive `(client, response)` matching `on_recv`, instead of `(response, client)`.
+
+```python
+# Before (v1.6.9)
+@server.route(MY_TYPE)
+def handler(response: Response, client: ClientInfo):
+    ...
+
+# After (v1.6.10)
+@server.route(MY_TYPE)
+def handler(client: ClientInfo, response: Response):
+    ...
+```
+
+##### `Response.latency` and `Response.timestamp` removed
+
+These fields were always `0.0` / `None` in practice — they were never populated by the wire protocol.
+Use the ping methods (`ping_server()` / `ping_client()`) which measure RTT via `time.perf_counter()`.
+
+##### `Server.clients` returns `list[ClientInfo]`
+
+The `clients` property no longer returns internal `ClientEntry` objects. If you were accessing
+`.info` manually on entries, drop it:
+
+```python
+# Before (v1.6.9)
+server.clients[0].info.addr
+
+# After (v1.6.10)
+server.clients[0].addr
+```
+
 ## [1.6.9] - 2026-06-03
 
 ### Fixed

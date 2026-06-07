@@ -58,7 +58,7 @@ custom protocols, IPC, remote tooling, file transfer.
 **Reliability**
 
 - Auto-reconnect : configurable retry with `DisconnectState` callbacks
-- `LOW` / `BALANCED` / `HIGH` performance mode presets
+- `SMALL` / `MEDIUM` / `LARGE` buffer size presets
 - Swappable socket backends via `SocketCore` (Threading now, Selectors in v1.7.0, Rust in v3.0.0)
 
 **Developer Experience**
@@ -74,9 +74,9 @@ custom protocols, IPC, remote tooling, file transfer.
 
 | Metric                          | Result                      |
 |---------------------------------|-----------------------------|
-| Concurrent stress (100 clients) | 38,985 msg/s : 100% success |
-| Burst send                      | 52,377 msg/s                |
-| Average latency                 | 0.006 ms                    |
+| Concurrent stress (100 clients) | 32,073 msg/s : 100% success |
+| Burst send                      | 50,467 msg/s                |
+| Average latency                 | 0.049 ms                    |
 | Idle server memory              | 212 KB                      |
 
 Full details : [Performance](../PERFORMANCE.md)

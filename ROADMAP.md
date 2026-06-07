@@ -22,7 +22,6 @@
 
 - Decorator-based message routing (`@server.route(MY_TYPE)`, `@client.route(MY_TYPE)`)
 - Auto-reconnect with configurable retry and `DisconnectState` callbacks
-- `PerformanceMode` presets for CPU/reactivity trade-off
 - `BufferSize` presets for common buffer configurations
 
 ### v1.6.0 : Socket Abstraction & Tags *(March 2026)*
