@@ -104,7 +104,11 @@ class UnhandledRule(Rule):
     _logger = Logger.get_instance()
 
     def handle(self, context: MessageContext) -> None:
-        src = f"client {context.client.addr}" if context.is_server else "server"
+        if context.is_server:
+            addr = getattr(context.client, "addr", "unknown")
+            src = f"client {addr}"
+        else:
+            src = "server"
         self._logger.warning(f"No handler registered for message from {src}")
 
     def can_handle(self, context: MessageContext) -> bool:
