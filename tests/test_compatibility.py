@@ -55,7 +55,7 @@ class TestVersionStr:
         assert str(Version(1, 6, 6)) == "1.6.6"
 
     def test_repr(self):
-        assert repr(Version(1, 6, 6)) == "Version(1.6.6)"
+        assert repr(Version(1, 6, 6)) == "Version(1, 6, 6)"
 
 
 class TestVersionIsCompatible:

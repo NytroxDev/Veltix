@@ -105,7 +105,7 @@ class Version:
         return f"{self.major}.{self.minor}.{self.patch}"
 
     def __repr__(self) -> str:
-        return f"Version({self.major}.{self.minor}.{self.patch})"
+        return f"Version({self.major}, {self.minor}, {self.patch})"
 
 
 # ---------------------------------------------------------------------------
