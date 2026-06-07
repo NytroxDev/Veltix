@@ -47,11 +47,6 @@ class RecvResult:
         return f"RecvResult({self.status.name})"
 
 
-_TIMEOUT_RESULT = RecvResult(RecvStatus.TIMEOUT)
-_CLOSED_RESULT = RecvResult(RecvStatus.CLOSED)
-_ERROR_RESULT = RecvResult(RecvStatus.ERROR)
-
-
 def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
     """
     Receive data from a socket with explicit status reporting.
@@ -65,21 +60,21 @@ def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
         data = conn.recv(buf_size)
 
         if not data:
-            return _CLOSED_RESULT
+            return RecvResult(RecvStatus.CLOSED)
 
         return RecvResult(RecvStatus.OK, data)
 
     except TimeoutError:
-        return _TIMEOUT_RESULT
+        return RecvResult(RecvStatus.TIMEOUT)
 
     except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
         logger.warning("Connection reset by peer")
-        return _ERROR_RESULT
+        return RecvResult(RecvStatus.ERROR)
 
     except OSError as e:
         logger.debug(f"OSError on recv: {e}")
-        return _ERROR_RESULT
+        return RecvResult(RecvStatus.ERROR)
 
     except Exception as e:
         logger.error(f"Unexpected recv error: {type(e).__name__}: {e}")
-        return _ERROR_RESULT
+        return RecvResult(RecvStatus.ERROR)
