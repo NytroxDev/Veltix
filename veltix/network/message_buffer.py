@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..logger.core import Logger
-from .request import Request, Response
+from .request import HEADER_SIZE, Request, Response
 
 
 class MessageBuffer:
@@ -20,7 +20,7 @@ class MessageBuffer:
         self._buffer = bytearray()
         self._max_message_size = max_message_size
         self._logger = Logger.get_instance()
-        self._header_size = 22
+        self._header_size = HEADER_SIZE
 
     def add_data(self, data: bytes) -> None:
         self._buffer.extend(data)

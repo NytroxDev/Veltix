@@ -12,7 +12,7 @@ from veltix import (
     SenderError,
     VeltixError,
 )
-from veltix.network.request import Request as Req
+from veltix.network.request import HEADER_SIZE, Request as Req
 
 
 # ── Exception hierarchy ───────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ class TestRequestError:
         msg_type = MessageType(code=3202, name="hash_err_test")
         request = Request(msg_type, b"hello")
         compiled = bytearray(request.compile())
-        compiled[22] = (compiled[22] + 1) % 256  # corrupt content
+        compiled[HEADER_SIZE] = (compiled[HEADER_SIZE] + 1) % 256  # corrupt content
         with pytest.raises(RequestError) as exc:
             Req.parse(bytes(compiled))
         assert "Hash mismatch" in str(exc.value)

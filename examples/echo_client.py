@@ -23,7 +23,6 @@ def main():
     def on_message(response):
         echo = response.content.decode("utf-8")
         print(f"Server response: {echo}")
-        print(f"Latency: {response.latency}ms")
 
     # Bind callback
     client.set_callback(Events.ON_RECV, on_message)
