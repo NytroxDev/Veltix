@@ -8,11 +8,10 @@ Package entry point — allows running the suite with:
     python -m benchmark --save results.json
 """
 
-from veltix import Logger, LogLevel
-
-Logger.get_instance().set_level(LogLevel.ERROR)  # silence logs before any veltix object is created
-
 from .cli import main  # noqa: E402
 
 if __name__ == "__main__":
+    from veltix import Logger, LogLevel
+
+    Logger.get_instance().set_level(LogLevel.ERROR)
     main()
