@@ -1,12 +1,9 @@
 """Tests for Request/Response binary protocol."""
 
-import time
-import uuid
-
 import pytest
 
 from veltix import MessageType, Request, RequestError
-from veltix.network.request import generate_random_id
+from veltix.network.request import HEADER_SIZE, generate_random_id
 
 
 class TestProtocol:
@@ -14,7 +11,7 @@ class TestProtocol:
         content = b"Hello World"
         request = Request(test_message_type, content)
         compiled = request.compile()
-        assert len(compiled) == 22 + len(content)
+        assert len(compiled) == HEADER_SIZE + len(content)
         assert isinstance(compiled, bytes)
 
     def test_request_parse_roundtrip(self, test_message_type):
@@ -26,7 +23,6 @@ class TestProtocol:
         assert response.type.code == test_message_type.code
         assert response.content == content
         assert response.request_id == request_id
-        assert response.latency >= 0
 
     def test_request_id_auto_generation(self, test_message_type):
         request = Request(test_message_type, b"test")
@@ -56,7 +52,7 @@ class TestProtocol:
         request = Request(test_message_type, b"Hello")
         compiled = request.compile()
         corrupted = bytearray(compiled)
-        corrupted[22] = (corrupted[22] + 1) % 256
+        corrupted[HEADER_SIZE] = (corrupted[HEADER_SIZE] + 1) % 256
         with pytest.raises(RequestError) as exc_info:
             Request.parse(bytes(corrupted))
         assert "Hash mismatch" in str(exc_info.value)
@@ -93,9 +89,3 @@ class TestProtocol:
         response = Request.parse(compiled)
         assert response.content == b""
 
-    def test_latency_calculation(self, test_message_type):
-        request = Request(test_message_type, b"test")
-        compiled = request.compile()
-        time.sleep(0.01)
-        response = Request.parse(compiled)
-        assert response.latency >= 0

@@ -6,14 +6,14 @@ import dataclasses
 import random
 import struct
 import threading
-import time
 import zlib
 
 from ..exceptions import RequestError
 from ..logger.core import Logger
 from .types import MessageType, MessageTypeRegistry
 
-_HEADER_STRUCT = struct.Struct(">HI4sQ4s")
+HEADER_SIZE = 14
+_HEADER_STRUCT = struct.Struct(">HI4s4s")
 
 _id_lock = threading.Lock()
 
@@ -29,22 +29,8 @@ class Response:
 
     type: MessageType
     content: bytes
-    timestamp: int
     hash: bytes
-    received_at: int
     request_id: bytes
-
-    @property
-    def latency(self) -> int:
-        """
-        Round-trip latency in ms.
-
-        Only valid when the sender and receiver share the same process
-        (e.g. single-process testing). For cross-process RTT, use the
-        timing built into ping_server() / ping_client() instead.
-        """
-        return self.received_at - self.timestamp
-
 
 class Request:
     """Represents a message to be sent over the network."""
@@ -62,18 +48,16 @@ class Request:
     @staticmethod
     def parse(data: bytes, max_message_size: int = 10 * 1024 * 1024) -> Response:
         """Parse raw bytes into a Response. Raises RequestError on invalid data."""
-        if len(data) < 22:
-            raise RequestError(f"Data too short: {len(data)} bytes (minimum 22)")
+        if len(data) < HEADER_SIZE:
+            raise RequestError(f"Data too short: {len(data)} bytes (minimum {HEADER_SIZE})")
 
         if len(data) > max_message_size:
             raise RequestError(f"Message too large: {len(data)} bytes (maximum {max_message_size})")
 
-        received_at = int(time.monotonic() * 1000)
+        header = data[:HEADER_SIZE]
+        content = data[HEADER_SIZE:]
 
-        header = data[:22]
-        content = data[22:]
-
-        code, size, hash_received, timestamp_ms, request_id = _HEADER_STRUCT.unpack(header)
+        code, size, hash_received, request_id = _HEADER_STRUCT.unpack(header)
 
         if len(content) != size:
             raise RequestError(f"Size mismatch: expected {size} bytes, got {len(content)}")
@@ -89,9 +73,7 @@ class Request:
         return Response(
             type=msg_type,
             content=content,
-            timestamp=timestamp_ms,
             hash=hash_received,
-            received_at=received_at,
             request_id=request_id,
         )
 
@@ -104,13 +86,11 @@ class Request:
             raise RequestError(f"Content too large: {size} bytes (max: {max_size})")
 
         hash_value = zlib.crc32(self.content).to_bytes(4, "big")
-        timestamp_ms = int(time.monotonic() * 1000)
 
         header = _HEADER_STRUCT.pack(
             self.type.code,
             size,
             hash_value,
-            timestamp_ms,
             self.request_id,
         )
 

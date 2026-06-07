@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from veltix import MessageType, Mode, Request, Sender, SenderError
+from veltix.network.request import HEADER_SIZE
 from veltix.socket_core.base_socket import BaseSocket
 
 
@@ -58,7 +59,7 @@ class TestSenderSend:
         sender.send(request)
         sent_data = sock.send.call_args[0][0]
         assert isinstance(sent_data, bytes)
-        assert len(sent_data) == 22 + len(b"test")
+        assert len(sent_data) == HEADER_SIZE + len(b"test")
 
     def test_server_send_no_client_returns_false(self):
         sender = Sender(mode=Mode.SERVER)
