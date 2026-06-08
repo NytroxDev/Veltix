@@ -76,10 +76,25 @@ class AsyncSocket(BaseSocket):
             return False
         return True
 
-    def close(self) -> bool: ...
-    def bind(
-        self, host: str, port: int, max_client: int, buffer_size: int, timeout: float
-    ) -> bool: ...
+    # ── Server ────────────────────────────────────────────────────────────────
+
+    def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:
+        self._sock.setblocking(False)
+        self._sock.bind((host, port))
+        self._sock.listen()
+        self._selector.register(self._sock, selectors.EVENT_READ, data="listen")
+        self.running = True
+        self._selector_thread = threading.Thread(
+            target=self._selector_loop, args=(max_client, buffer_size, timeout)
+        )
+        self._selector_thread.start()
+        return self.running
+
+    def _selector_loop(self, max_client, buffer_size, timeout):
+        while self.running:
+            events = self._selector.select(0.5)
+
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool: ...
     def close_client(self, client) -> bool: ...
     def disconnect(self, timeout: float) -> bool: ...
+    def close(self) -> bool: ...
