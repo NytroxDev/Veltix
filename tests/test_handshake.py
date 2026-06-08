@@ -90,6 +90,7 @@ class TestHandshakeCompatibility:
 
 # ── Integration ───────────────────────────────────────────────────────────────
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestHandshakeIntegration:
     def test_handshake_completes_on_connect(self):
         server = Server(ServerConfig(host="127.0.0.1", port=18999))

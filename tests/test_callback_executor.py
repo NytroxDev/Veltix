@@ -2,6 +2,8 @@
 
 import time
 
+import pytest
+
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 from veltix.handler.callback_executor import CallbackExecutor
 
@@ -68,6 +70,7 @@ class TestCallbackExecutor:
         assert len(results) == 1
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestCallbackExecutorIntegration:
     """Integration tests — slow on_recv should not block recv loop."""
 
