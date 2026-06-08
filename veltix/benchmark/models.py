@@ -19,6 +19,7 @@ class LatencyStats:
     _samples: list[float] = field(default_factory=list, repr=False)
     jitter_ms: float = 0.0
     throughput: float = 0.0
+    backend: str = "async"
 
     def add(self, value: Optional[float]) -> None:
         if value is not None:
@@ -74,6 +75,7 @@ class LatencyStats:
             "stdev_ms": round(self.stdev, 4),
             "jitter_ms": round(self.jitter_ms, 3),
             "throughput": round(self.throughput, 1),
+            "backend": self.backend,
         }
 
 
@@ -92,6 +94,7 @@ class MemoryResult:
     # Teardown / leak detection
     ram_after_teardown_kb: float
     leak_kb: float
+    backend: str = "async"
 
     def to_dict(self) -> dict:
         return {
@@ -106,6 +109,7 @@ class MemoryResult:
             "ram_50_clients_kb": round(self.ram_50_clients_kb, 1),
             "ram_after_teardown_kb": round(self.ram_after_teardown_kb, 1),
             "leak_kb": round(self.leak_kb, 1),
+            "backend": self.backend,
         }
 
 
@@ -128,6 +132,7 @@ class FpsResult:
     tick_stdev_ms: float
     tick_budget_pct: float
     overrun_ticks: int
+    backend: str = "async"
 
     def to_dict(self) -> dict:
         return {
@@ -147,6 +152,7 @@ class FpsResult:
             "tick_stdev_ms": round(self.tick_stdev_ms, 3),
             "tick_budget_pct": round(self.tick_budget_pct, 1),
             "overrun_ticks": self.overrun_ticks,
+            "backend": self.backend,
         }
 
 
@@ -167,6 +173,7 @@ class BurstResult:
     drain_max_ms: float
     drain_jitter_ms: float
     recv_gap_avg_ms: float
+    backend: str = "async"
 
     def to_dict(self) -> dict:
         return {
@@ -184,6 +191,7 @@ class BurstResult:
             "drain_max_ms": round(self.drain_max_ms, 1),
             "drain_jitter_ms": round(self.drain_jitter_ms, 3),
             "recv_gap_avg_ms": round(self.recv_gap_avg_ms, 3),
+            "backend": self.backend,
         }
 
 
@@ -206,6 +214,7 @@ class StressResult:
     per_client_tps_min: float
     per_client_tps_max: float
     per_client_tps_stdev: float
+    backend: str = "async"
 
     def to_dict(self) -> dict:
         return {
@@ -224,4 +233,5 @@ class StressResult:
             "per_client_tps_min": round(self.per_client_tps_min, 1),
             "per_client_tps_max": round(self.per_client_tps_max, 1),
             "per_client_tps_stdev": round(self.per_client_tps_stdev, 1),
+            "backend": self.backend,
         }
