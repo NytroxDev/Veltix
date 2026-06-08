@@ -2,9 +2,12 @@
 
 import time
 
+import pytest
+
 from veltix import Client, ClientConfig, Server, ServerConfig
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestPingPong:
     def test_client_ping_server(self):
         server = Server(ServerConfig(host="127.0.0.1", port=19993))

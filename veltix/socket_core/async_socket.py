@@ -42,6 +42,7 @@ class AsyncSocket(BaseSocket):
 
         self._sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         self._selector = selectors.DefaultSelector()
@@ -79,6 +80,7 @@ class AsyncSocket(BaseSocket):
 
         conn._sock = sock
         conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         conn._selector = selectors.DefaultSelector()

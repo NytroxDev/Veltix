@@ -2,11 +2,14 @@
 
 import time
 
+import pytest
+
 from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig
 from veltix.network.request import Response
 from veltix.server.client_info import ClientInfo
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestServerRouting:
     """Tests for @server.route() decorator."""
 
@@ -194,6 +197,7 @@ class TestServerRouting:
         server.close_all()
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestClientRouting:
     """Tests for @client.route() decorator."""
 

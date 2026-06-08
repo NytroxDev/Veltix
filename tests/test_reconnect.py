@@ -4,6 +4,8 @@ import socket
 import threading
 import time
 
+import pytest
+
 from veltix import Client, ClientConfig, Events, Server, ServerConfig
 
 
@@ -44,6 +46,7 @@ def _wait_for_reconnect(reconnect_count: list, min_count: int = 2, timeout: floa
     return False
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestRetryInitial:
     """Tests for retry on initial connect() failure."""
 
@@ -127,6 +130,7 @@ class TestRetryInitial:
         assert elapsed >= 0.3
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestAutoReconnect:
     """Tests for automatic reconnection after mid-session disconnection."""
 
