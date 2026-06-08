@@ -32,195 +32,162 @@ def row(label: str, value: str, width: int = 36) -> None:
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 
-def _val(v: str, width: int) -> str:
-    return f"{v:>{width}}"
+CW = 22  # value column width (applies in both modes)
+
+def _val(v: str) -> str:
+    return f"{v:>{CW}}"
 
 
-def _section(title: str, rows: list[tuple], backend_count: int, col_width: int) -> None:
-    if not rows:
-        return
+def _fmt_kb(kb: float) -> str:
+    return format_bytes(int(kb * 1_024))
+
+
+# ── Row helpers per benchmark ─────────────────────────────────────────────────
+
+def _memory_defs() -> list[tuple[str, str, str]]:
+    """Return (label, attr, fmt) triples.  attr is poked via getattr."""
+    return [
+        ("Baseline",          "baseline_kb",         _fmt_kb),
+        ("Idle server",       "server_idle_kb",      _fmt_kb),
+        ("Per client (avg)",  "client_cost_kb",      _fmt_kb),
+        ("Per client (min)",  "client_cost_min_kb",  _fmt_kb),
+        ("Per client (max)",  "client_cost_max_kb",  _fmt_kb),
+        ("Per client (med)",  "client_cost_median_kb", _fmt_kb),
+        ("Per client (stdev)","client_cost_stdev_kb", lambda v: f"{v:.1f} KB"),
+        ("10 clients",        "ram_10_clients_kb",   _fmt_kb),
+        ("50 clients",        "ram_50_clients_kb",   _fmt_kb),
+        ("After teardown",    "ram_after_teardown_kb", _fmt_kb),
+        ("Leak delta",        "leak_kb",             lambda v: f"{v:.1f} KB"),
+    ]
+
+
+def _latency_defs() -> list[tuple[str, str, str]]:
+    return [
+        ("Count",      "count",     str),
+        ("Avg",        "avg",       lambda v: f"{v:.3f} ms"),
+        ("P50",        "median",    lambda v: f"{v:.4f} ms"),
+        ("P95",        "p95",       lambda v: f"{v:.3f} ms"),
+        ("P99",        "p99",       lambda v: f"{v:.3f} ms"),
+        ("Min",        "min",       lambda v: f"{v:.3f} ms"),
+        ("Max",        "max",       lambda v: f"{v:.3f} ms"),
+        ("Stdev",      "stdev",     lambda v: f"{v:.3f} ms"),
+        ("Jitter",     "jitter_ms", lambda v: f"{v:.3f} ms"),
+        ("Throughput", "throughput", lambda v: f"{v:,.1f} ping/s"),
+    ]
+
+
+def _fps_defs() -> list[tuple[str, str, str]]:
+    return [
+        ("Target tick",      "tick_rate",       lambda v: f"{v} Hz"),
+        ("Actual tick",      "actual_tick_rate", lambda v: f"{v:.1f} Hz"),
+        ("Duration",         "duration_s",       lambda v: f"{v:.2f} s"),
+        ("Sent total",       "total_sent",       lambda v: f"{v:,}"),
+        ("Received",         "total_recv",       lambda v: f"{v:,}"),
+        ("Success rate",     "success_rate",     lambda v: f"{v:.1f}%"),
+        ("Throughput",       "msg_per_sec",      lambda v: f"{v:,.0f} msg/s"),
+        ("RAM delta",        "ram_delta_mb",     lambda v: f"{v:+.2f} MB"),
+        ("Errors",           "errors",           lambda v: f"{v:,}"),
+        ("Tick avg",         "tick_avg_ms",      lambda v: f"{v:.3f} ms"),
+        ("Tick min",         "tick_min_ms",      lambda v: f"{v:.3f} ms"),
+        ("Tick max",         "tick_max_ms",      lambda v: f"{v:.3f} ms"),
+        ("Tick stdev",       "tick_stdev_ms",    lambda v: f"{v:.3f} ms"),
+        ("Budget comply",    "tick_budget_pct",  lambda v: f"{v:.1f}%"),
+        ("Overrun ticks",    "overrun_ticks",    str),
+    ]
+
+
+def _burst_defs() -> list[tuple[str, str, str]]:
+    return [
+        ("Messages",       "count",           lambda v: f"{v:,}"),
+        ("Payload",        "payload_bytes",   lambda v: f"{v} B"),
+        ("Send throughput","send_throughput", lambda v: f"{v:,.0f} msg/s"),
+        ("Recv throughput","recv_throughput", lambda v: f"{v:,.0f} msg/s"),
+        ("Data",           "data_mbps",       lambda v: f"{v:.2f} MB/s"),
+        ("Success rate",   "success_rate",    lambda v: f"{v:.2f}%"),
+        ("Total duration", "duration_s",      lambda v: f"{v*1000:.1f} ms"),
+        ("Send duration",  "send_duration_s", lambda v: f"{v*1000:.1f} ms"),
+        ("Drain P50",      "drain_p50_ms",    lambda v: f"{v:.1f} ms"),
+        ("Drain P95",      "drain_p95_ms",    lambda v: f"{v:.1f} ms"),
+        ("Drain P99",      "drain_p99_ms",    lambda v: f"{v:.1f} ms"),
+        ("Drain max",      "drain_max_ms",    lambda v: f"{v:.1f} ms"),
+        ("Drain jitter",   "drain_jitter_ms", lambda v: f"{v:.3f} ms"),
+        ("Recv gap avg",   "recv_gap_avg_ms", lambda v: f"{v:.3f} ms"),
+    ]
+
+
+def _stress_defs() -> list[tuple[str, str, str]]:
+    return [
+        ("Clients",           "num_clients",          lambda v: f"{v:,}"),
+        ("Msgs/client",       "msgs_per_client",      lambda v: f"{v:,}"),
+        ("Sent",              "total_sent",           lambda v: f"{v:,}"),
+        ("Received",          "total_recv",           lambda v: f"{v:,}"),
+        ("Success rate",      "success_rate",         lambda v: f"{v:.2f}%"),
+        ("Throughput",        "throughput",           lambda v: f"{v:,.0f} msg/s"),
+        ("Duration",          "duration_s",           lambda v: f"{v*1000:.1f} ms"),
+        ("RAM delta",         "ram_delta_mb",         lambda v: f"{v:+.2f} MB"),
+        ("Send phase",        "send_phase_s",         lambda v: f"{v*1000:.1f} ms"),
+        ("Drain time",        "drain_time_s",         lambda v: f"{v*1000:.1f} ms"),
+        ("TTFR",              "time_to_first_recv_ms",lambda v: f"{v:.1f} ms"),
+        ("Per-client TPS avg","per_client_tps_avg",   lambda v: f"{v:,.0f}"),
+        ("Per-client TPS min","per_client_tps_min",   lambda v: f"{v:,.0f}"),
+        ("Per-client TPS max","per_client_tps_max",   lambda v: f"{v:,.0f}"),
+        ("Per-client TPS sd", "per_client_tps_stdev", lambda v: f"{v:,.0f}"),
+    ]
+
+
+# ── Single-backend mode ───────────────────────────────────────────────────────
+
+def _show_single_section(title: str, defs: list[tuple], result) -> None:
     print(f"  {title}")
-    if backend_count == 2:
-        for label, *values in rows:
-            parts = "".join(_val(v, col_width) for v in values)
-            print(f"    {label:<28}{parts}")
-    else:
-        for label, value in rows:
-            print(f"    {label:<28}{_val(value, col_width)}")
-
-
-def _memory_rows(mem, col_width: int) -> list:
-    rows = []
-    for r in mem:
-        suffix = f" ({r.backend})"
-        rows.append(
-            (f"Idle server{suffix}", format_bytes(int(r.server_idle_kb * 1_024)))
-        )
-        rows.append(
-            (f"Per client{suffix}", format_bytes(int(r.client_cost_kb * 1_024)))
-        )
-        rows.append(
-            (f"50 clients total{suffix}", format_bytes(int(r.ram_50_clients_kb * 1_024)))
-        )
-    return rows
-
-
-def _latency_rows(lat, col_width: int) -> list:
-    rows = []
-    for r in lat:
-        suffix = f" ({r.backend})"
-        rows.append((f"Avg{suffix}", f"{r.avg:.3f} ms"))
-        rows.append((f"P95{suffix}", f"{r.p95:.3f} ms"))
-        rows.append((f"P99{suffix}", f"{r.p99:.3f} ms"))
-        rows.append((f"Max{suffix}", f"{r.max:.3f} ms"))
-    return rows
-
-
-def _burst_rows(burst, col_width: int) -> list:
-    rows = []
-    for r in burst:
-        suffix = f" ({r.backend})"
-        rows.append((f"Send{suffix}", f"{r.send_throughput:,.0f} msg/s"))
-        rows.append((f"Receive{suffix}", f"{r.recv_throughput:,.0f} msg/s"))
-        rows.append((f"Data{suffix}", f"{r.data_mbps:.2f} MB/s"))
-    return rows
-
-
-def _fps_rows(fps, col_width: int) -> list:
-    rows = []
-    for r in fps:
-        suffix = f" ({r.backend})"
-        rows.append(
-            (
-                f"{r.players}p @{r.tick_rate}Hz{suffix}",
-                f"{r.msg_per_sec:,.0f} msg/s ({r.success_rate:.0f}%)",
-            )
-        )
-    return rows
-
-
-def _stress_rows(stress, col_width: int) -> list:
-    rows = []
-    for r in stress:
-        suffix = f" ({r.backend})"
-        rows.append(
-            (
-                f"{r.num_clients} clients{suffix}",
-                f"{r.throughput:,.0f} msg/s ({r.success_rate:.0f}%)",
-            )
-        )
-    return rows
-
-
-# ── Side-by-side helpers (both mode) ──────────────────────────────────────────
-
-def _side_by_side(rows: list[tuple]) -> list[tuple]:
-    """Group rows by label, side-by-side for 2 backends, preserving order."""
-    by_name: dict[str, list[str]] = {}
-    for label, value in rows:
-        name = label.rsplit(" (", 1)[0]
-        if name not in by_name:
-            by_name[name] = []
-        by_name[name].append(value)
-    return [(name, *vals) for name, vals in by_name.items() if len(vals) == 2]
-
-
-def _show_side_by_side(mem, lat, fps64, fps128, burst, stress) -> None:
-    """Summary layout for two backends: side-by-side columns."""
-    cw = 20  # column width for values
-
-    if mem:
-        rows = _side_by_side(_memory_rows(mem, cw))
-        print(f"  MEMORY")
-        for label, v1, v2 in rows:
-            print(f"    {label:<28}{_val(v1, cw)}{_val(v2, cw)}")
-        print()
-
-    if lat:
-        print(f"  LATENCY (local)")
-        rows = _side_by_side(_latency_rows(lat, cw))
-        for label, v1, v2 in rows:
-            print(f"    {label:<28}{_val(v1, cw)}{_val(v2, cw)}")
-        print()
-
-    if fps64 or fps128:
-        print(f"  FPS SIMULATION")
-        if fps64:
-            rows = _side_by_side(_fps_rows(fps64, cw))
-            for label, v1, v2 in rows:
-                print(f"    {label:<28}{_val(v1, cw)}{_val(v2, cw)}")
-        if fps128:
-            rows = _side_by_side(_fps_rows(fps128, cw))
-            for label, v1, v2 in rows:
-                print(f"    {label:<28}{_val(v1, cw)}{_val(v2, cw)}")
-        print()
-
-    if burst:
-        print(f"  BURST THROUGHPUT")
-        rows = _side_by_side(_burst_rows(burst, cw))
-        for label, v1, v2 in rows:
-            print(f"    {label:<28}{_val(v1, cw)}{_val(v2, cw)}")
-        print()
-
-    if stress:
-        print(f"  CONCURRENT STRESS")
-        rows = _side_by_side(_stress_rows(stress, cw))
-        for label, v1, v2 in rows:
-            print(f"    {label:<28}{_val(v1, cw)}{_val(v2, cw)}")
-        print()
+    for label, attr, fmt in defs:
+        value = getattr(result, attr)
+        print(f"    {label:<28}{_val(fmt(value))}")
+    print()
 
 
 def _show_single(mem, lat, fps64, fps128, burst, stress) -> None:
-    """Summary layout for a single backend."""
-    cw = 20
-
     if mem:
-        section = []
-        for r in mem:
-            section.append(("Idle server", format_bytes(int(r.server_idle_kb * 1_024))))
-            section.append(("Per client", format_bytes(int(r.client_cost_kb * 1_024))))
-            section.append(("50 clients total", format_bytes(int(r.ram_50_clients_kb * 1_024))))
-        if section:
-            print(f"  MEMORY")
-            for label, value in section:
-                print(f"    {label:<28}{_val(value, cw)}")
-            print()
-
+        _show_single_section("MEMORY", _memory_defs(), mem[0])
     if lat:
-        print(f"  LATENCY (local)")
-        for r in lat:
-            print(f"    {'Avg':<28}{_val(f'{r.avg:.3f} ms', cw)}")
-            print(f"    {'P95':<28}{_val(f'{r.p95:.3f} ms', cw)}")
-            print(f"    {'P99':<28}{_val(f'{r.p99:.3f} ms', cw)}")
-            print(f"    {'Max':<28}{_val(f'{r.max:.3f} ms', cw)}")
-        print()
-
-    if fps64 or fps128:
-        print(f"  FPS SIMULATION")
-        if fps64:
-            for r in fps64:
-                print(f"    {f'{r.players}p @{r.tick_rate}Hz':<28}"
-                      f"{_val(f'{r.msg_per_sec:,.0f} msg/s ({r.success_rate:.0f}%)', cw)}")
-        if fps128:
-            for r in fps128:
-                print(f"    {f'{r.players}p @{r.tick_rate}Hz':<28}"
-                      f"{_val(f'{r.msg_per_sec:,.0f} msg/s ({r.success_rate:.0f}%)', cw)}")
-        print()
-
+        _show_single_section("LATENCY", _latency_defs(), lat[0])
+    if fps64:
+        _show_single_section("FPS — 64 players @ 64 Hz", _fps_defs(), fps64[0])
+    if fps128:
+        _show_single_section("FPS — 128 players @ 20 Hz", _fps_defs(), fps128[0])
     if burst:
-        print(f"  BURST THROUGHPUT")
-        for r in burst:
-            print(f"    {'Send':<28}{_val(f'{r.send_throughput:,.0f} msg/s', cw)}")
-            print(f"    {'Receive':<28}{_val(f'{r.recv_throughput:,.0f} msg/s', cw)}")
-            print(f"    {'Data':<28}{_val(f'{r.data_mbps:.2f} MB/s', cw)}")
-        print()
-
+        _show_single_section("BURST", _burst_defs(), burst[0])
     if stress:
-        print(f"  CONCURRENT STRESS")
-        for r in stress:
-            print(f"    {f'{r.num_clients} clients':<28}"
-                  f"{_val(f'{r.throughput:,.0f} msg/s ({r.success_rate:.0f}%)', cw)}")
-        print()
+        _show_single_section("STRESS", _stress_defs(), stress[0])
+
+
+# ── Both-backends mode ────────────────────────────────────────────────────────
+
+def _sbw(label: str) -> str:
+    """Print side-by-side value line."""
+    return f"{label:<28}"
+
+
+def _show_both_section(title: str, defs: list[tuple], results: list) -> None:
+    print(f"  {title}")
+    for label, attr, fmt in defs:
+        parts = "".join(_val(fmt(getattr(r, attr))) for r in results)
+        print(f"    {_sbw(label)}{parts}")
+    print()
+
+
+def _show_side_by_side(mem, lat, fps64, fps128, burst, stress) -> None:
+    if mem:
+        _show_both_section("MEMORY", _memory_defs(), mem)
+    if lat:
+        _show_both_section("LATENCY", _latency_defs(), lat)
+    if fps64:
+        _show_both_section("FPS — 64 players @ 64 Hz", _fps_defs(), fps64)
+    if fps128:
+        _show_both_section("FPS — 128 players @ 20 Hz", _fps_defs(), fps128)
+    if burst:
+        _show_both_section("BURST", _burst_defs(), burst)
+    if stress:
+        _show_both_section("STRESS", _stress_defs(), stress)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -260,14 +227,14 @@ def print_summary(
     stress = _results(stress)
 
     if _is_both(mem, lat, fps64, fps128, burst, stress):
-        # Derive backend names from first group with data
         backends = []
         for g in (mem, lat, fps64, fps128, burst, stress):
             if g:
                 backends = [r.backend for r in g]
                 break
-        header_parts = "".join(f"{b:>20}" for b in backends)
-        print(f"  {'':30}{header_parts}")
+        label_w = 28
+        header_parts = "".join(f"{b:>{CW}}" for b in backends)
+        print(f"  {'':<{label_w}}{header_parts}")
         sep("─")
         _show_side_by_side(mem, lat, fps64, fps128, burst, stress)
     else:
