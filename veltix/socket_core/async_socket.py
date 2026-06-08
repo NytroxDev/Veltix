@@ -50,6 +50,42 @@ class AsyncSocket(BaseSocket):
 
         self._client_buffer = MessageBuffer(max_message_size)
 
+    @classmethod
+    def _create_client_instance(
+        cls,
+        sock: socket.socket,
+        logger: Logger,
+        request_handler: RequestHandler,
+        max_message_size: int,
+    ) -> AsyncSocket:
+        """Create a properly initialized client socket instance."""
+        conn = cls.__new__(cls)
+        conn.client_manager = ClientsManager(max_message_size)
+
+        conn.id_count = 0
+
+        conn.running = False
+
+        conn._selector_thread = None
+
+        conn.on_connect = None
+        conn.on_disconnect = None
+        conn.on_recv = None
+
+        conn.max_message_size = max_message_size
+        conn.request_handler = request_handler
+        conn.handshake_timeout = 5.0
+        conn._logger = Logger.get_instance()
+
+        conn._sock = sock
+        conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+        conn._selector = selectors.DefaultSelector()
+
+        conn._client_buffer = MessageBuffer(max_message_size)
+        return conn
+
     # ── Shared helpers ────────────────────────────────────────────────────────
 
     def recv(self, buf_size: int) -> bytes:
@@ -110,9 +146,12 @@ class AsyncSocket(BaseSocket):
         if self.client_manager.count() >= max_client or not self.running:
             return
         conn, addr = self._sock.accept()
-        client = ClientInfo(conn, addr, self.id_count)
+        client_sock = AsyncSocket._create_client_instance(
+            conn, self._logger, self.request_handler, self.max_message_size
+        )
+        client = ClientInfo(client_sock, addr, self.id_count)
         client_id = self.client_manager.add_client(client)
-        self._selector.register(conn, selectors.EVENT_READ, data=client_id)
+        self._selector.register(client_sock, selectors.EVENT_READ, data=client_id)
         self.id_count += 1
         return
 
