@@ -100,7 +100,7 @@ class AsyncSocket(BaseSocket):
                 if key.data == "listen":
                     self._accept_client(max_client)
                 else:
-                    self._handle_client_read(key.fileobj, buffer_size)
+                    self._handle_client_read(key.data, buffer_size)
 
     def _accept_client(self, max_client: int):
         if self.client_manager.count() >= max_client or not self.running:
@@ -112,7 +112,13 @@ class AsyncSocket(BaseSocket):
         self.id_count += 1
         return
 
-    def _handle_client_read(self, sock: socket.socket, buffer_size: int) -> None:
+    def _handle_client_read(self, client_id: int, buffer_size: int) -> None:
+        entry = self.client_manager.get_client(client_id)
+        if not entry:
+            return
+
+        sock = entry.info.conn
+
         try:
             data = sock.recv(buffer_size)
         except BlockingIOError:
@@ -126,6 +132,12 @@ class AsyncSocket(BaseSocket):
                     self._close_client_sock(key.data)
                     break
             return
+
+        entry.buffer.add_data(data)
+        messages = entry.buffer.extract_messages()
+        if messages:
+            for message in messages:
+                self.request_handler.handle(message, entry.info)
 
     def _close_client_sock(self, client_id: int) -> None:
         entry = self.client_manager.get_client(client_id)
