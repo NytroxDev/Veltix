@@ -46,14 +46,40 @@ class AsyncSocket(BaseSocket):
 
         self._selector = selectors.DefaultSelector()
 
-    def set_callback(self, event: SocketEvents, callback: Callable) -> bool: ...
-    def send(self, data: bytes) -> bool: ...
+    # ── Shared helpers ────────────────────────────────────────────────────────
+
+    def recv(self, buf_size: int) -> bytes:
+        return self._sock.recv(buf_size)
+
+    def send(self, data: bytes) -> bool:
+        try:
+            self._sock.sendall(data)
+            return True
+        except Exception:
+            return False
+
+    def settimeout(self, timeout: float) -> bool:
+        try:
+            self._sock.settimeout(timeout)
+            return True
+        except Exception:
+            return False
+
+    def set_callback(self, event: SocketEvents, callback: Callable) -> bool:
+        if event == SocketEvents.RECV:
+            self.on_recv = callback
+        elif event == SocketEvents.CONNECT:
+            self.on_connect = callback
+        elif event == SocketEvents.DISCONNECT:
+            self.on_disconnect = callback
+        else:
+            return False
+        return True
+
     def close(self) -> bool: ...
     def bind(
         self, host: str, port: int, max_client: int, buffer_size: int, timeout: float
     ) -> bool: ...
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool: ...
-    def settimeout(self, timeout: float) -> bool: ...
     def close_client(self, client) -> bool: ...
     def disconnect(self, timeout: float) -> bool: ...
-    def recv(self, buf_size: int) -> bytes: ...
