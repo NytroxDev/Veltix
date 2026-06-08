@@ -23,7 +23,7 @@ import statistics
 import threading
 import time
 
-from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig
+from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
 
 from ..config import PLAYER_MOVE, PLAYER_SHOOT, PORT_FPS_1, PORT_FPS_2
 from ..display import header, row
@@ -36,6 +36,7 @@ def run(
     tick_rate: int = 64,
     duration_s: float = 5.0,
     port: int = PORT_FPS_1,
+    socket_core: str = "async",
 ) -> FpsResult:
     """
     Simulates a realistic FPS server:
@@ -44,10 +45,11 @@ def run(
     """
     header(f"③ FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)")
 
+    _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]
     lock = threading.Lock()
 
-    server = Server(ServerConfig(host="127.0.0.1", port=port))
+    server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
     server.set_callback(Events.ON_RECV, lambda _c, _m: incr(recv_count, lock))
     server.start()
     time.sleep(0.5)
@@ -56,7 +58,7 @@ def run(
     clients: list[Client] = []
     print(f"  Connecting {num_players} players...", end="", flush=True)
     for _ in range(num_players):
-        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
         c.connect()
         clients.append(c)
         time.sleep(0.005)

@@ -17,7 +17,7 @@ import gc
 import statistics
 import time
 
-from veltix import Client, ClientConfig, Server, ServerConfig, format_bytes
+from veltix import Client, ClientConfig, Server, ServerConfig, SocketCore, format_bytes
 
 from ..config import PORT_MEMORY
 from ..display import header, row
@@ -25,7 +25,7 @@ from ..models import MemoryResult
 from ..utils import ram_kb, ram_mb
 
 
-def run(port: int = PORT_MEMORY) -> MemoryResult:
+def run(port: int = PORT_MEMORY, socket_core: str = "async") -> MemoryResult:
     header("① BASELINE MEMORY FOOTPRINT")
 
     # ── Baseline ──────────────────────────────────────────────────────────────
@@ -34,7 +34,8 @@ def run(port: int = PORT_MEMORY) -> MemoryResult:
     row("Python process baseline", format_bytes(int(baseline * 1_024)))
 
     # ── Idle server ───────────────────────────────────────────────────────────
-    server = Server(ServerConfig(host="127.0.0.1", port=port))
+    _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
+    server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
     server.start()
     time.sleep(0.3)
     gc.collect()
@@ -52,7 +53,7 @@ def run(port: int = PORT_MEMORY) -> MemoryResult:
     for _ in range(10):
         gc.collect()
         before = ram_kb()
-        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
         c.connect()
         time.sleep(0.05)
         gc.collect()
@@ -76,7 +77,7 @@ def run(port: int = PORT_MEMORY) -> MemoryResult:
 
     # ── Scale to 50 clients ───────────────────────────────────────────────────
     for _ in range(40):
-        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
         c.connect()
         time.sleep(0.01)
         clients.append(c)

@@ -42,15 +42,17 @@ def _tdivider() -> None:
 
 # ── Public summary ────────────────────────────────────────────────────────────
 
-def print_summary(
-    mem: Optional[MemoryResult],
-    lat: Optional[LatencyStats],
-    fps64: Optional[FpsResult],
-    fps128: Optional[FpsResult],
-    burst: Optional[BurstResult],
-    stress: Optional[StressResult],
-) -> None:
-    header("📋  README-READY SUMMARY")
+def _results(value):
+    """Normalize to list or None."""
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return value if value else None
+    return [value]
+
+
+def _show(mem, lat, fps64, fps128, burst, stress) -> None:
+    """Internal rendering — assumes list values (or None)."""
     print()
     print("┌─────────────────────────────────────────────────────────────────────┐")
     print("│                    VELTIX PERFORMANCE RESULTS                       │")
@@ -58,46 +60,71 @@ def print_summary(
     if mem:
         _tdivider()
         _trow("MEMORY", "")
-        _trow("Idle server",     format_bytes(int(mem.server_idle_kb * 1_024)))
-        _trow("Per client",      format_bytes(int(mem.client_cost_kb * 1_024)))
-        _trow("50 clients total", format_bytes(int(mem.ram_50_clients_kb * 1_024)))
+        for r in mem:
+            _trow(f"  Idle server ({r.backend})", format_bytes(int(r.server_idle_kb * 1_024)))
+            _trow(f"  Per client ({r.backend})", format_bytes(int(r.client_cost_kb * 1_024)))
+            _trow(f"  50 cl. total ({r.backend})", format_bytes(int(r.ram_50_clients_kb * 1_024)))
 
     if lat:
         _tdivider()
         _trow("LATENCY (local)", "")
-        _trow("Average", f"{lat.avg:.3f} ms")
-        _trow("P95",     f"{lat.p95:.3f} ms")
-        _trow("P99",     f"{lat.p99:.3f} ms")
-        _trow("Max",     f"{lat.max:.3f} ms")
+        for r in lat:
+            _trow(f"  Avg ({r.backend})", f"{r.avg:.3f} ms")
+            _trow(f"  P95 ({r.backend})", f"{r.p95:.3f} ms")
+            _trow(f"  P99 ({r.backend})", f"{r.p99:.3f} ms")
+            _trow(f"  Max ({r.backend})", f"{r.max:.3f} ms")
 
     if fps64 or fps128:
         _tdivider()
         _trow("FPS SIMULATION", "")
         if fps64:
-            _trow(
-                f"{fps64.players} players @{fps64.tick_rate}Hz",
-                f"{fps64.msg_per_sec:,.0f} msg/s  –  {fps64.success_rate:.0f}% success",
-            )
+            for r in fps64:
+                _trow(
+                    f"  {r.players}p @{r.tick_rate}Hz ({r.backend})",
+                    f"{r.msg_per_sec:,.0f} msg/s  –  {r.success_rate:.0f}% success",
+                )
         if fps128:
-            _trow(
-                f"{fps128.players} players @{fps128.tick_rate}Hz",
-                f"{fps128.msg_per_sec:,.0f} msg/s  –  {fps128.success_rate:.0f}% success",
-            )
+            for r in fps128:
+                _trow(
+                    f"  {r.players}p @{r.tick_rate}Hz ({r.backend})",
+                    f"{r.msg_per_sec:,.0f} msg/s  –  {r.success_rate:.0f}% success",
+                )
 
     if burst:
         _tdivider()
         _trow("BURST THROUGHPUT", "")
-        _trow("Send",    f"{burst.send_throughput:,.0f} msg/s")
-        _trow("Receive", f"{burst.recv_throughput:,.0f} msg/s")
-        _trow("Data",    f"{burst.data_mbps:.2f} MB/s")
+        for r in burst:
+            _trow(f"  Send ({r.backend})", f"{r.send_throughput:,.0f} msg/s")
+            _trow(f"  Receive ({r.backend})", f"{r.recv_throughput:,.0f} msg/s")
+            _trow(f"  Data ({r.backend})", f"{r.data_mbps:.2f} MB/s")
 
     if stress:
         _tdivider()
         _trow("CONCURRENT STRESS", "")
-        _trow(
-            f"{stress.num_clients} clients",
-            f"{stress.throughput:,.0f} msg/s  –  {stress.success_rate:.0f}% success",
-        )
+        for r in stress:
+            _trow(
+                f"  {r.num_clients} cl. ({r.backend})",
+                f"{r.throughput:,.0f} msg/s  –  {r.success_rate:.0f}% success",
+            )
 
     print("└─────────────────────┴───────────────────────────────────────────────┘")
     print()
+
+
+def print_summary(
+    mem: Optional[MemoryResult | list[MemoryResult]],
+    lat: Optional[LatencyStats | list[LatencyStats]],
+    fps64: Optional[FpsResult | list[FpsResult]],
+    fps128: Optional[FpsResult | list[FpsResult]],
+    burst: Optional[BurstResult | list[BurstResult]],
+    stress: Optional[StressResult | list[StressResult]],
+) -> None:
+    header("📋  README-READY SUMMARY")
+    _show(
+        _results(mem),
+        _results(lat),
+        _results(fps64),
+        _results(fps128),
+        _results(burst),
+        _results(stress),
+    )
