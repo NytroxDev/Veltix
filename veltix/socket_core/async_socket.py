@@ -27,6 +27,8 @@ class AsyncSocket(BaseSocket):
     def __init__(self, request_handler: RequestHandler, max_message_size: int) -> None:
         self.client_manager = ClientsManager(max_message_size)
 
+        self.id_count = 0
+
         self.running = False
 
         self._selector_thread: Optional[threading.Thread] = None
@@ -93,6 +95,20 @@ class AsyncSocket(BaseSocket):
     def _selector_loop(self, max_client, buffer_size, timeout):
         while self.running:
             events = self._selector.select(0.5)
+
+            for key, mask in events:
+                if key.data == "listen":
+                    self._accept_client(max_client)
+
+    def _accept_client(self, max_client: int):
+        if self.client_manager.count() >= max_client or not self.running:
+            return
+        conn, addr = self._sock.accept()
+        client = ClientInfo(conn, addr, self.id_count)
+        client_id = self.client_manager.add_client(client)
+        self._selector.register(conn, selectors.EVENT_READ, data=client_id)
+        self.id_count += 1
+        return
 
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool: ...
     def close_client(self, client) -> bool: ...
