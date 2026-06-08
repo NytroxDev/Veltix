@@ -48,6 +48,8 @@ class AsyncSocket(BaseSocket):
 
         self._selector = selectors.DefaultSelector()
 
+        self._client_buffer = MessageBuffer(max_message_size)
+
     # ── Shared helpers ────────────────────────────────────────────────────────
 
     def recv(self, buf_size: int) -> bytes:
@@ -99,8 +101,10 @@ class AsyncSocket(BaseSocket):
             for key, mask in events:
                 if key.data == "listen":
                     self._accept_client(max_client)
+                elif key.data == "client":
+                    self._handle_self_read(buffer_size)
                 else:
-                    self._handle_client_read(key.data, buffer_size)
+                    self._handle_server_client(key.data, buffer_size)
 
     def _accept_client(self, max_client: int):
         if self.client_manager.count() >= max_client or not self.running:
@@ -112,7 +116,7 @@ class AsyncSocket(BaseSocket):
         self.id_count += 1
         return
 
-    def _handle_client_read(self, client_id: int, buffer_size: int) -> None:
+    def _handle_server_client(self, client_id: int, buffer_size: int) -> None:
         entry = self.client_manager.get_client(client_id)
         if not entry:
             return
@@ -135,6 +139,24 @@ class AsyncSocket(BaseSocket):
         if messages:
             for message in messages:
                 self.request_handler.handle(message, entry.info)
+
+    def _handle_self_read(self, buffer_size: int):
+        try:
+            data = self._sock.recv(buffer_size)
+        except BlockingIOError:
+            return
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            data = b""
+
+        if not data:
+            self.disconnect(0.5)
+            return
+
+        self._client_buffer.add_data(data)
+        messages = self._client_buffer.extract_messages()
+        if messages:
+            for message in messages:
+                self.request_handler.handle(message)
 
     def close_client(self, client: Union[ClientEntry, int]) -> bool:
         if isinstance(client, ClientEntry):
@@ -159,14 +181,40 @@ class AsyncSocket(BaseSocket):
     def close(self) -> bool:
         try:
             self.running = False
+            self._selector.unregister(self._sock)
             self._sock.close()
             self.client_manager.iter_on_clients(self._close_server_client)
+            self._selector.close()
             if self._selector_thread and self._selector_thread != threading.current_thread():
                 self._selector_thread.join(timeout=0.2)
             return True
         except Exception:
             return False
 
-    def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool: ...
+    def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool:
+        try:
+            self._sock.connect((host, port))
+            self._sock.setblocking(False)
+            self.running = True
+            self._selector.register(self._sock, selectors.EVENT_READ, data="client")
+            self._selector_thread = threading.Thread(
+                target=self._selector_loop, args=(0, buffer_size, timeout)
+            )
+            self._selector_thread.start()
+            return True
+        except (TimeoutError, ConnectionRefusedError) as e:
+            return False
+        except Exception as e:
+            return False
 
-    def disconnect(self, timeout: float) -> bool: ...
+    def disconnect(self, timeout: float = 5.0) -> bool:
+        try:
+            self.running = False
+            self._selector.unregister(self._sock)
+            self._sock.close()
+            if self._selector_thread and threading.current_thread() != self._selector_thread:
+                self._selector_thread.join(timeout=timeout + 0.1)
+            return True
+
+        except Exception as e:
+            return False
