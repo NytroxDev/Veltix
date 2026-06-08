@@ -121,7 +121,6 @@ class AsyncSocket(BaseSocket):
             data = b""
 
         if not data:
-            # déconnexion → trouver le client_id associé à ce sock
             for key, _ in self._selector.get_map().items():
                 if key.fileobj is sock:
                     self._close_client_sock(key.data)
