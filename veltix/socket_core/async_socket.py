@@ -5,10 +5,8 @@ from __future__ import annotations
 import selectors
 import socket
 import threading
-import time
 from typing import TYPE_CHECKING, Optional, Union
 
-from ..internal.network import RecvResult, recv
 from ..logger import Logger
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -48,6 +46,8 @@ class AsyncSocket(BaseSocket):
 
         self._selector = selectors.DefaultSelector()
 
+        self._handshake_requests: dict[int, bytes] = {}
+
         self._client_buffer = MessageBuffer(max_message_size)
 
     @classmethod
@@ -83,6 +83,8 @@ class AsyncSocket(BaseSocket):
 
         conn._selector = selectors.DefaultSelector()
 
+        conn._handshake_requests: dict[int, bytes] = {}
+
         conn._client_buffer = MessageBuffer(max_message_size)
         return conn
 
@@ -95,7 +97,17 @@ class AsyncSocket(BaseSocket):
         try:
             self._sock.sendall(data)
             return True
-        except Exception:
+        except BlockingIOError:
+            try:
+                self._sock.setblocking(True)
+                self._sock.sendall(data)
+                self._sock.setblocking(False)
+                return True
+            except Exception as e:
+                self._logger.debug(f"send BlockingIOError fallback failed: {e}")
+                return False
+        except Exception as e:
+            self._logger.debug(f"send failed: {e}")
             return False
 
     def settimeout(self, timeout: float) -> bool:
@@ -142,10 +154,14 @@ class AsyncSocket(BaseSocket):
                 else:
                     self._handle_server_client(key.data, buffer_size)
 
+    def fileno(self) -> int:
+        return self._sock.fileno()
+
     def _accept_client(self, max_client: int):
-        if self.client_manager.count() >= max_client or not self.running:
+        if (max_client != -1 and self.client_manager.count() >= max_client) or not self.running:
             return
         conn, addr = self._sock.accept()
+        self._logger.debug(f"accepted client from {addr}")
         client_sock = AsyncSocket._create_client_instance(
             conn, self._logger, self.request_handler, self.max_message_size
         )
@@ -153,6 +169,11 @@ class AsyncSocket(BaseSocket):
         client_id = self.client_manager.add_client(client)
         self._selector.register(client_sock, selectors.EVENT_READ, data=client_id)
         self.id_count += 1
+        handshake_request_id, hello = self.request_handler.handshake_handler.prepare_hello()
+        self.request_handler.register(handshake_request_id)
+        self._logger.debug(f"sending hello to client {client_id} at {addr}")
+        self.request_handler.handshake_handler.send_hello(hello, client_sock)
+        self._handshake_requests[client_id] = handshake_request_id
         return
 
     def _handle_server_client(self, client_id: int, buffer_size: int) -> None:
@@ -170,14 +191,47 @@ class AsyncSocket(BaseSocket):
             data = b""
 
         if not data:
+            self._logger.debug(f"client {client_id} disconnected")
             self.close_client(client_id)
             return
 
+        self._logger.debug(f"client {client_id} recv {len(data)} bytes")
         entry.buffer.add_data(data)
         messages = entry.buffer.extract_messages()
         if messages:
+            self._logger.debug(f"client {client_id} extracted {len(messages)} messages")
             for message in messages:
                 self.request_handler.handle(message, entry.info)
+                handshake_request_id = self._handshake_requests.get(client_id)
+                handshake_done = entry.info.handshake_done
+                if handshake_request_id and not handshake_done:
+                    self._check_server_handshake(entry, handshake_request_id)
+
+    def _check_server_handshake(self, entry: ClientEntry, handshake_request_id: bytes) -> None:
+        with self.request_handler.pending_requests_lock:
+            queue = self.request_handler.pending_requests.get(handshake_request_id)
+            is_resolved = queue is not None and not queue.empty()
+            self._logger.debug(
+                f"handshake check for {entry.info.addr}: request_id={handshake_request_id!r}, "
+                f"queue={'exists' if queue else 'none'}, "
+                f"resolved={is_resolved}, handshake_done={entry.info.handshake_done}"
+            )
+            if is_resolved:
+                self.request_handler.pending_requests.pop(handshake_request_id, None)
+                entry.info.handshake_done = True
+
+        if not is_resolved:
+            return
+
+        self._logger.debug(f"Handshake complete for {entry.info.addr}")
+
+        if self.on_connect:
+            try:
+                self.on_connect(entry.info)
+            except Exception as e:
+                self._logger.error(
+                    f"on_connect error for {entry.info.addr}: {type(e).__name__}: {e}"
+                )
 
     def _handle_self_read(self, buffer_size: int):
         try:
@@ -188,12 +242,17 @@ class AsyncSocket(BaseSocket):
             data = b""
 
         if not data:
+            self._logger.debug("self_read: disconnected from server")
+            if self.on_disconnect:
+                self.on_disconnect()
             self.disconnect(0.5)
             return
 
+        self._logger.debug(f"self_read: recv {len(data)} bytes")
         self._client_buffer.add_data(data)
         messages = self._client_buffer.extract_messages()
         if messages:
+            self._logger.debug(f"self_read: extracted {len(messages)} messages")
             for message in messages:
                 self.request_handler.handle(message)
 
@@ -213,6 +272,8 @@ class AsyncSocket(BaseSocket):
         self._selector.unregister(entry.info.conn)
 
         self.client_manager.remove_client(entry.id)
+
+        self._handshake_requests.pop(entry.id, None)
 
         if self.on_disconnect:
             self.on_disconnect(entry.info)
