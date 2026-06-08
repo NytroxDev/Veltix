@@ -99,6 +99,8 @@ class AsyncSocket(BaseSocket):
             for key, mask in events:
                 if key.data == "listen":
                     self._accept_client(max_client)
+                else:
+                    self._handle_client_read(key.fileobj, buffer_size)
 
     def _accept_client(self, max_client: int):
         if self.client_manager.count() >= max_client or not self.running:
@@ -109,6 +111,30 @@ class AsyncSocket(BaseSocket):
         self._selector.register(conn, selectors.EVENT_READ, data=client_id)
         self.id_count += 1
         return
+
+    def _handle_client_read(self, sock: socket.socket, buffer_size: int) -> None:
+        try:
+            data = sock.recv(buffer_size)
+        except BlockingIOError:
+            return
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            data = b""
+
+        if not data:
+            # déconnexion → trouver le client_id associé à ce sock
+            for key, _ in self._selector.get_map().items():
+                if key.fileobj is sock:
+                    self._close_client_sock(key.data)
+                    break
+            return
+
+    def _close_client_sock(self, client_id: int) -> None:
+        entry = self.client_manager.get_client(client_id)
+        if not entry:
+            return
+        self._selector.unregister(entry.info.conn)
+        self.client_manager.remove_client(client_id)
+        entry.info.conn.close()
 
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool: ...
     def close_client(self, client) -> bool: ...
