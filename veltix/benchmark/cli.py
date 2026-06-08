@@ -85,6 +85,9 @@ def _backends_from_args(socket_core: str) -> list[str]:
 def _run_for_backends(runner, backends: list[str], *args):
     results = []
     for backend in backends:
+        sep("─")
+        print(f"  ▶ Backend: {backend}")
+        sep("─")
         print()
         result = runner(*args, socket_core=backend)
         result.backend = backend
