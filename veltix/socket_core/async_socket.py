@@ -127,10 +127,7 @@ class AsyncSocket(BaseSocket):
             data = b""
 
         if not data:
-            for key, _ in self._selector.get_map().items():
-                if key.fileobj is sock:
-                    self._close_client_sock(key.data)
-                    break
+            self.close_client(client_id)
             return
 
         entry.buffer.add_data(data)
@@ -139,15 +136,37 @@ class AsyncSocket(BaseSocket):
             for message in messages:
                 self.request_handler.handle(message, entry.info)
 
-    def _close_client_sock(self, client_id: int) -> None:
-        entry = self.client_manager.get_client(client_id)
+    def close_client(self, client: Union[ClientEntry, int]) -> bool:
+        if isinstance(client, ClientEntry):
+            self._close_server_client(client)
+            return True
+        entry = self.client_manager.get_client(client)
         if not entry:
-            return
-        self._selector.unregister(entry.info.conn)
-        self.client_manager.remove_client(client_id)
+            return False
+        self._close_server_client(entry)
+        return True
+
+    def _close_server_client(self, entry: ClientEntry) -> None:
         entry.info.conn.close()
 
+        self._selector.unregister(entry.info.conn)
+
+        self.client_manager.remove_client(entry.id)
+
+        if self.on_disconnect:
+            self.on_disconnect(entry.info)
+
+    def close(self) -> bool:
+        try:
+            self.running = False
+            self._sock.close()
+            self.client_manager.iter_on_clients(self._close_server_client)
+            if self._selector_thread and self._selector_thread != threading.current_thread():
+                self._selector_thread.join(timeout=0.2)
+            return True
+        except Exception:
+            return False
+
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool: ...
-    def close_client(self, client) -> bool: ...
+
     def disconnect(self, timeout: float) -> bool: ...
-    def close(self) -> bool: ...
