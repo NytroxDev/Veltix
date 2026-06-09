@@ -185,9 +185,7 @@ class AsyncSocket(BaseSocket):
                 continue
             entry = self.client_manager.get_client(client_id)
             if entry and not entry.info.handshake_done:
-                self._logger.warning(
-                    f"handshake timeout for client {entry.id} ({entry.info.addr})"
-                )
+                self._logger.warning(f"handshake timeout for client {entry.id} ({entry.info.addr})")
                 self._close_server_client(entry)
 
     def fileno(self) -> int:
