@@ -51,10 +51,17 @@ def parse_args() -> argparse.Namespace:
         default="async",
         help="Socket backend to benchmark ('threading', 'async', or 'both')",
     )
+    p.add_argument(
+        "--runs",
+        type=int,
+        default=1,
+        metavar="N",
+        help="Run each benchmark N times and average the results",
+    )
 
     # ── Per-benchmark knobs ───────────────────────────────────────────────────
     g = p.add_argument_group("latency")
-    g.add_argument("--latency-iterations", type=int, default=2_000, metavar="N")
+    g.add_argument("--latency-iterations", type=int, default=50_000, metavar="N")
 
     g = p.add_argument_group("fps (run 1)")
     g.add_argument("--fps-players", type=int, default=64, metavar="N")
@@ -95,6 +102,25 @@ def _run_for_backends(runner, backends: list[str], *args):
     return results
 
 
+def _run_runs(runner, backends: list[str], runs: int, *args):
+    """Run a bench across backends, averaging over N runs."""
+    if runs <= 1:
+        return _run_for_backends(runner, backends, *args)
+
+    all_backend_results: list[list] = []
+    for run_idx in range(runs):
+        print(f"\n  ── Run {run_idx + 1}/{runs} ──")
+        all_backend_results.append(_run_for_backends(runner, backends, *args))
+
+    num_backends = len(all_backend_results[0])
+    averaged = []
+    for b_idx in range(num_backends):
+        run_specific = [run[b_idx] for run in all_backend_results]
+        avg = run_specific[0].average(run_specific)
+        averaged.append(avg)
+    return averaged
+
+
 def main() -> None:
     args = parse_args()
     run = set(args.only)
@@ -114,6 +140,8 @@ def main() -> None:
     row("RAM", f"{psutil.virtual_memory().total / 1_073_741_824:.1f} GB")
     row("OS", sys.platform)
     row("Socket backend", args.socket_core)
+    if args.runs > 1:
+        row("Runs (avg)", str(args.runs))
 
     # ── Run selected benchmarks ───────────────────────────────────────────────
     mem = lat = fps64 = fps128 = burst = stress = None
@@ -121,35 +149,35 @@ def main() -> None:
     if "memory" in run:
         from .benches.memory import run as run_memory
 
-        mem = _run_for_backends(run_memory, backends)
+        mem = _run_runs(run_memory, backends, args.runs)
 
     if "latency" in run:
         from .benches.latency import run as run_latency
 
-        lat = _run_for_backends(run_latency, backends, args.latency_iterations)
+        lat = _run_runs(run_latency, backends, args.runs, args.latency_iterations)
 
     if "fps" in run:
         from .benches.fps import run as run_fps
         from .config import PORT_FPS_1, PORT_FPS_2
 
-        fps64 = _run_for_backends(
-            run_fps, backends,
+        fps64 = _run_runs(
+            run_fps, backends, args.runs,
             args.fps_players, args.fps_tick_rate, args.fps_duration, PORT_FPS_1,
         )
-        fps128 = _run_for_backends(
-            run_fps, backends,
+        fps128 = _run_runs(
+            run_fps, backends, args.runs,
             args.fps2_players, args.fps2_tick_rate, args.fps_duration, PORT_FPS_2,
         )
 
     if "burst" in run:
         from .benches.burst import run as run_burst
 
-        burst = _run_for_backends(run_burst, backends, args.burst_count, args.burst_payload)
+        burst = _run_runs(run_burst, backends, args.runs, args.burst_count, args.burst_payload)
 
     if "stress" in run:
         from .benches.stress import run as run_stress
 
-        stress = _run_for_backends(run_stress, backends, args.stress_clients, args.stress_msgs)
+        stress = _run_runs(run_stress, backends, args.runs, args.stress_clients, args.stress_msgs)
 
     # ── Summary + export ──────────────────────────────────────────────────────
     print_summary(mem, lat, fps64, fps128, burst, stress)
