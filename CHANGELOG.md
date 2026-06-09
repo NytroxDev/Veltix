@@ -5,6 +5,170 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-06-09
+
+### Added
+
+#### AsyncSocket (Selectors-Based Backend)
+
+New `SocketCore.ASYNC` backend (`veltix/socket_core/async_socket.py`) — a selectors-based
+I/O loop that replaces the one-thread-per-client model:
+
+- **Selector loop** with `selectors.DefaultSelector()` — single thread handles all clients,
+  no thread-per-client overhead
+- **`_accept_client()`** + **`_send_hello()`** — HELLO is sent immediately on accept,
+  eliminating the 500 ms `select()` latency of the old deferred handshake queue
+- **Client mode** — `connect()` / `disconnect()` / self-read via `_handle_self_read()`
+- **`_close_server_client()`** — clean teardown with `close()` + `on_disconnect` callback
+- **`_check_handshake_timeouts()`** — configurable timeout for stalled handshakes
+- **`_create_client_instance()`** — factory method for per-client socket instances with
+  their own selector, buffer, and handshake state
+
+#### Protocol Hardening
+
+- **MAGIC bytes** (`b"VX"`) prepended to every frame — validates frame alignment on
+  the receiving end. Invalid magic triggers automatic stream resynchronization.
+- **`MessageBuffer._resync()`** — on parse failure (CRC, size, or magic mismatch),
+  searches the buffer for the next valid MAGIC byte and discards corrupted data.
+  If no MAGIC is found, the entire buffer is cleared.
+- **`MAX_BUFFER_SIZE`** — hard 20 MB limit on the accumulation buffer. Exceeding it
+  clears the buffer entirely (DoS protection).
+- **Per-message `max_message_size`** — individual message size validated at `parse()`
+  time (default 10 MB).
+
+#### Benchmark Suite Enhancements
+
+- **`--socket-core` argument** — benchmark threading, async, or both backends
+  side-by-side
+- **`--runs N`** — run each benchmark N times and average all results, eliminating
+  run-to-run noise
+- **`--latency-iterations`** default increased from 2 000 to **50 000** for stable
+  P95/P99/max stats
+- **`average()` static methods** on all result models (`LatencyStats`, `MemoryResult`,
+  `FpsResult`, `BurstResult`, `StressResult`) — `LatencyStats` concatenates raw
+  samples for accurate percentile computation across runs
+- **Side-by-side summary** — `--socket-core both` now displays threading and async
+  results in adjacent columns for direct comparison
+- **Benchmark label fix** — each per-bench output shows which backend is being tested
+- **Callback executor error suppression** — `CallbackExecutor` errors no longer pollute
+  benchmark output during teardown
+
+#### Integration Tests
+
+- **Parametrized over both backends** — all integration tests (`test_client_server.py`,
+  `test_callback_executor.py`) run on both `SocketCore.THREADING` and `SocketCore.ASYNC`
+
+### Changed
+
+#### Protocol Wire Format (Breaking)
+
+- **Header size increased from 14 to 16 bytes** — 2 bytes added for MAGIC (`b"VX"`)
+  at the start of every frame
+- **`Request.compile()`** now prepends MAGIC before the binary header
+- **`Request.parse()`** validates MAGIC bytes first, then proceeds to type, CRC, and
+  content. Raises `RequestError("Invalid magic bytes")` on mismatch.
+- **`HEADER_SIZE` constant** updated from `14` to `16`
+- **`_HEADER_STRUCT`** format changed from `">HI4s4s"` to `">2sHI4s4s"`
+- **Version compatibility** — v1.7.0 is only compatible with itself. Entry added to
+  `COMPATIBILITY` table: `Version(1, 7, 0): [Version(1, 7, 0)]`
+
+#### MessageBuffer
+
+- **`extract_messages()`** — uses `struct.unpack_from` to read MAGIC + content size
+  in a single zero-copy operation (replaces `buffer[:2]` + `int.from_bytes(buffer[4:8])`)
+- **`extract_messages()`** — passes `bytearray` slice directly to `Request.parse()`,
+  eliminating an extra `bytes()` copy
+- **`Request.parse()`** — accepts `bytes | bytearray` (type hint updated)
+
+#### Sender
+
+- **`broadcast()`** — compiles the `Request` once and reuses the serialized bytes
+  for all recipients, instead of calling `data.compile()` per client
+
+#### Test Protocol
+
+- **`test_invalid_magic_bytes`** — new test verifying that corrupted magic is properly
+  rejected
+- **`test_message_buffer.py`** — 15 new tests covering corruption recovery,
+  resynchronization (multiple corruptions, continuous garbage), and buffer
+  protection (overflow, max-size enforcement)
+- **All existing parse tests updated** for 16-byte header and MAGIC offsets
+
+### Fixed
+
+#### AsyncSocket
+
+- **Race condition on HELLO delivery** — the original code queued HELLO sending to
+  `_process_pending_handshakes()` which ran after `select()`, adding up to 500 ms
+  latency before the handshake initiated. Fixed by sending HELLO immediately in
+  `_accept_client()` via the new `_send_hello()` method.
+- **`BlockingIOError` on send** — caught and retried with temporary blocking mode
+- **`accept()` errors** — `BlockingIOError` and `OSError` caught gracefully
+- **Non-blocking mode** — all client sockets set to non-blocking on creation
+- **Handshake timeout** — stalled connections are cleaned up after `handshake_timeout`
+  seconds
+- **`on_disconnect` in self-read** — client-side disconnection properly triggers
+  the callback
+
+#### ThreadingSocket
+
+- **`max_client=-1` blocking accept** — when `max_client` was -1 (unlimited), the
+  accept loop could block indefinitely. Now treated as "no limit".
+- **`send()` `BlockingIOError` fallback** — caught and retried with blocking mode
+- **`on_disconnect` in self-read** — server-originated disconnection now fires the
+  callback
+
+### Internal
+
+- **`_handshake_pending` / `_process_pending_handshakes()`** — now dead code in
+  `AsyncSocket` (nothing pushes to the pending queue since `_send_hello` is called
+  directly). Left in place for backward compatibility; will be removed in v1.8.0.
+- **`_check_handshake_timeouts()`** — shared between threading and async backends
+- **Message buffer pre-compiled struct** — `_MAGIC_AND_SIZE = Struct(">2s2xI")`
+  for zero-copy magic + size extraction
+
+### Performance (v1.7.0 @ 5-run average)
+
+#### Memory
+
+| Metric | threading | async |
+|---|---|---|
+| Idle server | 45.6 KB | 4 KB |
+| Per client (avg) | 36.1 KB | 12.4 KB |
+| Per client (min) | 17.6 KB | 4 KB |
+| Per client (max) | 45.6 KB | 16 KB |
+| Leak delta | 423 KB | 21 KB |
+| 50 clients | 24.39 MB | 23.63 MB |
+
+#### Latency (250 000 pings)
+
+| Metric | threading | async |
+|---|---|---|
+| Avg | 0.032 ms | 0.035 ms |
+| P50 | 0.030 ms | 0.035 ms |
+| P95 | 0.042 ms | 0.048 ms |
+| P99 | 0.070 ms | 0.079 ms |
+| Throughput | 29 461/s | 26 625/s |
+
+#### Burst (10 000 × 64 B)
+
+| Metric | threading | async |
+|---|---|---|
+| Send | 52 109 msg/s | 52 296 msg/s |
+| Recv | 41 327 msg/s | 41 343 msg/s |
+| Duration | 242.0 ms | 244.1 ms |
+
+#### Stress (100 clients × 100 msg)
+
+| Metric | threading | async |
+|---|---|---|
+| Throughput | 37 676 msg/s | 76 929 msg/s |
+| Duration | 267.0 ms | 136.0 ms |
+
+Full benchmark comparison with v1.6.10: [PERFORMANCE.md](PERFORMANCE.md)
+
+---
+
 ## [1.6.10] - 2026-06-07
 
 ### PerformanceMode Removal

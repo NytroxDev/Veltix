@@ -240,6 +240,7 @@ class TestClientsManagerThreadSafety:
         assert len(errors) == 0
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestCloseClientById:
     def test_close_client_with_none_id(self):
         """close_client(id_=None) should not crash — bugfix v1.6.6."""

@@ -3,9 +3,12 @@
 import threading
 import time
 
+import pytest
+
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestClientServer:
     def test_basic_connection(self):
         server = Server(ServerConfig(host="127.0.0.1", port=19999))

@@ -26,7 +26,7 @@ import statistics
 import threading
 import time
 
-from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig
+from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
 
 from ..config import PLAYER_MOVE, PORT_BURST
 from ..display import header, row
@@ -38,13 +38,15 @@ def run(
     count: int = 10_000,
     payload_size: int = 64,
     port: int = PORT_BURST,
+    socket_core: str = "async",
 ) -> BurstResult:
     header(f"④ BURST THROUGHPUT  ({count:,} msgs × {payload_size} B)")
 
+    _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     received_ts: list[float] = []
     lock = threading.Lock()
 
-    server = Server(ServerConfig(host="127.0.0.1", port=port))
+    server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
     server.set_callback(
         Events.ON_RECV,
         lambda _c, _m: append_ts(received_ts, lock),
@@ -52,7 +54,7 @@ def run(
     server.start()
     time.sleep(0.3)
 
-    client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+    client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
     client.connect()
     time.sleep(0.2)
 

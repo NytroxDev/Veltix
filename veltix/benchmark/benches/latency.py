@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import time
 
-from veltix import Client, ClientConfig, Server, ServerConfig
+from veltix import Client, ClientConfig, Server, ServerConfig, SocketCore
 
 from ..config import PORT_LATENCY
 from ..display import header, row
@@ -50,14 +50,16 @@ def _histogram(samples: list[float]) -> None:
         row(f"    {label}", f"{count:>5}  ({pct:5.1f}%)  {bar}")
 
 
-def run(iterations: int = 2_000, port: int = PORT_LATENCY) -> LatencyStats:
+def run(iterations: int = 50_000, port: int = PORT_LATENCY, socket_core: str = "async") -> LatencyStats:
     header("② PING / PONG LATENCY")
 
-    server = Server(ServerConfig(host="127.0.0.1", port=port))
+    _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
+
+    server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
     server.start()
     time.sleep(0.3)
 
-    client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+    client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
     client.connect()
     time.sleep(0.2)
 

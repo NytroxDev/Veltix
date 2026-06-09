@@ -1,5 +1,39 @@
 # Migration Guide
 
+## v1.6.10 → v1.7.0
+
+**Breaking change : wire format — NOT backward compatible.**
+
+v1.7.0 adds **2 MAGIC bytes** (`b"VX"`) at the start of every frame. The header size
+increases from 14 to 16 bytes. v1.7.0 **cannot communicate** with earlier versions.
+
+```
+Before (v1.6.10) : [2B  size][2B  code][4B CRC][4B request_id][     content     ]
+After  (v1.7.0)  : [2B MAGIC][2B  size][2B  code][4B CRC][4B request_id][content ]
+                    ^^^^^^^^
+                    new — always 0x56 0x58 ("VX")
+```
+
+### Action required
+
+- **All clients and servers must be upgraded together** — mixed-version communication
+  will fail with `RequestError("Invalid magic bytes")`.
+- No source-level API changes needed — the wire format change is transparent to
+  application code using `Request` / `Response` objects.
+
+### New features
+
+- **`AsyncSocket`** : selectors-based backend — switch via `SocketCore.ASYNC`.
+  Up to **2x stress throughput** (76 929 msg/s vs 37 676 msg/s).
+- **Protocol hardening** : MAGIC bytes, auto-resynchronization on corruption,
+  `MAX_BUFFER_SIZE` (20 MB) for DoS protection.
+- **Benchmark `--socket-core`** : test threading, async, or both side-by-side.
+- **Benchmark `--runs N`** : average results over multiple runs.
+
+See [CHANGELOG.md](../CHANGELOG.md) for the full list of changes.
+
+---
+
 ## v1.6.9 → v1.6.10
 
 **Breaking changes in public API :**

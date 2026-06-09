@@ -26,7 +26,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig
+from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
 
 from ..config import PLAYER_MOVE, PORT_STRESS
 from ..display import header, row
@@ -38,9 +38,11 @@ def run(
     num_clients: int = 100,
     msgs_per_client: int = 100,
     port: int = PORT_STRESS,
+    socket_core: str = "async",
 ) -> StressResult:
     header(f"⑤ CONCURRENT STRESS  ({num_clients} clients × {msgs_per_client} msgs)")
 
+    _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]
     first_recv_ts: list[float] = []
     last_recv_ts: list[float] = []
@@ -55,7 +57,7 @@ def run(
             last_recv_ts.clear()
             last_recv_ts.append(ts)
 
-    server = Server(ServerConfig(host="127.0.0.1", port=port))
+    server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
     server.set_callback(Events.ON_RECV, on_recv)
     server.start()
     time.sleep(0.5)
@@ -64,7 +66,7 @@ def run(
     clients: list[Client] = []
     print(f"  Connecting {num_clients} clients...", end="", flush=True)
     for _ in range(num_clients):
-        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
         c.connect()
         clients.append(c)
         time.sleep(0.003)
