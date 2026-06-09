@@ -195,7 +195,13 @@ class AsyncSocket(BaseSocket):
         if (max_client != -1 and self.client_manager.count() >= max_client) or not self.running:
             self._logger.debug("_accept_client: max clients reached or server not running")
             return
-        conn, addr = self._sock.accept()
+        try:
+            conn, addr = self._sock.accept()
+        except BlockingIOError:
+            return
+        except OSError as e:
+            self._logger.error(f"accept failed: {e}")
+            return
         self._logger.debug(f"accepted client from {addr}")
         client_sock = AsyncSocket._create_client_instance(
             conn, self._logger, self.request_handler, self.max_message_size
