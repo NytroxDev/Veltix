@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import struct
+
 from ..logger.core import Logger
-from .request import HEADER_SIZE, MAGIC, MAGIC_SIZE, Request, Response
+from .request import HEADER_SIZE, MAGIC, Request, Response
+
+_MAGIC_SIZE = len(MAGIC)
+_MAGIC_AND_SIZE = struct.Struct(">2s2xI")
 
 MAX_BUFFER_SIZE = 20 * 1024 * 1024
 
@@ -48,11 +53,11 @@ class MessageBuffer:
             if len(self._buffer) < HEADER_SIZE:
                 break
 
-            if self._buffer[:MAGIC_SIZE] != MAGIC:
+            magic, content_size = _MAGIC_AND_SIZE.unpack_from(self._buffer, 0)
+            if magic != MAGIC:
                 self._resync()
                 continue
 
-            content_size = int.from_bytes(self._buffer[4:8], byteorder="big")
             total_size = HEADER_SIZE + content_size
 
             if total_size > self._max_message_size:
@@ -66,7 +71,7 @@ class MessageBuffer:
             if len(self._buffer) < total_size:
                 break
 
-            message_data = bytes(self._buffer[:total_size])
+            message_data = self._buffer[:total_size]
 
             try:
                 response = Request.parse(message_data)
