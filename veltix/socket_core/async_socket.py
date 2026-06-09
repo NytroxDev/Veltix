@@ -7,6 +7,7 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union
 
+from ..internal.network import recv
 from ..logger import Logger
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -199,18 +200,17 @@ class AsyncSocket(BaseSocket):
 
         sock = entry.info.conn
 
-        try:
-            data = sock.recv(buffer_size)
-        except BlockingIOError:
-            return
-        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
-            data = b""
+        result = recv(sock, buffer_size)
 
-        if not data:
+        if result.timed_out:
+            return
+
+        if result.disconnected:
             self._logger.debug(f"client {client_id} disconnected")
             self.close_client(client_id)
             return
 
+        data = result.data
         self._logger.debug(f"client {client_id} recv {len(data)} bytes")
         entry.buffer.add_data(data)
         messages = entry.buffer.extract_messages()
@@ -250,20 +250,19 @@ class AsyncSocket(BaseSocket):
                 )
 
     def _handle_self_read(self, buffer_size: int):
-        try:
-            data = self._sock.recv(buffer_size)
-        except BlockingIOError:
-            return
-        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
-            data = b""
+        result = recv(self, buffer_size)
 
-        if not data:
+        if result.timed_out:
+            return
+
+        if result.disconnected:
             self._logger.debug("self_read: disconnected from server")
             if self.on_disconnect:
                 self.on_disconnect()
             self.disconnect(0.5)
             return
 
+        data = result.data
         self._logger.debug(f"self_read: recv {len(data)} bytes")
         self._client_buffer.add_data(data)
         messages = self._client_buffer.extract_messages()
