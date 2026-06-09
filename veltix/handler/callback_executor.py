@@ -26,7 +26,7 @@ class CallbackExecutor:
         try:
             self._executor.submit(_safe_run)
         except RuntimeError:
-            self._logger.error("Cannot submit callback: executor is shut down")
+            pass
 
     def shutdown(self, wait: bool = True) -> None:
         """Shutdown the executor, optionally waiting for in-progress callbacks."""

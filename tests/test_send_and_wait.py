@@ -2,9 +2,12 @@
 
 import time
 
+import pytest
+
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 
 
+@pytest.mark.usefixtures("socket_core_backend")
 class TestSendAndWait:
     def test_client_send_and_wait(self):
         server = Server(ServerConfig(host="127.0.0.1", port=19990))

@@ -35,4 +35,4 @@ class ClientConfig:
     max_workers: int = 4
     retry: int = 0
     retry_delay: float = 1.0
-    socket_core: SocketCore = SocketCore.THREADING
+    socket_core: SocketCore = SocketCore.ASYNC

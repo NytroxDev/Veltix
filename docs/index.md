@@ -59,12 +59,12 @@ custom protocols, IPC, remote tooling, file transfer.
 
 - Auto-reconnect : configurable retry with `DisconnectState` callbacks
 - `SMALL` / `MEDIUM` / `LARGE` buffer size presets
-- Swappable socket backends via `SocketCore` (Threading now, Selectors in v1.7.0, Rust in v3.0.0)
+- Swappable socket backends via `SocketCore` (Threading or Async/Selectors, Rust in v3.0.0)
 
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 208 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
+- 261 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
 
 ---
 
@@ -72,12 +72,12 @@ custom protocols, IPC, remote tooling, file transfer.
 
 > Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
 
-| Metric                          | Result                      |
-|---------------------------------|-----------------------------|
-| Concurrent stress (100 clients) | 32,073 msg/s : 100% success |
-| Burst send                      | 50,467 msg/s                |
-| Average latency                 | 0.049 ms                    |
-| Idle server memory              | 212 KB                      |
+| Metric                          | Threading       | Async           |
+|---------------------------------|-----------------|-----------------|
+| Concurrent stress (100 clients) | 37,676 msg/s    | **76,929 msg/s**|
+| Burst send                      | 52,109 msg/s    | 52,296 msg/s    |
+| Average latency                 | 0.032 ms        | 0.035 ms        |
+| Idle server memory              | 46 KB           | 4 KB            |
 
 Full details : [Performance](../PERFORMANCE.md)
 

@@ -32,4 +32,4 @@ class ServerConfig:
     max_message_size: int = 10 * 1024 * 1024  # 10 MB
     handshake_timeout: float = 5.0
     max_workers: int = 4
-    socket_core: SocketCore = SocketCore.THREADING
+    socket_core: SocketCore = SocketCore.ASYNC

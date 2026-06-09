@@ -19,6 +19,7 @@ class LatencyStats:
     _samples: list[float] = field(default_factory=list, repr=False)
     jitter_ms: float = 0.0
     throughput: float = 0.0
+    backend: str = "async"
 
     def add(self, value: Optional[float]) -> None:
         if value is not None:
@@ -62,6 +63,16 @@ class LatencyStats:
     def stdev(self) -> float:
         return statistics.stdev(self._samples) if len(self._samples) > 1 else 0.0
 
+    @staticmethod
+    def average(results: list[LatencyStats]) -> LatencyStats:
+        combined = LatencyStats()
+        for r in results:
+            combined._samples.extend(r._samples)
+        combined.jitter_ms = statistics.mean(r.jitter_ms for r in results)
+        combined.throughput = statistics.mean(r.throughput for r in results)
+        combined.backend = results[0].backend if results else "async"
+        return combined
+
     def to_dict(self) -> dict:
         return {
             "count": self.count,
@@ -74,6 +85,7 @@ class LatencyStats:
             "stdev_ms": round(self.stdev, 4),
             "jitter_ms": round(self.jitter_ms, 3),
             "throughput": round(self.throughput, 1),
+            "backend": self.backend,
         }
 
 
@@ -92,6 +104,24 @@ class MemoryResult:
     # Teardown / leak detection
     ram_after_teardown_kb: float
     leak_kb: float
+    backend: str = "async"
+
+    @staticmethod
+    def average(results: list[MemoryResult]) -> MemoryResult:
+        return MemoryResult(
+            baseline_kb=statistics.mean(r.baseline_kb for r in results),
+            server_idle_kb=statistics.mean(r.server_idle_kb for r in results),
+            client_cost_kb=statistics.mean(r.client_cost_kb for r in results),
+            client_cost_min_kb=statistics.mean(r.client_cost_min_kb for r in results),
+            client_cost_max_kb=statistics.mean(r.client_cost_max_kb for r in results),
+            client_cost_median_kb=statistics.mean(r.client_cost_median_kb for r in results),
+            client_cost_stdev_kb=statistics.mean(r.client_cost_stdev_kb for r in results),
+            ram_10_clients_kb=statistics.mean(r.ram_10_clients_kb for r in results),
+            ram_50_clients_kb=statistics.mean(r.ram_50_clients_kb for r in results),
+            ram_after_teardown_kb=statistics.mean(r.ram_after_teardown_kb for r in results),
+            leak_kb=statistics.mean(r.leak_kb for r in results),
+            backend=results[0].backend if results else "async",
+        )
 
     def to_dict(self) -> dict:
         return {
@@ -106,6 +136,7 @@ class MemoryResult:
             "ram_50_clients_kb": round(self.ram_50_clients_kb, 1),
             "ram_after_teardown_kb": round(self.ram_after_teardown_kb, 1),
             "leak_kb": round(self.leak_kb, 1),
+            "backend": self.backend,
         }
 
 
@@ -128,6 +159,29 @@ class FpsResult:
     tick_stdev_ms: float
     tick_budget_pct: float
     overrun_ticks: int
+    backend: str = "async"
+
+    @staticmethod
+    def average(results: list[FpsResult]) -> FpsResult:
+        return FpsResult(
+            players=results[0].players,
+            tick_rate=results[0].tick_rate,
+            duration_s=statistics.mean(r.duration_s for r in results),
+            total_sent=round(statistics.mean(r.total_sent for r in results)),
+            total_recv=round(statistics.mean(r.total_recv for r in results)),
+            msg_per_sec=statistics.mean(r.msg_per_sec for r in results),
+            success_rate=statistics.mean(r.success_rate for r in results),
+            ram_delta_mb=statistics.mean(r.ram_delta_mb for r in results),
+            errors=round(statistics.mean(r.errors for r in results)),
+            actual_tick_rate=statistics.mean(r.actual_tick_rate for r in results),
+            tick_avg_ms=statistics.mean(r.tick_avg_ms for r in results),
+            tick_min_ms=statistics.mean(r.tick_min_ms for r in results),
+            tick_max_ms=statistics.mean(r.tick_max_ms for r in results),
+            tick_stdev_ms=statistics.mean(r.tick_stdev_ms for r in results),
+            tick_budget_pct=statistics.mean(r.tick_budget_pct for r in results),
+            overrun_ticks=round(statistics.mean(r.overrun_ticks for r in results)),
+            backend=results[0].backend if results else "async",
+        )
 
     def to_dict(self) -> dict:
         return {
@@ -147,6 +201,7 @@ class FpsResult:
             "tick_stdev_ms": round(self.tick_stdev_ms, 3),
             "tick_budget_pct": round(self.tick_budget_pct, 1),
             "overrun_ticks": self.overrun_ticks,
+            "backend": self.backend,
         }
 
 
@@ -167,6 +222,27 @@ class BurstResult:
     drain_max_ms: float
     drain_jitter_ms: float
     recv_gap_avg_ms: float
+    backend: str = "async"
+
+    @staticmethod
+    def average(results: list[BurstResult]) -> BurstResult:
+        return BurstResult(
+            count=round(statistics.mean(r.count for r in results)),
+            payload_bytes=results[0].payload_bytes,
+            send_throughput=statistics.mean(r.send_throughput for r in results),
+            recv_throughput=statistics.mean(r.recv_throughput for r in results),
+            data_mbps=statistics.mean(r.data_mbps for r in results),
+            success_rate=statistics.mean(r.success_rate for r in results),
+            duration_s=statistics.mean(r.duration_s for r in results),
+            send_duration_s=statistics.mean(r.send_duration_s for r in results),
+            drain_p50_ms=statistics.mean(r.drain_p50_ms for r in results),
+            drain_p95_ms=statistics.mean(r.drain_p95_ms for r in results),
+            drain_p99_ms=statistics.mean(r.drain_p99_ms for r in results),
+            drain_max_ms=statistics.mean(r.drain_max_ms for r in results),
+            drain_jitter_ms=statistics.mean(r.drain_jitter_ms for r in results),
+            recv_gap_avg_ms=statistics.mean(r.recv_gap_avg_ms for r in results),
+            backend=results[0].backend if results else "async",
+        )
 
     def to_dict(self) -> dict:
         return {
@@ -184,6 +260,7 @@ class BurstResult:
             "drain_max_ms": round(self.drain_max_ms, 1),
             "drain_jitter_ms": round(self.drain_jitter_ms, 3),
             "recv_gap_avg_ms": round(self.recv_gap_avg_ms, 3),
+            "backend": self.backend,
         }
 
 
@@ -206,6 +283,28 @@ class StressResult:
     per_client_tps_min: float
     per_client_tps_max: float
     per_client_tps_stdev: float
+    backend: str = "async"
+
+    @staticmethod
+    def average(results: list[StressResult]) -> StressResult:
+        return StressResult(
+            num_clients=results[0].num_clients,
+            msgs_per_client=results[0].msgs_per_client,
+            total_sent=round(statistics.mean(r.total_sent for r in results)),
+            total_recv=round(statistics.mean(r.total_recv for r in results)),
+            success_rate=statistics.mean(r.success_rate for r in results),
+            throughput=statistics.mean(r.throughput for r in results),
+            duration_s=statistics.mean(r.duration_s for r in results),
+            ram_delta_mb=statistics.mean(r.ram_delta_mb for r in results),
+            send_phase_s=statistics.mean(r.send_phase_s for r in results),
+            drain_time_s=statistics.mean(r.drain_time_s for r in results),
+            time_to_first_recv_ms=statistics.mean(r.time_to_first_recv_ms for r in results),
+            per_client_tps_avg=statistics.mean(r.per_client_tps_avg for r in results),
+            per_client_tps_min=statistics.mean(r.per_client_tps_min for r in results),
+            per_client_tps_max=statistics.mean(r.per_client_tps_max for r in results),
+            per_client_tps_stdev=statistics.mean(r.per_client_tps_stdev for r in results),
+            backend=results[0].backend if results else "async",
+        )
 
     def to_dict(self) -> dict:
         return {
@@ -224,4 +323,5 @@ class StressResult:
             "per_client_tps_min": round(self.per_client_tps_min, 1),
             "per_client_tps_max": round(self.per_client_tps_max, 1),
             "per_client_tps_stdev": round(self.per_client_tps_stdev, 1),
+            "backend": self.backend,
         }

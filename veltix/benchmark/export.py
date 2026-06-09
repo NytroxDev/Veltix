@@ -19,13 +19,21 @@ import veltix
 from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
 
 
+def _normalise(value):
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return [r.to_dict() for r in value] if value else None
+    return value.to_dict()
+
+
 def build_json(
-    mem: Optional[MemoryResult],
-    lat: Optional[LatencyStats],
-    fps64: Optional[FpsResult],
-    fps128: Optional[FpsResult],
-    burst: Optional[BurstResult],
-    stress: Optional[StressResult],
+    mem: Optional[MemoryResult | list[MemoryResult]],
+    lat: Optional[LatencyStats | list[LatencyStats]],
+    fps64: Optional[FpsResult | list[FpsResult]],
+    fps128: Optional[FpsResult | list[FpsResult]],
+    burst: Optional[BurstResult | list[BurstResult]],
+    stress: Optional[StressResult | list[StressResult]],
 ) -> dict:
     """Build a JSON-serializable dict from benchmark results."""
     return {
@@ -42,12 +50,12 @@ def build_json(
             "machine": platform.machine(),
         },
         "results": {
-            "memory": mem.to_dict() if mem else None,
-            "latency": lat.to_dict() if lat else None,
-            "fps_64": fps64.to_dict() if fps64 else None,
-            "fps_128": fps128.to_dict() if fps128 else None,
-            "burst": burst.to_dict() if burst else None,
-            "stress": stress.to_dict() if stress else None,
+            "memory": _normalise(mem),
+            "latency": _normalise(lat),
+            "fps_64": _normalise(fps64),
+            "fps_128": _normalise(fps128),
+            "burst": _normalise(burst),
+            "stress": _normalise(stress),
         },
     }
 

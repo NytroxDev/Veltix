@@ -85,8 +85,8 @@ class TestRequestError:
         msg_type = MessageType(code=3203, name="unknown_type_test")
         request = Request(msg_type, b"hello")
         compiled = bytearray(request.compile())
-        compiled[0] = 0xFF
-        compiled[1] = 0xFE
+        compiled[2] = 0xFF  # type code high byte (offset 2 after 2 magic bytes)
+        compiled[3] = 0xFE  # type code low byte
         with pytest.raises(RequestError) as exc:
             Req.parse(bytes(compiled))
         assert "Unknown message type" in str(exc.value)

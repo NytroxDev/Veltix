@@ -1,9 +1,9 @@
-"""Tests for Request/Response binary protocol."""
+"""Tests for Request/Response binary protocol (v2 — magic bytes)."""
 
 import pytest
 
 from veltix import MessageType, Request, RequestError
-from veltix.network.request import HEADER_SIZE, generate_random_id
+from veltix.network.request import HEADER_SIZE, MAGIC, generate_random_id
 
 
 class TestProtocol:
@@ -13,6 +13,7 @@ class TestProtocol:
         compiled = request.compile()
         assert len(compiled) == HEADER_SIZE + len(content)
         assert isinstance(compiled, bytes)
+        assert compiled[:2] == MAGIC
 
     def test_request_parse_roundtrip(self, test_message_type):
         content = b"Test Content 123"
@@ -70,11 +71,21 @@ class TestProtocol:
         request = Request(msg_type, b"test")
         compiled = request.compile()
         corrupted = bytearray(compiled)
-        corrupted[0] = 0xFF
-        corrupted[1] = 0xFE
+        corrupted[2] = 0xFF  # type code high byte (offset 2 after 2 magic bytes)
+        corrupted[3] = 0xFE  # type code low byte
         with pytest.raises(RequestError) as exc_info:
             Request.parse(bytes(corrupted))
         assert "Unknown message type" in str(exc_info.value)
+
+    def test_invalid_magic_bytes(self, test_message_type):
+        request = Request(test_message_type, b"test")
+        compiled = request.compile()
+        corrupted = bytearray(compiled)
+        corrupted[0] = 0x00
+        corrupted[1] = 0x00
+        with pytest.raises(RequestError) as exc_info:
+            Request.parse(bytes(corrupted))
+        assert "Invalid magic bytes" in str(exc_info.value)
 
     def test_large_content(self, test_message_type):
         large_content = b"X" * 10000
@@ -88,4 +99,3 @@ class TestProtocol:
         compiled = request.compile()
         response = Request.parse(compiled)
         assert response.content == b""
-
