@@ -51,6 +51,8 @@ class AsyncSocket(BaseSocket):
 
         self._client_buffer = MessageBuffer(max_message_size)
 
+        self._logger.debug("AsyncSocket initialized")
+
     @classmethod
     def _create_client_instance(
         cls,
@@ -76,7 +78,7 @@ class AsyncSocket(BaseSocket):
         conn.max_message_size = max_message_size
         conn.request_handler = request_handler
         conn.handshake_timeout = 5.0
-        conn._logger = Logger.get_instance()
+        conn._logger = logger
 
         conn._sock = sock
         conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -85,19 +87,23 @@ class AsyncSocket(BaseSocket):
 
         conn._selector = selectors.DefaultSelector()
 
-        conn._handshake_requests: dict[int, bytes] = {}
+        conn._handshake_requests = {}
 
         conn._client_buffer = MessageBuffer(max_message_size)
+        conn._logger.debug(f"created client socket instance (fd={conn._sock.fileno()})")
         return conn
 
     # ── Shared helpers ────────────────────────────────────────────────────────
 
     def recv(self, buf_size: int) -> bytes:
-        return self._sock.recv(buf_size)
+        data = self._sock.recv(buf_size)
+        self._logger.debug(f"recv {len(data)} bytes (buf_size={buf_size})")
+        return data
 
     def send(self, data: bytes) -> bool:
         try:
             self._sock.sendall(data)
+            self._logger.debug(f"send {len(data)} bytes")
             return True
         except BlockingIOError:
             try:
@@ -115,8 +121,10 @@ class AsyncSocket(BaseSocket):
     def settimeout(self, timeout: float) -> bool:
         try:
             self._sock.settimeout(timeout)
+            self._logger.debug(f"settimeout {timeout}s")
             return True
-        except Exception:
+        except Exception as e:
+            self._logger.debug(f"settimeout {timeout}s failed: {e}")
             return False
 
     def set_callback(self, event: SocketEvents, callback: Callable) -> bool:
@@ -127,7 +135,9 @@ class AsyncSocket(BaseSocket):
         elif event == SocketEvents.DISCONNECT:
             self.on_disconnect = callback
         else:
+            self._logger.debug(f"set_callback: unknown event {event}")
             return False
+        self._logger.debug(f"set_callback: {event.name}")
         return True
 
     # ── Server ────────────────────────────────────────────────────────────────
@@ -139,16 +149,19 @@ class AsyncSocket(BaseSocket):
         self._selector.register(self._sock, selectors.EVENT_READ, data="listen")
         self.running = True
         self._selector_thread = threading.Thread(
-            target=self._selector_loop, args=(max_client, buffer_size, timeout)
+            target=self._selector_loop, args=(max_client, buffer_size)
         )
         self._selector_thread.start()
+        self._logger.debug(
+            f"bound to {host}:{port}, max_client={max_client}, running={self.running}"
+        )
         return self.running
 
-    def _selector_loop(self, max_client, buffer_size, timeout):
+    def _selector_loop(self, max_client, buffer_size):
         while self.running:
             events = self._selector.select(0.5)
 
-            for key, mask in events:
+            for key, _ in events:
                 if key.data == "listen":
                     self._accept_client(max_client)
                 elif key.data == "client":
@@ -161,6 +174,7 @@ class AsyncSocket(BaseSocket):
 
     def _accept_client(self, max_client: int):
         if (max_client != -1 and self.client_manager.count() >= max_client) or not self.running:
+            self._logger.debug("_accept_client: max clients reached or server not running")
             return
         conn, addr = self._sock.accept()
         self._logger.debug(f"accepted client from {addr}")
@@ -264,11 +278,13 @@ class AsyncSocket(BaseSocket):
             return True
         entry = self.client_manager.get_client(client)
         if not entry:
+            self._logger.debug(f"close_client: client {client} not found")
             return False
         self._close_server_client(entry)
         return True
 
     def _close_server_client(self, entry: ClientEntry) -> None:
+        self._logger.debug(f"closing server client {entry.id} ({entry.info.addr})")
         entry.info.conn.close()
 
         self._selector.unregister(entry.info.conn)
@@ -282,6 +298,7 @@ class AsyncSocket(BaseSocket):
 
     def close(self) -> bool:
         try:
+            self._logger.debug("closing server socket")
             self.running = False
             self._selector.unregister(self._sock)
             self._sock.close()
@@ -289,8 +306,10 @@ class AsyncSocket(BaseSocket):
             self._selector.close()
             if self._selector_thread and self._selector_thread != threading.current_thread():
                 self._selector_thread.join(timeout=0.2)
+            self._logger.debug("server socket closed")
             return True
-        except Exception:
+        except Exception as e:
+            self._logger.debug(f"close failed: {e}")
             return False
 
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool:
@@ -300,23 +319,29 @@ class AsyncSocket(BaseSocket):
             self.running = True
             self._selector.register(self._sock, selectors.EVENT_READ, data="client")
             self._selector_thread = threading.Thread(
-                target=self._selector_loop, args=(0, buffer_size, timeout)
+                target=self._selector_loop, args=(0, buffer_size)
             )
             self._selector_thread.start()
+            self._logger.debug(f"connected to {host}:{port}")
             return True
         except (TimeoutError, ConnectionRefusedError) as e:
+            self._logger.debug(f"connect to {host}:{port} failed: {e}")
             return False
         except Exception as e:
+            self._logger.debug(f"connect to {host}:{port} failed: {e}")
             return False
 
     def disconnect(self, timeout: float = 5.0) -> bool:
         try:
+            self._logger.debug("disconnecting client socket")
             self.running = False
             self._selector.unregister(self._sock)
             self._sock.close()
             if self._selector_thread and threading.current_thread() != self._selector_thread:
                 self._selector_thread.join(timeout=timeout + 0.1)
+            self._logger.debug("client socket disconnected")
             return True
 
         except Exception as e:
+            self._logger.debug(f"disconnect failed: {e}")
             return False
