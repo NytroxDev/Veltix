@@ -51,8 +51,8 @@ def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
     """
     Receive data from a socket with explicit status reporting.
 
-    The socket must have a timeout set via settimeout() — without one,
-    this call blocks indefinitely and TIMEOUT is never returned.
+    Works with both blocking (settimeout) and non-blocking sockets.
+    For non-blocking sockets, BlockingIOError is reported as TIMEOUT.
     """
     logger = Logger.get_instance()
 
@@ -65,6 +65,9 @@ def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
         return RecvResult(RecvStatus.OK, data)
 
     except TimeoutError:
+        return RecvResult(RecvStatus.TIMEOUT)
+
+    except BlockingIOError:
         return RecvResult(RecvStatus.TIMEOUT)
 
     except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):

@@ -7,7 +7,7 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union
 
-from ..internal.network import recv
+from ..internal.network import recv as _network_recv
 from ..logger import Logger
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -97,9 +97,7 @@ class AsyncSocket(BaseSocket):
     # ── Shared helpers ────────────────────────────────────────────────────────
 
     def recv(self, buf_size: int) -> bytes:
-        data = self._sock.recv(buf_size)
-        self._logger.debug(f"recv {len(data)} bytes (buf_size={buf_size})")
-        return data
+        return self._sock.recv(buf_size)
 
     def send(self, data: bytes) -> bool:
         try:
@@ -200,7 +198,7 @@ class AsyncSocket(BaseSocket):
 
         sock = entry.info.conn
 
-        result = recv(sock, buffer_size)
+        result = _network_recv(sock, buffer_size)
 
         if result.timed_out:
             return
@@ -250,7 +248,7 @@ class AsyncSocket(BaseSocket):
                 )
 
     def _handle_self_read(self, buffer_size: int):
-        result = recv(self, buffer_size)
+        result = _network_recv(self, buffer_size)
 
         if result.timed_out:
             return
