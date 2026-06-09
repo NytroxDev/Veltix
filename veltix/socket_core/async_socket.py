@@ -5,6 +5,7 @@ from __future__ import annotations
 import selectors
 import socket
 import threading
+import time
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..internal.network import recv as _network_recv
@@ -50,6 +51,8 @@ class AsyncSocket(BaseSocket):
 
         self._handshake_requests: dict[int, bytes] = {}
 
+        self._client_connect_time: dict[int, float] = {}
+
         self._client_buffer = MessageBuffer(max_message_size)
 
         self._logger.debug("AsyncSocket initialized")
@@ -89,6 +92,8 @@ class AsyncSocket(BaseSocket):
         conn._selector = selectors.DefaultSelector()
 
         conn._handshake_requests = {}
+
+        conn._client_connect_time = {}
 
         conn._client_buffer = MessageBuffer(max_message_size)
         conn._logger.debug(f"created client socket instance (fd={conn._sock.fileno()})")
@@ -168,6 +173,23 @@ class AsyncSocket(BaseSocket):
                 else:
                     self._handle_server_client(key.data, buffer_size)
 
+            self._check_handshake_timeouts()
+
+    def _check_handshake_timeouts(self) -> None:
+        now = time.monotonic()
+        for client_id in list(self._client_connect_time.keys()):
+            connect_time = self._client_connect_time.get(client_id)
+            if connect_time is None:
+                continue
+            if now - connect_time <= self.handshake_timeout:
+                continue
+            entry = self.client_manager.get_client(client_id)
+            if entry and not entry.info.handshake_done:
+                self._logger.warning(
+                    f"handshake timeout for client {entry.id} ({entry.info.addr})"
+                )
+                self._close_server_client(entry)
+
     def fileno(self) -> int:
         return self._sock.fileno()
 
@@ -189,6 +211,7 @@ class AsyncSocket(BaseSocket):
         self._logger.debug(f"sending hello to client {client_id} at {addr}")
         self.request_handler.handshake_handler.send_hello(hello, client_sock)
         self._handshake_requests[client_id] = handshake_request_id
+        self._client_connect_time[client_id] = time.monotonic()
         return
 
     def _handle_server_client(self, client_id: int, buffer_size: int) -> None:
@@ -233,6 +256,7 @@ class AsyncSocket(BaseSocket):
             if is_resolved:
                 self.request_handler.pending_requests.pop(handshake_request_id, None)
                 entry.info.handshake_done = True
+                self._client_connect_time.pop(entry.id, None)
 
         if not is_resolved:
             return
@@ -289,6 +313,7 @@ class AsyncSocket(BaseSocket):
         self.client_manager.remove_client(entry.id)
 
         self._handshake_requests.pop(entry.id, None)
+        self._client_connect_time.pop(entry.id, None)
 
         if self.on_disconnect:
             self.on_disconnect(entry.info)
