@@ -228,6 +228,11 @@ class AsyncSocket(BaseSocket):
             self._logger.error(f"accept failed: {e}")
             return
         self._logger.debug(f"accepted client from {addr}")
+
+        self._send_hello(conn, addr)
+        return
+
+    def _send_hello(self, conn: socket.socket, addr: tuple) -> None:
         client_sock = AsyncSocket._create_client_instance(
             conn, self._logger, self.request_handler, self.max_message_size
         )
@@ -235,9 +240,18 @@ class AsyncSocket(BaseSocket):
         client_id = self.client_manager.add_client(client)
         self._selector.register(client_sock, selectors.EVENT_READ, data=client_id)
         self.id_count += 1
-        self._handshake_pending.append(client_id)
+        self._handshake_requests[client_id] = b""
         self._client_connect_time[client_id] = time.monotonic()
-        return
+
+        try:
+            handshake_request_id, hello = self.request_handler.handshake_handler.prepare_hello()
+            self.request_handler.register(handshake_request_id)
+            self._logger.debug(f"sending hello to client {client_id} at {addr}")
+            self.request_handler.handshake_handler.send_hello(hello, client_sock)
+            self._handshake_requests[client_id] = handshake_request_id
+        except Exception as e:
+            self._logger.error(f"handshake failed for client {client_id}: {e}")
+            self.close_client(client_id)
 
     def _handle_server_client(self, client_id: int, buffer_size: int) -> None:
         entry = self.client_manager.get_client(client_id)
