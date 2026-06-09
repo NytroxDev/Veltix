@@ -51,6 +51,8 @@ class AsyncSocket(BaseSocket):
 
         self._handshake_requests: dict[int, bytes] = {}
 
+        self._handshake_pending: list[int] = []
+
         self._client_connect_time: dict[int, float] = {}
 
         self._client_buffer = MessageBuffer(max_message_size)
@@ -93,6 +95,8 @@ class AsyncSocket(BaseSocket):
         conn._selector = selectors.DefaultSelector()
 
         conn._handshake_requests = {}
+
+        conn._handshake_pending = []
 
         conn._client_connect_time = {}
 
@@ -174,6 +178,7 @@ class AsyncSocket(BaseSocket):
                 else:
                     self._handle_server_client(key.data, buffer_size)
 
+            self._process_pending_handshakes()
             self._check_handshake_timeouts()
 
     def _check_handshake_timeouts(self) -> None:
@@ -187,6 +192,25 @@ class AsyncSocket(BaseSocket):
             entry = self.client_manager.get_client(client_id)
             if entry and not entry.info.handshake_done:
                 self._logger.warning(f"handshake timeout for client {entry.id} ({entry.info.addr})")
+                self._close_server_client(entry)
+
+    def _process_pending_handshakes(self) -> None:
+        if not self._handshake_pending:
+            return
+        pending = self._handshake_pending[:]
+        self._handshake_pending.clear()
+        for client_id in pending:
+            entry = self.client_manager.get_client(client_id)
+            if not entry or entry.info.handshake_done:
+                continue
+            try:
+                handshake_request_id, hello = self.request_handler.handshake_handler.prepare_hello()
+                self.request_handler.register(handshake_request_id)
+                self._logger.debug(f"sending hello to client {client_id} at {entry.info.addr}")
+                self.request_handler.handshake_handler.send_hello(hello, entry.info.conn)
+                self._handshake_requests[client_id] = handshake_request_id
+            except Exception as e:
+                self._logger.error(f"handshake failed for client {client_id}: {e}")
                 self._close_server_client(entry)
 
     def fileno(self) -> int:
@@ -211,11 +235,7 @@ class AsyncSocket(BaseSocket):
         client_id = self.client_manager.add_client(client)
         self._selector.register(client_sock, selectors.EVENT_READ, data=client_id)
         self.id_count += 1
-        handshake_request_id, hello = self.request_handler.handshake_handler.prepare_hello()
-        self.request_handler.register(handshake_request_id)
-        self._logger.debug(f"sending hello to client {client_id} at {addr}")
-        self.request_handler.handshake_handler.send_hello(hello, client_sock)
-        self._handshake_requests[client_id] = handshake_request_id
+        self._handshake_pending.append(client_id)
         self._client_connect_time[client_id] = time.monotonic()
         return
 
