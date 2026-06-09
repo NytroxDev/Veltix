@@ -13,7 +13,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection  
 so you can focus on your application logic.
 
-**52k msg/s** • **0.006ms latency** • **212KB idle** • **100% success rate**
+**77k msg/s** • **0.032ms latency** • **46KB idle** • **2x stress throughput** • **100% success rate**
 
 ---
 
@@ -97,12 +97,12 @@ custom protocols, IPC, remote tooling, file transfer.
 
 - Auto-reconnect : configurable retry with `DisconnectState` callbacks
 - `SMALL` / `MEDIUM` / `LARGE` buffer size presets
-- Swappable socket backends via `SocketCore` (Threading now, Selectors in v1.7.0, Rust in v3.0.0)
+- Swappable socket backends via `SocketCore` (Threading or Async/Selectors, Rust in v3.0.0)
 
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 208 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
+- 261 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
 
 ---
 
@@ -110,13 +110,14 @@ custom protocols, IPC, remote tooling, file transfer.
 
 > Benchmarked on Python 3.14.5 — 12-core CPU, 30.5 GB RAM, Linux (loopback).
 
-| Metric                             | Result                                |
-|------------------------------------|---------------------------------------|
-| Concurrent stress (100 clients)    | 38,985 msg/s — 100% success           |
-| Burst throughput                   | 52,377 msg/s send / 41,496 msg/s recv |
-| Average latency                    | 0.006 ms                              |
-| Idle server memory                 | 212 KB                                |
-| FPS simulation (64 players @ 64Hz) | 4,488 msg/s — 100% success            |
+| Metric                             | Threading           | Async               |
+|------------------------------------|---------------------|---------------------|
+| Concurrent stress (100 clients)    | 37,676 msg/s        | **76,929 msg/s**    |
+| Burst throughput                   | 52,109 / 41,327     | 52,296 / 41,343     |
+| Average latency                    | 0.032 ms            | 0.035 ms            |
+| Idle server memory                 | 46 KB               | 4 KB                |
+| Per client memory (avg)            | 36 KB               | 12 KB               |
+| FPS simulation (64 players @ 64Hz) | 4,488 msg/s         | 4,488 msg/s         |
 
 Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
 ---
@@ -194,9 +195,10 @@ python client.py  # In a separate terminal
 
 8 bug fixes across reconnect path + code quality cleanups
 
-### v1.7.0 : Selectors *(June 2026)* : Planned
+### v1.7.0 : AsyncSocket + Protocol Hardening *(June 2026)* : Released
 
-`AsyncSocket` : selectors-based I/O, same API, 4-8x throughput improvement
+`AsyncSocket` (selectors), MAGIC bytes, corruption recovery, benchmark averaging.
+**2x stress throughput**, memory cut by 40-74%.
 
 [Full roadmap](ROADMAP.md)
 
