@@ -1,47 +1,67 @@
-"""Message buffer for handling TCP stream framing."""
+"""Message buffer for handling TCP stream framing with protocol hardening."""
 
 from __future__ import annotations
 
 from ..logger.core import Logger
-from .request import HEADER_SIZE, Request, Response
+from .request import HEADER_SIZE, MAGIC, MAGIC_SIZE, Request, Response
+
+MAX_BUFFER_SIZE = 20 * 1024 * 1024
 
 
 class MessageBuffer:
     """
     Accumulates TCP stream data and extracts complete framed messages.
 
-    Handles partial reads and concatenated messages transparently.
-    Thread-safe when used with a single reader thread per instance.
+    Features:
+    - Stream resynchronization via MAGIC byte search on parse failure
+    - Hard buffer limit (MAX_BUFFER_SIZE) to prevent memory exhaustion
+    - Handles partial reads and concatenated messages transparently
+    - Thread-safe when used with a single reader thread per instance
     """
 
-    __slots__ = ("_buffer", "_max_message_size", "_logger", "_header_size")
+    __slots__ = ("_buffer", "_max_message_size", "_logger", "_max_buffer_size")
 
-    def __init__(self, max_message_size: int = 10 * 1024 * 1024) -> None:
+    def __init__(
+        self,
+        max_message_size: int = 10 * 1024 * 1024,
+        max_buffer_size: int = MAX_BUFFER_SIZE,
+    ) -> None:
         self._buffer = bytearray()
         self._max_message_size = max_message_size
+        self._max_buffer_size = max_buffer_size
         self._logger = Logger.get_instance()
-        self._header_size = HEADER_SIZE
 
     def add_data(self, data: bytes) -> None:
+        if len(self._buffer) + len(data) > self._max_buffer_size:
+            self._logger.error(
+                f"Buffer size {len(self._buffer) + len(data)} exceeds maximum "
+                f"{self._max_buffer_size} — clearing buffer."
+            )
+            self.clear()
+            return
         self._buffer.extend(data)
 
     def extract_messages(self) -> list[Response]:
         messages = []
 
         while True:
-            if len(self._buffer) < self._header_size:
+            if len(self._buffer) < HEADER_SIZE:
                 break
 
-            content_size = int.from_bytes(self._buffer[2:6], byteorder="big")
-            total_size = self._header_size + content_size
+            if self._buffer[:MAGIC_SIZE] != MAGIC:
+                self._resync()
+                continue
+
+            content_size = int.from_bytes(self._buffer[4:8], byteorder="big")
+            total_size = HEADER_SIZE + content_size
 
             if total_size > self._max_message_size:
                 self._logger.error(
                     f"Message size {total_size} exceeds maximum {self._max_message_size} — "
-                    f"possible corruption. Clearing buffer."
+                    f"possible corruption. Resyncing."
                 )
-                self.clear()
-                break
+                self._resync()
+                continue
 
             if len(self._buffer) < total_size:
                 break
@@ -55,11 +75,20 @@ class MessageBuffer:
             except Exception as e:
                 self._logger.error(
                     f"Failed to parse message ({len(message_data)} bytes): {type(e).__name__}: {e}. "
-                    f"Advancing buffer past corrupted message to resync."
+                    f"Resyncing."
                 )
-                self._buffer = self._buffer[total_size:]
+                self._resync()
 
         return messages
+
+    def _resync(self) -> None:
+        idx = self._buffer.find(MAGIC, 1)
+        if idx == -1:
+            self.clear()
+        else:
+            discarded = idx
+            self._buffer = self._buffer[idx:]
+            self._logger.debug(f"Resynced: discarded {discarded} bytes, found MAGIC at offset {idx}")
 
     def clear(self) -> None:
         self._buffer.clear()
@@ -68,4 +97,7 @@ class MessageBuffer:
         return len(self._buffer)
 
     def __repr__(self) -> str:
-        return f"MessageBuffer(size={len(self._buffer)}, max_size={self._max_message_size})"
+        return (
+            f"MessageBuffer(size={len(self._buffer)}, "
+            f"max_msg={self._max_message_size}, max_buf={self._max_buffer_size})"
+        )
