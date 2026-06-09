@@ -72,15 +72,21 @@
 - Removed dead code : `ping_result`, redundant `_handshake_done`, magic `settimeout(0.5)`
 - Guarded `psutil` import in benchmark CLI
 
+### v1.7.0 : AsyncSocket + Protocol Hardening *(June 2026)*
+
+- **`AsyncSocket`** : selectors-based I/O backend — single-thread event loop replaces one-thread-per-client. Up to **2x stress throughput** (76 929 msg/s vs 37 676 msg/s).
+- **MAGIC bytes** (`b"VX"`) + auto-resynchronization for stream alignment and corruption recovery
+- **`MAX_BUFFER_SIZE`** (20 MB) + per-message `max_message_size` for DoS protection
+- **Benchmark `--socket-core`** : test threading, async, or both side-by-side
+- **Benchmark `--runs N`** : average results across multiple runs for noise-free measurements
+- **Hot-path optimisations** : broadcast compile-once, `unpack_from` zero-copy, `bytearray` passthrough
+- **Protocol breaking** : 16-byte header (was 14); v1.7.0 is only compatible with itself
+- **Memory cut by 40%** threading (60.4 KB → 36.08 KB per client), **74%** async (12.4 KB per client)
+- Full details : [CHANGELOG.md](CHANGELOG.md)
+
 ---
 
 ## Planned
-
-### v1.7.0 : Selectors *(June 2026)*
-
-- `AsyncSocket` : selectors-based I/O, replaces one-thread-per-client
-- Same API, 4-8x throughput improvement expected
-- Switch via `SocketCore.ASYNC`
 
 ### v1.8.0 : Plugin System *(August 2026)*
 
