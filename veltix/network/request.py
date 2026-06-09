@@ -49,7 +49,7 @@ class Request:
         self.request_id = response.request_id
 
     @staticmethod
-    def parse(data: bytes, max_message_size: int = 10 * 1024 * 1024) -> Response:
+    def parse(data: bytes | bytearray, max_message_size: int = 10 * 1024 * 1024) -> Response:
         """Parse raw bytes into a Response. Raises RequestError on invalid data."""
         if len(data) < HEADER_SIZE:
             raise RequestError(f"Data too short: {len(data)} bytes (minimum {HEADER_SIZE})")

@@ -100,12 +100,17 @@ class Sender:
             return True
 
         except_set = set(except_clients) if except_clients else set()
+        compiled = data.compile()
         all_ok = True
 
         for client in list_of_client:
             if client in except_set:
                 continue
-            if not self.send(data=data, client=client):
+            try:
+                client.send(compiled)
+            except (ConnectionResetError, BrokenPipeError):
+                all_ok = False
+            except Exception:
                 all_ok = False
 
         return all_ok
