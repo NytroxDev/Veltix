@@ -85,6 +85,7 @@ class AsyncSocket(BaseSocket):
         conn._logger = logger
 
         conn._sock = sock
+        conn._sock.setblocking(False)
         conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
