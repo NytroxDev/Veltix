@@ -1471,12 +1471,12 @@ custom protocols, IPC, remote tooling, file transfer.</p>
 <ul>
 <li>Auto-reconnect : configurable retry with <code>DisconnectState</code> callbacks</li>
 <li><code>SMALL</code> / <code>MEDIUM</code> / <code>LARGE</code> buffer size presets</li>
-<li>Swappable socket backends via <code>SocketCore</code> (Threading now, Selectors in v1.7.0, Rust in v3.0.0)</li>
+<li>Swappable socket backends via <code>SocketCore</code> (Threading or Async/Selectors, Rust in v3.0.0)</li>
 </ul>
 <p><strong>Developer Experience</strong></p>
 <ul>
 <li>Integrated logger : colorized, file-rotating, thread-safe</li>
-<li>208 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14</li>
+<li>261 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14</li>
 </ul>
 <hr />
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
@@ -1487,25 +1487,30 @@ custom protocols, IPC, remote tooling, file transfer.</p>
 <thead>
 <tr>
 <th>Metric</th>
-<th>Result</th>
+<th>Threading</th>
+<th>Async</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Concurrent stress (100 clients)</td>
-<td>32,073 msg/s : 100% success</td>
+<td>37,676 msg/s</td>
+<td><strong>76,929 msg/s</strong></td>
 </tr>
 <tr>
 <td>Burst send</td>
-<td>50,467 msg/s</td>
+<td>52,109 msg/s</td>
+<td>52,296 msg/s</td>
 </tr>
 <tr>
 <td>Average latency</td>
-<td>0.049 ms</td>
+<td>0.032 ms</td>
+<td>0.035 ms</td>
 </tr>
 <tr>
 <td>Idle server memory</td>
-<td>212 KB</td>
+<td>46 KB</td>
+<td>4 KB</td>
 </tr>
 </tbody>
 </table>
