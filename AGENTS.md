@@ -736,7 +736,7 @@ sender = server.get_sender()
 @server.route(CHAT)
 def on_chat(client: ClientInfo, response: Response) -> None:
     print(f"[{client.ip}] {response.content.decode()}")
-    sender.broadcast(Request(CHAT, response.content), server.get_all_clients_sockets())
+    sender.broadcast(Request(CHAT, response.content), server.get_all_clients_sockets(), [client.conn])
 
 
 server.set_callback(Events.ON_CONNECT, lambda c: print(f"+ {c.addr}"))
