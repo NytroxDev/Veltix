@@ -14,9 +14,11 @@ It handles framing, threading, handshake, routing, and reconnection.
 
 ## Use Cases (When to Use Veltix)
 
-Veltix is designed for projects that need **raw TCP communication** without the complexity of async frameworks or the boilerplate of raw sockets.
+Veltix is designed for projects that need **raw TCP communication** without the complexity of async frameworks or the
+boilerplate of raw sockets.
 
 **Perfect for:**
+
 - **LAN tools:** file transfer, remote control, chat apps (e.g., [Nexo](https://github.com/NytroxDev/Nexo))
 - **Multiplayer game servers:** real-time state sync, 64+ players at 64Hz tick rate
 - **Real-time dashboards:** live data streaming between microservices
@@ -26,25 +28,43 @@ Veltix is designed for projects that need **raw TCP communication** without the 
 - **IoT / embedded:** minimal memory footprint (46 KB idle), no heavy dependencies
 
 **Not ideal for:**
+
 - **HTTP/REST APIs:** use Flask, FastAPI, or Django REST Framework
 - **Browser clients:** Veltix uses raw TCP, not WebSocket; use websockets or Socket.IO for browser apps
 - **Async-first codebases:** Veltix is sync by design; if your whole project is async, use `asyncio` directly
 - **Very high throughput (>100k msg/s per connection):** consider a compiled language for the hot path
 
-**Key differentiator:** Veltix gives you FastAPI-style routing (`@server.route(MY_TYPE)`) over raw TCP, with built-in framing, handshake, ping/pong, and reconnection: zero dependencies, zero boilerplate.
+**Key differentiator:** Veltix gives you FastAPI-style routing (`@server.route(MY_TYPE)`) over raw TCP, with built-in
+framing, handshake, ping/pong, and reconnection: zero dependencies, zero boilerplate.
+
+## Performance
+
+> Benchmarked on Python 3.14.5: 12-core CPU, 30.5 GB RAM, Linux (loopback). All numbers are 5-run averages.
+
+| Metric                             | Threading    | Async            |
+|------------------------------------|--------------|------------------|
+| Idle server memory                 | 45.6 KB      | 4 KB             |
+| Per client memory (avg)            | 36.08 KB     | 12.4 KB          |
+| Average latency                    | 0.032 ms     | 0.035 ms         |
+| Burst send                         | 52,109 msg/s | 52,296 msg/s     |
+| Burst receive                      | 41,327 msg/s | 41,343 msg/s     |
+| Concurrent stress (100 clients)    | 37,676 msg/s | **76,929 msg/s** |
+| FPS simulation (64 players @ 64Hz) | 4,488 msg/s  | 4,488 msg/s      |
+
+Async stress throughput is **2x higher** than Threading under high concurrency.
 
 ## Tech Stack
 
-| Tool        | Purpose               | Config                                     |
-|-------------|-----------------------|--------------------------------------------|
-| setuptools  | Build/packaging       | `pyproject.toml`                           |
-| pytest      | Testing               | `[tool.pytest.ini_options]` in pyproject.toml |
-| pytest-cov  | Code coverage         | `[tool.coverage.*]` in pyproject.toml      |
-| pytest-asyncio | Async test support |                                             |
-| ruff        | Linting & formatting  | `[tool.ruff.*]` in pyproject.toml          |
-| mypy        | Static type checking  | `[tool.mypy]` in pyproject.toml            |
-| mkdocs      | Documentation         | `mkdocs.yml`                               |
-| mkdocstrings | Auto-generated API docs | Google-style docstrings                  |
+| Tool           | Purpose                 | Config                                        |
+|----------------|-------------------------|-----------------------------------------------|
+| setuptools     | Build/packaging         | `pyproject.toml`                              |
+| pytest         | Testing                 | `[tool.pytest.ini_options]` in pyproject.toml |
+| pytest-cov     | Code coverage           | `[tool.coverage.*]` in pyproject.toml         |
+| pytest-asyncio | Async test support      |                                               |
+| ruff           | Linting & formatting    | `[tool.ruff.*]` in pyproject.toml             |
+| mypy           | Static type checking    | `[tool.mypy]` in pyproject.toml               |
+| mkdocs         | Documentation           | `mkdocs.yml`                                  |
+| mkdocstrings   | Auto-generated API docs | Google-style docstrings                       |
 
 ## Project Structure
 
@@ -164,6 +184,7 @@ No docstrings on private methods (`_*`). No comments inside functions unless the
 ### Imports
 
 Order (separated by blank line):
+
 1. Python stdlib
 2. Third-party (none currently: zero deps)
 3. Veltix internal (`from ..module import ...`)
@@ -186,16 +207,16 @@ if TYPE_CHECKING:
 
 ### Naming
 
-| Element              | Convention     | Example                |
-|----------------------|----------------|------------------------|
-| Classes              | PascalCase     | `ServerConfig`         |
-| Functions/methods    | snake_case     | `send_and_wait()`      |
-| Private methods      | `_` prefix     | `_handle_message()`    |
-| Constants            | UPPER_SNAKE    | `HEADER_SIZE`          |
-| Enums                | PascalCase     | `class Events(Enum)`   |
-| Enum members         | UPPER_SNAKE    | `Events.ON_RECV`       |
-| Type variables       | PascalCase     | `T`, `ResponseT`       |
-| Module variables     | snake_case     | `_id_lock`             |
+| Element           | Convention  | Example              |
+|-------------------|-------------|----------------------|
+| Classes           | PascalCase  | `ServerConfig`       |
+| Functions/methods | snake_case  | `send_and_wait()`    |
+| Private methods   | `_` prefix  | `_handle_message()`  |
+| Constants         | UPPER_SNAKE | `HEADER_SIZE`        |
+| Enums             | PascalCase  | `class Events(Enum)` |
+| Enum members      | UPPER_SNAKE | `Events.ON_RECV`     |
+| Type variables    | PascalCase  | `T`, `ResponseT`     |
+| Module variables  | snake_case  | `_id_lock`           |
 
 ### Dataclasses
 
@@ -203,6 +224,7 @@ Prefer `@dataclasses.dataclass` for configuration and data-holder classes.
 
 ```python
 import dataclasses
+
 
 @dataclasses.dataclass
 class ServerConfig:
@@ -256,22 +278,26 @@ Levels: `trace`, `debug`, `info`, `success`, `warning`, `error`, `critical`.
 - **Markers:** `slow`, `integration`, `unit`
 
 Key fixtures (conftest.py):
+
 - `cleanup_after_test`: autouse, clears `MessageTypeRegistry`, waits 0.3s for thread cleanup.
 - `reset_logger`: resets logger singleton before/after test.
 - `test_message_type`: creates a unique `MessageType` per test.
 - `socket_core_backend`: parametrizes over `THREADING` and `ASYNC` backends.
 
 Run all tests:
+
 ```bash
 python -m pytest tests/ -v --tb=short
 ```
 
 Run with coverage:
+
 ```bash
 python -m pytest tests/ --cov=veltix --cov-report=term
 ```
 
 Run specific test:
+
 ```bash
 python -m pytest tests/test_routing.py -v
 ```
@@ -315,7 +341,8 @@ def on_my_type(client: ClientInfo, response: Response) -> None:
 
 ### Adding a new Rule
 
-Inherit from `Rule` (in `handler/rules_manager.py`), implement `can_handle` and `handle`, then add to `ALL_RULES` list in `handler/rules.py`.
+Inherit from `Rule` (in `handler/rules_manager.py`), implement `can_handle` and `handle`, then add to `ALL_RULES` list
+in `handler/rules.py`.
 
 ### Adding a new event
 
@@ -350,6 +377,7 @@ class MyNewError(VeltixError):
 - Never force push.
 
 Examples:
+
 ```
 feat(protocol): implement MAGIC bytes integrity check
 fix: handle BlockingIOError in accept loop
@@ -374,67 +402,75 @@ The public API is defined in `veltix/__init__.py`. Anything not listed in `__all
 ### Core Classes
 
 #### `Server(config: ServerConfig)`
+
 ```python
 from veltix import Server, ServerConfig
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.THREADING))
-server.start()                                      # Non-blocking, starts accept loop in thread
-server.set_callback(Events.ON_RECV, callback)       # func(client: ClientInfo, response: Response)
-server.set_callback(Events.ON_CONNECT, callback)    # func(client: ClientInfo)
-server.set_callback(Events.ON_DISCONNECT, callback) # func(client: ClientInfo)
+server.start()  # Non-blocking, starts accept loop in thread
+server.set_callback(Events.ON_RECV, callback)  # func(client: ClientInfo, response: Response)
+server.set_callback(Events.ON_CONNECT, callback)  # func(client: ClientInfo)
+server.set_callback(Events.ON_DISCONNECT, callback)  # func(client: ClientInfo)
 
-@server.route(MY_TYPE)                              # Decorator: func(client, response)
+
+@server.route(MY_TYPE)  # Decorator: func(client, response)
 def on_msg(client: ClientInfo, response: Response) -> None: ...
 
-server.get_sender()                                 # -> Sender
+
+server.get_sender()  # -> Sender
 server.send_and_wait(request, client, timeout=5.0)  # -> Optional[Response]
-server.ping_client(client, timeout=5.0)             # -> Optional[float] (latency ms)
-server.ping_client_async(client, callback, timeout) # non-blocking ping
-server.close_client(client)                         # -> bool
-server.close_all()                                  # stop server + disconnect all
-server.clients                                      # -> list[ClientInfo]
-server.get_all_clients_sockets()                    # -> list[BaseSocket]
+server.ping_client(client, timeout=5.0)  # -> Optional[float] (latency ms)
+server.ping_client_async(client, callback, timeout)  # non-blocking ping
+server.close_client(client)  # -> bool
+server.close_all()  # stop server + disconnect all
+server.clients  # -> list[ClientInfo]
+server.get_all_clients_sockets()  # -> list[BaseSocket]
 server.get_clients_sockets_by_tag(tag, value=None)  # -> list[BaseSocket]
 ```
 
 #### `Client(config: ClientConfig)`
+
 ```python
 from veltix import Client, ClientConfig
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, retry=3, retry_delay=1.0))
-client.connect()                                    # Blocks until handshake done -> bool
-client.set_callback(Events.ON_RECV, callback)       # func(response: Response)
-client.set_callback(Events.ON_CONNECT, callback)    # func()
-client.set_callback(Events.ON_DISCONNECT, callback) # func(state: DisconnectState)
+client.connect()  # Blocks until handshake done -> bool
+client.set_callback(Events.ON_RECV, callback)  # func(response: Response)
+client.set_callback(Events.ON_CONNECT, callback)  # func()
+client.set_callback(Events.ON_DISCONNECT, callback)  # func(state: DisconnectState)
 
-@client.route(MY_TYPE)                              # Decorator: func(response, client=None)
+
+@client.route(MY_TYPE)  # Decorator: func(response, client=None)
 def on_msg(response: Response) -> None: ...
 
-client.get_sender()                                 # -> Sender
-client.send_and_wait(request, timeout=5.0)          # -> Optional[Response]
-client.ping_server(timeout=5.0)                     # -> Optional[float] (latency ms)
-client.disconnect()                                 # -> bool
-client.stop_retry()                                 # cancel pending reconnection
-client.retry(max_=None)                             # force reconnection attempts
+
+client.get_sender()  # -> Sender
+client.send_and_wait(request, timeout=5.0)  # -> Optional[Response]
+client.ping_server(timeout=5.0)  # -> Optional[float] (latency ms)
+client.disconnect()  # -> bool
+client.stop_retry()  # cancel pending reconnection
+client.retry(max_=None)  # force reconnection attempts
 ```
 
 ### Configuration
 
 #### `ServerConfig`
+
 ```python
 @dataclasses.dataclass
 class ServerConfig:
     host: str = "0.0.0.0"
     port: int = 8080
-    buffer_size: int = BufferSize.SMALL              # 1024 bytes
-    max_connection: int = -1                         # -1 = unlimited
-    max_message_size: int = 10 * 1024 * 1024         # 10 MB
+    buffer_size: int = BufferSize.SMALL  # 1024 bytes
+    max_connection: int = -1  # -1 = unlimited
+    max_message_size: int = 10 * 1024 * 1024  # 10 MB
     handshake_timeout: float = 5.0
     max_workers: int = 4
     socket_core: SocketCore = SocketCore.ASYNC
 ```
 
 #### `ClientConfig`
+
 ```python
 @dataclasses.dataclass
 class ClientConfig:
@@ -444,7 +480,7 @@ class ClientConfig:
     max_message_size: int = 10 * 1024 * 1024
     handshake_timeout: float = 5.0
     max_workers: int = 4
-    retry: int = 0                                   # 0 = no reconnect
+    retry: int = 0  # 0 = no reconnect
     retry_delay: float = 1.0
     socket_core: SocketCore = SocketCore.ASYNC
 ```
@@ -452,16 +488,19 @@ class ClientConfig:
 ### Network Protocol
 
 #### `Request(_type, content, request_id=None)`
+
 ```python
 from veltix import Request
 
-req = Request(MY_TYPE, b"hello")                     # auto-generates request_id
-req = Request(MY_TYPE, b"hello", request_id=b"\x00"*4)
-req.compile()                                        # -> bytes (wire format)
-Request.parse(data, max_message_size=10MB)           # -> Response (static)
+req = Request(MY_TYPE, b"hello")  # auto-generates request_id
+req = Request(MY_TYPE, b"hello", request_id=b"\x00" * 4)
+req.compile()  # -> bytes (wire format)
+Request.parse(data, max_message_size=10
+MB)  # -> Response (static)
 ```
 
 #### `Response` (dataclass)
+
 ```python
 @dataclasses.dataclass
 class Response:
@@ -472,16 +511,18 @@ class Response:
 ```
 
 #### `Sender`
+
 ```python
 from veltix import Sender, Mode
 
-sender.send(request)                                 # -> bool (CLIENT mode)
-sender.send(request, client=socket)                  # -> bool (SERVER mode)
-sender.broadcast(request, list_of_clients)           # -> bool
+sender.send(request)  # -> bool (CLIENT mode)
+sender.send(request, client=socket)  # -> bool (SERVER mode)
+sender.broadcast(request, list_of_clients)  # -> bool
 sender.broadcast(request, list_of_clients, except_clients=[...])
 ```
 
 #### `MessageType(code, name=None, description=None)`
+
 ```python
 from veltix import MessageType
 
@@ -491,6 +532,7 @@ MY_TYPE = MessageType(code=300, name="my_type")
 Code ranges: **0-199** system, **200-499** user, **500+** plugins.
 
 #### System Types (pre-registered)
+
 ```python
 from veltix import PING, PONG, HELLO, HELLO_ACK
 # PING    = MessageType(0, "ping")
@@ -500,31 +542,33 @@ from veltix import PING, PONG, HELLO, HELLO_ACK
 ```
 
 #### `MessageBuffer`
+
 ```python
 from veltix.network.message_buffer import MessageBuffer
 
-buf = MessageBuffer(max_message_size=10*1024*1024)
-buf.add_data(raw_bytes)                              # feed TCP stream data
-buf.extract_messages()                               # -> list[Response]
+buf = MessageBuffer(max_message_size=10 * 1024 * 1024)
+buf.add_data(raw_bytes)  # feed TCP stream data
+buf.extract_messages()  # -> list[Response]
 buf.clear()
 ```
 
 ### Client Info & Tags
 
 #### `ClientInfo`
-```python
-client.ip                                           # -> str
-client.port                                         # -> int
-client.addr                                         # -> tuple[str, int]
-client.conn                                         # -> BaseSocket
-client.tags                                         # -> dict[str, Any]
 
-client.add_tag(name, value=None)                    # -> bool (False if exists)
-client.has_tag(name)                                # -> bool
-client.has_all_tags(names)                          # -> bool
-client.has_any_tags(names)                          # -> bool
-client.get_tag(name)                                # -> Optional[Any]
-client.remove_tag(name)                             # -> bool
+```python
+client.ip  # -> str
+client.port  # -> int
+client.addr  # -> tuple[str, int]
+client.conn  # -> BaseSocket
+client.tags  # -> dict[str, Any]
+
+client.add_tag(name, value=None)  # -> bool (False if exists)
+client.has_tag(name)  # -> bool
+client.has_all_tags(names)  # -> bool
+client.has_any_tags(names)  # -> bool
+client.get_tag(name)  # -> Optional[Any]
+client.remove_tag(name)  # -> bool
 client.clear_tags()
 ```
 
@@ -533,9 +577,9 @@ client.clear_tags()
 ```python
 from veltix import Events
 
-Events.ON_RECV       # "on_recv"
-Events.ON_CONNECT    # "on_connect"
-Events.ON_DISCONNECT # "on_disconnect"
+Events.ON_RECV  # "on_recv"
+Events.ON_CONNECT  # "on_connect"
+Events.ON_DISCONNECT  # "on_disconnect"
 ```
 
 ### Socket Backends
@@ -543,8 +587,8 @@ Events.ON_DISCONNECT # "on_disconnect"
 ```python
 from veltix import SocketCore
 
-SocketCore.THREADING # thread-per-client (default)
-SocketCore.ASYNC     # selectors-based (v1.7.0+)
+SocketCore.THREADING  # thread-per-client (default)
+SocketCore.ASYNC  # selectors-based (v1.7.0+)
 # SocketCore.RUST    # planned v3.0.0
 ```
 
@@ -556,6 +600,7 @@ from veltix import DisconnectState, DisconnectReason
 DisconnectReason.SERVER_CLOSED
 DisconnectReason.ERROR
 DisconnectReason.MANUAL
+
 
 @dataclasses.dataclass
 class DisconnectState:
@@ -570,10 +615,10 @@ class DisconnectState:
 ```python
 from veltix import BufferSize
 
-BufferSize.SMALL   # 1 KB
+BufferSize.SMALL  # 1 KB
 BufferSize.MEDIUM  # 8 KB
-BufferSize.LARGE   # 64 KB
-BufferSize.HUGE    # 1 MB
+BufferSize.LARGE  # 64 KB
+BufferSize.HUGE  # 1 MB
 ```
 
 ### Version Compatibility
@@ -583,7 +628,7 @@ from veltix import Version, COMPATIBILITY
 
 v = Version(1, 7, 0)
 v2 = Version.from_str("v1.6.6")
-v.is_compatible(v2)          # -> Optional[bool] (True/False/None)
+v.is_compatible(v2)  # -> Optional[bool] (True/False/None)
 ```
 
 ### Logger
@@ -605,12 +650,13 @@ logger.critical("msg")
 logger.set_level(LogLevel.WARNING)
 logger.enable()
 logger.disable()
-logger.get_stats()              # -> {LogLevel: count}
-logger.configure(new_config)    # reconfigure at runtime
-Logger.reset_instance()         # for testing
+logger.get_stats()  # -> {LogLevel: count}
+logger.configure(new_config)  # reconfigure at runtime
+Logger.reset_instance()  # for testing
 ```
 
 #### `LoggerConfig`
+
 ```python
 @dataclasses.dataclass
 class LoggerConfig:
@@ -626,6 +672,7 @@ class LoggerConfig:
 ```
 
 #### Log Levels
+
 | Level      | Severity |
 |------------|----------|
 | `TRACE`    | 5        |
@@ -641,11 +688,11 @@ class LoggerConfig:
 ```python
 from veltix import encode_utf8, decode_utf8, encode_json, decode_json, format_bytes
 
-encode_utf8("hello")       # -> b"hello"
-decode_utf8(b"hello")      # -> "hello"
-encode_json({"key": 1})    # -> b'{"key": 1}'
-decode_json(b'{"key": 1}') # -> {"key": 1}
-format_bytes(148_000)      # -> "144.5 KB"
+encode_utf8("hello")  # -> b"hello"
+decode_utf8(b"hello")  # -> "hello"
+encode_json({"key": 1})  # -> b'{"key": 1}'
+decode_json(b'{"key": 1}')  # -> {"key": 1}
+format_bytes(148_000)  # -> "144.5 KB"
 ```
 
 ### Exceptions
@@ -653,44 +700,141 @@ format_bytes(148_000)      # -> "144.5 KB"
 ```python
 from veltix import VeltixError, MessageTypeError, RequestError, SenderError
 
-class VeltixError(Exception): ...          # base
-class MessageTypeError(VeltixError): ...   # invalid message type
-class RequestError(VeltixError): ...       # parse/compile failure
-class SenderError(VeltixError): ...        # send failure
-class NetworkError(VeltixError): ...       # network operation failure
-class TimeoutError(VeltixError): ...       # operation timeout
+
+class VeltixError(Exception): ...  # base
+
+
+class MessageTypeError(VeltixError): ...  # invalid message type
+
+
+class RequestError(VeltixError): ...  # parse/compile failure
+
+
+class SenderError(VeltixError): ...  # send failure
+
+
+class NetworkError(VeltixError): ...  # network operation failure
+
+
+class TimeoutError(VeltixError): ...  # operation timeout
 ```
 
-### Quick-Start Patterns
+### Complete Examples
 
-**Server with route:**
+#### Example 1: Chat server + client
+
+**`chat_server.py`**
+
 ```python
-from veltix import Server, ServerConfig, ClientInfo, Response, MessageType
+from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request, Events
 
 CHAT = MessageType(code=200, name="chat")
-server = Server(ServerConfig(port=8080))
+server = Server(ServerConfig(host="0.0.0.0", port=8080))
+sender = server.get_sender()
+
 
 @server.route(CHAT)
 def on_chat(client: ClientInfo, response: Response) -> None:
-    print(f"{client.ip}: {response.content.decode()}")
+    print(f"[{client.ip}] {response.content.decode()}")
+    sender.broadcast(Request(CHAT, response.content), server.get_all_clients_sockets())
+
+
+server.set_callback(Events.ON_CONNECT, lambda c: print(f"+ {c.addr}"))
+server.set_callback(Events.ON_DISCONNECT, lambda c: print(f"- {c.addr}"))
+server.start()
+input("Press Enter to stop...\n")
+server.close_all()
+```
+
+**`chat_client.py`**
+
+```python
+from veltix import Client, ClientConfig, Response, MessageType, Request
+import threading
+import time
+
+CHAT = MessageType(code=200, name="chat")
+client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
+
+
+@client.route(CHAT)
+def on_chat(response: Response) -> None:
+    print(f"\n[{client.config.server_addr}]: {response.content.decode()}")
+
+
+client.connect()
+
+
+def _input_loop() -> None:
+    while True:
+        msg = input()
+        if msg.lower() == "/quit":
+            client.disconnect()
+            break
+        client.get_sender().send(Request(CHAT, msg.encode()))
+
+
+threading.Thread(target=_input_loop, daemon=True).start()
+
+try:
+    while client.is_connected:
+        time.sleep(0.1)
+except (KeyboardInterrupt, SystemExit):
+    client.disconnect()
+```
+
+#### Example 2: Request/Response (RPC pattern)
+
+```python
+from veltix import Server, ServerConfig, Client, ClientConfig, MessageType, Request, Response, ClientInfo
+
+ECHO = MessageType(code=201, name="echo")
+server = Server(ServerConfig(port=8080))
+
+
+@server.route(ECHO)
+def on_echo(client: ClientInfo, response: Response) -> None:
+    server.get_sender().send(Request(ECHO, response.content), client=client.conn)
+
 
 server.start()
-```
 
-**Client with reconnect:**
-```python
-from veltix import Client, ClientConfig, Response
-
-client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, retry=5))
-client.set_callback(Events.ON_RECV, lambda r: print(r.content.decode()))
+client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 client.connect()
-client.get_sender().send(Request(CHAT, b"Hello!"))
-```
 
-**Request/Response pattern:**
-```python
-req = Request(MY_TYPE, b"ping")
+req = Request(ECHO, b"Hello RPC!")
 resp = client.send_and_wait(req, timeout=3.0)
 if resp:
-    print(resp.content)
+    print(f"Got: {resp.content.decode()}")  # "Got: Hello RPC!"
+
+client.disconnect()
+server.close_all()
+```
+
+#### Example 3: Broadcast with tags
+
+```python
+from veltix import MessageType, Request, Server, ServerConfig, ClientInfo, Response
+
+CHANNEL_JOIN = MessageType(code=202, name="channel_join")
+CHANNEL_MSG = MessageType(code=203, name="channel_msg")
+server = Server(ServerConfig(port=8080))
+
+
+@server.route(CHANNEL_JOIN)
+def on_join(client: ClientInfo, response: Response) -> None:
+    channel = response.content.decode()
+    client.tags["channel"] = channel
+    print(f"{client.ip} joined channel '{channel}'")
+
+
+@server.route(CHANNEL_MSG)
+def on_msg(client: ClientInfo, response: Response) -> None:
+    channel = client.get_tag("channel")
+    if channel:
+        targets = server.get_clients_sockets_by_tag("channel", channel)
+        server.get_sender().broadcast(
+            Request(CHANNEL_MSG, response.content), targets,
+            except_clients=[client.conn]
+        )
 ```
