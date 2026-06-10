@@ -158,7 +158,7 @@ class AsyncSocket(BaseSocket):
         self._selector.register(self._sock, selectors.EVENT_READ, data="listen")
         self.running = True
         self._selector_thread = threading.Thread(
-            target=self._selector_loop, args=(max_client, buffer_size)
+            target=self._selector_loop, args=(max_client, buffer_size), daemon=True
         )
         self._selector_thread.start()
         self._logger.debug(
@@ -380,7 +380,7 @@ class AsyncSocket(BaseSocket):
             self.running = True
             self._selector.register(self._sock, selectors.EVENT_READ, data="client")
             self._selector_thread = threading.Thread(
-                target=self._selector_loop, args=(0, buffer_size)
+                target=self._selector_loop, args=(0, buffer_size), daemon=True
             )
             self._selector_thread.start()
             self._logger.debug(f"connected to {host}:{port}")
