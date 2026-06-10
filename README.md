@@ -8,6 +8,7 @@
 [![License](https://img.shields.io/github/license/NytroxDev/Veltix?cacheSeconds=300)](https://github.com/NytroxDev/Veltix/blob/main/LICENSE)
 [![Downloads](https://static.pepy.tech/personalized-badge/veltix?period=total&units=NONE&left_color=BLACK&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/veltix)
 [![Security Policy](https://img.shields.io/badge/security-policy-blue)](SECURITY.md)
+[![AI Guide](https://img.shields.io/badge/for_AI-AGENTS.md-purple)](AGENTS.md)
 
 Sync, thread-friendly, zero dependencies : TCP done right.  
 Veltix handles framing, threading, handshake, routing, and reconnection  
