@@ -824,7 +824,7 @@ server = Server(ServerConfig(port=8080))
 @server.route(CHANNEL_JOIN)
 def on_join(client: ClientInfo, response: Response) -> None:
     channel = response.content.decode()
-    client.tags["channel"] = channel
+    client.add_tag("channel", channel)
     print(f"{client.ip} joined channel '{channel}'")
 
 
