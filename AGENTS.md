@@ -755,6 +755,7 @@ import time
 
 CHAT = MessageType(code=200, name="chat")
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
+sender = client.get_sender()
 
 
 @client.route(CHAT)
@@ -771,7 +772,7 @@ def _input_loop() -> None:
         if msg.lower() == "/quit":
             client.disconnect()
             break
-        client.get_sender().send(Request(CHAT, msg.encode()))
+        sender.send(Request(CHAT, msg.encode()))
 
 
 threading.Thread(target=_input_loop, daemon=True).start()
@@ -790,11 +791,12 @@ from veltix import Server, ServerConfig, Client, ClientConfig, MessageType, Requ
 
 ECHO = MessageType(code=201, name="echo")
 server = Server(ServerConfig(port=8080))
+sender = server.get_sender()
 
 
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
-    server.get_sender().send(Request(ECHO, response.content), client=client.conn)
+    sender.send(Request(ECHO, response.content), client=client.conn)
 
 
 server.start()
