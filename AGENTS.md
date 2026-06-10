@@ -821,6 +821,7 @@ from veltix import MessageType, Request, Server, ServerConfig, ClientInfo, Respo
 CHANNEL_JOIN = MessageType(code=202, name="channel_join")
 CHANNEL_MSG = MessageType(code=203, name="channel_msg")
 server = Server(ServerConfig(port=8080))
+sender = server.get_sender()
 
 
 @server.route(CHANNEL_JOIN)
@@ -835,7 +836,7 @@ def on_msg(client: ClientInfo, response: Response) -> None:
     channel = client.get_tag("channel")
     if channel:
         targets = server.get_clients_sockets_by_tag("channel", channel)
-        server.get_sender().broadcast(
+        sender.broadcast(
             Request(CHANNEL_MSG, response.content), targets,
             except_clients=[client.conn]
         )
