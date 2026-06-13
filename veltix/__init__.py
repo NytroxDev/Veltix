@@ -7,7 +7,7 @@ and request/response patterns.
 
 from .client.client import Client, ClientConfig, DisconnectReason
 from .client.disconnect import DisconnectState
-from .exceptions import MessageTypeError, RequestError, SenderError, VeltixError
+from .exceptions import MessageTypeError, NetworkError, RequestError, SenderError, TimeoutError, VeltixError
 from .internal.buffer_size import BufferSize
 from .internal.compatibility import COMPATIBILITY, Version
 from .internal.events import Events
@@ -69,6 +69,8 @@ __all__ = [
     # Exceptions
     "VeltixError",
     "MessageTypeError",
+    "NetworkError",
     "RequestError",
     "SenderError",
+    "TimeoutError",
 ]
