@@ -59,7 +59,7 @@ class HandshakeHandler:
         condition where HELLO_ACK arrives before the queue is registered.
         """
         hello = Request(HELLO, self._encode_hello())
-        self._logger.debug(f"[Handshake] HELLO prepared (id={hello.request_id[:8]}...)")
+        self._logger.debug(f"[Handshake] HELLO prepared (id={hello.request_id.hex()}...)")
         return hello.request_id, hello
 
     def send_hello(self, hello: Request, client_conn=None) -> None:
@@ -68,7 +68,7 @@ class HandshakeHandler:
             self.sender.send(hello, client=client_conn)
         else:
             self.sender.send(hello)
-        self._logger.debug(f"[Handshake] HELLO sent (id={hello.request_id[:8]}...)")
+        self._logger.debug(f"[Handshake] HELLO sent (id={hello.request_id.hex()}...)")
 
     def handle_hello_ack(self, response: Response) -> bool:
         """Validate an incoming HELLO_ACK from the client."""
@@ -108,4 +108,4 @@ class HandshakeHandler:
         """Send HELLO_ACK back to the server."""
         ack = Request(HELLO_ACK, self._encode_hello(), request_id=request_id)
         self.sender.send(ack)
-        self._logger.debug(f"[Handshake] HELLO_ACK sent (id={request_id[:8]}...)")
+        self._logger.debug(f"[Handshake] HELLO_ACK sent (id={request_id.hex()}...)")

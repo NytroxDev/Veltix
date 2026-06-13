@@ -162,12 +162,12 @@ class Server:
             Matching Response, or None on timeout or send failure.
         """
         request_id = request.request_id
-        self._logger.debug(f"send_and_wait: {request_id[:8]}... → {client.addr}")
+        self._logger.debug(f"send_and_wait: {request_id.hex()}... → {client.addr}")
 
         self.request_handler.register(request_id)
 
         if not self.sender.send(request, client=client.conn):
-            self._logger.error(f"Failed to send request {request_id[:8]}... to {client.addr}")
+            self._logger.error(f"Failed to send request {request_id.hex()}... to {client.addr}")
             self.request_handler.unregister(request_id)
             return None
 

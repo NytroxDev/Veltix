@@ -266,12 +266,12 @@ class Client:
             Matching Response, or None on timeout or send failure.
         """
         request_id = request.request_id
-        self._logger.debug(f"send_and_wait: registering request {request_id[:8]}...")
+        self._logger.debug(f"send_and_wait: registering request {request_id.hex()}...")
 
         self.request_handler.register(request_id)
 
         if not self.sender.send(request):
-            self._logger.error(f"Failed to send request {request_id[:8]}...")
+            self._logger.error(f"Failed to send request {request_id.hex()}...")
             self.request_handler.unregister(request_id)
             return None
 
