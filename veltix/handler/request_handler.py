@@ -32,7 +32,9 @@ class RequestHandler:
     6. Log a warning if nothing handled the message
     """
 
-    def __init__(self, mode: Union[Mode, str], max_workers: int = 4, sender: Sender = None) -> None:
+    def __init__(
+        self, mode: Union[Mode, str], max_workers: int = 4, sender: Optional[Sender] = None
+    ) -> None:
         if isinstance(mode, str):
             mode = Mode(mode)
         self.on_recv = None
