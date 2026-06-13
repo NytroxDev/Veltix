@@ -79,17 +79,6 @@ module-name = "veltix._message_buffer"
 manifest-path = "rust/message-buffer/Cargo.toml"
 
 # Setuptools configuration
-[tool.setuptools]
-zip-safe = false
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["veltix*"]
-exclude = ["tests*", "examples*", "*.tests*", "*.examples*"]
-
-[tool.setuptools.package-data]
-veltix = ["py.typed"]
-
 # Pytest configuration
 [tool.pytest.ini_options]
 testpaths = ["tests"]
