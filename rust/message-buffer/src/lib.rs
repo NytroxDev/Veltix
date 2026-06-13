@@ -57,7 +57,7 @@ impl MessageBuffer {
             if self.buffer.len() < total_size {
                 break;
             }
-            let message_data: Vec<u8> = self.buffer[0..total_size].try_into().unwrap();
+            let message_data: Vec<u8> = self.buffer[0..total_size].into();
             self.buffer.drain(0..total_size);
             messages.push(message_data);
         }
