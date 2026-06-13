@@ -352,7 +352,10 @@ class AsyncSocket(BaseSocket):
         self._logger.debug(f"closing server client {entry.id} ({entry.info.addr})")
         entry.info.conn.close()
 
-        self._selector.unregister(entry.info.conn)
+        try:
+            self._selector.unregister(entry.info.conn)
+        except KeyError:
+            pass
 
         self.client_manager.remove_client(entry.id)
 
