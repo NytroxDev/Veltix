@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
 
 [project]
 name = "veltix"
@@ -72,6 +72,11 @@ Documentation = "https://nytroxdev.github.io/Veltix/"
 Issues = "https://github.com/NytroxDev/Veltix/issues"
 Changelog = "https://github.com/NytroxDev/Veltix/blob/main/CHANGELOG.md"
 Discord = "https://discord.gg/jwjEV5eze7"
+
+# Maturin configuration (builds Rust extension message_buffer)
+[tool.maturin]
+module-name = "veltix._message_buffer"
+manifest-path = "rust/message-buffer/Cargo.toml"
 
 # Setuptools configuration
 [tool.setuptools]
