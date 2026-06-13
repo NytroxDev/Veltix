@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import socket
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional
 
@@ -64,7 +65,7 @@ def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
 
         return RecvResult(RecvStatus.OK, data)
 
-    except TimeoutError:
+    except socket.timeout:
         return RecvResult(RecvStatus.TIMEOUT)
 
     except BlockingIOError:

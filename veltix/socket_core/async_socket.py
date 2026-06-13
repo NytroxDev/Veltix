@@ -393,7 +393,7 @@ class AsyncSocket(BaseSocket):
             self._selector_thread.start()
             self._logger.debug(f"connected to {host}:{port}")
             return True
-        except (TimeoutError, ConnectionRefusedError) as e:
+        except (socket.timeout, ConnectionRefusedError) as e:
             self._logger.debug(f"connect to {host}:{port} failed: {e}")
             return False
         except Exception as e:
