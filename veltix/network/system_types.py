@@ -5,7 +5,6 @@ from .types import MessageType
 # Core system messages (0-9)
 PING = MessageType(0, "ping", "Request latency measurement")
 PONG = MessageType(1, "pong", "Response to PING request")
-HEARTBEAT = MessageType(2, "heartbeat", "Keep-alive message")
 
 # Connection management (10-19)
 HELLO = MessageType(10, "hello", "Initial handshake — server → client")
