@@ -22,14 +22,14 @@ class Sender:
     """
 
     def __init__(self, mode: Union[Mode, str], conn: Optional[BaseSocket] = None) -> None:
-        """Initialise l'expéditeur avec un mode et une connexion optionnelle.
+        """Initialize the sender with a mode and an optional connection.
 
         Args:
-            mode: Mode CLIENT ou SERVER.
-            conn: Socket de connexion (obligatoire en mode CLIENT).
+            mode: CLIENT or SERVER mode.
+            conn: Connection socket (required in CLIENT mode).
 
         Raises:
-            SenderError: Si le mode est CLIENT sans connexion fournie.
+            SenderError: If mode is CLIENT without a connection.
         """
         self._logger = Logger.get_instance()
 
@@ -44,17 +44,17 @@ class Sender:
         self.conn: Optional[BaseSocket] = conn
 
     def send(self, data: Request, client: Optional[BaseSocket] = None) -> bool:
-        """Envoie une requête sur le réseau.
+        """Send a request over the network.
 
-        En mode CLIENT, utilise la connexion interne.
-        En mode SERVER, utilise le socket client fourni.
+        In CLIENT mode, uses the internal connection.
+        In SERVER mode, uses the provided client socket.
 
         Args:
-            data: Requête à envoyer.
-            client: Socket client destinataire (obligatoire en mode SERVER).
+            data: Request to send.
+            client: Target client socket (required in SERVER mode).
 
         Returns:
-            True si l'envoi a réussi, False sinon.
+            True if the send succeeded, False otherwise.
         """
         target = self.conn if self.is_client else client
 
@@ -82,15 +82,15 @@ class Sender:
         list_of_client: list[BaseSocket],
         except_clients: Optional[list[BaseSocket]] = None,
     ) -> bool:
-        """Envoie une requête à plusieurs clients (mode SERVER uniquement).
+        """Send a request to multiple clients (SERVER mode only).
 
         Args:
-            data: Requête à diffuser.
-            list_of_client: Liste des sockets clients destinataires.
-            except_clients: Liste optionnelle de clients à exclure.
+            data: Request to broadcast.
+            list_of_client: List of target client sockets.
+            except_clients: Optional list of clients to exclude.
 
         Returns:
-            True si tous les envois ont réussi, False sinon.
+            True if all sends succeeded, False otherwise.
         """
         if self.is_client:
             self._logger.error("Broadcast not available in CLIENT mode")
