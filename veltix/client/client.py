@@ -1,6 +1,7 @@
 # client.py
 """TCP client implementation for Veltix."""
 
+import socket
 import time
 from threading import Event
 from typing import TYPE_CHECKING, Callable, Optional, Union
@@ -235,7 +236,7 @@ class Client:
 
             return True
 
-        except (TimeoutError, ConnectionRefusedError) as e:
+        except (socket.timeout, ConnectionRefusedError) as e:
             self._logger.error(
                 f"Connection failed to {self.config.server_addr}:{self.config.port}: "
                 f"{type(e).__name__}"

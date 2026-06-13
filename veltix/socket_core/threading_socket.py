@@ -163,7 +163,7 @@ class ThreadingSocket(BaseSocket):
                 with self._threads_lock:
                     self.threads[thread_id] = thread
 
-            except TimeoutError:
+            except socket.timeout:
                 continue
             except OSError:
                 self.running = False
@@ -320,7 +320,7 @@ class ThreadingSocket(BaseSocket):
             self.thread_handler.start()
             return True
 
-        except (TimeoutError, ConnectionRefusedError) as e:
+        except (socket.timeout, ConnectionRefusedError) as e:
             self._logger.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
             return False
 
