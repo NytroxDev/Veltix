@@ -2,9 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "**" ]
+    branches: ["**"]
+
+env:
+  PYO3_USE_ABI3_FORWARD_COMPATIBILITY: 1
 
 jobs:
   # ── Version consistency check ──────────────────────────────────────────────
@@ -28,32 +31,95 @@ jobs:
             echo "   version.py    → $VERSION_PY"
             echo "   pyproject.toml → $VERSION_TOML"
             echo ""
-            echo "Fix: make sure both files declare the same version before releasing."
             exit 1
           fi
 
           echo "✅ Versions match: $VERSION_PY"
 
-  # ── Tests ──────────────────────────────────────────────────────────────────
+  # ── Rust checks ────────────────────────────────────────────────────────────
+  rust:
+    name: Rust checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cargo test
+        run: cargo test
+        working-directory: rust/message-buffer
+
+      - name: cargo clippy
+        run: cargo clippy -- -D warnings
+        working-directory: rust/message-buffer
+
+  # ── Tests (Python + Rust extension) ───────────────────────────────────────
   tests:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    needs: version-check
+    needs: [version-check, rust]
     strategy:
       matrix:
-        python-version: [ "3.8", "3.10", "3.12", "3.14" ]
+        python-version: ["3.8", "3.10", "3.12", "3.14"]
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: pip install pytest pytest-cov
+      - name: Install maturin + test dependencies
+        run: |
+          pip install maturin pytest pytest-cov
+
+      - name: Build and install Rust extension
+        run: maturin develop --release
 
       - name: Run tests
         run: python -m pytest tests/ -v --tb=short
+
+      - name: Run tests with Rust disabled
+        run: VELTIX_DISABLE_RUST=1 python -m pytest tests/ -v --tb=short
+
+  # ── Wheels (cross-platform) ───────────────────────────────────────────────
+  wheels:
+    name: Wheel (${{ matrix.platform.name }})
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      matrix:
+        platform:
+          - { name: Linux x86_64, os: ubuntu-latest }
+          - { name: macOS x86_64, os: macos-13 }
+          - { name: macOS ARM64, os: macos-14 }
+          - { name: Windows x86_64, os: windows-latest }
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build wheel
+        run: maturin build --release
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.platform.name }}
+          path: rust/message-buffer/target/wheels/*.whl
