@@ -80,7 +80,9 @@ jobs:
           pip install maturin pytest pytest-cov
 
       - name: Build and install Rust extension
-        run: maturin develop --release
+        run: |
+          maturin build --release
+          pip install rust/message-buffer/target/wheels/*.whl
 
       - name: Run tests
         run: python -m pytest tests/ -v --tb=short
