@@ -1,7 +1,9 @@
 """Tests for HELLO/HELLO_ACK handshake — updated for v1.6.6 refacto."""
 
 import socket
+import struct
 import time
+import zlib
 
 import pytest
 
@@ -9,6 +11,7 @@ from veltix import Client, ClientConfig, Events, Server, ServerConfig
 from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.internal.compatibility import Version
 from veltix.network.sender import Mode, Sender
+from veltix.network.request import MAGIC, HEADER_SIZE
 from veltix.version import __version__
 
 
@@ -162,4 +165,40 @@ class TestHandshakeIntegration:
 
         for client in clients:
             client.disconnect()
+        server.close_all()
+
+    def test_server_rejects_incompatible_version(self):
+        """Server must reject a client whose HELLO_ACK contains an incompatible version."""
+        connected = []
+        server = Server(ServerConfig(host="127.0.0.1", port=18995))
+        server.set_callback(Events.ON_CONNECT, lambda c: connected.append(c))
+        server.start()
+
+        raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        raw.connect(("127.0.0.1", 18995))
+        raw.settimeout(3.0)
+
+        # Receive HELLO from server
+        header = raw.recv(HEADER_SIZE)
+        assert len(header) == HEADER_SIZE, "Server should send HELLO on connect"
+        magic, code, size, _, request_id = struct.unpack(">2sHI4s4s", header)
+        assert magic == MAGIC
+        assert code == 10  # HELLO
+
+        content = raw.recv(size)
+        assert len(content) == size
+
+        # Send back HELLO_ACK with incompatible version
+        bad_version = b"0.0.1"
+        bad_content = len(bad_version).to_bytes(2, "big") + bad_version
+        bad_hash = zlib.crc32(bad_content).to_bytes(4, "big")
+        ack_header = struct.pack(">2sHI4s4s", MAGIC, 11, len(bad_content), bad_hash, request_id)
+        raw.sendall(ack_header + bad_content)
+
+        time.sleep(0.3)
+
+        # Server must NOT have accepted the handshake
+        assert len(connected) == 0, "on_connect must not fire for incompatible version"
+
+        raw.close()
         server.close_all()
