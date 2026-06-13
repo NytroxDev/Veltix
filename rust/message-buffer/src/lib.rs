@@ -6,6 +6,7 @@ const HEADER_SIZE: usize = 16;
 pub struct MessageBuffer {
     buffer: Vec<u8>,
     max_message_size: usize,
+    max_buffer_size: usize,
 }
 
 impl MessageBuffer {
@@ -13,10 +14,14 @@ impl MessageBuffer {
         MessageBuffer {
             buffer: Vec::new(),
             max_message_size,
+            max_buffer_size: 20 * 1024 * 1024,
         }
     }
 
     pub fn add_data(&mut self, data: &[u8]) {
+        if data.len() + self.buffer.len() > self.max_buffer_size {
+            self.clear()
+        }
         self.buffer.extend_from_slice(data);
     }
 
@@ -138,7 +143,7 @@ mod tests {
     #[test]
     fn partial_header_preserved() {
         let mut buffer = MessageBuffer::new(10 * 1024 * 1024);
-        buffer.add_data(&[86, 88, 0, 200]);  // only 4 bytes, need 16
+        buffer.add_data(&[86, 88, 0, 200]); // only 4 bytes, need 16
         let messages = buffer.extract_messages();
         assert!(messages.is_empty());
         assert_eq!(buffer.len(), 4);
@@ -148,7 +153,7 @@ mod tests {
     fn partial_content_preserved() {
         let mut buffer = MessageBuffer::new(10 * 1024 * 1024);
         let mut data = vec![86, 88, 0, 200, 0, 0, 0, 5, 54, 16, 166, 134, 1, 2, 3, 4];
-        data.extend_from_slice(b"he");  // only 2 of 5 content bytes
+        data.extend_from_slice(b"he"); // only 2 of 5 content bytes
         buffer.add_data(&data);
         let messages = buffer.extract_messages();
         assert!(messages.is_empty());
@@ -157,16 +162,13 @@ mod tests {
 
     #[test]
     fn size_exceeds_max_triggers_resync() {
-        let mut buffer = MessageBuffer::new(50);  // small max
+        let mut buffer = MessageBuffer::new(50); // small max
         let large: &[u8] = &[
-            86, 88, 0, 200, 0, 0, 0, 100, 153, 136, 198, 202, 1, 2, 3, 4,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
+            86, 88, 0, 200, 0, 0, 0, 100, 153, 136, 198, 202, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         buffer.add_data(large);
         let messages = buffer.extract_messages();
@@ -178,7 +180,10 @@ mod tests {
     #[test]
     fn no_magic_found_clears_buffer() {
         let mut buffer = MessageBuffer::new(10 * 1024 * 1024);
-        buffer.add_data(&[0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12]);
+        buffer.add_data(&[
+            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E,
+            0x0F, 0x10, 0x11, 0x12,
+        ]);
         let messages = buffer.extract_messages();
         assert!(messages.is_empty());
         assert!(buffer.is_empty());
