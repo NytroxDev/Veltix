@@ -285,21 +285,26 @@ class AsyncSocket(BaseSocket):
 
     def _check_server_handshake(self, entry: ClientEntry, handshake_request_id: bytes) -> None:
         with self.request_handler.pending_requests_lock:
-            queue = self.request_handler.pending_requests.get(handshake_request_id)
-            is_resolved = queue is not None and not queue.empty()
+            queue = self.request_handler.pending_requests.pop(handshake_request_id, None)
+            response = queue.get_nowait() if queue is not None and not queue.empty() else None
             self._logger.debug(
                 f"handshake check for {entry.info.addr}: request_id={handshake_request_id!r}, "
-                f"queue={'exists' if queue else 'none'}, "
-                f"resolved={is_resolved}, handshake_done={entry.info.handshake_done}"
+                f"resolved={response is not None}, handshake_done={entry.info.handshake_done}"
             )
-            if is_resolved:
-                self.request_handler.pending_requests.pop(handshake_request_id, None)
-                entry.info.handshake_done = True
+            if response is not None:
                 self._client_connect_time.pop(entry.id, None)
 
-        if not is_resolved:
+        if response is None:
             return
 
+        if not self.request_handler.handshake_handler.handle_hello_ack(response):
+            self._logger.warning(
+                f"Handshake failed for {entry.info.addr} — version mismatch, closing"
+            )
+            entry.info.conn.close()
+            return
+
+        entry.info.handshake_done = True
         self._logger.debug(f"Handshake complete for {entry.info.addr}")
 
         if self.on_connect:
