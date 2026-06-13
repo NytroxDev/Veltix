@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import os
 import struct
 
-from ..logger.core import Logger
 from .request import HEADER_SIZE, MAGIC, Request, Response
+from ..logger.core import Logger
 
 _MAGIC_SIZE = len(MAGIC)
 _MAGIC_AND_SIZE = struct.Struct(">2s2xI")
@@ -14,11 +15,13 @@ MAX_BUFFER_SIZE = 20 * 1024 * 1024
 
 _HAS_RUST = False
 
-try:
-    from veltix._message_buffer import MessageBuffer as _RustBuffer
-    _HAS_RUST = True
-except ImportError:
-    pass
+if not os.environ.get("VELTIX_DISABLE_RUST"):
+    try:
+        from veltix._message_buffer import MessageBuffer as _RustBuffer
+
+        _HAS_RUST = True
+    except ImportError:
+        pass
 
 
 class MessageBuffer:
@@ -35,9 +38,9 @@ class MessageBuffer:
     __slots__ = ("_buffer", "_max_message_size", "_logger", "_max_buffer_size")
 
     def __init__(
-        self,
-        max_message_size: int = 10 * 1024 * 1024,
-        max_buffer_size: int = MAX_BUFFER_SIZE,
+            self,
+            max_message_size: int = 10 * 1024 * 1024,
+            max_buffer_size: int = MAX_BUFFER_SIZE,
     ) -> None:
         self._buffer = bytearray()
         self._max_message_size = max_message_size
@@ -124,9 +127,9 @@ if _HAS_RUST:
         __slots__ = ("_buf", "_max_message_size", "_max_buffer_size", "_logger")
 
         def __init__(
-            self,
-            max_message_size: int = 10 * 1024 * 1024,
-            max_buffer_size: int = MAX_BUFFER_SIZE,
+                self,
+                max_message_size: int = 10 * 1024 * 1024,
+                max_buffer_size: int = MAX_BUFFER_SIZE,
         ) -> None:
             self._buf = _RustBuffer(max_message_size, max_buffer_size)
             self._max_message_size = max_message_size
