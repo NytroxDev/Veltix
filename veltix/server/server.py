@@ -222,7 +222,7 @@ class Server:
 
         threading.Thread(target=_ping, daemon=True).start()
 
-    def close_client(self, client: ClientInfo, id_: int = None) -> bool:
+    def close_client(self, client: ClientInfo, id_: Optional[int] = None) -> bool:
         """Forcefully close a specific client connection."""
         if id_ is not None:
             return self.socket.close_client(id_)
