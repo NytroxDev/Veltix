@@ -370,7 +370,10 @@ class AsyncSocket(BaseSocket):
             self._logger.debug("closing server socket")
             self.running = False
             self._selector.unregister(self._sock)
-            self._sock.close()
+            try:
+                self._sock.close()
+            except OSError:
+                pass
             self.client_manager.iter_on_clients(self._close_server_client)
             self._selector.close()
             if self._selector_thread and self._selector_thread != threading.current_thread():
