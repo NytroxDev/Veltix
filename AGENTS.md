@@ -588,8 +588,8 @@ Events.ON_DISCONNECT  # "on_disconnect"
 ```python
 from veltix import SocketCore
 
-SocketCore.THREADING  # thread-per-client (default)
-SocketCore.ASYNC  # selectors-based (v1.7.0+)
+SocketCore.THREADING  # thread-per-client
+SocketCore.ASYNC  # selectors-based (v1.7.0+, default)
 # SocketCore.RUST    # planned v3.0.0
 ```
 
