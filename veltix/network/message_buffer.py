@@ -12,6 +12,14 @@ _MAGIC_AND_SIZE = struct.Struct(">2s2xI")
 
 MAX_BUFFER_SIZE = 20 * 1024 * 1024
 
+_HAS_RUST = False
+
+try:
+    from veltix._message_buffer import MessageBuffer as _RustBuffer
+    _HAS_RUST = True
+except ImportError:
+    pass
+
 
 class MessageBuffer:
     """
@@ -106,3 +114,48 @@ class MessageBuffer:
             f"MessageBuffer(size={len(self._buffer)}, "
             f"max_msg={self._max_message_size}, max_buf={self._max_buffer_size})"
         )
+
+
+if _HAS_RUST:
+
+    class MessageBuffer:  # type: ignore[no-redef]
+        """Message buffer backed by Rust for framing, with Python Response parsing."""
+
+        __slots__ = ("_buf", "_max_message_size", "_max_buffer_size", "_logger")
+
+        def __init__(
+            self,
+            max_message_size: int = 10 * 1024 * 1024,
+            max_buffer_size: int = MAX_BUFFER_SIZE,
+        ) -> None:
+            self._buf = _RustBuffer(max_message_size, max_buffer_size)
+            self._max_message_size = max_message_size
+            self._max_buffer_size = max_buffer_size
+            self._logger = Logger.get_instance()
+
+        def add_data(self, data: bytes) -> None:
+            self._buf.add_data(data)
+
+        def extract_messages(self) -> list[Response]:
+            messages: list[Response] = []
+            for frame in self._buf.extract_messages():
+                try:
+                    messages.append(Request.parse(frame))
+                except Exception as e:
+                    self._logger.error(
+                        f"Failed to parse message ({len(frame)} bytes): "
+                        f"{type(e).__name__}: {e}."
+                    )
+            return messages
+
+        def clear(self) -> None:
+            self._buf.clear()
+
+        def __len__(self) -> int:
+            return len(self._buf)
+
+        def __repr__(self) -> str:
+            return (
+                f"MessageBuffer(size={len(self._buf)}, "
+                f"max_msg={self._max_message_size}, max_buf={self._max_buffer_size})"
+            )
