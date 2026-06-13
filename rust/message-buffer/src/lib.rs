@@ -18,6 +18,14 @@ impl MessageBuffer {
         }
     }
 
+    pub fn with_config(max_message_size: usize, max_buffer_size: usize) -> Self {
+        MessageBuffer {
+            buffer: Vec::new(),
+            max_message_size,
+            max_buffer_size,
+        }
+    }
+
     pub fn add_data(&mut self, data: &[u8]) {
         if data.len() + self.buffer.len() > self.max_buffer_size {
             self.clear()
@@ -189,3 +197,5 @@ mod tests {
         assert!(buffer.is_empty());
     }
 }
+
+pub mod binding;
