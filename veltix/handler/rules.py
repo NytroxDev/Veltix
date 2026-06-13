@@ -9,7 +9,7 @@ class PingRule(Rule):
 
     def handle(self, context: MessageContext) -> None:
         self._logger.debug(
-            f"Responding to PING with PONG (request_id={context.response.request_id})"
+            f"Responding to PING with PONG (request_id={context.response.request_id.hex()})"
         )
         pong = Request(PONG, b"", request_id=context.response.request_id)
         if context.is_server:
@@ -58,7 +58,7 @@ class PendingRequestRule(Rule):
             return False
         queue.put(context.response)
         self._logger.debug(
-            f"Routing response to pending request (request_id={context.response.request_id})"
+            f"Routing response to pending request (request_id={context.response.request_id.hex()})"
         )
         return True
 
