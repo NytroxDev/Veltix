@@ -38,7 +38,7 @@ impl PyMessageBuffer {
 }
 
 #[pymodule]
-fn message_buffer(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _message_buffer(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyMessageBuffer>()?;
     Ok(())
 }
