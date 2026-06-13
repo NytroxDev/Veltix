@@ -45,17 +45,11 @@ class HelloRule(Rule):
 class PendingRequestRule(Rule):
     _logger = Logger.get_instance()
 
-    def handle(self, context: MessageContext) -> None:
-        self._logger.debug(
-            f"Routing response to pending request (request_id={context.response.request_id})"
-        )
-        with context.handler.pending_requests_lock:
-            queue = context.handler.pending_requests.get(context.response.request_id)
-        if queue:
-            queue.put(context.response)
-
     def can_handle(self, context: MessageContext) -> bool:
         return False
+
+    def handle(self, context: MessageContext) -> None:
+        pass
 
     def try_handle(self, context: MessageContext) -> bool:
         with context.handler.pending_requests_lock:
