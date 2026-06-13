@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from ..socket_core.base_socket import BaseSocket
 
+_id_lock = threading.Lock()
+_next_id = 0
+
+
+def _generate_id() -> int:
+    global _next_id
+    with _id_lock:
+        _next_id += 1
+        return _next_id
+
 
 class ClientInfo:
-    __slots__ = ("conn", "addr", "thread_id", "handshake_done", "tags")
+    __slots__ = ("_id", "conn", "addr", "thread_id", "handshake_done", "tags")
 
     def __init__(
         self,
@@ -16,11 +27,20 @@ class ClientInfo:
         thread_id: int,
         handshake_done: bool = False,
     ) -> None:
+        self._id = _generate_id()
         self.conn = conn
         self.addr = addr
         self.thread_id = thread_id
         self.handshake_done = handshake_done
         self.tags: dict[str, Any] = {}
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ClientInfo):
+            return NotImplemented
+        return self._id == other._id
+
+    def __hash__(self) -> int:
+        return hash(self._id)
 
     @property
     def ip(self) -> str:
