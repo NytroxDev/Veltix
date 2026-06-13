@@ -365,7 +365,8 @@ class MyNewError(VeltixError):
 - **Thread safety:** all shared state must be protected.
 - **Type hints** required on all public symbols.
 - **Google-style docstrings** required on all public symbols.
-- **100% backward compatibility** within the same major version.
+- **Wire protocol changes** must be registered in the COMPATIBILITY table (`internal/compatibility.py`).
+- **Backward compatibility** within a minor series is preferred but not guaranteed; breaking changes must bump minor and update COMPATIBILITY.
 
 ## Git & Commit
 
