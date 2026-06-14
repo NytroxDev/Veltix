@@ -21,7 +21,8 @@ if not os.environ.get("VELTIX_DISABLE_RUST"):
 
         _HAS_RUST = True
     except ImportError:
-        pass
+        _logger = Logger.get_instance()
+        _logger.warning("Rust extension not found; falling back to Python")
 
 
 class MessageBuffer:

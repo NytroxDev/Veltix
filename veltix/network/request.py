@@ -24,6 +24,8 @@ if _HAS_RUST:
     try:
         from .._message_buffer import compile as _rust_compile, parse as _rust_parse
     except ImportError:
+        _logger = Logger.get_instance()
+        _logger.warning("Rust extension not found; falling back to Python")
         _HAS_RUST = False
 
 _id_lock = threading.Lock()
