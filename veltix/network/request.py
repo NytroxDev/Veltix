@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 import random
 import struct
 import threading
@@ -16,6 +17,14 @@ MAGIC = b"VX"
 MAGIC_SIZE = len(MAGIC)
 HEADER_SIZE = 16
 _HEADER_STRUCT = struct.Struct(">2sHI4s4s")
+
+_HAS_RUST = not os.environ.get("VELTIX_DISABLE_RUST", "")
+
+if _HAS_RUST:
+    try:
+        from .._message_buffer import compile as _rust_compile, parse as _rust_parse
+    except ImportError:
+        _HAS_RUST = False
 
 _id_lock = threading.Lock()
 
@@ -51,30 +60,38 @@ class Request:
     @staticmethod
     def parse(data: bytes | bytearray, max_message_size: int = 10 * 1024 * 1024) -> Response:
         """Parse raw bytes into a Response. Raises RequestError on invalid data."""
-        if len(data) < HEADER_SIZE:
-            raise RequestError(f"Data too short: {len(data)} bytes (minimum {HEADER_SIZE})")
+        if _HAS_RUST:
+            try:
+                type_code, content, hash_received, request_id = _rust_parse(data, max_message_size)
+            except ValueError as e:
+                raise RequestError(str(e)) from None
+        else:
+            if len(data) < HEADER_SIZE:
+                raise RequestError(f"Data too short: {len(data)} bytes (minimum {HEADER_SIZE})")
 
-        if len(data) > max_message_size:
-            raise RequestError(f"Message too large: {len(data)} bytes (maximum {max_message_size})")
+            if len(data) > max_message_size:
+                raise RequestError(f"Message too large: {len(data)} bytes (maximum {max_message_size})")
 
-        header = data[:HEADER_SIZE]
-        content = data[HEADER_SIZE:]
+            header = data[:HEADER_SIZE]
+            content = data[HEADER_SIZE:]
 
-        magic, code, size, hash_received, request_id = _HEADER_STRUCT.unpack(header)
+            magic, code, size, hash_received, request_id = _HEADER_STRUCT.unpack(header)
 
-        if magic != MAGIC:
-            raise RequestError(f"Invalid magic bytes: {magic!r}")
+            if magic != MAGIC:
+                raise RequestError(f"Invalid magic bytes: {magic!r}")
 
-        if len(content) != size:
-            raise RequestError(f"Size mismatch: expected {size} bytes, got {len(content)}")
+            if len(content) != size:
+                raise RequestError(f"Size mismatch: expected {size} bytes, got {len(content)}")
 
-        msg_type = MessageTypeRegistry.get(code)
+            hash_content = zlib.crc32(content).to_bytes(4, "big")
+            if hash_received != hash_content:
+                raise RequestError("Hash mismatch — corrupted data")
+
+            type_code = code
+
+        msg_type = MessageTypeRegistry.get(type_code)
         if not msg_type:
-            raise RequestError(f"Unknown message type code: {code}")
-
-        hash_content = zlib.crc32(content).to_bytes(4, "big")
-        if hash_received != hash_content:
-            raise RequestError("Hash mismatch — corrupted data")
+            raise RequestError(f"Unknown message type code: {type_code}")
 
         return Response(
             type=msg_type,
@@ -85,6 +102,12 @@ class Request:
 
     def compile(self) -> bytes:
         """Compile request into wire format. Raises RequestError if content exceeds 4GB."""
+        if _HAS_RUST:
+            try:
+                return _rust_compile(self.type.code, self.content, self.request_id)
+            except ValueError as e:
+                raise RequestError(str(e)) from None
+
         max_size = 2 ** 32 - 1
         size = len(self.content)
 

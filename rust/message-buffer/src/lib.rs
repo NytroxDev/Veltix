@@ -1,5 +1,7 @@
 use std::convert::TryInto;
 
+pub mod protocol;
+
 const MAGIC: [u8; 2] = [86, 88]; // b"VX"
 const HEADER_SIZE: usize = 16;
 
