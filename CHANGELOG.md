@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-06-14
+
+### Fixed
+
+#### AsyncSocket
+- **`_close_server_client()` idempotent on selector unregister** — calling `unregister()` on an already-closed file descriptor no longer raises `KeyError` ([1bee90e])
+- **Selector threads set as daemons** — ensures the process can exit cleanly even if selector threads are still running during shutdown ([d2ffed4])
+
+#### Server
+- **`ClientInfo._id` with `__eq__`/`__hash__`** — stable identity for `ClientInfo` objects, fixing set/dict membership issues ([48cbbf2])
+- **`close_client()` type hint** — `id_` parameter type fixed to `Optional[int]` ([dd991e5])
+- **Handshake version validation** — HELLO_ACK version is now validated in `_check_server_handshake`, rejecting incompatible clients earlier ([6d377ee])
+
+#### Client / Sender
+- **`_sock.close()` wrapped in try/except** — client cleanup is never skipped even if the socket is already closed ([24fc1e5])
+- **`request_id` bytes in log f-strings** — `.hex()` prevents `TypeError` from raw bytes interpolation in log messages ([91f68e8])
+
+#### Python < 3.11 Compatibility
+- **`TimeoutError` replaced with `socket.timeout`** — `TimeoutError` is a builtin only since Python 3.11; now uses `socket.timeout` which exists in all supported versions ([2069879])
+
+#### RequestHandler
+- **`sender` parameter made `Optional`** — constructor accepts `None` sender, matching usage from client-side paths ([2d20a88])
+- **Dead `handle()` replaced with no-op** — `PendingRequestRule.handle()` was unreachable (only `try_handle()` is used); no longer misleading ([56df37a])
+
+### Features
+- **Export `NetworkError` and `TimeoutError` in `__all__`** — both exception classes are now part of the public API ([4a6e7a6])
+
+### Chores
+- **Remove unused `HEARTBEAT` message type** — was never registered or referenced in the codebase ([cf76069])
+
+### Documentation
+- **AGENTS.md** — new comprehensive guide for AI agents with project conventions, API reference, and examples ([c9c3683])
+- **AGENTS.md expanded** — added performance benchmarks, detailed examples, and updated conventions ([12aff33])
+- **AGENTS.md SocketCore default** — updated to reflect `SocketCore.ASYNC` as the default backend ([b3388d4])
+- **AGENTS.md backward compatibility** — fixed constraint description to match actual policy ([a5bf915])
+- **Sender docstrings** — translated from French to English ([8f4a26c])
+- **README rewrite** — added socket comparison table, backend selection guide, and maturity highlights ([5f843e0])
+- **README badge** — added AI guide badge linking to AGENTS.md ([8aa5b94])
+
+### Refactors
+- **Sender instances reused** — client and server examples reuse `sender` for broadcasts and sends, improving readability ([8807f39], [55f7160])
+- **Broadcast excluded sender** — `CHAT` handler excludes the sender client from broadcast recipients ([b83c181])
+- **`add_tag()` used in CHANNEL_JOIN handler** — replaces direct `tags` dict update with the idiomatic method ([a9b21cc])
+
+### Tests
+- **Handshake version rejection** — new test verifying the server rejects an incompatible HELLO_ACK version ([b7a1d84])
+
+---
+
 ## [1.7.0] - 2026-06-09
 
 ### Added

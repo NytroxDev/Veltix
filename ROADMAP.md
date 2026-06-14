@@ -84,6 +84,14 @@
 - **Memory cut by 40%** threading (60.4 KB → 36.08 KB per client), **74%** async (12.4 KB per client)
 - Full details : [CHANGELOG.md](CHANGELOG.md)
 
+### v1.7.1 : Stability & Documentation Polish *(June 2026)*
+
+- **6 bug fixes** : AsyncSocket selector idempotency, daemon threads, `ClientInfo._id` identity, handshake version validation, Python < 3.11 compat, sender cleanup
+- **`NetworkError` / `TimeoutError` now public** : both exception classes exported in `__all__`
+- **AGENTS.md** : full AI agent guide with API reference, conventions, and examples
+- **README** : socket comparison table, backend guide, maturity highlights
+- **Wire-compatible with v1.7.0** : no protocol changes
+
 ---
 
 ## Planned
