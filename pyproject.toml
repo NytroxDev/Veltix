@@ -71,7 +71,7 @@ Repository = "https://github.com/NytroxDev/Veltix"
 Documentation = "https://nytroxdev.github.io/Veltix/"
 Issues = "https://github.com/NytroxDev/Veltix/issues"
 Changelog = "https://github.com/NytroxDev/Veltix/blob/main/CHANGELOG.md"
-Discord = "https://discord.gg/jwjEV5eze7"
+Discord = "https://discord.gg/76AeXdST9m"
 
 # Setuptools configuration
 [tool.setuptools]
