@@ -18,7 +18,7 @@ def _generate_id() -> int:
 
 
 class ClientInfo:
-    __slots__ = ("_id", "conn", "addr", "thread_id", "handshake_done", "tags")
+    __slots__ = ("_id", "conn", "addr", "thread_id", "handshake_done", "tags", "_tags_lock")
 
     def __init__(
         self,
@@ -33,6 +33,7 @@ class ClientInfo:
         self.thread_id = thread_id
         self.handshake_done = handshake_done
         self.tags: dict[str, Any] = {}
+        self._tags_lock = threading.Lock()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ClientInfo):
@@ -51,28 +52,35 @@ class ClientInfo:
         return self.addr[1]
 
     def add_tag(self, name: str, value: Optional[Any] = None) -> bool:
-        if name in self.tags:
-            return False
-        self.tags[name] = value
-        return True
+        with self._tags_lock:
+            if name in self.tags:
+                return False
+            self.tags[name] = value
+            return True
 
     def has_tag(self, name: str) -> bool:
-        return name in self.tags
+        with self._tags_lock:
+            return name in self.tags
 
     def has_all_tags(self, names: list[str]) -> bool:
-        return all(self.has_tag(name) for name in names)
+        with self._tags_lock:
+            return all(name in self.tags for name in names)
 
     def has_any_tags(self, names: list[str]) -> bool:
-        return any(self.has_tag(name) for name in names)
+        with self._tags_lock:
+            return any(name in self.tags for name in names)
 
     def get_tag(self, name: str) -> Optional[Any]:
-        return self.tags.get(name)
+        with self._tags_lock:
+            return self.tags.get(name)
 
     def remove_tag(self, name: str) -> bool:
-        if not self.has_tag(name):
-            return False
-        self.tags.pop(name)
-        return True
+        with self._tags_lock:
+            if name not in self.tags:
+                return False
+            self.tags.pop(name)
+            return True
 
     def clear_tags(self) -> None:
-        self.tags.clear()
+        with self._tags_lock:
+            self.tags.clear()
