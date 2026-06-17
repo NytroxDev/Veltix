@@ -4,7 +4,7 @@
 import socket
 import time
 from threading import Event
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.events import Events, events
@@ -13,11 +13,10 @@ from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 from ..network.types import MessageType
+from ..socket_core.base_socket import BaseSocket, SocketEvents
 from .config import ClientConfig
 from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
-
-from ..socket_core.base_socket import BaseSocket, SocketEvents
 
 
 class Client:
@@ -56,9 +55,7 @@ class Client:
 
         self.init_components()
 
-        self._logger.debug(
-            f"Client initialized for {self.config.server_addr}:{self.config.port}"
-        )
+        self._logger.debug(f"Client initialized for {self.config.server_addr}:{self.config.port}")
 
     # -------------------------------------------------------------------------
     # Internal initialization
