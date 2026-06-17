@@ -5,17 +5,17 @@
 **Server:**
 
 ```python
-from veltix import Server, ServerConfig, Events, MessageType, Request
+from veltix import Server, ServerConfig, MessageType, Request, ClientInfo, Response
 
 ECHO = MessageType(code=200, name="echo")
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
-def on_message(client, response):
+@server.route(ECHO)
+def on_echo(client: ClientInfo, response: Response) -> None:
     reply = Request(ECHO, response.content, request_id=response.request_id)
     server.get_sender().send(reply, client=client.conn)
 
-server.set_callback(Events.ON_RECV, on_message)
 server.start()
 
 input("Press Enter to stop...")
@@ -25,12 +25,16 @@ server.close_all()
 **Client:**
 
 ```python
-from veltix import Client, ClientConfig, Events, MessageType, Request
+from veltix import Client, ClientConfig, MessageType, Request, Response
 
 ECHO = MessageType(code=200, name="echo")
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
-client.set_callback(Events.ON_RECV, lambda r: print(r.content.decode()))
+
+@client.route(ECHO)
+def on_echo(response: Response) -> None:
+    print(response.content.decode())
+
 client.connect()  # blocks until handshake is complete
 
 client.get_sender().send(Request(ECHO, b"Hello!"))

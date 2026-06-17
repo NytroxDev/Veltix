@@ -54,18 +54,18 @@ client.clear_tags()                            # Remove all tags
 
 ## Socket Backend
 
-Veltix abstracts the socket layer behind a `SocketCore` enum. `THREADING` (one thread per client) is the default,
-`ASYNC` (selectors-based single-thread event loop) is available since v1.7.0. Future versions will add `RUST`
+Veltix abstracts the socket layer behind a `SocketCore` enum. `ASYNC` (selectors-based single-thread event loop) is the default since v1.7.0,
+`THREADING` (one thread per client) is also available. Future versions will add `RUST`
 (Tokio via PyO3, v3.0.0).
 
 ```python
 from veltix import ServerConfig, ClientConfig, SocketCore
 
-# Default — one thread per client
-server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.THREADING))
-
-# Selectors-based, same API — up to 2x stress throughput
+# Default — selectors-based, up to 2x stress throughput
 server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.ASYNC))
+
+# Thread-per-client — predictable per-connection latency
+server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.THREADING))
 ```
 
 Switching backends requires no changes to application code.

@@ -102,7 +102,7 @@ client = Client(ClientConfig(
 client.stop_retry()
 
 # Force a new attempt, optionally overriding retry_max
-client.retry(max=10)
+client.retry(max_=10)
 ```
 
 See the [Auto-Reconnect guide](reconnect.md) for full details.

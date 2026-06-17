@@ -94,7 +94,7 @@ client.stop_retry()
 client.retry()
 
 # Force a new attempt and override retry_max
-client.retry(max=10)
+client.retry(max_=10)
 ```
 
 !!! warning

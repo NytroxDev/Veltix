@@ -1,5 +1,31 @@
 # Migration Guide
 
+## v1.7.0 → v1.7.1
+
+**No breaking changes — wire-compatible with v1.7.0.**
+
+v1.7.1 is a stability release with 6 bug fixes and no protocol changes.
+
+### Changes
+
+- **Fixed:** `AsyncSocket` selector idempotency on `_close_server_client`
+- **Fixed:** `ClientInfo._id` with `__eq__`/`__hash__` for stable identity
+- **Fixed:** daemon threads no longer block process exit
+- **Fixed:** `close_client()` type hint corrected to `Optional[int]`
+- **Fixed:** `send_and_wait` timeout compatibility with Python < 3.11
+- **Fixed:** HELLO_ACK version validation in `_check_server_handshake`
+- **New public exports:** `NetworkError`, `TimeoutError`
+
+### Action required
+
+None — drop-in upgrade.
+
+```bash
+pip install --upgrade veltix
+```
+
+---
+
 ## v1.6.10 → v1.7.0
 
 **Breaking change : wire format — NOT backward compatible.**
