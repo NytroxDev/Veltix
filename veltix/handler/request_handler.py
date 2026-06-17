@@ -50,6 +50,7 @@ class RequestHandler:
         self.pending_requests_lock = Lock()
 
         self._routes: dict[MessageType, Callable] = {}
+        self._routes_lock = Lock()
         self.on_handshake_done: Optional[Callable] = None
 
         self.rules_manager = RulesManager()
@@ -120,19 +121,33 @@ class RequestHandler:
     def set_on_recv(self, callback: Callable) -> None:
         self.on_recv = callback
 
+    def has_route(self, type_: MessageType) -> bool:
+        with self._routes_lock:
+            return type_ in self._routes
+
+    def get_route(self, type_: MessageType) -> Optional[Callable]:
+        with self._routes_lock:
+            return self._routes.get(type_)
+
+    def copy_routes(self) -> dict[MessageType, Callable]:
+        with self._routes_lock:
+            return dict(self._routes)
+
     def register_route(self, type_: MessageType, function: Callable) -> bool:
-        if type_ in self._routes:
-            self._logger.warning(f"Route for type {type_} already registered — ignoring")
-            return False
-        self._routes[type_] = function
-        return True
+        with self._routes_lock:
+            if type_ in self._routes:
+                self._logger.warning(f"Route for type {type_} already registered — ignoring")
+                return False
+            self._routes[type_] = function
+            return True
 
     def unregister_route(self, type_: MessageType) -> bool:
-        if type_ not in self._routes:
-            self._logger.warning(f"Route for type {type_} not registered — ignoring")
-            return False
-        self._routes.pop(type_)
-        return True
+        with self._routes_lock:
+            if type_ not in self._routes:
+                self._logger.warning(f"Route for type {type_} not registered — ignoring")
+                return False
+            self._routes.pop(type_)
+            return True
 
     def shutdown(self, wait: bool = True) -> None:
         self._executor.shutdown(wait=wait)

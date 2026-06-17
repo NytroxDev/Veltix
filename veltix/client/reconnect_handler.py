@@ -131,7 +131,7 @@ class ReconnectHandler:
     def reset(self) -> None:
         self._logger.debug("Resetting client state for reconnection")
         old_handler = self._context.context_get_request_handler()
-        old_routes = dict(old_handler._routes) if old_handler else {}
+        old_routes = old_handler.copy_routes() if old_handler else {}
 
         self._context.context_set_connected(False)
         self._context.context_set_running(True)

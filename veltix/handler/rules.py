@@ -68,17 +68,19 @@ class RouteRule(Rule):
 
     def handle(self, context: MessageContext) -> None:
         self._logger.debug(f"Dispatching to registered route for type {context.response.type}")
+        route = context.handler.get_route(context.response.type)
+        if route is None:
+            self._logger.warning(
+                f"Route for type {context.response.type} disappeared before dispatch"
+            )
+            return
         if context.is_server:
-            context.handler._executor.submit(
-                context.handler._routes[context.response.type], context.client, context.response
-            )
+            context.handler._executor.submit(route, context.client, context.response)
         else:
-            context.handler._executor.submit(
-                context.handler._routes[context.response.type], context.response
-            )
+            context.handler._executor.submit(route, context.response)
 
     def can_handle(self, context: MessageContext) -> bool:
-        return context.response.type in context.handler._routes
+        return context.handler.has_route(context.response.type)
 
 
 class OnRecvRule(Rule):
