@@ -51,6 +51,7 @@ class Client:
         self.on_disconnect: Optional[Callable] = None
 
         self.is_connected: bool = False
+        self._connecting: bool = False
         self.running: bool = True
 
         self.init_components()
@@ -92,8 +93,8 @@ class Client:
         self.request_handler.on_handshake_done = _on_handshake_done
 
         def _on_socket_disconnect():
-            # Ignore disconnect events triggered by an explicit manual disconnect().
-            if not self.running:
+            # Ignore disconnect events during connect() or manual disconnect().
+            if not self.running or self._connecting:
                 return
 
             self.is_connected = False
@@ -209,6 +210,7 @@ class Client:
         """
         try:
             self._logger.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
+            self._connecting = True
             connected = self.socket.connect(
                 self.config.server_addr,
                 self.config.port,
@@ -216,12 +218,14 @@ class Client:
                 0.5,
             )
             if not connected:
+                self._connecting = False
                 self._logger.error(
                     f"Connection failed to {self.config.server_addr}:{self.config.port}"
                 )
                 return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
             self.is_connected = True
+            self._connecting = False
             self._reconnect_handler.init_connect()
             self._logger.info(
                 f"Successfully connected to server {self.config.server_addr}:{self.config.port}"
