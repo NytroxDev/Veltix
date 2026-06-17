@@ -63,6 +63,14 @@ class Client:
 
     def init_components(self) -> None:
         """(Re)initialise all internal components (socket, sender, handler)."""
+        old_handler = getattr(self, "request_handler", None)
+        old_socket = getattr(self, "socket", None)
+
+        if old_handler:
+            old_handler.shutdown(wait=False)
+        if old_socket:
+            old_socket.close()
+
         self.socket: BaseSocket = self.config.socket_core.value(
             request_handler=None,
             max_message_size=self.config.max_message_size,
