@@ -35,16 +35,14 @@ class ReconnectHandler:
         self._fail_count = 0
         self._stop_retry_flag = False
         self._stop_event = threading.Event()
-        self._retry_thread: Optional[threading.Thread] = None
+        self._reconnect_lock = threading.Lock()
 
     def init_connect(self) -> None:
-        """Reset retry state after a successful connection."""
         self._fail_count = 0
         self._stop_retry_flag = False
         self._stop_event.clear()
 
     def fire_on_disconnect(self, permanent: bool, reason: DisconnectReason) -> None:
-        """Fire the on_disconnect callback with the current retry state."""
         state = DisconnectState(
             permanent=permanent,
             attempt=self._fail_count,
@@ -57,19 +55,6 @@ class ReconnectHandler:
             self._logger.error(f"Error in on_disconnect callback: {type(e).__name__}: {e}")
 
     def reconnect_loop(self, reason: DisconnectReason = DisconnectReason.SERVER_CLOSED) -> bool:
-        """
-        Attempt reconnection up to config.retry times.
-
-        Each attempt is made immediately. On failure, waits retry_delay
-        before the next attempt. The wait is interruptible via stop_retry().
-
-        Fires on_disconnect at each failed attempt with permanent=False,
-        and a final time with permanent=True if all attempts are exhausted
-        or stop_retry() was called.
-
-        Returns:
-            True if reconnection succeeded, False otherwise.
-        """
         while not self._stop_retry_flag and self._fail_count < self._context.config.retry:
             self._fail_count += 1
             self._logger.info(
@@ -100,73 +85,50 @@ class ReconnectHandler:
         return False
 
     def try_reconnect(self, reason: DisconnectReason) -> bool:
-        """
-        Start the reconnect loop if retry is enabled.
-
-        When ``config.retry == 0``, fires ``on_disconnect`` with
-        ``permanent=True`` immediately without attempting a connection.
-
-        When ``config.retry > 0``, fires ``on_disconnect`` with
-        ``permanent=False`` for the initial disconnection, then enters
-        the reconnect loop.
-
-        Returns:
-            True if reconnection eventually succeeded, False otherwise.
-        """
         if self._context.config.retry == 0:
             self.fire_on_disconnect(permanent=True, reason=reason)
             return False
 
         self.fire_on_disconnect(permanent=False, reason=reason)
-        return self.reconnect_loop(reason)
+
+        if not self._reconnect_lock.acquire(blocking=False):
+            self._logger.warning("try_reconnect ignored — reconnect loop already active")
+            return False
+
+        try:
+            return self.reconnect_loop(reason)
+        finally:
+            self._reconnect_lock.release()
 
     def stop_retry(self) -> None:
-        """
-        Cancel all pending reconnection attempts.
-
-        If a retry loop is running, it will stop after the current attempt
-        and fire on_disconnect with permanent=True.
-        """
         self._logger.info("stop_retry() called — cancelling reconnection attempts")
         self._stop_retry_flag = True
         self._stop_event.set()
 
     def retry(self, max_: Optional[int] = None) -> None:
-        """
-        Force an immediate reconnection attempt, even if retry_max was reached.
+        self._logger.info("retry() called — forcing reconnection attempt")
+        thread = threading.Thread(
+            target=self._retry_in_thread, kwargs={"max_": max_}, daemon=True
+        )
+        thread.start()
 
-        If a reconnect loop is already running, this call is ignored
-        and a warning is logged.
-
-        Args:
-            max_: Override retry_max for this session (optional).
-        """
-
-        if self._retry_thread and self._retry_thread.is_alive():
-            self._logger.warning("retry() ignored : a reconnect loop is already running")
+    def _retry_in_thread(self, max_: Optional[int] = None) -> None:
+        if not self._reconnect_lock.acquire(blocking=False):
+            self._logger.warning("retry() ignored — reconnect loop already active")
             return
 
-        if max_ is not None:
-            self._context.config = dataclasses.replace(self._context.config, retry=max_)
-            self._logger.info(f"retry() called — new retry_max={max_}")
-        else:
-            self._logger.info("retry() called — forcing reconnection attempt")
-
-        self._stop_retry_flag = False
-        self._stop_event.clear()
-        self._fail_count = 0
-        self.reset()
-        self._retry_thread = threading.Thread(target=self.reconnect_loop, daemon=True)
-        self._retry_thread.start()
+        try:
+            if max_ is not None:
+                self._context.config = dataclasses.replace(self._context.config, retry=max_)
+            self._stop_retry_flag = False
+            self._stop_event.clear()
+            self._fail_count = 0
+            self.reset()
+            self.reconnect_loop()
+        finally:
+            self._reconnect_lock.release()
 
     def reset(self) -> None:
-        """
-        Reset the client state for a reconnection attempt.
-
-        Sets the connection state to disconnected, ensures the client is
-        marked as running, re-initialises the context, and re-attaches
-        the on_recv callback to the request handler.
-        """
         self._logger.debug("Resetting client state for reconnection")
         old_handler = self._context.context_get_request_handler()
         old_routes = dict(old_handler._routes) if old_handler else {}
@@ -185,5 +147,4 @@ class ReconnectHandler:
 
     @property
     def stop_retry_flag(self) -> bool:
-        """Whether reconnection attempts have been cancelled."""
         return self._stop_retry_flag
