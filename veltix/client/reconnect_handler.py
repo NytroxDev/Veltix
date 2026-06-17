@@ -143,7 +143,7 @@ class ReconnectHandler:
         """
 
         if self._retry_thread and self._retry_thread.is_alive():
-            self._logger.warning("retry() ignoré : une boucle de reconnexion est déjà active")
+            self._logger.warning("retry() ignored : a reconnect loop is already running")
             return
 
         if max_ is not None:
