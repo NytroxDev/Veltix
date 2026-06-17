@@ -38,7 +38,7 @@ class Writer:
     def _init_file(self) -> None:
         try:
             self._file_path.parent.mkdir(parents=True, exist_ok=True)
-            self._file_handle = open(self._file_path, "a", encoding="utf-8", buffering=8192)
+            self._file_handle = open(self._file_path, "a", encoding="utf-8", buffering=8192)  # noqa: SIM115
             if self._file_path.exists():
                 self._current_size = self._file_path.stat().st_size
         except (OSError, PermissionError) as e:
@@ -69,7 +69,8 @@ class Writer:
 
         try:
             for message in messages:
-                self._write_to_file_direct(message)
+                with self._lock:
+                    self._write_to_file_direct(message)
         except Exception as e:
             print(f"⚠️  Error flushing log buffer: {e}")
 
@@ -114,7 +115,9 @@ class Writer:
                     self._file_handle.close()
 
                 base_path = self._file_path
-                oldest = base_path.with_suffix(f"{base_path.suffix}.{self.config.file_backup_count}")
+                oldest = base_path.with_suffix(
+                    f"{base_path.suffix}.{self.config.file_backup_count}"
+                )
                 if oldest.exists():
                     oldest.unlink()
 
@@ -127,7 +130,7 @@ class Writer:
                 if base_path.exists():
                     base_path.rename(base_path.with_suffix(f"{base_path.suffix}.1"))
 
-                self._file_handle = open(base_path, "a", encoding="utf-8", buffering=8192)
+                self._file_handle = open(base_path, "a", encoding="utf-8", buffering=8192)  # noqa: SIM115
                 self._current_size = 0
             except Exception as e:
                 print(f"⚠️  Error rotating log file: {e}")
