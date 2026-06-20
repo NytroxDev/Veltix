@@ -84,6 +84,7 @@ class Client:
             max_workers=self.config.max_workers,
         )
         self.socket.request_handler = self.request_handler
+        self._handshake_done.clear()
 
         def _on_handshake_done():
             self._handshake_done.set()
