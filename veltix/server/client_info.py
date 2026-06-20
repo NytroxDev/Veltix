@@ -18,7 +18,7 @@ def _generate_id() -> int:
 
 
 class ClientInfo:
-    __slots__ = ("_id", "conn", "addr", "thread_id", "handshake_done", "tags", "_tags_lock")
+    __slots__ = ("_id", "conn", "addr", "thread_id", "handshake_done", "_tags", "_tags_lock")
 
     def __init__(
         self,
@@ -32,8 +32,13 @@ class ClientInfo:
         self.addr = addr
         self.thread_id = thread_id
         self.handshake_done = handshake_done
-        self.tags: dict[str, Any] = {}
+        self._tags: dict[str, Any] = {}
         self._tags_lock = threading.Lock()
+
+    @property
+    def tags(self) -> dict[str, Any]:
+        with self._tags_lock:
+            return dict(self._tags)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ClientInfo):
@@ -53,34 +58,34 @@ class ClientInfo:
 
     def add_tag(self, name: str, value: Optional[Any] = None) -> bool:
         with self._tags_lock:
-            if name in self.tags:
+            if name in self._tags:
                 return False
-            self.tags[name] = value
+            self._tags[name] = value
             return True
 
     def has_tag(self, name: str) -> bool:
         with self._tags_lock:
-            return name in self.tags
+            return name in self._tags
 
     def has_all_tags(self, names: list[str]) -> bool:
         with self._tags_lock:
-            return all(name in self.tags for name in names)
+            return all(name in self._tags for name in names)
 
     def has_any_tags(self, names: list[str]) -> bool:
         with self._tags_lock:
-            return any(name in self.tags for name in names)
+            return any(name in self._tags for name in names)
 
     def get_tag(self, name: str) -> Optional[Any]:
         with self._tags_lock:
-            return self.tags.get(name)
+            return self._tags.get(name)
 
     def remove_tag(self, name: str) -> bool:
         with self._tags_lock:
-            if name not in self.tags:
+            if name not in self._tags:
                 return False
-            self.tags.pop(name)
+            self._tags.pop(name)
             return True
 
     def clear_tags(self) -> None:
         with self._tags_lock:
-            self.tags.clear()
+            self._tags.clear()
