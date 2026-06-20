@@ -260,8 +260,7 @@ Projects using Veltix in production:
 
 - [Full documentation](docs/README.md)
 - [Advanced features](docs/ADVANCED.md)
-- [Migration guide](docs/MIGRATION.md)
-- [Roadmap](ROADMAP.md)
+- [Migration guide](docs/guides/migration.md)
 - [Changelog](CHANGELOG.md)
 - [Examples](examples/)
 

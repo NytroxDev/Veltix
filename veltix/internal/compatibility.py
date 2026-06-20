@@ -125,4 +125,5 @@ COMPATIBILITY: dict[Version, list[Version]] = {
     Version(1, 6, 10): [Version(1, 6, 10)],
     Version(1, 7, 0): [Version(1, 7, 0), Version(1, 7, 1)],
     Version(1, 7, 1): [Version(1, 7, 0), Version(1, 7, 1)],
+    Version(1, 7, 2): [Version(1, 7, 0), Version(1, 7, 1), Version(1, 7, 2)],
 }

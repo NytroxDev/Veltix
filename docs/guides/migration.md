@@ -1,5 +1,22 @@
 # Migration Guide
 
+## v1.7.1 → v1.7.2
+
+**No breaking changes — wire-compatible with v1.7.0/v1.7.1.**
+
+v1.7.2 is a stability release with 10 bug fixes, +108 tests, and documentation polish.
+No protocol changes.
+
+### Action required
+
+None — drop-in upgrade.
+
+```bash
+pip install --upgrade veltix
+```
+
+---
+
 ## v1.7.0 → v1.7.1
 
 **No breaking changes — wire-compatible with v1.7.0.**

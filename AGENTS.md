@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 1.7.1
+- **Version:** 1.7.2
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -115,7 +115,7 @@ veltix/
 │   └── format_size.py   # format_bytes
 ├── benchmark/           # CLI benchmarking suite
 ├── exceptions.py        # VeltixError hierarchy
-├── version.py           # __version__ = "1.7.1"
+├── version.py           # __version__ = "1.7.2"
 └── __init__.py          # Public API exports
 tests/
 ├── conftest.py          # Shared fixtures
