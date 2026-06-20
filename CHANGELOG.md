@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.2] - 2026-06-20
+
+### Added
+
+- **108 new tests** — coverage increased across routing, handshake, reconnection, and logging ; existing tests
+  accelerated ([be78e94])
+
+### Fixed
+
+#### Server
+- **`ClientInfo.tags` locked** — tags dict now protected with `threading.Lock` across all reads/writes ; property
+  returns a read-only copy ([84e586d], [1c2a60d])
+- **`_routes` dict race condition** — all reads and writes now properly locked ([1148fe4])
+
+#### Client
+- **`_handshake_done` cleared before reconnect** — prevents stale event state from blocking the next connection
+  attempt ([7e89e74])
+- **Premature disconnect callback on connect** — guarded the window between socket bind and handshake completion
+  ([380b1ed])
+- **Old socket not closed on reconnect** — `close()` and `shutdown()` now called on the previous socket and handler
+  before creating new ones ([5063baa])
+- **Double reconnect loop** — `_reconnect_lock` prevents concurrent reconnection attempts ([1a8d78c])
+- **Imports cleaned up** — unused imports removed from `client.py` ([c6cbc23])
+
+#### Logger / Writer
+- **`_flush_buffer` lock** — file writer flush access wrapped in thread-safe lock ([3677d1c])
+
+#### ReconnectHandler
+- **Log message language corrected** — French alert message fixed to proper English ([b33b39b])
+
+### CI
+- **`actions/checkout` and `setup-python` versions updated** — workflow now uses latest GitHub Actions versions
+  ([0592e36])
+
+### Docs
+- **Guides and quickstart refined** — `retry` parameter documentation adjusted, info sections updated ([a405433])
+
+### Chore
+- **Discord invite link updated** in `pyproject.toml` ([f381a2c])
+
+---
+
 ## [1.7.1] - 2026-06-14
 
 ### Fixed
