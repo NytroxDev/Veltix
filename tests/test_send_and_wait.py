@@ -1,16 +1,23 @@
 """Tests for send_and_wait functionality."""
 
-import time
+import socket
 
 import pytest
 
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 
 
+def find_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
 @pytest.mark.usefixtures("socket_core_backend")
 class TestSendAndWait:
     def test_client_send_and_wait(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19990))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
 
         def on_message(client_info, response2):
             echo = Request(response2.type, response2.content, request_id=response2.request_id)
@@ -18,9 +25,8 @@ class TestSendAndWait:
 
         server.set_callback(Events.ON_RECV, on_message)
         server.start()
-        time.sleep(0.1)
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19990))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
 
         msg_type = MessageType(code=2303, name="echo_test")
@@ -35,11 +41,11 @@ class TestSendAndWait:
         server.close_all()
 
     def test_server_send_and_wait(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19989))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
-        time.sleep(0.1)
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19989))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
 
         def on_message(response2):
             echo = Request(response2.type, response2.content, request_id=response2.request_id)
@@ -47,7 +53,6 @@ class TestSendAndWait:
 
         client.set_callback(Events.ON_RECV, on_message)
         client.connect()
-        time.sleep(0.1)
 
         msg_type = MessageType(code=2304, name="server_echo")
         request = Request(msg_type, b"Server to client")
@@ -60,12 +65,12 @@ class TestSendAndWait:
         server.close_all()
 
     def test_send_and_wait_timeout(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19988))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.set_callback(Events.ON_RECV, lambda _c, _r: None)
         server.start()
-        time.sleep(0.1)
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19988))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
 
         msg_type = MessageType(code=2305, name="timeout_test")

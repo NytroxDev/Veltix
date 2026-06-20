@@ -1,12 +1,28 @@
 """Tests for the routing system — v1.5.0."""
 
+import socket
 import time
 
 import pytest
 
-from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig
+from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 from veltix.network.request import Response
 from veltix.server.client_info import ClientInfo
+
+
+def find_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def wait_for_condition(condition, timeout=5.0, interval=0.02):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if condition():
+            return True
+        time.sleep(interval)
+    return False
 
 
 @pytest.mark.usefixtures("socket_core_backend")
@@ -15,7 +31,7 @@ class TestServerRouting:
 
     def test_route_basic(self, test_message_type):
         """Registered route should be called when matching message type arrives."""
-        port = 18100
+        port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
@@ -29,9 +45,7 @@ class TestServerRouting:
         client.connect()
         client.get_sender().send(Request(test_message_type, b"hello"))
 
-        time.sleep(0.3)
-
-        assert len(received) == 1
+        assert wait_for_condition(lambda: len(received) == 1, timeout=2.0)
         assert received[0].type == test_message_type
 
         client.disconnect()
@@ -39,7 +53,7 @@ class TestServerRouting:
 
     def test_route_priority_over_on_recv(self, test_message_type):
         """Route should take priority over on_recv for matching message type."""
-        port = 18101
+        port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
@@ -56,9 +70,7 @@ class TestServerRouting:
         client.connect()
         client.get_sender().send(Request(test_message_type, b"hello"))
 
-        time.sleep(0.3)
-
-        assert len(routed) == 1
+        assert wait_for_condition(lambda: len(routed) == 1, timeout=2.0)
         assert len(fallback) == 0
 
         client.disconnect()
@@ -66,7 +78,7 @@ class TestServerRouting:
 
     def test_unregistered_type_falls_to_on_recv(self, test_message_type):
         """Message with no matching route should fall through to on_recv."""
-        port = 18102
+        port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
@@ -78,9 +90,7 @@ class TestServerRouting:
         client.connect()
         client.get_sender().send(Request(test_message_type, b"hello"))
 
-        time.sleep(0.3)
-
-        assert len(fallback) == 1
+        assert wait_for_condition(lambda: len(fallback) == 1, timeout=2.0)
         assert fallback[0].type == test_message_type
 
         client.disconnect()
@@ -88,9 +98,7 @@ class TestServerRouting:
 
     def test_route_not_called_for_other_types(self, test_message_type):
         """Route for one type should not be called when another type arrives."""
-        from veltix import MessageType
-
-        port = 18103
+        port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
@@ -107,8 +115,7 @@ class TestServerRouting:
         client.connect()
         client.get_sender().send(Request(other_type, b"hello"))
 
-        time.sleep(0.3)
-
+        time.sleep(0.2)
         assert len(routed) == 0
 
         client.disconnect()
@@ -116,7 +123,7 @@ class TestServerRouting:
 
     def test_register_duplicate_returns_false(self, test_message_type):
         """Registering the same type twice should return False."""
-        server = Server(ServerConfig(host="127.0.0.1", port=18104))
+        server = Server(ServerConfig(host="127.0.0.1", port=find_free_port()))
 
         result1 = server.request_handler.register_route(test_message_type, lambda c, r: None)
         result2 = server.request_handler.register_route(test_message_type, lambda c, r: None)
@@ -128,7 +135,7 @@ class TestServerRouting:
 
     def test_unregister_route(self, test_message_type):
         """After unregistering, message should fall through to on_recv."""
-        port = 18105
+        port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
@@ -146,17 +153,15 @@ class TestServerRouting:
         client.connect()
         client.get_sender().send(Request(test_message_type, b"hello"))
 
-        time.sleep(0.3)
-
+        assert wait_for_condition(lambda: len(fallback) == 1, timeout=2.0)
         assert len(routed) == 0
-        assert len(fallback) == 1
 
         client.disconnect()
         server.close_all()
 
     def test_unregister_nonexistent_returns_false(self, test_message_type):
         """Unregistering a type that was never registered should return False."""
-        server = Server(ServerConfig(host="127.0.0.1", port=18106))
+        server = Server(ServerConfig(host="127.0.0.1", port=find_free_port()))
 
         result = server.request_handler.unregister_route(test_message_type)
         assert result is False
@@ -165,9 +170,7 @@ class TestServerRouting:
 
     def test_multiple_routes(self, test_message_type):
         """Multiple routes should each handle their respective types."""
-        from veltix import MessageType
-
-        port = 18107
+        port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
@@ -188,10 +191,9 @@ class TestServerRouting:
         client.get_sender().send(Request(test_message_type, b"a"))
         client.get_sender().send(Request(type_b, b"b"))
 
-        time.sleep(0.3)
-
-        assert len(received_a) == 1
-        assert len(received_b) == 1
+        assert wait_for_condition(
+            lambda: len(received_a) == 1 and len(received_b) == 1, timeout=2.0
+        )
 
         client.disconnect()
         server.close_all()
@@ -203,7 +205,7 @@ class TestClientRouting:
 
     def test_client_route_basic(self, test_message_type):
         """Registered route on client should be called when matching message arrives."""
-        port = 18110
+        port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
 
         received = []
@@ -224,9 +226,7 @@ class TestClientRouting:
         server.start()
         client.connect()
 
-        time.sleep(0.3)
-
-        assert len(received) == 1
+        assert wait_for_condition(lambda: len(received) == 1, timeout=2.0)
         assert received[0].type == test_message_type
 
         client.disconnect()
@@ -234,7 +234,7 @@ class TestClientRouting:
 
     def test_client_route_priority_over_on_recv(self, test_message_type):
         """Client route should take priority over on_recv."""
-        port = 18111
+        port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
 
         routed = []
@@ -258,9 +258,7 @@ class TestClientRouting:
         server.start()
         client.connect()
 
-        time.sleep(0.3)
-
-        assert len(routed) == 1
+        assert wait_for_condition(lambda: len(routed) == 1, timeout=2.0)
         assert len(fallback) == 0
 
         client.disconnect()
