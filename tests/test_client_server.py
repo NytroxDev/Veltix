@@ -1,5 +1,6 @@
 """Integration tests for Client and Server."""
 
+import socket
 import threading
 import time
 
@@ -8,10 +9,26 @@ import pytest
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 
 
+def find_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def wait_for_condition(condition, timeout=5.0, interval=0.02):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if condition():
+            return True
+        time.sleep(interval)
+    return False
+
+
 @pytest.mark.usefixtures("socket_core_backend")
 class TestClientServer:
     def test_basic_connection(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19999))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         messages_received = []
 
         def on_message(_client, response):
@@ -20,25 +37,24 @@ class TestClientServer:
         server.set_callback(Events.ON_RECV, on_message)
         server.start()
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19999))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         assert client.connect()
 
         msg_type = MessageType(code=2300, name="test_basic")
         client.get_sender().send(Request(msg_type, b"Hello Server"))
 
-        time.sleep(0.5)
-
-        assert len(messages_received) > 0
+        assert wait_for_condition(lambda: len(messages_received) > 0, timeout=2.0)
         assert messages_received[0] == b"Hello Server"
 
         client.disconnect()
         server.close_all()
 
     def test_client_reconnect(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19998))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19998))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         assert client.connect()
         assert client.is_connected
 
@@ -48,60 +64,59 @@ class TestClientServer:
         server.close_all()
 
     def test_server_on_connect_callback(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19997))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         connected_clients = []
 
         server.set_callback(Events.ON_CONNECT, lambda c: connected_clients.append(c.addr))
         server.start()
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19997))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        time.sleep(0.1)
 
-        assert len(connected_clients) == 1
+        assert wait_for_condition(lambda: len(connected_clients) == 1, timeout=2.0)
 
         client.disconnect()
         server.close_all()
 
     def test_client_on_connect_callback(self):
-        """Test client ON_CONNECT callback fires after handshake."""
-        server = Server(ServerConfig(host="127.0.0.1", port=19985))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
         connected = []
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19985))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.set_callback(Events.ON_CONNECT, lambda: connected.append(True))
         client.connect()
 
-        time.sleep(0.1)
-        assert len(connected) == 1
+        assert wait_for_condition(lambda: len(connected) == 1, timeout=2.0)
 
         client.disconnect()
         server.close_all()
 
     def test_client_on_disconnect_callback(self):
-        """Test client ON_DISCONNECT callback fires on disconnect."""
-        server = Server(ServerConfig(host="127.0.0.1", port=19984))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
         disconnected = []
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19984))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.set_callback(Events.ON_DISCONNECT, lambda state: disconnected.append(True))
         client.connect()
         client.disconnect()
 
-        time.sleep(0.1)
-        assert len(disconnected) == 1
+        assert wait_for_condition(lambda: len(disconnected) == 1, timeout=2.0)
 
         server.close_all()
 
     def test_multiple_clients(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19996, max_connection=3))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=3))
         server.start()
 
         clients = []
         for _ in range(3):
-            client = Client(ClientConfig(server_addr="127.0.0.1", port=19996))
+            client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
             assert client.connect()
             clients.append(client)
 
@@ -112,7 +127,8 @@ class TestClientServer:
         server.close_all()
 
     def test_broadcasting(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19995, max_connection=3))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=3))
         server.start()
 
         clients = []
@@ -122,7 +138,7 @@ class TestClientServer:
         ready_lock = threading.Lock()
 
         for i in range(3):
-            client = Client(ClientConfig(server_addr="127.0.0.1", port=19995))
+            client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
 
             def make_callback(index):
                 def callback(response):
@@ -132,7 +148,6 @@ class TestClientServer:
 
             client.set_callback(Events.ON_RECV, make_callback(i))
 
-            # Track when client is actually connected
             def make_ready_callback(idx):
                 def callback():
                     with ready_lock:
@@ -146,19 +161,17 @@ class TestClientServer:
             client.connect()
             clients.append(client)
 
-        # Wait for ALL 3 clients to be ready (max 10 seconds)
-        if not clients_ready.wait(timeout=10):
-            raise TimeoutError("Not all clients connected in time")
+        assert clients_ready.wait(timeout=10), "Not all clients connected in time"
 
         msg_type = MessageType(code=2301, name="broadcast_test")
         server.get_sender().broadcast(
             Request(msg_type, b"Broadcast to all"), server.get_all_clients_sockets()
         )
 
-        time.sleep(0.5)
-
+        assert wait_for_condition(
+            lambda: all(len(msgs) > 0 for msgs in messages_received), timeout=2.0
+        )
         for msgs in messages_received:
-            assert len(msgs) > 0
             assert msgs[0] == b"Broadcast to all"
 
         for client in clients:
@@ -166,15 +179,18 @@ class TestClientServer:
         server.close_all()
 
     def test_broadcast_with_exclusion(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19994, max_connection=3))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=3))
         server.start()
-        time.sleep(0.1)
 
         clients = []
         messages_received = [[], [], []]
+        clients_ready = threading.Event()
+        ready_count = [0]
+        ready_lock = threading.Lock()
 
         for i in range(3):
-            client = Client(ClientConfig(server_addr="127.0.0.1", port=19994))
+            client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
 
             def make_callback(index):
                 def callback(response):
@@ -183,11 +199,21 @@ class TestClientServer:
                 return callback
 
             client.set_callback(Events.ON_RECV, make_callback(i))
+
+            def make_ready_callback(idx):
+                def callback():
+                    with ready_lock:
+                        ready_count[0] += 1
+                        if ready_count[0] == 3:
+                            clients_ready.set()
+
+                return callback
+
+            client.set_callback(Events.ON_CONNECT, make_ready_callback(i))
             client.connect()
             clients.append(client)
-            time.sleep(0.05)
 
-        time.sleep(0.2)
+        assert clients_ready.wait(timeout=10), "Not all clients connected in time"
 
         msg_type = MessageType(code=2302, name="selective_broadcast")
         exclude_socket = server.clients[0].conn
@@ -197,11 +223,14 @@ class TestClientServer:
             except_clients=[exclude_socket],
         )
 
-        time.sleep(0.5)
-
-        assert len(messages_received[0]) == 0
-        assert len(messages_received[1]) > 0
-        assert len(messages_received[2]) > 0
+        assert wait_for_condition(
+            lambda: (
+                len(messages_received[0]) == 0
+                and len(messages_received[1]) > 0
+                and len(messages_received[2]) > 0
+            ),
+            timeout=2.0,
+        )
 
         for client in clients:
             client.disconnect()

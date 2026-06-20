@@ -14,12 +14,12 @@ code = 200
 
 @pytest.fixture(autouse=True)
 def cleanup_after_test():
-    """Give threads time to clean up after each test."""
+    """Restore MessageTypeRegistry and give threads time to clean up."""
     saved_registry = dict(MessageTypeRegistry._registry)
     yield
     MessageTypeRegistry._registry.clear()
     MessageTypeRegistry._registry.update(saved_registry)
-    time.sleep(0.3)
+    time.sleep(0.05)
 
 
 @pytest.fixture

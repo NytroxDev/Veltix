@@ -1,5 +1,6 @@
 """Tests for PING/PONG functionality."""
 
+import socket
 import time
 
 import pytest
@@ -7,14 +8,29 @@ import pytest
 from veltix import Client, ClientConfig, Server, ServerConfig
 
 
+def find_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def wait_for_condition(condition, timeout=5.0, interval=0.02):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if condition():
+            return True
+        time.sleep(interval)
+    return False
+
+
 @pytest.mark.usefixtures("socket_core_backend")
 class TestPingPong:
     def test_client_ping_server(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19993))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
-        time.sleep(0.1)
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19993))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
 
         latency = client.ping_server(timeout=2.0)
@@ -27,7 +43,8 @@ class TestPingPong:
         server.close_all()
 
     def test_server_ping_client(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19992))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         ping_results = []
 
         def on_connect(client_info):
@@ -37,13 +54,11 @@ class TestPingPong:
 
         server.set_callback("on_connect", on_connect)
         server.start()
-        time.sleep(0.1)
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19992))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        time.sleep(0.3)
 
-        assert len(ping_results) > 0
+        assert wait_for_condition(lambda: len(ping_results) > 0, timeout=3.0)
         assert ping_results[0] is not None
         assert ping_results[0] >= 0
 
@@ -51,11 +66,11 @@ class TestPingPong:
         server.close_all()
 
     def test_ping_timeout(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=19991))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
-        time.sleep(0.1)
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=19991))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
 
         latency = client.ping_server(timeout=0.001)

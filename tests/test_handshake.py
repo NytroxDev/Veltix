@@ -15,6 +15,21 @@ from veltix.network.request import MAGIC, HEADER_SIZE
 from veltix.version import __version__
 
 
+def find_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def wait_for_condition(condition, timeout=5.0, interval=0.02):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if condition():
+            return True
+        time.sleep(interval)
+    return False
+
+
 # ── Fixture ───────────────────────────────────────────────────────────────────
 
 def make_handler(mode: Mode = Mode.CLIENT) -> HandshakeHandler:
@@ -86,7 +101,6 @@ class TestHandshakeCompatibility:
         """Different patch version should be rejected."""
         handler = make_handler()
         other = Version(handler.version.major, handler.version.minor, handler.version.patch + 1)
-        # Only check if other is registered — if not, returns None (falsy)
         result = handler.version.is_compatible(other)
         assert not result  # False or None — both mean reject
 
@@ -96,35 +110,38 @@ class TestHandshakeCompatibility:
 @pytest.mark.usefixtures("socket_core_backend")
 class TestHandshakeIntegration:
     def test_handshake_completes_on_connect(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=18999))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=18999))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         result = client.connect()
-        time.sleep(0.1)
 
         assert result is True
         assert client.is_connected
-        assert server.clients[0].handshake_done is True
+        assert wait_for_condition(lambda: server.clients[0].handshake_done is True, timeout=2.0)
 
         client.disconnect()
         server.close_all()
 
     def test_handshake_done_flag_on_client_info(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=18998))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.start()
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=18998))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        time.sleep(0.1)
 
-        assert server.clients[0].handshake_done is True
+        assert wait_for_condition(
+            lambda: server.clients[0].handshake_done is True, timeout=2.0
+        )
 
         client.disconnect()
         server.close_all()
 
     def test_on_connect_fires_after_handshake(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=18997))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         handshake_states = []
 
         def on_connect(client_info):
@@ -133,35 +150,35 @@ class TestHandshakeIntegration:
         server.set_callback(Events.ON_CONNECT, on_connect)
         server.start()
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=18997))
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        time.sleep(0.1)
 
-        assert len(handshake_states) == 1
+        assert wait_for_condition(lambda: len(handshake_states) == 1, timeout=2.0)
         assert handshake_states[0] is True
 
         client.disconnect()
         server.close_all()
 
     def test_handshake_timeout_returns_false(self):
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=11112, handshake_timeout=1.0))
+        port = find_free_port()
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, handshake_timeout=1.0))
         result = client.connect()
         assert result is False
 
     def test_multiple_clients_all_handshake(self):
-        server = Server(ServerConfig(host="127.0.0.1", port=18996, max_connection=3))
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=3))
         server.start()
 
         clients = []
         for _ in range(3):
-            client = Client(ClientConfig(server_addr="127.0.0.1", port=18996))
+            client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
             assert client.connect() is True
             clients.append(client)
 
-        time.sleep(0.1)
-
-        for entry in server.clients:
-            assert entry.handshake_done is True
+        assert wait_for_condition(
+            lambda: all(c.handshake_done for c in server.clients), timeout=2.0
+        )
 
         for client in clients:
             client.disconnect()
@@ -169,16 +186,16 @@ class TestHandshakeIntegration:
 
     def test_server_rejects_incompatible_version(self):
         """Server must reject a client whose HELLO_ACK contains an incompatible version."""
+        port = find_free_port()
         connected = []
-        server = Server(ServerConfig(host="127.0.0.1", port=18995))
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
         server.set_callback(Events.ON_CONNECT, lambda c: connected.append(c))
         server.start()
 
         raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        raw.connect(("127.0.0.1", 18995))
+        raw.connect(("127.0.0.1", port))
         raw.settimeout(3.0)
 
-        # Receive HELLO from server
         header = raw.recv(HEADER_SIZE)
         assert len(header) == HEADER_SIZE, "Server should send HELLO on connect"
         magic, code, size, _, request_id = struct.unpack(">2sHI4s4s", header)
@@ -188,7 +205,6 @@ class TestHandshakeIntegration:
         content = raw.recv(size)
         assert len(content) == size
 
-        # Send back HELLO_ACK with incompatible version
         bad_version = b"0.0.1"
         bad_content = len(bad_version).to_bytes(2, "big") + bad_version
         bad_hash = zlib.crc32(bad_content).to_bytes(4, "big")
@@ -197,7 +213,6 @@ class TestHandshakeIntegration:
 
         time.sleep(0.3)
 
-        # Server must NOT have accepted the handshake
         assert len(connected) == 0, "on_connect must not fire for incompatible version"
 
         raw.close()
