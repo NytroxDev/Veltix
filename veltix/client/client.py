@@ -3,7 +3,6 @@
 
 import socket
 import time
-from threading import Event
 from typing import Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
@@ -40,7 +39,6 @@ class Client:
         Args:
             config: Client configuration.
         """
-        self._handshake_done: Event = Event()
         self._logger = Logger.get_instance()
         self.config: ClientConfig = config
 
@@ -84,14 +82,6 @@ class Client:
             max_workers=self.config.max_workers,
         )
         self.socket.request_handler = self.request_handler
-        self._handshake_done.clear()
-
-        def _on_handshake_done():
-            self._handshake_done.set()
-            if self.on_connect:
-                self.on_connect()
-
-        self.request_handler.on_handshake_done = _on_handshake_done
 
         def _on_socket_disconnect():
             # Ignore disconnect events during connect() or manual disconnect().
@@ -232,17 +222,13 @@ class Client:
                 f"Successfully connected to server {self.config.server_addr}:{self.config.port}"
             )
 
-            self._logger.debug("Started client message handler thread")
-
-            handshake_ok = self._handshake_done.wait(timeout=self.config.handshake_timeout)
-
-            if not handshake_ok:
-                self._logger.error(
-                    f"Handshake timeout after {self.config.handshake_timeout}s — disconnecting"
-                )
-                if not _from_retry:
-                    self.disconnect()
-                return False
+            if self.on_connect:
+                try:
+                    self.on_connect()
+                except Exception as e:
+                    self._logger.error(
+                        f"on_connect error: {type(e).__name__}: {e}"
+                    )
 
             return True
 
