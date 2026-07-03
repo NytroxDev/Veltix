@@ -46,7 +46,6 @@ def make_context(
         handler.pending_requests = {}
         handler.pending_requests_lock = MagicMock()
         handler.handshake_handler = MagicMock()
-        handler.handshake_handler.handle_hello = MagicMock(return_value=True)
 
     return MessageContext(response=response, handler=handler, is_server=is_server)
 

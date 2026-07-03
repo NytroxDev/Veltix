@@ -327,8 +327,6 @@ class AsyncSocket(BaseSocket):
                 return False
 
             self._handshake_meta = meta
-            if self.request_handler.on_handshake_done:
-                self.request_handler.on_handshake_done()
 
             self._sock.setblocking(False)
             self.running = True

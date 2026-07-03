@@ -24,7 +24,7 @@ class Server:
     """
     TCP server for the Veltix protocol.
 
-    Accepts incoming client connections, drives the HELLO/HELLO_ACK handshake,
+    Accepts incoming client connections, drives the JSON raw-socket handshake,
     and dispatches received messages through the request handler.
 
     Each client runs in a dedicated thread. Slow callbacks never block

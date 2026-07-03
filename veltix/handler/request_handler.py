@@ -50,7 +50,6 @@ class RequestHandler:
 
         self._routes: dict[MessageType, Callable] = {}
         self._routes_lock = Lock()
-        self.on_handshake_done: Optional[Callable] = None
 
         self.rules_manager = RulesManager()
 

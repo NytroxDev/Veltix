@@ -298,8 +298,6 @@ class ThreadingSocket(BaseSocket):
                 return False
 
             self._handshake_meta = meta
-            if self.request_handler.on_handshake_done:
-                self.request_handler.on_handshake_done()
 
             self.running = True
 
