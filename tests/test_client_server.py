@@ -7,6 +7,8 @@ import time
 import pytest
 
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
+from veltix.handler.handshake_handler import HandshakeHandler
+from veltix.internal.mode import Mode
 
 
 def find_free_port() -> int:
@@ -26,6 +28,42 @@ def wait_for_condition(condition, timeout=5.0, interval=0.02):
 
 @pytest.mark.usefixtures("socket_core_backend")
 class TestClientServer:
+    def test_connect_returns_after_server_registration(self):
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
+        server.start()
+
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
+
+        assert client.connect()
+        assert len(server.clients) == 1
+        assert server.clients[0].handshake_done
+
+        client.disconnect()
+        server.close_all()
+
+    def test_failed_handshake_does_not_leave_server_client(self):
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
+        server.start()
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(3.0)
+        sock.connect(("127.0.0.1", port))
+
+        handler = HandshakeHandler(mode=Mode.CLIENT)
+        server_payload = handler._recv_handshake(sock)
+        assert server_payload is not None
+
+        bad_payload = handler._encode({"v": "0.0.1", "meta": {}})
+        assert bad_payload is not None
+        sock.sendall(bad_payload)
+        sock.close()
+
+        assert wait_for_condition(lambda: len(server.clients) == 0, timeout=2.0)
+
+        server.close_all()
+
     def test_basic_connection(self):
         port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))

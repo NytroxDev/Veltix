@@ -92,6 +92,10 @@ class ThreadingSocket(BaseSocket):
         except Exception:
             return False
 
+    def _shutdown_socket(self) -> None:
+        with contextlib.suppress(OSError):
+            self._sock.shutdown(socket.SHUT_RDWR)
+
     def settimeout(self, timeout: float) -> bool:
         try:
             self._sock.settimeout(timeout)
@@ -183,9 +187,7 @@ class ThreadingSocket(BaseSocket):
 
         entry.info.conn.settimeout(timeout)
 
-        ok = self.request_handler.handshake_handler.do_server_handshake(
-            entry.info.conn._sock
-        )
+        ok = self.request_handler.handshake_handler.do_server_handshake(entry.info.conn._sock)
         if not ok:
             self._logger.warning(f"Handshake failed for {entry.info.addr}")
             self._close_server_client(entry)
@@ -211,9 +213,7 @@ class ThreadingSocket(BaseSocket):
             if not self._process_server_message(result, entry):
                 break
 
-    def _process_server_message(
-        self, result: RecvResult, entry: ClientEntry
-    ) -> bool:
+    def _process_server_message(self, result: RecvResult, entry: ClientEntry) -> bool:
         if result.timed_out:
             return True
 
@@ -269,10 +269,9 @@ class ThreadingSocket(BaseSocket):
     def close_all(self) -> bool:
         try:
             self.running = False
-            try:
+            self._shutdown_socket()
+            with contextlib.suppress(OSError):
                 self._sock.close()
-            except OSError:
-                pass
             self.client_manager.iter_on_clients(self._close_server_client)
             if self.start_th and self.start_th != threading.current_thread():
                 self.start_th.join(timeout=0.2)
@@ -292,9 +291,7 @@ class ThreadingSocket(BaseSocket):
             self._logger.info(f"Connecting to {host}:{port}")
             self._sock.connect((host, port))
 
-            success, meta = self.request_handler.handshake_handler.do_client_handshake(
-                self._sock
-            )
+            success, meta = self.request_handler.handshake_handler.do_client_handshake(self._sock)
             if not success:
                 self._logger.error("Client handshake failed")
                 self._sock.close()
@@ -355,11 +352,12 @@ class ThreadingSocket(BaseSocket):
     def disconnect(self, timeout: float = 5.0) -> bool:
         try:
             self.running = False
+            self._shutdown_socket()
+            self._sock.close()
 
             if self.thread_handler and threading.current_thread() != self.thread_handler:
                 self.thread_handler.join(timeout=timeout + 0.1)
 
-            self._sock.close()
             self._logger.info("Disconnected from server")
             return True
 

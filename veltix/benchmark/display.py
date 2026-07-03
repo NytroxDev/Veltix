@@ -6,7 +6,7 @@ Terminal rendering helpers and the README-ready summary table.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Union
 
 from veltix import format_bytes
 
@@ -209,12 +209,12 @@ def _is_both(*groups) -> bool:
 
 
 def print_summary(
-    mem: Optional[MemoryResult | list[MemoryResult]],
-    lat: Optional[LatencyStats | list[LatencyStats]],
-    fps64: Optional[FpsResult | list[FpsResult]],
-    fps128: Optional[FpsResult | list[FpsResult]],
-    burst: Optional[BurstResult | list[BurstResult]],
-    stress: Optional[StressResult | list[StressResult]],
+    mem: Optional[Union[MemoryResult, list[MemoryResult]]],
+    lat: Optional[Union[LatencyStats, list[LatencyStats]]],
+    fps64: Optional[Union[FpsResult, list[FpsResult]]],
+    fps128: Optional[Union[FpsResult, list[FpsResult]]],
+    burst: Optional[Union[BurstResult, list[BurstResult]]],
+    stress: Optional[Union[StressResult, list[StressResult]]],
 ) -> None:
     header("📋  README-READY SUMMARY")
     print()

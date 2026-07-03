@@ -7,10 +7,11 @@ import random
 import struct
 import threading
 import zlib
+from typing import Optional, Union
 
-from .types import MessageType, MessageTypeRegistry
 from ..exceptions import RequestError
 from ..logger.core import Logger
+from .types import MessageType, MessageTypeRegistry
 
 MAGIC = b"VX"
 MAGIC_SIZE = len(MAGIC)
@@ -38,7 +39,7 @@ class Response:
 class Request:
     """Represents a message to be sent over the network."""
 
-    def __init__(self, _type: MessageType, content: bytes, request_id: bytes | None = None) -> None:
+    def __init__(self, _type: MessageType, content: bytes, request_id: Optional[bytes] = None) -> None:
         self.type = _type
         self.content = content
         self.request_id: bytes = request_id or generate_random_id().to_bytes(4, "big")
@@ -49,7 +50,7 @@ class Request:
         self.request_id = response.request_id
 
     @staticmethod
-    def parse(data: bytes | bytearray, max_message_size: int = 10 * 1024 * 1024) -> Response:
+    def parse(data: Union[bytes, bytearray], max_message_size: int = 10 * 1024 * 1024) -> Response:
         """Parse raw bytes into a Response. Raises RequestError on invalid data."""
         if len(data) < HEADER_SIZE:
             raise RequestError(f"Data too short: {len(data)} bytes (minimum {HEADER_SIZE})")

@@ -10,7 +10,7 @@ import json
 import platform
 import sys
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Union
 
 import psutil
 
@@ -28,12 +28,12 @@ def _normalise(value):
 
 
 def build_json(
-    mem: Optional[MemoryResult | list[MemoryResult]],
-    lat: Optional[LatencyStats | list[LatencyStats]],
-    fps64: Optional[FpsResult | list[FpsResult]],
-    fps128: Optional[FpsResult | list[FpsResult]],
-    burst: Optional[BurstResult | list[BurstResult]],
-    stress: Optional[StressResult | list[StressResult]],
+    mem: Optional[Union[MemoryResult, list[MemoryResult]]],
+    lat: Optional[Union[LatencyStats, list[LatencyStats]]],
+    fps64: Optional[Union[FpsResult, list[FpsResult]]],
+    fps128: Optional[Union[FpsResult, list[FpsResult]]],
+    burst: Optional[Union[BurstResult, list[BurstResult]]],
+    stress: Optional[Union[StressResult, list[StressResult]]],
 ) -> dict:
     """Build a JSON-serializable dict from benchmark results."""
     return {

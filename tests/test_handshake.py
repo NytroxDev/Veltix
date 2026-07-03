@@ -1,219 +1,239 @@
-"""Tests for HELLO/HELLO_ACK handshake — updated for v1.6.6 refacto."""
+"""Tests for JSON raw-socket handshake (v1.8.0+)."""
+
+from __future__ import annotations
 
 import socket
-import struct
+import threading
 import time
-import zlib
+from typing import Optional
 
 import pytest
 
-from veltix import Client, ClientConfig, Events, Server, ServerConfig
 from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.internal.compatibility import Version
-from veltix.network.sender import Mode, Sender
-from veltix.network.request import MAGIC, HEADER_SIZE
+from veltix.internal.mode import Mode
 from veltix.version import __version__
 
 
-def find_free_port() -> int:
+# ── Encode / decode ────────────────────────────────────────────────────────────
+
+class TestHandshakeEncodeDecode:
+    def setup_method(self) -> None:
+        self.handler = HandshakeHandler(mode=Mode.SERVER)
+
+    def test_encode_returns_bytes(self):
+        result = self.handler._encode({"v": "1.8.0", "meta": {}})
+        assert isinstance(result, bytes)
+        assert len(result) > 2
+
+    def test_decode_returns_dict(self):
+        payload = self.handler._encode({"v": "1.8.0", "meta": {}})
+        decoded = self.handler._decode(payload)
+        assert decoded is not None
+        assert decoded["v"] == "1.8.0"
+
+    def test_encode_decode_roundtrip(self):
+        original = {"v": "1.8.0", "meta": {"key": "val"}}
+        encoded = self.handler._encode(original)
+        decoded = self.handler._decode(encoded)
+        assert decoded == original
+
+    def test_encode_returns_none_on_bad_input(self):
+        result = self.handler._encode({"v": object()})  # type: ignore
+        assert result is None
+
+    def test_decode_returns_none_on_truncated(self):
+        result = self.handler._decode(b"\x00\x05hello")
+        assert result is None
+
+    def test_decode_returns_none_on_empty(self):
+        result = self.handler._decode(b"")
+        assert result is None
+
+
+# ── Version check ──────────────────────────────────────────────────────────────
+
+class TestHandshakeCheckVersion:
+    def setup_method(self) -> None:
+        self.handler = HandshakeHandler(mode=Mode.SERVER)
+
+    def test_compatible_version(self):
+        assert self.handler._check_version(__version__) is True
+
+    def test_incompatible_version(self):
+        assert self.handler._check_version("0.0.1") is False
+
+    def test_invalid_version_string(self):
+        assert self.handler._check_version("not_a_version") is False
+
+    def test_empty_version_string(self):
+        assert self.handler._check_version("") is False
+
+
+# ── Integration with real sockets ──────────────────────────────────────────────
+
+def _find_free_port() -> int:
+    """Bind to port 0 and return the assigned port."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
 
 
-def wait_for_condition(condition, timeout=5.0, interval=0.02):
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        if condition():
-            return True
-        time.sleep(interval)
-    return False
-
-
-# ── Fixture ───────────────────────────────────────────────────────────────────
-
-def make_handler(mode: Mode = Mode.CLIENT) -> HandshakeHandler:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sender = Sender(mode=Mode.CLIENT, conn=sock)
-    return HandshakeHandler(sender=sender, mode=mode)
-
-
-# ── Encode / decode ───────────────────────────────────────────────────────────
-
-class TestHandshakeEncoding:
-    def test_encode_decode_roundtrip(self):
-        handler = make_handler()
-        encoded = handler._encode_hello()
-        decoded = handler._decode_hello(encoded)
-        assert decoded == Version.from_str(__version__)
-
-    def test_encode_hello_wire_format(self):
-        """Wire format: [2B length][NB version UTF-8]."""
-        encoded = HandshakeHandler._encode_hello()
-        length = int.from_bytes(encoded[0:2], "big")
-        version_bytes = encoded[2: 2 + length]
-        assert version_bytes.decode("utf-8") == __version__
-
-    def test_decode_returns_version_object(self):
-        handler = make_handler()
-        encoded = handler._encode_hello()
-        decoded = handler._decode_hello(encoded)
-        assert isinstance(decoded, Version)
-
-    def test_decode_correct_components(self):
-        handler = make_handler()
-        encoded = handler._encode_hello()
-        decoded = handler._decode_hello(encoded)
-        expected = Version.from_str(__version__)
-        assert decoded.major == expected.major
-        assert decoded.minor == expected.minor
-        assert decoded.patch == expected.patch
-
-
-# ── Version stored on handler ─────────────────────────────────────────────────
-
-class TestHandshakeVersion:
-    def test_handler_stores_version(self):
-        handler = make_handler()
-        assert isinstance(handler.version, Version)
-        assert handler.version == Version.from_str(__version__)
-
-    def test_server_handler_stores_version(self):
-        handler = make_handler(Mode.SERVER)
-        assert handler.version == Version.from_str(__version__)
-
-    def test_is_server_flag(self):
-        server_handler = make_handler(Mode.SERVER)
-        client_handler = make_handler(Mode.CLIENT)
-        assert server_handler.is_server is True
-        assert client_handler.is_server is False
-
-
-# ── Compatibility check ───────────────────────────────────────────────────────
-
-class TestHandshakeCompatibility:
-    def test_compatible_versions_accepted(self):
-        """Same version should be accepted."""
-        handler = make_handler()
-        assert handler.version.is_compatible(Version.from_str(__version__)) is True
-
-    def test_incompatible_version_rejected(self):
-        """Different patch version should be rejected."""
-        handler = make_handler()
-        other = Version(handler.version.major, handler.version.minor, handler.version.patch + 1)
-        result = handler.version.is_compatible(other)
-        assert not result  # False or None — both mean reject
-
-
-# ── Integration ───────────────────────────────────────────────────────────────
-
-@pytest.mark.usefixtures("socket_core_backend")
 class TestHandshakeIntegration:
-    def test_handshake_completes_on_connect(self):
-        port = find_free_port()
-        server = Server(ServerConfig(host="127.0.0.1", port=port))
-        server.start()
+    """Test the full handshake flow using real TCP sockets."""
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        result = client.connect()
+    def test_server_client_handshake_success(self):
+        port = _find_free_port()
+        server_handler = HandshakeHandler(mode=Mode.SERVER)
+        client_handler = HandshakeHandler(mode=Mode.CLIENT)
 
-        assert result is True
-        assert client.is_connected
-        assert wait_for_condition(lambda: server.clients[0].handshake_done is True, timeout=2.0)
+        results: dict[str, Optional[bool]] = {"server": None, "client": None}
 
-        client.disconnect()
-        server.close_all()
+        def server_thread() -> None:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind(("127.0.0.1", port))
+            sock.listen(1)
+            sock.settimeout(3.0)
+            try:
+                conn, _ = sock.accept()
+                results["server"] = server_handler.do_server_handshake(conn)
+                conn.close()
+            except Exception:
+                results["server"] = False
+            finally:
+                sock.close()
 
-    def test_handshake_done_flag_on_client_info(self):
-        port = find_free_port()
-        server = Server(ServerConfig(host="127.0.0.1", port=port))
-        server.start()
+        t = threading.Thread(target=server_thread, daemon=True)
+        t.start()
+        time.sleep(0.1)
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        client.connect()
+        client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_sock.settimeout(3.0)
+        client_sock.connect(("127.0.0.1", port))
+        success, meta = client_handler.do_client_handshake(client_sock)
+        client_sock.close()
+        t.join()
 
-        assert wait_for_condition(
-            lambda: server.clients[0].handshake_done is True, timeout=2.0
-        )
+        assert results["server"] is True
+        assert success is True
+        assert isinstance(meta, dict)
 
-        client.disconnect()
-        server.close_all()
+    def test_version_mismatch_rejected(self):
+        port = _find_free_port()
+        server_handler = HandshakeHandler(mode=Mode.SERVER)
+        client_handler = HandshakeHandler(mode=Mode.CLIENT)
 
-    def test_on_connect_fires_after_handshake(self):
-        port = find_free_port()
-        server = Server(ServerConfig(host="127.0.0.1", port=port))
-        handshake_states = []
+        results: dict[str, Optional[bool]] = {"server": None, "client": None}
 
-        def on_connect(client_info):
-            handshake_states.append(client_info.handshake_done)
+        def server_thread() -> None:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind(("127.0.0.1", port))
+            sock.listen(1)
+            sock.settimeout(3.0)
+            try:
+                conn, _ = sock.accept()
+                results["server"] = server_handler.do_server_handshake(conn)
+                conn.close()
+            except Exception:
+                results["server"] = False
+            finally:
+                sock.close()
 
-        server.set_callback(Events.ON_CONNECT, on_connect)
-        server.start()
+        t = threading.Thread(target=server_thread, daemon=True)
+        t.start()
+        time.sleep(0.1)
 
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        client.connect()
+        client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_sock.settimeout(3.0)
+        client_sock.connect(("127.0.0.1", port))
 
-        assert wait_for_condition(lambda: len(handshake_states) == 1, timeout=2.0)
-        assert handshake_states[0] is True
+        server_payload = client_handler._recv_handshake(client_sock)
+        assert server_payload is not None
+        client_handler._send_handshake(client_sock, {"v": "0.0.1", "meta": {}})
+        client_sock.close()
+        t.join()
 
-        client.disconnect()
-        server.close_all()
+        assert results["server"] is False
 
-    def test_handshake_timeout_returns_false(self):
-        port = find_free_port()
-        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, handshake_timeout=1.0))
-        result = client.connect()
-        assert result is False
+    def test_handshake_timeout(self):
+        port = _find_free_port()
+        handler = HandshakeHandler(mode=Mode.SERVER)
 
-    def test_multiple_clients_all_handshake(self):
-        port = find_free_port()
-        server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=3))
-        server.start()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("127.0.0.1", port))
+        sock.listen(1)
+        sock.settimeout(3.0)
 
-        clients = []
-        for _ in range(3):
-            client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-            assert client.connect() is True
-            clients.append(client)
+        results: list[bool] = []
 
-        assert wait_for_condition(
-            lambda: all(c.handshake_done for c in server.clients), timeout=2.0
-        )
+        def server_thread() -> None:
+            try:
+                conn, _ = sock.accept()
+                result = handler.do_server_handshake(conn)
+                results.append(result)
+                conn.close()
+            except Exception:
+                results.append(False)
+            finally:
+                sock.close()
 
-        for client in clients:
-            client.disconnect()
-        server.close_all()
+        t = threading.Thread(target=server_thread, daemon=True)
+        t.start()
+        time.sleep(0.1)
 
-    def test_server_rejects_incompatible_version(self):
-        """Server must reject a client whose HELLO_ACK contains an incompatible version."""
-        port = find_free_port()
-        connected = []
-        server = Server(ServerConfig(host="127.0.0.1", port=port))
-        server.set_callback(Events.ON_CONNECT, lambda c: connected.append(c))
-        server.start()
+        client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_sock.settimeout(1.0)
+        client_sock.connect(("127.0.0.1", port))
+        server_payload = handler._recv_handshake(client_sock)
+        assert server_payload is not None
+        time.sleep(1.5)
+        client_sock.close()
+        t.join(timeout=3.0)
 
-        raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        raw.connect(("127.0.0.1", port))
-        raw.settimeout(3.0)
+        assert len(results) == 1
+        assert results[0] is False
 
-        header = raw.recv(HEADER_SIZE)
-        assert len(header) == HEADER_SIZE, "Server should send HELLO on connect"
-        magic, code, size, _, request_id = struct.unpack(">2sHI4s4s", header)
-        assert magic == MAGIC
-        assert code == 10  # HELLO
+    def test_multiple_clients_sequential(self):
+        port = _find_free_port()
+        server_handler = HandshakeHandler(mode=Mode.SERVER)
 
-        content = raw.recv(size)
-        assert len(content) == size
+        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_sock.bind(("127.0.0.1", port))
+        server_sock.listen(5)
+        server_sock.settimeout(5.0)
 
-        bad_version = b"0.0.1"
-        bad_content = len(bad_version).to_bytes(2, "big") + bad_version
-        bad_hash = zlib.crc32(bad_content).to_bytes(4, "big")
-        ack_header = struct.pack(">2sHI4s4s", MAGIC, 11, len(bad_content), bad_hash, request_id)
-        raw.sendall(ack_header + bad_content)
+        n_clients = 3
+        server_results: list[bool] = []
 
-        time.sleep(0.3)
+        def accept_loop() -> None:
+            for _ in range(n_clients):
+                try:
+                    conn, _ = server_sock.accept()
+                    ok = server_handler.do_server_handshake(conn)
+                    server_results.append(ok)
+                    conn.close()
+                except Exception:
+                    server_results.append(False)
 
-        assert len(connected) == 0, "on_connect must not fire for incompatible version"
+        t = threading.Thread(target=accept_loop, daemon=True)
+        t.start()
+        time.sleep(0.2)
 
-        raw.close()
-        server.close_all()
+        for _ in range(n_clients):
+            client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client_sock.settimeout(3.0)
+            client_sock.connect(("127.0.0.1", port))
+            client_handler = HandshakeHandler(mode=Mode.CLIENT)
+            success, _ = client_handler.do_client_handshake(client_sock)
+            assert success is True
+            client_sock.close()
+
+        t.join(timeout=3.0)
+        server_sock.close()
+
+        assert len(server_results) == n_clients
+        assert all(server_results)

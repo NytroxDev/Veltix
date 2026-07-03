@@ -6,7 +6,7 @@ import contextlib
 import selectors
 import socket
 import threading
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 from ..internal.network import recv as _network_recv
 from ..logger import Logger
@@ -61,6 +61,7 @@ class AsyncSocket(BaseSocket):
         logger: Logger,
         request_handler: RequestHandler,
         max_message_size: int,
+        nonblocking: bool = True,
     ) -> AsyncSocket:
         """Create a properly initialized client socket instance."""
         conn = cls.__new__(cls)
@@ -82,7 +83,7 @@ class AsyncSocket(BaseSocket):
         conn._logger = logger
 
         conn._sock = sock
-        conn._sock.setblocking(False)
+        conn._sock.setblocking(not nonblocking)
         conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         with contextlib.suppress(AttributeError, OSError):
             conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -116,6 +117,10 @@ class AsyncSocket(BaseSocket):
         except Exception as e:
             self._logger.debug(f"send failed: {e}")
             return False
+
+    def _shutdown_socket(self) -> None:
+        with contextlib.suppress(OSError):
+            self._sock.shutdown(socket.SHUT_RDWR)
 
     def settimeout(self, timeout: float) -> bool:
         try:
@@ -186,17 +191,26 @@ class AsyncSocket(BaseSocket):
 
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
+        client_sock = AsyncSocket._create_client_instance(
+            conn, self._logger, self.request_handler, self.max_message_size, nonblocking=False
+        )
+        client = ClientInfo(client_sock, addr, self.id_count, handshake_done=False)
+        client_id = self.client_manager.add_client(client)
+
         ok = self.request_handler.handshake_handler.do_server_handshake(conn)
         if not ok:
             self._logger.warning(f"Handshake failed for {addr}")
-            conn.close()
+            entry = self.client_manager.get_client(client_id)
+            if entry:
+                self._close_server_client(entry)
+            else:
+                client_sock._shutdown_socket()
+                with contextlib.suppress(OSError):
+                    conn.close()
             return
 
-        client_sock = AsyncSocket._create_client_instance(
-            conn, self._logger, self.request_handler, self.max_message_size
-        )
-        client = ClientInfo(client_sock, addr, self.id_count, handshake_done=True)
-        client_id = self.client_manager.add_client(client)
+        client.handshake_done = True
+        conn.setblocking(False)
         self._selector.register(client_sock, selectors.EVENT_READ, data=client_id)
         self.id_count += 1
         self._logger.info(
@@ -207,9 +221,7 @@ class AsyncSocket(BaseSocket):
             try:
                 self.on_connect(client)
             except Exception as e:
-                self._logger.error(
-                    f"on_connect error for {addr}: {type(e).__name__}: {e}"
-                )
+                self._logger.error(f"on_connect error for {addr}: {type(e).__name__}: {e}")
 
     def _handle_server_client(self, client_id: int, buffer_size: int) -> None:
         entry = self.client_manager.get_client(client_id)
@@ -272,12 +284,14 @@ class AsyncSocket(BaseSocket):
 
     def _close_server_client(self, entry: ClientEntry) -> None:
         self._logger.debug(f"closing server client {entry.id} ({entry.info.addr})")
-        entry.info.conn.close()
+        client_sock = cast("AsyncSocket", entry.info.conn)
 
-        try:
-            self._selector.unregister(entry.info.conn)
-        except KeyError:
-            pass
+        with contextlib.suppress(KeyError):
+            self._selector.unregister(client_sock)
+
+        client_sock._shutdown_socket()
+        with contextlib.suppress(OSError):
+            client_sock._sock.close()
 
         self.client_manager.remove_client(entry.id)
 
@@ -289,10 +303,9 @@ class AsyncSocket(BaseSocket):
             self._logger.debug("closing server socket")
             self.running = False
             self._selector.unregister(self._sock)
-            try:
+            self._shutdown_socket()
+            with contextlib.suppress(OSError):
                 self._sock.close()
-            except OSError:
-                pass
             self.client_manager.iter_on_clients(self._close_server_client)
             self._selector.close()
             if self._selector_thread and self._selector_thread != threading.current_thread():
@@ -307,9 +320,7 @@ class AsyncSocket(BaseSocket):
         try:
             self._sock.connect((host, port))
 
-            success, meta = self.request_handler.handshake_handler.do_client_handshake(
-                self._sock
-            )
+            success, meta = self.request_handler.handshake_handler.do_client_handshake(self._sock)
             if not success:
                 self._logger.error("Client handshake failed")
                 self._sock.close()
@@ -340,6 +351,7 @@ class AsyncSocket(BaseSocket):
             self._logger.debug("disconnecting client socket")
             self.running = False
             self._selector.unregister(self._sock)
+            self._shutdown_socket()
             self._sock.close()
             if self._selector_thread and threading.current_thread() != self._selector_thread:
                 self._selector_thread.join(timeout=timeout + 0.1)

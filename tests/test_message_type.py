@@ -2,7 +2,7 @@
 
 import pytest
 
-from veltix import PING, PONG, MessageType, MessageTypeError
+from veltix import ERROR, INVALID_REQUEST, PING, PONG, MessageType, MessageTypeError
 from veltix.network.types import MessageTypeRegistry
 
 
@@ -44,10 +44,9 @@ class TestMessageType:
         assert PING.name == "ping"
         assert PONG.name == "pong"
 
-    def test_hello_types_exist(self):
-        """Test that v1.4.0 handshake types are registered."""
-        from veltix import HELLO, HELLO_ACK
-        assert HELLO.code == 10
-        assert HELLO_ACK.code == 11
-        assert HELLO.name == "hello"
-        assert HELLO_ACK.name == "hello_ack"
+    def test_error_types_exist(self):
+        """Test that error system types are registered."""
+        assert ERROR.code == 20
+        assert INVALID_REQUEST.code == 21
+        assert ERROR.name == "error"
+        assert INVALID_REQUEST.name == "invalid_request"

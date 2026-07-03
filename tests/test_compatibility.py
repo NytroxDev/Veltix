@@ -7,12 +7,12 @@ from veltix.internal.compatibility import COMPATIBILITY, Version
 
 class TestVersionFromStr:
     def test_parse_basic(self):
-        v = Version.from_str("1.6.6")
-        assert v == Version(1, 6, 6)
+        v = Version.from_str("1.8.0")
+        assert v == Version(1, 8, 0)
 
     def test_parse_with_v_prefix(self):
-        v = Version.from_str("v1.6.6")
-        assert v == Version(1, 6, 6)
+        v = Version.from_str("v1.8.0")
+        assert v == Version(1, 8, 0)
 
     def test_parse_components(self):
         v = Version.from_str("2.10.3")
@@ -36,44 +36,44 @@ class TestVersionFromStr:
 
 class TestVersionHash:
     def test_hashable(self):
-        v = Version(1, 6, 6)
+        v = Version(1, 8, 0)
         assert hash(v) is not None
 
     def test_usable_as_dict_key(self):
-        d = {Version(1, 6, 6): "test"}
-        assert d[Version(1, 6, 6)] == "test"
+        d = {Version(1, 8, 0): "test"}
+        assert d[Version(1, 8, 0)] == "test"
 
     def test_different_versions_different_hash(self):
-        assert hash(Version(1, 6, 6)) != hash(Version(1, 6, 5))
+        assert hash(Version(1, 8, 0)) != hash(Version(1, 8, 1))
 
     def test_same_version_same_hash(self):
-        assert hash(Version(1, 6, 6)) == hash(Version(1, 6, 6))
+        assert hash(Version(1, 8, 0)) == hash(Version(1, 8, 0))
 
 
 class TestVersionStr:
     def test_str(self):
-        assert str(Version(1, 6, 6)) == "1.6.6"
+        assert str(Version(1, 8, 0)) == "1.8.0"
 
     def test_repr(self):
-        assert repr(Version(1, 6, 6)) == "Version(1, 6, 6)"
+        assert repr(Version(1, 8, 0)) == "Version(1, 8, 0)"
 
 
 class TestVersionIsCompatible:
     def test_compatible_with_itself(self):
-        v = Version(1, 6, 6)
-        assert v.is_compatible(Version(1, 6, 6)) is True
+        v = Version(1, 8, 0)
+        assert v.is_compatible(Version(1, 8, 0)) is True
 
     def test_incompatible_different_patch(self):
-        v = Version(1, 6, 6)
-        assert v.is_compatible(Version(1, 6, 5)) is False
+        v = Version(1, 8, 0)
+        assert v.is_compatible(Version(1, 8, 1)) is False
 
     def test_incompatible_different_minor(self):
-        v = Version(1, 6, 6)
-        assert v.is_compatible(Version(1, 5, 6)) is False
+        v = Version(1, 8, 0)
+        assert v.is_compatible(Version(1, 7, 0)) is False
 
     def test_incompatible_different_major(self):
-        v = Version(1, 6, 6)
-        assert v.is_compatible(Version(2, 6, 6)) is False
+        v = Version(1, 8, 0)
+        assert v.is_compatible(Version(2, 8, 0)) is False
 
     def test_unknown_version_returns_none(self):
         """Version not in COMPATIBILITY table should return None."""
@@ -82,9 +82,8 @@ class TestVersionIsCompatible:
 
     def test_cross_compatibility(self):
         """If a version declares another as compatible, it should return True."""
-        # Temporarily add a cross-compatible entry to test the mechanism
-        v1 = Version(1, 6, 6)
-        v2 = Version(1, 6, 5)
+        v1 = Version(1, 8, 0)
+        v2 = Version(1, 8, 1)
         original = COMPATIBILITY.get(v1, [])
         try:
             COMPATIBILITY[v1] = [v1, v2]
