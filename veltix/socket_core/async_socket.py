@@ -6,7 +6,6 @@ import contextlib
 import selectors
 import socket
 import threading
-import time
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..internal.network import recv as _network_recv
@@ -51,12 +50,6 @@ class AsyncSocket(BaseSocket):
 
         self._selector = selectors.DefaultSelector()
 
-        self._handshake_requests: dict[int, bytes] = {}
-
-        self._handshake_pending: list[int] = []
-
-        self._client_connect_time: dict[int, float] = {}
-
         self._client_buffer = MessageBuffer(max_message_size)
 
         self._logger.debug("AsyncSocket initialized")
@@ -96,12 +89,6 @@ class AsyncSocket(BaseSocket):
         conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         conn._selector = selectors.DefaultSelector()
-
-        conn._handshake_requests = {}
-
-        conn._handshake_pending = []
-
-        conn._client_connect_time = {}
 
         conn._client_buffer = MessageBuffer(max_message_size)
         conn._logger.debug(f"created client socket instance (fd={conn._sock.fileno()})")
@@ -181,41 +168,6 @@ class AsyncSocket(BaseSocket):
                 else:
                     self._handle_server_client(key.data, buffer_size)
 
-            self._process_pending_handshakes()
-            self._check_handshake_timeouts()
-
-    def _check_handshake_timeouts(self) -> None:
-        now = time.monotonic()
-        for client_id in list(self._client_connect_time.keys()):
-            connect_time = self._client_connect_time.get(client_id)
-            if connect_time is None:
-                continue
-            if now - connect_time <= self.handshake_timeout:
-                continue
-            entry = self.client_manager.get_client(client_id)
-            if entry and not entry.info.handshake_done:
-                self._logger.warning(f"handshake timeout for client {entry.id} ({entry.info.addr})")
-                self._close_server_client(entry)
-
-    def _process_pending_handshakes(self) -> None:
-        if not self._handshake_pending:
-            return
-        pending = self._handshake_pending[:]
-        self._handshake_pending.clear()
-        for client_id in pending:
-            entry = self.client_manager.get_client(client_id)
-            if not entry or entry.info.handshake_done:
-                continue
-            try:
-                handshake_request_id, hello = self.request_handler.handshake_handler.prepare_hello()
-                self.request_handler.register(handshake_request_id)
-                self._logger.debug(f"sending hello to client {client_id} at {entry.info.addr}")
-                self.request_handler.handshake_handler.send_hello(hello, entry.info.conn)
-                self._handshake_requests[client_id] = handshake_request_id
-            except Exception as e:
-                self._logger.error(f"handshake failed for client {client_id}: {e}")
-                self._close_server_client(entry)
-
     def fileno(self) -> int:
         return self._sock.fileno()
 
@@ -232,29 +184,32 @@ class AsyncSocket(BaseSocket):
             return
         self._logger.debug(f"accepted client from {addr}")
 
-        self._send_hello(conn, addr)
-        return
+        conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-    def _send_hello(self, conn: socket.socket, addr: tuple) -> None:
+        ok = self.request_handler.handshake_handler.do_server_handshake(conn)
+        if not ok:
+            self._logger.warning(f"Handshake failed for {addr}")
+            conn.close()
+            return
+
         client_sock = AsyncSocket._create_client_instance(
             conn, self._logger, self.request_handler, self.max_message_size
         )
-        client = ClientInfo(client_sock, addr, self.id_count)
+        client = ClientInfo(client_sock, addr, self.id_count, handshake_done=True)
         client_id = self.client_manager.add_client(client)
         self._selector.register(client_sock, selectors.EVENT_READ, data=client_id)
         self.id_count += 1
-        self._handshake_requests[client_id] = b""
-        self._client_connect_time[client_id] = time.monotonic()
+        self._logger.info(
+            f"New client connected: {addr} (total: {self.client_manager.count()}/{max_client})"
+        )
 
-        try:
-            handshake_request_id, hello = self.request_handler.handshake_handler.prepare_hello()
-            self.request_handler.register(handshake_request_id)
-            self._logger.debug(f"sending hello to client {client_id} at {addr}")
-            self.request_handler.handshake_handler.send_hello(hello, client_sock)
-            self._handshake_requests[client_id] = handshake_request_id
-        except Exception as e:
-            self._logger.error(f"handshake failed for client {client_id}: {e}")
-            self.close_client(client_id)
+        if self.on_connect:
+            try:
+                self.on_connect(client)
+            except Exception as e:
+                self._logger.error(
+                    f"on_connect error for {addr}: {type(e).__name__}: {e}"
+                )
 
     def _handle_server_client(self, client_id: int, buffer_size: int) -> None:
         entry = self.client_manager.get_client(client_id)
@@ -281,42 +236,6 @@ class AsyncSocket(BaseSocket):
             self._logger.debug(f"client {client_id} extracted {len(messages)} messages")
             for message in messages:
                 self.request_handler.handle(message, entry.info)
-                handshake_request_id = self._handshake_requests.get(client_id)
-                handshake_done = entry.info.handshake_done
-                if handshake_request_id and not handshake_done:
-                    self._check_server_handshake(entry, handshake_request_id)
-
-    def _check_server_handshake(self, entry: ClientEntry, handshake_request_id: bytes) -> None:
-        with self.request_handler.pending_requests_lock:
-            queue = self.request_handler.pending_requests.pop(handshake_request_id, None)
-            response = queue.get_nowait() if queue is not None and not queue.empty() else None
-            self._logger.debug(
-                f"handshake check for {entry.info.addr}: request_id={handshake_request_id!r}, "
-                f"resolved={response is not None}, handshake_done={entry.info.handshake_done}"
-            )
-            if response is not None:
-                self._client_connect_time.pop(entry.id, None)
-
-        if response is None:
-            return
-
-        if not self.request_handler.handshake_handler.handle_hello_ack(response):
-            self._logger.warning(
-                f"Handshake failed for {entry.info.addr} — version mismatch, closing"
-            )
-            entry.info.conn.close()
-            return
-
-        entry.info.handshake_done = True
-        self._logger.debug(f"Handshake complete for {entry.info.addr}")
-
-        if self.on_connect:
-            try:
-                self.on_connect(entry.info)
-            except Exception as e:
-                self._logger.error(
-                    f"on_connect error for {entry.info.addr}: {type(e).__name__}: {e}"
-                )
 
     def _handle_self_read(self, buffer_size: int):
         result = _network_recv(self, buffer_size)
@@ -362,9 +281,6 @@ class AsyncSocket(BaseSocket):
 
         self.client_manager.remove_client(entry.id)
 
-        self._handshake_requests.pop(entry.id, None)
-        self._client_connect_time.pop(entry.id, None)
-
         if self.on_disconnect:
             self.on_disconnect(entry.info)
 
@@ -390,6 +306,19 @@ class AsyncSocket(BaseSocket):
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool:
         try:
             self._sock.connect((host, port))
+
+            success, meta = self.request_handler.handshake_handler.do_client_handshake(
+                self._sock
+            )
+            if not success:
+                self._logger.error("Client handshake failed")
+                self._sock.close()
+                return False
+
+            self._handshake_meta = meta
+            if self.request_handler.on_handshake_done:
+                self.request_handler.on_handshake_done()
+
             self._sock.setblocking(False)
             self.running = True
             self._selector.register(self._sock, selectors.EVENT_READ, data="client")
