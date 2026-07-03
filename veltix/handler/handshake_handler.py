@@ -25,10 +25,15 @@ class RawSocket(Protocol):
 class HandshakeHandler:
     """
     Manage the version compatibility handshake for a single raw TCP connection.
+    Uses a 3-way protocol to ensure both sides are synchronized:
 
-    Server mode sends the local version first, waits for the client version,
-    and validates compatibility. Client mode reads the server version first,
-    validates compatibility, then sends the local version response.
+      1. Server → Client : {"v", "meta"}
+      2. Client → Server : {"v", "meta"}
+      3. Server → Client : {"result": "ok"}
+
+    Server mode sends first, then validates client version before acking.
+    Client mode reads server version, validates, sends its version, then
+    waits for the server ack before returning.
     """
 
     def __init__(self, mode: Mode) -> None:
@@ -127,6 +132,10 @@ class HandshakeHandler:
             self._logger.error(f"Client version {peer_version} is incompatible")
             return False
 
+        if not self._send_handshake(sock, {"result": "ok"}):
+            self._logger.error("Failed to send handshake acknowledgment")
+            return False
+
         self._logger.debug("Server handshake complete")
         return True
 
@@ -146,6 +155,11 @@ class HandshakeHandler:
 
         if not self._send_handshake(sock, {"v": __version__, "meta": {}}):
             self._logger.error("Failed to send client handshake response")
+            return False, None
+
+        ack = self._recv_handshake(sock)
+        if not ack or ack.get("result") != "ok":
+            self._logger.error("Failed to receive server handshake acknowledgment")
             return False, None
 
         meta = server_payload.get("meta", {})
