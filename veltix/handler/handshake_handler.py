@@ -2,29 +2,36 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import json
+import struct
+from typing import Any, Optional, Protocol
 
 from ..internal.compatibility import Version
 from ..internal.mode import Mode
 from ..logger.core import Logger
-from ..network.request import Request, Response
-from ..network.system_types import HELLO, HELLO_ACK
 from ..version import __version__
 
-if TYPE_CHECKING:
-    from ..network.sender import Sender
+_HANDSHAKE_STRUCT = struct.Struct(">H")
+
+
+class RawSocket(Protocol):
+    """Minimal raw TCP socket interface for handshake I/O."""
+
+    def settimeout(self, timeout: Optional[float]) -> None: ...
+    def sendall(self, data: bytes) -> None: ...
+    def recv(self, bufsize: int) -> bytes: ...
 
 
 class HandshakeHandler:
     """
-    Handles the HELLO / HELLO_ACK exchange for a single connection.
+    Manage the version compatibility handshake for a single raw TCP connection.
 
-    SERVER: prepare_hello() → send_hello() → handle_hello_ack()
-    CLIENT: handle_hello() → send_hello_ack()
+    Server mode sends the local version first, waits for the client version,
+    and validates compatibility. Client mode reads the server version first,
+    validates compatibility, then sends the local version response.
     """
 
-    def __init__(self, sender: Sender, mode: Mode) -> None:
-        self.sender = sender
+    def __init__(self, mode: Mode) -> None:
         self.mode = mode
         self.is_server = mode == Mode.SERVER
         self._logger = Logger.get_instance()
@@ -36,76 +43,111 @@ class HandshakeHandler:
     # ── Encode / decode ───────────────────────────────────────────────────────
 
     @staticmethod
-    def _encode_hello() -> bytes:
-        version_bytes = __version__.encode("utf-8")
-        return len(version_bytes).to_bytes(2, "big") + version_bytes
+    def _encode(payload: dict[str, Any]) -> Optional[bytes]:
+        """Length-prefixed JSON encoding."""
+        try:
+            payload_encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            data = _HANDSHAKE_STRUCT.pack(len(payload_encoded)) + payload_encoded
+            return data
+        except Exception:
+            return None
 
     @staticmethod
-    def _decode_hello(payload: bytes) -> Version:
-        if len(payload) < 2:
-            raise ValueError("Payload too short for length prefix")
-        length = int.from_bytes(payload[0:2], "big")
-        if len(payload) < 2 + length:
-            raise ValueError(f"Payload too short: need {2 + length}, got {len(payload)}")
-        return Version.from_str(payload[2 : 2 + length].decode("utf-8"))
+    def _decode(data: bytes) -> Optional[dict[str, Any]]:
+        """Parse length-prefixed JSON."""
+        try:
+            payload_len = _HANDSHAKE_STRUCT.unpack(data[:2])[0]
+            return json.loads(data[2 : 2 + payload_len])
+        except Exception:
+            return None
 
-    # ── Server ────────────────────────────────────────────────────────────────
-
-    def prepare_hello(self) -> tuple[bytes, Request]:
-        """
-        Prepare a HELLO request without sending it.
-
-        Must be called BEFORE register() and send_hello() to avoid the race
-        condition where HELLO_ACK arrives before the queue is registered.
-        """
-        hello = Request(HELLO, self._encode_hello())
-        self._logger.debug(f"[Handshake] HELLO prepared (id={hello.request_id.hex()}...)")
-        return hello.request_id, hello
-
-    def send_hello(self, hello: Request, client_conn=None) -> None:
-        """Send a previously prepared HELLO. Must be called AFTER register()."""
-        if self.is_server:
-            self.sender.send(hello, client=client_conn)
-        else:
-            self.sender.send(hello)
-        self._logger.debug(f"[Handshake] HELLO sent (id={hello.request_id.hex()}...)")
-
-    def handle_hello_ack(self, response: Response) -> bool:
-        """Validate an incoming HELLO_ACK from the client."""
-        if response.type != HELLO_ACK:
-            self._logger.warning(f"[Handshake] Expected HELLO_ACK, got '{response.type.name}'")
+    def _send_handshake(self, sock: RawSocket, payload: dict[str, Any]) -> bool:
+        """Send a handshake JSON payload over a raw TCP socket."""
+        data = self._encode(payload)
+        if not data:
+            return False
+        try:
+            sock.sendall(data)
+            return True
+        except Exception:
             return False
 
-        client_version = self._decode_hello(response.content)
-        if not self.version.is_compatible(client_version):
-            self._logger.warning(
-                f"[Handshake] Version mismatch — server={self.version}, client={client_version}"
-            )
+    def _recv_handshake(self, sock: RawSocket, timeout: float = 5.0) -> Optional[dict[str, Any]]:
+        """Receive a handshake JSON payload from a raw TCP socket."""
+
+        def _recv_all(sock: RawSocket, n: int) -> Optional[bytes]:
+            chunks = []
+            remaining = n
+            while remaining > 0:
+                chunk = sock.recv(remaining)
+                if not chunk:
+                    return None
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            return b"".join(chunks)
+
+        try:
+            sock.settimeout(timeout)
+            header = _recv_all(sock, 2)
+            if not header or len(header) < 2:
+                return None
+            payload_len = _HANDSHAKE_STRUCT.unpack(header)[0]
+            data = _recv_all(sock, payload_len)
+            if not data or len(data) < payload_len:
+                return None
+            return self._decode(header + data)
+        except Exception:
+            return None
+
+    def _check_version(self, peer_version: str) -> bool:
+        """Check peer version against the compatibility table."""
+        try:
+            peer = Version.from_str(peer_version)
+            result = self.version.is_compatible(peer)
+            return bool(result)
+        except Exception:
+            self._logger.error(f"Invalid peer version string: {peer_version!r}")
             return False
 
-        self._logger.debug(f"[Handshake] HELLO_ACK accepted — client={client_version}")
+    def do_server_handshake(self, sock: RawSocket) -> bool:
+        """Server-side handshake: send server info, validate client response."""
+        self._logger.debug("Server handshake start")
+
+        if not self._send_handshake(sock, {"v": __version__, "meta": {}}):
+            self._logger.error("Failed to send server handshake")
+            return False
+
+        client_payload = self._recv_handshake(sock)
+        if not client_payload:
+            self._logger.error("Failed to receive client handshake response")
+            return False
+
+        peer_version = client_payload.get("v", "")
+        if not self._check_version(peer_version):
+            self._logger.error(f"Client version {peer_version} is incompatible")
+            return False
+
+        self._logger.debug("Server handshake complete")
         return True
 
-    # ── Client ────────────────────────────────────────────────────────────────
+    def do_client_handshake(self, sock: RawSocket) -> tuple[bool, Optional[dict[str, Any]]]:
+        """Client-side handshake: read server info, send client response."""
+        self._logger.debug("Client handshake start")
 
-    def handle_hello(self, response: Response) -> bool:
-        """Validate an incoming HELLO from the server."""
-        if response.type != HELLO:
-            self._logger.warning(f"[Handshake] Expected HELLO, got '{response.type.name}'")
-            return False
+        server_payload = self._recv_handshake(sock)
+        if not server_payload:
+            self._logger.error("Failed to receive server handshake")
+            return False, None
 
-        server_version = self._decode_hello(response.content)
-        if not self.version.is_compatible(server_version):
-            self._logger.warning(
-                f"[Handshake] Version mismatch — server={server_version}, client={self.version}"
-            )
-            return False
+        peer_version = server_payload.get("v", "")
+        if not self._check_version(peer_version):
+            self._logger.error(f"Server version {peer_version} is incompatible")
+            return False, None
 
-        self._logger.debug(f"[Handshake] HELLO accepted — server={server_version}")
-        return True
+        if not self._send_handshake(sock, {"v": __version__, "meta": {}}):
+            self._logger.error("Failed to send client handshake response")
+            return False, None
 
-    def send_hello_ack(self, request_id: bytes) -> None:
-        """Send HELLO_ACK back to the server."""
-        ack = Request(HELLO_ACK, self._encode_hello(), request_id=request_id)
-        self.sender.send(ack)
-        self._logger.debug(f"[Handshake] HELLO_ACK sent (id={request_id.hex()}...)")
+        meta = server_payload.get("meta", {})
+        self._logger.debug("Client handshake complete")
+        return True, meta
