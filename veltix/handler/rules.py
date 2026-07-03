@@ -1,6 +1,6 @@
 from ..logger.core import Logger
 from ..network.request import Request
-from ..network.system_types import HELLO, PING, PONG
+from ..network.system_types import PING, PONG
 from .rules_manager import MessageContext, Rule
 
 
@@ -19,27 +19,6 @@ class PingRule(Rule):
 
     def can_handle(self, context: MessageContext) -> bool:
         return context.response.type == PING
-
-
-class HelloRule(Rule):
-    _logger = Logger.get_instance()
-
-    def handle(self, context: MessageContext) -> None:
-        ok = context.handler.handshake_handler.handle_hello(context.response)
-        if ok:
-            context.handler.handshake_handler.send_hello_ack(context.response.request_id)
-            if context.handler.on_handshake_done:
-                try:
-                    context.handler.on_handshake_done()
-                except Exception as e:
-                    self._logger.error(f"Error in on_handshake_done: {e}")
-        else:
-            self._logger.warning("[Handshake] HELLO invalid — closing connection")
-            if context.handler.sender.conn:
-                context.handler.sender.conn.close()
-
-    def can_handle(self, context: MessageContext) -> bool:
-        return context.response.type == HELLO and not context.is_server
 
 
 class PendingRequestRule(Rule):
@@ -113,7 +92,6 @@ class UnhandledRule(Rule):
 
 ALL_RULES = [
     PingRule(),
-    HelloRule(),
     PendingRequestRule(),
     RouteRule(),
     OnRecvRule(),
