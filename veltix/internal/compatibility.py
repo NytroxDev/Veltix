@@ -119,12 +119,5 @@ class Version:
 # ---------------------------------------------------------------------------
 
 COMPATIBILITY: dict[Version, list[Version]] = {
-    Version(1, 6, 6): [Version(1, 6, 6), Version(1, 6, 8), Version(1, 6, 9)],
-    Version(1, 6, 8): [Version(1, 6, 6), Version(1, 6, 8), Version(1, 6, 9)],
-    Version(1, 6, 9): [Version(1, 6, 6), Version(1, 6, 8), Version(1, 6, 9)],
-    Version(1, 6, 10): [Version(1, 6, 10)],
-    Version(1, 7, 0): [Version(1, 7, 0), Version(1, 7, 1)],
-    Version(1, 7, 1): [Version(1, 7, 0), Version(1, 7, 1)],
-    Version(1, 7, 2): [Version(1, 7, 0), Version(1, 7, 1), Version(1, 7, 2)],
-    Version(1, 7, 5): [Version(1, 7, 0), Version(1, 7, 1), Version(1, 7, 2), Version(1, 7, 5)],
+    Version(1, 8, 0): [Version(1, 8, 0)],
 }
