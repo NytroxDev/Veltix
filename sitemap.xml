@@ -2,102 +2,106 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://nytroxdev.github.io/Veltix/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/changelog/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/callback_executor/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/client/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/exceptions/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/handshake_handler/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/logger/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/request/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/request_handler/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/sender/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/server/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/socket/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/types/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/api/utils/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/getting-started/installation/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/getting-started/quickstart/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/advanced/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/callbacks/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/client/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/logger/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/messages/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/migration/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/reconnect/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/routing/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
     </url>
     <url>
          <loc>https://nytroxdev.github.io/Veltix/guides/server/</loc>
-         <lastmod>2026-06-15</lastmod>
+         <lastmod>2026-07-03</lastmod>
+    </url>
+    <url>
+         <loc>https://nytroxdev.github.io/Veltix/plans/v1.8.0-v1.9.0-roadmap/</loc>
+         <lastmod>2026-07-03</lastmod>
     </url>
 </urlset>

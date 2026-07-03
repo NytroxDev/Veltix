@@ -1678,7 +1678,7 @@
 
 
         <p>TCP server for the Veltix protocol.</p>
-<p>Accepts incoming client connections, drives the HELLO/HELLO_ACK handshake,
+<p>Accepts incoming client connections, drives the JSON raw-socket handshake,
 and dispatches received messages through the request handler.</p>
 <p>Each client runs in a dedicated thread. Slow callbacks never block
 message reception — all user-defined handlers execute in a thread pool

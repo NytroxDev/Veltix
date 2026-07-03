@@ -1151,10 +1151,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.prepare_hello" class="md-nav__link">
+  <a href="#veltix.handler.handshake_handler.HandshakeHandler.do_server_handshake" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;prepare_hello
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;do_server_handshake
       
     </span>
   </a>
@@ -1162,43 +1162,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.send_hello" class="md-nav__link">
+  <a href="#veltix.handler.handshake_handler.HandshakeHandler.do_client_handshake" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;send_hello
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.handle_hello_ack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;handle_hello_ack
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.handle_hello" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;handle_hello
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.send_hello_ack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;send_hello_ack
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;do_client_handshake
       
     </span>
   </a>
@@ -1404,10 +1371,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.prepare_hello" class="md-nav__link">
+  <a href="#veltix.handler.handshake_handler.HandshakeHandler.do_server_handshake" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;prepare_hello
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;do_server_handshake
       
     </span>
   </a>
@@ -1415,43 +1382,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.send_hello" class="md-nav__link">
+  <a href="#veltix.handler.handshake_handler.HandshakeHandler.do_client_handshake" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;send_hello
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.handle_hello_ack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;handle_hello_ack
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.handle_hello" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;handle_hello
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.handler.handshake_handler.HandshakeHandler.send_hello_ack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;send_hello_ack
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;do_client_handshake
       
     </span>
   </a>
@@ -1501,9 +1435,16 @@
 
 
 
-        <p>Handles the HELLO / HELLO_ACK exchange for a single connection.</p>
-<p>SERVER: prepare_hello() → send_hello() → handle_hello_ack()
-CLIENT: handle_hello() → send_hello_ack()</p>
+        <p>Manage the version compatibility handshake for a single raw TCP connection.
+Uses a 3-way protocol to ensure both sides are synchronized:</p>
+<ol>
+<li>Server → Client : {"v", "meta"}</li>
+<li>Client → Server : {"v", "meta"}</li>
+<li>Server → Client : {"result": "ok"}</li>
+</ol>
+<p>Server mode sends first, then validates client version before acking.
+Client mode reads server version, validates, sends its version, then
+waits for the server ack before returning.</p>
 
 
 
@@ -1529,19 +1470,17 @@ CLIENT: handle_hello() → send_hello_ack()</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="veltix.handler.handshake_handler.HandshakeHandler.prepare_hello" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">prepare_hello</span>
+<h3 id="veltix.handler.handshake_handler.HandshakeHandler.do_server_handshake" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">do_server_handshake</span>
 
 
-<a href="#veltix.handler.handshake_handler.HandshakeHandler.prepare_hello" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">prepare_hello</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Request</span><span class="p">]</span>
+<a href="#veltix.handler.handshake_handler.HandshakeHandler.do_server_handshake" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">do_server_handshake</span><span class="p">(</span><span class="n">sock</span><span class="p">:</span> <span class="n">RawSocket</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Prepare a HELLO request without sending it.</p>
-<p>Must be called BEFORE register() and send_hello() to avoid the race
-condition where HELLO_ACK arrives before the queue is registered.</p>
+        <p>Server-side handshake: send server info, validate client response.</p>
 
 
     </div>
@@ -1551,77 +1490,19 @@ condition where HELLO_ACK arrives before the queue is registered.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="veltix.handler.handshake_handler.HandshakeHandler.send_hello" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">send_hello</span>
+<h3 id="veltix.handler.handshake_handler.HandshakeHandler.do_client_handshake" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">do_client_handshake</span>
 
 
-<a href="#veltix.handler.handshake_handler.HandshakeHandler.send_hello" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">send_hello</span><span class="p">(</span><span class="n">hello</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">client_conn</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<a href="#veltix.handler.handshake_handler.HandshakeHandler.do_client_handshake" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">do_client_handshake</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">sock</span><span class="p">:</span> <span class="n">RawSocket</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Send a previously prepared HELLO. Must be called AFTER register().</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="veltix.handler.handshake_handler.HandshakeHandler.handle_hello_ack" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">handle_hello_ack</span>
-
-
-<a href="#veltix.handler.handshake_handler.HandshakeHandler.handle_hello_ack" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">handle_hello_ack</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Validate an incoming HELLO_ACK from the client.</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="veltix.handler.handshake_handler.HandshakeHandler.handle_hello" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">handle_hello</span>
-
-
-<a href="#veltix.handler.handshake_handler.HandshakeHandler.handle_hello" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">handle_hello</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Validate an incoming HELLO from the server.</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="veltix.handler.handshake_handler.HandshakeHandler.send_hello_ack" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">send_hello_ack</span>
-
-
-<a href="#veltix.handler.handshake_handler.HandshakeHandler.send_hello_ack" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">send_hello_ack</span><span class="p">(</span><span class="n">request_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Send HELLO_ACK back to the server.</p>
+        <p>Client-side handshake: read server info, send client response.</p>
 
 
     </div>
