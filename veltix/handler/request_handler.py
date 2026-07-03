@@ -25,11 +25,10 @@ class RequestHandler:
 
     Processing order for each message:
     1. Auto-respond to PING with PONG
-    2. Auto-handle HELLO (client side) — respond with HELLO_ACK
-    3. Deliver to pending queue if send_and_wait() is waiting
-    4. Dispatch to a registered route if one matches
-    5. Fall back to default on_recv callback
-    6. Log a warning if nothing handled the message
+    2. Deliver to pending queue if send_and_wait() is waiting
+    3. Dispatch to a registered route if one matches
+    4. Fall back to default on_recv callback
+    5. Log a warning if nothing handled the message
     """
 
     def __init__(
@@ -43,7 +42,7 @@ class RequestHandler:
         self.sender = sender
 
         self._logger = Logger.get_instance()
-        self.handshake_handler = HandshakeHandler(sender=sender, mode=mode)
+        self.handshake_handler = HandshakeHandler(mode=mode)
         self._executor = CallbackExecutor(max_workers=max_workers)
 
         self.pending_requests: dict[bytes, Queue] = {}
