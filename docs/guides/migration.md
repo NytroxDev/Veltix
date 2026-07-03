@@ -1,5 +1,39 @@
 # Migration Guide
 
+## v1.7.5 → v1.8.0
+
+**Breaking change : handshake protocol — NOT backward compatible.**
+
+v1.8.0 replaces the old HELLO/HELLO_ACK message-based handshake with a **JSON raw-socket
+protocol**. Handshake now exchanges JSON payloads (`{"v": "1.8.0", "meta": {}}`) directly
+over the TCP stream before any Veltix framing.
+
+### Action required
+
+- **All clients and servers must be upgraded together** — mixed-version handshakes will
+  fail (v1.7.x sends a binary Veltix frame as HELLO, v1.8.0 expects a JSON payload).
+- No source-level API changes needed — `client.connect()` still returns `bool`, the
+  handshake is still automatic and transparent.
+- `HELLO` / `HELLO_ACK` are no longer available as imports (they were never meant for
+  public use).
+
+### What changed
+
+- Handshake is now **synchronous**: `connect()` blocks until the JSON handshake completes
+  or the socket timeout fires. The internal `_handshake_done` Event has been removed.
+- `HelloRule` removed — the handshake no longer routes through the message dispatch
+  pipeline. This is an internal change only.
+- `ERROR` / `INVALID_REQUEST` system types (codes 20, 21) are kept and re-exported.
+- Compatibility table only has `Version(1, 8, 0)`.
+
+```python
+# Before (v1.7.5) — HELLO/HELLO_ACK over Veltix wire protocol
+# After (v1.8.0) — JSON over raw TCP, then normal Veltix protocol
+# No code changes required.
+```
+
+---
+
 ## v1.7.1 → v1.7.2
 
 **No breaking changes — wire-compatible with v1.7.0/v1.7.1.**

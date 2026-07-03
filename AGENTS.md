@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 1.7.2
+- **Version:** 1.8.0
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -83,13 +83,13 @@ veltix/
 │   ├── request.py       # Request, Response, MAGIC, HEADER_SIZE
 │   ├── sender.py        # Sender, Mode
 │   ├── types.py         # MessageType, MessageTypeRegistry
-│   ├── system_types.py  # PING, PONG, HELLO, HELLO_ACK
+│   ├── system_types.py  # PING, PONG, ERROR, INVALID_REQUEST
 │   └── message_buffer.py
 ├── handler/             # Request routing & callbacks
 │   ├── request_handler.py   # RequestHandler
 │   ├── handshake_handler.py # HandshakeHandler
 │   ├── callback_executor.py # CallbackExecutor (thread pool)
-│   ├── rules.py             # PingRule, HelloRule, RouteRule, etc.
+│   ├── rules.py             # PingRule, PendingRequestRule, RouteRule, etc.
 │   └── rules_manager.py     # RulesManager, MessageContext, Rule
 ├── socket_core/         # Swappable socket backends
 │   ├── core.py          # SocketCore enum (THREADING, ASYNC)
@@ -115,7 +115,7 @@ veltix/
 │   └── format_size.py   # format_bytes
 ├── benchmark/           # CLI benchmarking suite
 ├── exceptions.py        # VeltixError hierarchy
-├── version.py           # __version__ = "1.7.2"
+├── version.py           # __version__ = "1.8.0"
 └── __init__.py          # Public API exports
 tests/
 ├── conftest.py          # Shared fixtures
@@ -535,11 +535,11 @@ Code ranges: **0-199** system, **200-499** user, **500+** plugins.
 #### System Types (pre-registered)
 
 ```python
-from veltix import PING, PONG, HELLO, HELLO_ACK
-# PING    = MessageType(0, "ping")
-# PONG    = MessageType(1, "pong")
-# HELLO   = MessageType(10, "hello")
-# HELLO_ACK = MessageType(11, "hello_ack")
+from veltix import ERROR, INVALID_REQUEST, PING, PONG
+# PING             = MessageType(0, "ping")
+# PONG             = MessageType(1, "pong")
+# ERROR            = MessageType(20, "error")
+# INVALID_REQUEST  = MessageType(21, "invalid_request")
 ```
 
 #### `MessageBuffer`
@@ -627,8 +627,8 @@ BufferSize.HUGE  # 1 MB
 ```python
 from veltix import Version, COMPATIBILITY
 
-v = Version(1, 7, 0)
-v2 = Version.from_str("v1.6.6")
+v = Version(1, 8, 0)
+v2 = Version.from_str("v1.8.0")
 v.is_compatible(v2)  # -> Optional[bool] (True/False/None)
 ```
 

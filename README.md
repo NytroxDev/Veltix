@@ -16,7 +16,7 @@ so you can focus on your application logic.
 
 **77k msg/s** • **0.035ms latency** • **4KB idle** • **2x throughput vs threading**
 
-**Mature & tested** - 261+ tests · CI on Python 3.8-3.14 · 10+ releases
+**Mature & tested** - 377+ tests · CI on Python 3.8-3.14 · 11+ releases
 
 ## Raw Socket vs Veltix
 
@@ -69,7 +69,7 @@ No manual framing. No thread management. No boilerplate.
 
 - **Message framing**: no more `recv()` loops and buffer handling
 - **Protocol routing**: `@server.route(MY_TYPE)` instead of `if/elif` chains
-- **Automatic handshake**: HELLO/HELLO_ACK with version compatibility
+- **Automatic handshake**: JSON raw-socket protocol with version compatibility
 - **Built-in ping/pong**: bidirectional latency measurement, zero config
 - **Auto-reconnect**: configurable retry with disconnect state callbacks
 - **Message integrity**: CRC32 verification on every message

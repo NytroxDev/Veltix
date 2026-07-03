@@ -5,6 +5,78 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-07-04
+
+### Added
+
+#### JSON Raw-Socket Handshake (Breaking)
+
+HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protocol**:
+
+- Handshake now exchanges JSON payloads (`{"v": "1.8.0", "meta": {}}`) directly over the TCP
+  stream, before any Veltix framing is used.
+- **Synchronous**: `client.connect()` blocks until the JSON handshake completes or fails.
+  No more `_handshake_done` Event or deferred handshake state.
+- `HandshakeHandler` rewritten: `_encode()` / `_decode()` for JSON serialization,
+  `_send_handshake()` / `_recv_handshake()` for raw socket I/O, `do_server_handshake()` /
+  `do_client_handshake()` as the public entry points.
+- Server-side handshake executes before the client is registered in `ClientsManager` on the
+  `AsyncSocket` backend — the `ClientInfo` is created, registered, and only marked
+  `handshake_done=True` after a successful handshake. On failure, cleanup is immediate and
+  complete.
+
+### Removed
+
+- **`HELLO` / `HELLO_ACK` system types** (codes 10, 11) — no longer used.
+- **`HelloRule`** — removed from `handler/rules.py` and `ALL_RULES`.
+- **`_handshake_done` Event** from `Client` — handshake is now synchronous; `connect()`
+  returns True/False directly.
+- **`handshake_timeout` config** (retained in config for future use but no longer used in
+  the handshake path — the raw socket timeout serves the same purpose).
+- **`_handshake_pending` / `_process_pending_handshakes()`** dead code from `AsyncSocket`
+  (noted as dead in v1.7.0 changelog).
+
+### Changed
+
+- **`ERROR` / `INVALID_REQUEST` system types** (codes 20, 21) confirmed as kept and
+  re-exported.
+- **`HandshakeHandler` constructor** no longer takes a `sender` parameter — only `mode`.
+- **Wire protocol**: Handshake no longer uses MAGIC/HEADER_SIZE framing. Post-handshake
+  messages continue to use the existing Veltix frame format unchanged.
+- **Compatibility table**: only `Version(1, 8, 0) : [Version(1, 8, 0)]`.
+- **Python 3.8 compatibility**: all `X | Y` union syntax replaced with `Union[X, Y]`
+  across `benchmark/`, `logger/config.py`, `network/request.py`.
+
+### Fixed
+
+- **`AsyncSocket` server-side handshake ordering**: `ClientInfo` is now created and
+  registered in `ClientsManager` *before* the handshake, not after. This ensures the
+  server has a consistent view of all connecting clients regardless of handshake outcome.
+- **`AsyncSocket._close_server_client()`** now calls `shutdown()` before `close()` to
+  ensure clean TCP teardown. Added `_shutdown_socket()` helper.
+- **`ThreadingSocket`** also uses `_shutdown_socket()` before `close()` on disconnect
+  and shutdown.
+
+### Tests
+
+- **377 tests** (up from 261) — test count reflects the broader coverage built across
+  the 1.7.x cycle.
+- **`test_handshake.py`** rewritten: tests JSON encode/decode roundtrips, version check
+  logic, integration with real sockets (success, version mismatch, timeout, multiple
+  clients sequential).
+- **`test_message_type.py`**: `test_hello_types_exist` replaced with `test_error_types_exist`.
+- **`test_compatibility.py`**: version references updated to 1.8.0.
+- **`test_client_server.py`**: two new tests verify handshake registration ordering and
+  failed-handshake cleanup.
+
+### Docs
+
+- **AGENTS.md**: version 1.8.0, system types updated, HelloRule removed, examples updated.
+- **README.md**: handshake description updated, test count corrected.
+- **docs/**: index.md, migration.md updated for v1.8.0 changes.
+
+---
+
 ## [1.7.5] - 2026-07-02
 
 ### Fixed

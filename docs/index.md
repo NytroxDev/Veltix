@@ -45,7 +45,7 @@ custom protocols, IPC, remote tooling, file transfer.
 
 - Zero dependencies : pure Python stdlib
 - Binary protocol with CRC32 integrity verification
-- Automatic HELLO/HELLO_ACK handshake with version compatibility
+- Automatic JSON raw-socket handshake with version compatibility
 - Thread-safe callback execution : slow handlers never block reception
 
 **API**
@@ -64,7 +64,7 @@ custom protocols, IPC, remote tooling, file transfer.
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 261 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
+- 377 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
 
 ---
 
