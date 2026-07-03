@@ -207,3 +207,6 @@ marimo/_lsp/
 __marimo__/
 code_review_bugs.md
 /ANALYSIS_RAPPORT.md
+
+# Plans de développement (docs de travail)
+docs/plans/
