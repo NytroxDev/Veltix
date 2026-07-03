@@ -183,37 +183,42 @@ class ThreadingSocket(BaseSocket):
 
         entry.info.conn.settimeout(timeout)
 
-        handshake_request_id, hello = self.request_handler.handshake_handler.prepare_hello()
-        self.request_handler.register(handshake_request_id)
-        self.request_handler.handshake_handler.send_hello(hello, entry.info.conn)
+        ok = self.request_handler.handshake_handler.do_server_handshake(
+            entry.info.conn._sock
+        )
+        if not ok:
+            self._logger.warning(f"Handshake failed for {entry.info.addr}")
+            self._close_server_client(entry)
+            return
 
-        conn_time = time.monotonic()
+        entry.info.handshake_done = True
+        self._logger.debug(f"Handshake complete for {entry.info.addr}")
+
+        if self.on_connect:
+            try:
+                self.on_connect(entry.info)
+            except Exception as e:
+                self._logger.error(
+                    f"on_connect error for {entry.info.addr}: {type(e).__name__}: {e}"
+                )
 
         while self.running:
             result = recv(entry.info.conn, buffer_size)
 
             if result.timed_out:
-                if (
-                    not entry.info.handshake_done
-                    and time.monotonic() - conn_time > self.handshake_timeout
-                ):
-                    self._logger.warning(f"Handshake timeout for {entry.info.addr}")
-                    self._close_server_client(entry)
-                    break
                 continue
 
-            if not self._process_server_message(result, entry, handshake_request_id):
+            if not self._process_server_message(result, entry):
                 break
 
     def _process_server_message(
-        self, result: RecvResult, entry: ClientEntry, handshake_request_id: bytes
+        self, result: RecvResult, entry: ClientEntry
     ) -> bool:
         if result.timed_out:
             return True
 
         if result.disconnected:
             self._logger.info(f"Client {entry.info.addr} disconnected")
-            self.request_handler.unregister(handshake_request_id)
             self._close_server_client(entry)
             return False
 
@@ -230,41 +235,12 @@ class ThreadingSocket(BaseSocket):
                 if isinstance(handler_result, Exception):
                     self._logger.error(f"Handler error for {entry.info.addr}: {handler_result}")
 
-                if not entry.info.handshake_done:
-                    self._check_server_handshake(entry, handshake_request_id)
-
         except Exception as e:
             self._logger.error(
                 f"Error processing message from {entry.info.addr}: {type(e).__name__}: {e}"
             )
 
         return True
-
-    def _check_server_handshake(self, entry: ClientEntry, handshake_request_id: bytes) -> None:
-        with self.request_handler.pending_requests_lock:
-            queue = self.request_handler.pending_requests.pop(handshake_request_id, None)
-            response = queue.get_nowait() if queue is not None and not queue.empty() else None
-
-        if response is None:
-            return
-
-        if not self.request_handler.handshake_handler.handle_hello_ack(response):
-            self._logger.warning(
-                f"Handshake failed for {entry.info.addr} — version mismatch, closing"
-            )
-            entry.info.conn.close()
-            return
-
-        entry.info.handshake_done = True
-        self._logger.debug(f"Handshake complete for {entry.info.addr}")
-
-        if self.on_connect:
-            try:
-                self.on_connect(entry.info)
-            except Exception as e:
-                self._logger.error(
-                    f"on_connect error for {entry.info.addr}: {type(e).__name__}: {e}"
-                )
 
     def _close_server_client(self, entry: ClientEntry) -> None:
         entry.info.conn.close()
@@ -315,6 +291,19 @@ class ThreadingSocket(BaseSocket):
         try:
             self._logger.info(f"Connecting to {host}:{port}")
             self._sock.connect((host, port))
+
+            success, meta = self.request_handler.handshake_handler.do_client_handshake(
+                self._sock
+            )
+            if not success:
+                self._logger.error("Client handshake failed")
+                self._sock.close()
+                return False
+
+            self._handshake_meta = meta
+            if self.request_handler.on_handshake_done:
+                self.request_handler.on_handshake_done()
+
             self.running = True
 
             self.thread_handler = threading.Thread(
