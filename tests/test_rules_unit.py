@@ -7,7 +7,6 @@ import pytest
 
 from veltix.handler.rules import (
     ALL_RULES,
-    HelloRule,
     OnRecvRule,
     PendingRequestRule,
     PingRule,
@@ -18,7 +17,7 @@ from veltix.handler.rules_manager import MessageContext, Rule, RulesManager
 from veltix.internal.compatibility import Version
 from veltix.network.request import Response
 from veltix.network.sender import Mode, Sender
-from veltix.network.system_types import HELLO, HELLO_ACK, PING, PONG
+from veltix.network.system_types import PING, PONG
 from veltix.network.types import MessageType
 
 
@@ -95,45 +94,6 @@ class TestPingRule:
         rule = PingRule()
         ctx = make_context()
         assert rule.try_handle(ctx) is False
-
-
-class TestHelloRule:
-    def test_can_handle_hello_client_side(self):
-        rule = HelloRule()
-        ctx = make_context(msg_type=HELLO, is_server=False)
-        assert rule.can_handle(ctx) is True
-
-    def test_cannot_handle_hello_server_side(self):
-        rule = HelloRule()
-        ctx = make_context(msg_type=HELLO, is_server=True)
-        assert rule.can_handle(ctx) is False
-
-    def test_cannot_handle_non_hello(self):
-        rule = HelloRule()
-        ctx = make_context()
-        assert rule.can_handle(ctx) is False
-
-    def test_handle_invokes_handshake_handler(self):
-        rule = HelloRule()
-        handler = MagicMock()
-        handler.sender = MagicMock()
-        handler.handshake_handler.handle_hello = MagicMock(return_value=True)
-        handler.on_handshake_done = MagicMock()
-        ctx = make_context(msg_type=HELLO, is_server=False, handler=handler)
-        rule.handle(ctx)
-        handler.handshake_handler.handle_hello.assert_called_once()
-        handler.handshake_handler.send_hello_ack.assert_called_once()
-        handler.on_handshake_done.assert_called_once()
-
-    def test_handle_closes_on_failed_handshake(self):
-        rule = HelloRule()
-        handler = MagicMock()
-        handler.sender = MagicMock()
-        handler.sender.conn = MagicMock()
-        handler.handshake_handler.handle_hello = MagicMock(return_value=False)
-        ctx = make_context(msg_type=HELLO, is_server=False, handler=handler)
-        rule.handle(ctx)
-        handler.sender.conn.close.assert_called_once()
 
 
 class TestPendingRequestRule:
@@ -269,22 +229,20 @@ class TestAllRules:
         assert isinstance(ALL_RULES, list)
 
     def test_all_rules_has_correct_count(self):
-        assert len(ALL_RULES) == 6
+        assert len(ALL_RULES) == 5
 
     def test_all_rules_contains_all_rule_types(self):
         types_in_all = [type(r).__name__ for r in ALL_RULES]
         assert "PingRule" in types_in_all
-        assert "HelloRule" in types_in_all
         assert "PendingRequestRule" in types_in_all
         assert "RouteRule" in types_in_all
         assert "OnRecvRule" in types_in_all
         assert "UnhandledRule" in types_in_all
 
     def test_all_rules_ordered_correctly(self):
-        """Rules order matters: Ping -> Hello -> Pending -> Route -> OnRecv -> Unhandled."""
+        """Rules order matters: Ping -> Pending -> Route -> OnRecv -> Unhandled."""
         assert isinstance(ALL_RULES[0], PingRule)
-        assert isinstance(ALL_RULES[1], HelloRule)
-        assert isinstance(ALL_RULES[2], PendingRequestRule)
-        assert isinstance(ALL_RULES[3], RouteRule)
-        assert isinstance(ALL_RULES[4], OnRecvRule)
-        assert isinstance(ALL_RULES[5], UnhandledRule)
+        assert isinstance(ALL_RULES[1], PendingRequestRule)
+        assert isinstance(ALL_RULES[2], RouteRule)
+        assert isinstance(ALL_RULES[3], OnRecvRule)
+        assert isinstance(ALL_RULES[4], UnhandledRule)

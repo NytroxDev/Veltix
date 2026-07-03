@@ -23,7 +23,7 @@ from .logger.core import Logger
 from .logger.levels import LogLevel
 from .network.request import Request, Response
 from .network.sender import Mode, Sender
-from .network.system_types import PING, PONG
+from .network.system_types import ERROR, INVALID_REQUEST, PING, PONG
 from .network.types import MessageType
 from .server.client_info import ClientInfo
 from .server.config import ServerConfig
