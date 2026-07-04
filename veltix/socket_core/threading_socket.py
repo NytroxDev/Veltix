@@ -6,7 +6,7 @@ import contextlib
 import socket
 import threading
 import time
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 from ..internal.network import RecvResult, recv
 from ..logger import Logger
@@ -187,7 +187,9 @@ class ThreadingSocket(BaseSocket):
 
         entry.info.conn.settimeout(timeout)
 
-        ok = self.request_handler.handshake_handler.do_server_handshake(entry.info.conn._sock)
+        ok = self.request_handler.handshake_handler.do_server_handshake(
+            cast(ThreadingSocket, entry.info.conn)._sock
+        )
         if not ok:
             self._logger.warning(f"Handshake failed for {entry.info.addr}")
             self._close_server_client(entry)
@@ -223,7 +225,7 @@ class ThreadingSocket(BaseSocket):
             return False
 
         try:
-            entry.buffer.add_data(result.data)
+            entry.buffer.add_data(result.data or b"")
             messages = entry.buffer.extract_messages()
 
             for response in messages:
@@ -260,10 +262,10 @@ class ThreadingSocket(BaseSocket):
             self._close_server_client(client)
             return True
         else:
-            client = self.client_manager.get_client(client)
-            if not client:
+            entry = self.client_manager.get_client(client)
+            if not entry:
                 return False
-            self._close_server_client(client)
+            self._close_server_client(entry)
             return True
 
     def close_all(self) -> bool:
@@ -333,7 +335,7 @@ class ThreadingSocket(BaseSocket):
                 break
 
             try:
-                message_buffer.add_data(result.data)
+                message_buffer.add_data(result.data or b"")
 
                 for response in message_buffer.extract_messages():
                     self._logger.debug(

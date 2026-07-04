@@ -161,7 +161,7 @@ class AsyncSocket(BaseSocket):
         )
         return self.running
 
-    def _selector_loop(self, max_client, buffer_size):
+    def _selector_loop(self, max_client: int, buffer_size: int) -> None:
         while self.running:
             events = self._selector.select(0.5)
 
@@ -176,7 +176,7 @@ class AsyncSocket(BaseSocket):
     def fileno(self) -> int:
         return self._sock.fileno()
 
-    def _accept_client(self, max_client: int):
+    def _accept_client(self, max_client: int) -> None:
         if (max_client != -1 and self.client_manager.count() >= max_client) or not self.running:
             self._logger.debug("_accept_client: max clients reached or server not running")
             return
@@ -240,7 +240,7 @@ class AsyncSocket(BaseSocket):
             self.close_client(client_id)
             return
 
-        data = result.data
+        data = result.data or b""
         self._logger.debug(f"client {client_id} recv {len(data)} bytes")
         entry.buffer.add_data(data)
         messages = entry.buffer.extract_messages()
@@ -249,7 +249,7 @@ class AsyncSocket(BaseSocket):
             for message in messages:
                 self.request_handler.handle(message, entry.info)
 
-    def _handle_self_read(self, buffer_size: int):
+    def _handle_self_read(self, buffer_size: int) -> None:
         result = _network_recv(self, buffer_size)
 
         if result.timed_out:
@@ -262,7 +262,7 @@ class AsyncSocket(BaseSocket):
             self.disconnect(0.5)
             return
 
-        data = result.data
+        data = result.data or b""
         self._logger.debug(f"self_read: recv {len(data)} bytes")
         self._client_buffer.add_data(data)
         messages = self._client_buffer.extract_messages()
