@@ -52,7 +52,7 @@ class LoggerConfig:
     async_write: bool = False
     buffer_size: int = 100
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate and normalize configuration."""
         if self.file_path:
             self.file_path = Path(self.file_path)
