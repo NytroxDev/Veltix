@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.events import Events, events
@@ -213,7 +213,7 @@ class Server:
             timeout:  Timeout in seconds (default: 5.0).
         """
 
-        def _ping():
+        def _ping() -> None:
             try:
                 callback(self.ping_client(client, timeout=timeout))
             except Exception as e:
@@ -237,7 +237,7 @@ class Server:
             return False
         return self.socket.close_client(entry)
 
-    def get_clients_sockets_by_tag(self, tag: str, value=None) -> list[BaseSocket]:
+    def get_clients_sockets_by_tag(self, tag: str, value: Any = None) -> list[BaseSocket]:
         """Get all clients that have a specific tag, optionally matching a value."""
         entries = self.socket.client_manager.get_clients_by_tag(tag, value)
         return self.socket.client_manager.to_sockets(entries)

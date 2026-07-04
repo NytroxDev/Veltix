@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from threading import Lock
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from ...network.message_buffer import MessageBuffer
 
@@ -57,7 +57,7 @@ class ClientsManager:
         with self._clients_lock:
             return list(self.clients.values())
 
-    def iter_on_clients(self, func: Callable[[ClientEntry], None]):
+    def iter_on_clients(self, func: Callable[[ClientEntry], None]) -> None:
         with self._clients_lock:
             clients_copy = self.clients.copy()
         for client in clients_copy.values():
@@ -67,7 +67,7 @@ class ClientsManager:
         with self._clients_lock:
             return len(self.clients)
 
-    def get_clients_by_tag(self, tag: str, value=None) -> list[ClientEntry]:
+    def get_clients_by_tag(self, tag: str, value: Any = None) -> list[ClientEntry]:
         """Get all clients that have a specific tag, optionally matching a value."""
         with self._clients_lock:
             if value is None:
