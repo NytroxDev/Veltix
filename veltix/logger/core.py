@@ -22,7 +22,8 @@ class Logger:
     """
 
     _instance: Optional[Logger] = None
-    _lock = threading.Lock()
+    _initialized: bool = False
+    _lock = threading.RLock()
 
     def __new__(cls, config: Optional[LoggerConfig] = None) -> Logger:
         if cls._instance is None:
@@ -34,7 +35,6 @@ class Logger:
 
     def __init__(self, config: Optional[LoggerConfig] = None) -> None:
         if not self._initialized:
-            self._lock = threading.RLock()
             self._initialized = True
         elif config is not None:
             self._lock.acquire()
@@ -52,7 +52,7 @@ class Logger:
         self.config = config or LoggerConfig()
         self._formatter = Formatter(use_colors=self.config.use_colors)
         self._writer = Writer(self.config)
-        self._stats: dict[LogLevel, int] = dict.fromkeys(LogLevel, 0)
+        self._stats = dict.fromkeys(LogLevel, 0)
 
     @classmethod
     def get_instance(cls, config: Optional[LoggerConfig] = None) -> Logger:
