@@ -9,9 +9,12 @@ Shared low-level helpers used across benchmarks:
 from __future__ import annotations
 
 import os
-import threading
+from typing import TYPE_CHECKING
 
 import psutil
+
+if TYPE_CHECKING:
+    import threading
 
 # ── psutil process handle ─────────────────────────────────────────────────────
 _proc = psutil.Process(os.getpid())

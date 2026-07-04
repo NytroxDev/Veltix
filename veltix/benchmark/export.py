@@ -10,13 +10,14 @@ import json
 import platform
 import sys
 from datetime import datetime, timezone
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import psutil
 
 import veltix
 
-from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
+if TYPE_CHECKING:
+    from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
 
 
 def _normalise(value):

@@ -6,12 +6,14 @@ Terminal rendering helpers and the README-ready summary table.
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from veltix import format_bytes
 
 from .config import WIDTH
-from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
+
+if TYPE_CHECKING:
+    from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
 
 # ── Low-level helpers ─────────────────────────────────────────────────────────
 
@@ -208,10 +210,7 @@ def _results(value):
 
 
 def _is_both(*groups) -> bool:
-    for g in groups:
-        if g is not None and len(g) > 1:
-            return True
-    return False
+    return any(g is not None and len(g) > 1 for g in groups)
 
 
 def print_summary(
