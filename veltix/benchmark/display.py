@@ -6,7 +6,7 @@ Terminal rendering helpers and the README-ready summary table.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from veltix import format_bytes
 
@@ -33,6 +33,8 @@ def row(label: str, value: str, width: int = 36) -> None:
     print(f"  {label:<{width}}: {value}")
 
 
+_ColFmt = Callable[[Any], str]
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 
 CW = 22  # value column width (applies in both modes)
@@ -49,7 +51,7 @@ def _fmt_kb(kb: float) -> str:
 # ── Row helpers per benchmark ─────────────────────────────────────────────────
 
 
-def _memory_defs() -> list[tuple[str, str, str]]:
+def _memory_defs() -> list[tuple[str, str, _ColFmt]]:
     """Return (label, attr, fmt) triples.  attr is poked via getattr."""
     return [
         ("Baseline", "baseline_kb", _fmt_kb),
@@ -66,7 +68,7 @@ def _memory_defs() -> list[tuple[str, str, str]]:
     ]
 
 
-def _latency_defs() -> list[tuple[str, str, str]]:
+def _latency_defs() -> list[tuple[str, str, _ColFmt]]:
     return [
         ("Count", "count", str),
         ("Avg", "avg", lambda v: f"{v:.3f} ms"),
@@ -81,7 +83,7 @@ def _latency_defs() -> list[tuple[str, str, str]]:
     ]
 
 
-def _fps_defs() -> list[tuple[str, str, str]]:
+def _fps_defs() -> list[tuple[str, str, _ColFmt]]:
     return [
         ("Target tick", "tick_rate", lambda v: f"{v} Hz"),
         ("Actual tick", "actual_tick_rate", lambda v: f"{v:.1f} Hz"),
@@ -101,7 +103,7 @@ def _fps_defs() -> list[tuple[str, str, str]]:
     ]
 
 
-def _burst_defs() -> list[tuple[str, str, str]]:
+def _burst_defs() -> list[tuple[str, str, _ColFmt]]:
     return [
         ("Messages", "count", lambda v: f"{v:,}"),
         ("Payload", "payload_bytes", lambda v: f"{v} B"),
@@ -120,7 +122,7 @@ def _burst_defs() -> list[tuple[str, str, str]]:
     ]
 
 
-def _stress_defs() -> list[tuple[str, str, str]]:
+def _stress_defs() -> list[tuple[str, str, _ColFmt]]:
     return [
         ("Clients", "num_clients", lambda v: f"{v:,}"),
         ("Msgs/client", "msgs_per_client", lambda v: f"{v:,}"),
@@ -143,7 +145,7 @@ def _stress_defs() -> list[tuple[str, str, str]]:
 # ── Single-backend mode ───────────────────────────────────────────────────────
 
 
-def _show_single_section(title: str, defs: list[tuple], result) -> None:
+def _show_single_section(title: str, defs: list[tuple[str, str, _ColFmt]], result: Any) -> None:
     print(f"  {title}")
     for label, attr, fmt in defs:
         value = getattr(result, attr)
@@ -151,7 +153,9 @@ def _show_single_section(title: str, defs: list[tuple], result) -> None:
     print()
 
 
-def _show_single(mem, lat, fps64, fps128, burst, stress) -> None:
+def _show_single(
+    mem: Any, lat: Any, fps64: Any, fps128: Any, burst: Any, stress: Any,
+) -> None:
     if mem:
         _show_single_section("MEMORY", _memory_defs(), mem[0])
     if lat:
@@ -174,7 +178,7 @@ def _sbw(label: str) -> str:
     return f"{label:<28}"
 
 
-def _show_both_section(title: str, defs: list[tuple], results: list) -> None:
+def _show_both_section(title: str, defs: list[tuple[str, str, _ColFmt]], results: list[Any]) -> None:
     print(f"  {title}")
     for label, attr, fmt in defs:
         parts = "".join(_val(fmt(getattr(r, attr))) for r in results)
@@ -182,7 +186,9 @@ def _show_both_section(title: str, defs: list[tuple], results: list) -> None:
     print()
 
 
-def _show_side_by_side(mem, lat, fps64, fps128, burst, stress) -> None:
+def _show_side_by_side(
+    mem: Any, lat: Any, fps64: Any, fps128: Any, burst: Any, stress: Any,
+) -> None:
     if mem:
         _show_both_section("MEMORY", _memory_defs(), mem)
     if lat:
@@ -200,7 +206,7 @@ def _show_side_by_side(mem, lat, fps64, fps128, burst, stress) -> None:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
-def _results(value):
+def _results(value: Any) -> Optional[list[Any]]:
     """Normalize to list or None."""
     if value is None:
         return None
@@ -209,7 +215,7 @@ def _results(value):
     return [value]
 
 
-def _is_both(*groups) -> bool:
+def _is_both(*groups: Any) -> bool:
     return any(g is not None and len(g) > 1 for g in groups)
 
 
