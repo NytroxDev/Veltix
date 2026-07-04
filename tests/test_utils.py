@@ -1,5 +1,7 @@
 """Tests for veltix.utils — encoding helpers and format_bytes."""
 
+import json
+
 import pytest
 
 from veltix import decode_json, decode_utf8, encode_json, encode_utf8, format_bytes
@@ -89,5 +91,5 @@ class TestDecodeJson:
         assert decode_json(encode_json(original)) == original
 
     def test_decode_invalid_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(json.JSONDecodeError):
             decode_json(b"not json")

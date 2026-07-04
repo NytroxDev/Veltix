@@ -85,7 +85,7 @@ def run(
     while time.perf_counter() - t0 < duration_s:
         tick_start = time.perf_counter()
 
-        for i, c in enumerate(clients):
+        for i, _c in enumerate(clients):
             try:
                 senders[i].send(req_move[i])
                 total_sent += 1

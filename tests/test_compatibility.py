@@ -25,7 +25,7 @@ class TestVersionFromStr:
         assert v == Version(0, 0, 0)
 
     def test_parse_invalid_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             Version.from_str("not_a_version")
 
     def test_parse_truncates_extra_components(self):

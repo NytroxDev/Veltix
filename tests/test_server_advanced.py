@@ -144,7 +144,7 @@ class TestServerGetClientsSocketsByTag:
         server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=2))
         server.start()
 
-        MSG = MessageType(code=2500, name="tag_test_msg")
+        msg = MessageType(code=2500, name="tag_test_msg")
         received = []
 
         client1 = Client(ClientConfig(server_addr="127.0.0.1", port=port))
@@ -158,7 +158,7 @@ class TestServerGetClientsSocketsByTag:
         server.clients[1].add_tag("role", value="guest")
 
         admin_sockets = server.get_clients_sockets_by_tag("role", value="admin")
-        server.get_sender().broadcast(Request(MSG, b"test"), admin_sockets)
+        server.get_sender().broadcast(Request(msg, b"test"), admin_sockets)
 
         time.sleep(0.3)
         assert len(received) == 1
