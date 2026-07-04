@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from ..network.request import Response
     from ..network.sender import Sender
     from ..network.types import MessageType
-    from ..server.client_info import ClientInfo
 
 
 class RequestHandler:
@@ -56,11 +55,11 @@ class RequestHandler:
 
         self.init_rules_manager()
 
-    def init_rules_manager(self) -> None:
+    def init_rules_manager(self):
         for rule in ALL_RULES:
             self.rules_manager.add_rule(rule)
 
-    def handle(self, response: Response, client: Optional[ClientInfo] = None) -> Union[Exception, bool]:
+    def handle(self, response: Response, client=None) -> Union[Exception, bool]:
         """
         Handle an incoming message with full routing logic.
 
@@ -82,7 +81,7 @@ class RequestHandler:
 
         Avoids the race condition where the response arrives before the queue exists.
         """
-        queue: Queue = Queue(maxsize=1)
+        queue = Queue(maxsize=1)
         with self.pending_requests_lock:
             self.pending_requests[request_id] = queue
         return queue
@@ -107,7 +106,7 @@ class RequestHandler:
             return None
 
         try:
-            return queue.get(timeout=timeout)  # type: ignore[no-any-return]
+            return queue.get(timeout=timeout)
         except Empty:
             self._logger.warning(
                 f"Timeout waiting for response (id={request_id.hex()}) after {timeout}s"
@@ -118,7 +117,7 @@ class RequestHandler:
                 self.pending_requests.pop(request_id, None)
 
     def set_on_recv(self, callback: Callable) -> None:
-        self.on_recv = callback  # type: ignore[assignment]
+        self.on_recv = callback
 
     def has_route(self, type_: MessageType) -> bool:
         with self._routes_lock:
