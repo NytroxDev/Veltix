@@ -7,7 +7,8 @@ import contextlib
 import threading
 import time
 from collections import deque
-from typing import TYPE_CHECKING, Optional, TextIO
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional, TextIO, Union
 
 if TYPE_CHECKING:
     from .config import LoggerConfig
@@ -19,7 +20,7 @@ class Writer:
     def __init__(self, config: LoggerConfig) -> None:
         self.config = config
         self._lock = threading.RLock()
-        self._file_path = config.file_path
+        self._file_path: Optional[Path] = Path(config.file_path) if config.file_path else None
 
         self._file_handle: Optional[TextIO] = None
         self._current_size = 0
@@ -36,11 +37,14 @@ class Writer:
         atexit.register(self._cleanup)
 
     def _init_file(self) -> None:
+        file_path = self._file_path
+        if file_path is None:
+            return
         try:
-            self._file_path.parent.mkdir(parents=True, exist_ok=True)
-            self._file_handle = open(self._file_path, "a", encoding="utf-8", buffering=8192)  # noqa: SIM115
-            if self._file_path.exists():
-                self._current_size = self._file_path.stat().st_size
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            self._file_handle = open(file_path, "a", encoding="utf-8", buffering=8192)  # noqa: SIM115
+            if file_path.exists():
+                self._current_size = file_path.stat().st_size
         except (OSError, PermissionError) as e:
             print(f"⚠️  Failed to open log file: {e}")
             self._file_path = None
@@ -115,6 +119,8 @@ class Writer:
                     self._file_handle.close()
 
                 base_path = self._file_path
+                if base_path is None:
+                    return
                 oldest = base_path.with_suffix(
                     f"{base_path.suffix}.{self.config.file_backup_count}"
                 )
