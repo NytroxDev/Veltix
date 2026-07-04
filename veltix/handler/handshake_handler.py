@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import struct
-from typing import Any, Optional, Protocol
+from typing import Any, Optional, Protocol, cast
 
 from ..internal.compatibility import Version
 from ..internal.mode import Mode
@@ -62,7 +62,7 @@ class HandshakeHandler:
         """Parse length-prefixed JSON."""
         try:
             payload_len = _HANDSHAKE_STRUCT.unpack(data[:2])[0]
-            return json.loads(data[2 : 2 + payload_len])
+            return cast(dict[str, Any], json.loads(data[2 : 2 + payload_len]))
         except Exception:
             return None
 

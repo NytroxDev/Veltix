@@ -81,7 +81,7 @@ class Request:
 
         return Response(
             type=msg_type,
-            content=content,
+            content=bytes(content),
             hash=hash_received,
             request_id=request_id,
         )

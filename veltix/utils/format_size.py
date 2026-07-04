@@ -1,4 +1,4 @@
-def format_bytes(size: int) -> str:
+def format_bytes(size: float) -> str:
     """
     Format a byte count into a human-readable string.
 

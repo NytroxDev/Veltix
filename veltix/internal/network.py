@@ -44,7 +44,7 @@ class RecvResult:
 
     def __repr__(self) -> str:
         if self.ok:
-            return f"RecvResult(OK, {len(self.data)} bytes)"
+            return f"RecvResult(OK, {len(self.data or b'')} bytes)"
         return f"RecvResult({self.status.name})"
 
 
