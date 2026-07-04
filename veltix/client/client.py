@@ -226,9 +226,7 @@ class Client:
                 try:
                     self.on_connect()
                 except Exception as e:
-                    self._logger.error(
-                        f"on_connect error: {type(e).__name__}: {e}"
-                    )
+                    self._logger.error(f"on_connect error: {type(e).__name__}: {e}")
 
             return True
 

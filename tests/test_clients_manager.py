@@ -5,19 +5,21 @@ import threading
 import pytest
 
 from veltix.server.client_info import ClientInfo
-from veltix.socket_core.managers.clients_manager import ClientEntry, ClientsManager
-
+from veltix.socket_core.managers.clients_manager import ClientsManager
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 def make_client_info(addr=("127.0.0.1", 8080)) -> ClientInfo:
     """Create a minimal ClientInfo for testing."""
     import socket
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     return ClientInfo(conn=sock, addr=addr, thread_id=1)
 
 
 # ── ClientEntry ───────────────────────────────────────────────────────────────
+
 
 class TestClientEntry:
     def test_slots(self):
@@ -45,6 +47,7 @@ class TestClientEntry:
 
 
 # ── ClientsManager ────────────────────────────────────────────────────────────
+
 
 class TestClientsManagerAdd:
     def test_add_client_returns_id(self):
@@ -245,6 +248,7 @@ class TestCloseClientById:
     def test_close_client_with_none_id(self):
         """close_client(id_=None) should not crash — bugfix v1.6.6."""
         from veltix import Server, ServerConfig
+
         server = Server(ServerConfig(host="127.0.0.1", port=18200))
         # id_=0 used to be falsy — should now be handled correctly
         result = server.close_client(client=None, id_=None)
@@ -254,6 +258,7 @@ class TestCloseClientById:
     def test_close_client_with_zero_id(self):
         """id_=0 should not be treated as falsy — bugfix v1.6.6."""
         from veltix import Server, ServerConfig
+
         server = Server(ServerConfig(host="127.0.0.1", port=18201))
         # id=0 doesn't exist but should attempt lookup, not skip
         result = server.close_client(client=None, id_=0)

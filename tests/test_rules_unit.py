@@ -1,9 +1,7 @@
 """Direct unit tests for Rule classes, RulesManager, and ALL_RULES."""
 
 import socket
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from veltix.handler.rules import (
     ALL_RULES,
@@ -13,11 +11,9 @@ from veltix.handler.rules import (
     RouteRule,
     UnhandledRule,
 )
-from veltix.handler.rules_manager import MessageContext, Rule, RulesManager
-from veltix.internal.compatibility import Version
+from veltix.handler.rules_manager import MessageContext, RulesManager
 from veltix.network.request import Response
-from veltix.network.sender import Mode, Sender
-from veltix.network.system_types import PING, PONG
+from veltix.network.system_types import PING
 from veltix.network.types import MessageType
 
 
@@ -66,11 +62,13 @@ class TestPingRule:
         handler = MagicMock()
         handler.is_server = True
         handler.sender = MagicMock()
-        import socket
         from veltix.server.client_info import ClientInfo
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client = ClientInfo(conn=sock, addr=("127.0.0.1", 9999), thread_id=1)
-        ctx = make_context(msg_type=PING, is_server=True, handler=handler, request_id=b"\x01\x02\x03\x04")
+        ctx = make_context(
+            msg_type=PING, is_server=True, handler=handler, request_id=b"\x01\x02\x03\x04"
+        )
         ctx.client = client
         rule.handle(ctx)
         handler.sender.send.assert_called_once()
@@ -108,6 +106,7 @@ class TestPendingRequestRule:
         handler.pending_requests_lock = MagicMock()
         request_id = b"\xaa\xbb\xcc\xdd"
         from queue import Queue
+
         q = Queue()
         handler.pending_requests[request_id] = q
 

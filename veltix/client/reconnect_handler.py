@@ -107,9 +107,7 @@ class ReconnectHandler:
 
     def retry(self, max_: Optional[int] = None) -> None:
         self._logger.info("retry() called — forcing reconnection attempt")
-        thread = threading.Thread(
-            target=self._retry_in_thread, kwargs={"max_": max_}, daemon=True
-        )
+        thread = threading.Thread(target=self._retry_in_thread, kwargs={"max_": max_}, daemon=True)
         thread.start()
 
     def _retry_in_thread(self, max_: Optional[int] = None) -> None:

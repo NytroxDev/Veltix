@@ -1,9 +1,7 @@
 """Tests for MessageBuffer — TCP stream handling with protocol hardening (v1.7.0)."""
 
-import pytest
-
 from veltix import MessageType, Request
-from veltix.network.message_buffer import MAX_BUFFER_SIZE, MessageBuffer
+from veltix.network.message_buffer import MessageBuffer
 
 
 class TestMessageBuffer:

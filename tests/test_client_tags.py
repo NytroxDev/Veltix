@@ -2,12 +2,10 @@
 
 import socket
 
-import pytest
-
 from veltix.server.client_info import ClientInfo
 
-
 # ── Fixture ───────────────────────────────────────────────────────────────────
+
 
 def make_client() -> ClientInfo:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,6 +13,7 @@ def make_client() -> ClientInfo:
 
 
 # ── add_tag ───────────────────────────────────────────────────────────────────
+
 
 class TestAddTag:
     def test_add_tag_without_value(self):
@@ -57,6 +56,7 @@ class TestAddTag:
 
 # ── has_tag ───────────────────────────────────────────────────────────────────
 
+
 class TestHasTag:
     def test_has_tag_true(self):
         client = make_client()
@@ -75,6 +75,7 @@ class TestHasTag:
 
 
 # ── has_all_tags ──────────────────────────────────────────────────────────────
+
 
 class TestHasAllTags:
     def test_has_all_tags_true(self):
@@ -99,6 +100,7 @@ class TestHasAllTags:
 
 # ── has_any_tags ──────────────────────────────────────────────────────────────
 
+
 class TestHasAnyTags:
     def test_has_any_tags_one_match(self):
         client = make_client()
@@ -122,6 +124,7 @@ class TestHasAnyTags:
 
 # ── get_tag ───────────────────────────────────────────────────────────────────
 
+
 class TestGetTag:
     def test_get_existing_tag(self):
         client = make_client()
@@ -141,6 +144,7 @@ class TestGetTag:
 
 
 # ── remove_tag ────────────────────────────────────────────────────────────────
+
 
 class TestRemoveTag:
     def test_remove_existing_tag(self):
@@ -164,6 +168,7 @@ class TestRemoveTag:
 
 
 # ── clear_tags ────────────────────────────────────────────────────────────────
+
 
 class TestClearTags:
     def test_clear_all_tags(self):

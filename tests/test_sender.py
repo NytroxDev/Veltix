@@ -1,16 +1,14 @@
 """Tests for Sender — send and broadcast."""
 
-import socket
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from veltix import MessageType, Mode, Request, Sender, SenderError
 from veltix.network.request import HEADER_SIZE
-from veltix.socket_core.base_socket import BaseSocket
-
 
 # ── Fixture ───────────────────────────────────────────────────────────────────
+
 
 def make_mock_socket() -> MagicMock:
     """Create a mock socket that behaves like BaseSocket."""
@@ -23,6 +21,7 @@ MSG_TYPE = MessageType(code=3100, name="sender_test")
 
 
 # ── Init ──────────────────────────────────────────────────────────────────────
+
 
 class TestSenderInit:
     def test_client_mode_requires_socket(self):
@@ -42,6 +41,7 @@ class TestSenderInit:
 
 
 # ── send ──────────────────────────────────────────────────────────────────────
+
 
 class TestSenderSend:
     def test_client_send_success(self):
@@ -91,6 +91,7 @@ class TestSenderSend:
 
 
 # ── broadcast ─────────────────────────────────────────────────────────────────
+
 
 class TestSenderBroadcast:
     def test_broadcast_to_all(self):

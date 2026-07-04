@@ -7,6 +7,7 @@ import pytest
 from veltix import Client, ClientConfig, MessageType, Request, Server, ServerConfig
 from veltix.server.client_info import ClientInfo
 
+
 def find_free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
@@ -138,6 +139,7 @@ class TestServerGetClientsSocketsByTag:
     def test_server_route_with_tag_filtering(self):
         """Integration: tag-based socket filtering with routing."""
         import time
+
         port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port, max_connection=2))
         server.start()

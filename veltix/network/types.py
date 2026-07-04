@@ -19,7 +19,9 @@ class MessageTypeRegistry:
         with cls._lock:
             if msg_type.code in cls._registry:
                 existing = cls._registry[msg_type.code]
-                raise MessageTypeError(f"Code {msg_type.code} already registered as '{existing.name}'")
+                raise MessageTypeError(
+                    f"Code {msg_type.code} already registered as '{existing.name}'"
+                )
             cls._registry[msg_type.code] = msg_type
 
     @classmethod

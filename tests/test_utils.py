@@ -35,7 +35,7 @@ class TestEncodeUtf8:
         assert encode_utf8(b"hello") == b"hello"
 
     def test_encode_unicode(self):
-        assert encode_utf8("héllo") == "héllo".encode("utf-8")
+        assert encode_utf8("héllo") == "héllo".encode()
 
     def test_encode_empty_string(self):
         assert encode_utf8("") == b""
@@ -46,7 +46,7 @@ class TestDecodeUtf8:
         assert decode_utf8(b"hello") == "hello"
 
     def test_decode_unicode(self):
-        assert decode_utf8("héllo".encode("utf-8")) == "héllo"
+        assert decode_utf8("héllo".encode()) == "héllo"
 
     def test_decode_empty(self):
         assert decode_utf8(b"") == ""

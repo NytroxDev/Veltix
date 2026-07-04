@@ -22,7 +22,7 @@ from veltix import Client, ClientConfig, Server, ServerConfig, SocketCore, forma
 from ..config import PORT_MEMORY
 from ..display import header, row
 from ..models import MemoryResult
-from ..utils import ram_kb, ram_mb
+from ..utils import ram_kb
 
 
 def run(port: int = PORT_MEMORY, socket_core: str = "async") -> MemoryResult:

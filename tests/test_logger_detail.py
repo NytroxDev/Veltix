@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from veltix import Logger, LoggerConfig, LogLevel
-from veltix.logger.levels import LogLevel as LogLevelCls
 
 
 class TestLogLevelStr:

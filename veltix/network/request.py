@@ -23,7 +23,7 @@ _id_lock = threading.Lock()
 
 def generate_random_id() -> int:
     with _id_lock:
-        return random.randint(0, 2 ** 32 - 1)
+        return random.randint(0, 2**32 - 1)
 
 
 @dataclasses.dataclass
@@ -39,7 +39,9 @@ class Response:
 class Request:
     """Represents a message to be sent over the network."""
 
-    def __init__(self, _type: MessageType, content: bytes, request_id: Optional[bytes] = None) -> None:
+    def __init__(
+        self, _type: MessageType, content: bytes, request_id: Optional[bytes] = None
+    ) -> None:
         self.type = _type
         self.content = content
         self.request_id: bytes = request_id or generate_random_id().to_bytes(4, "big")
@@ -86,7 +88,7 @@ class Request:
 
     def compile(self) -> bytes:
         """Compile request into wire format. Raises RequestError if content exceeds 4GB."""
-        max_size = 2 ** 32 - 1
+        max_size = 2**32 - 1
         size = len(self.content)
 
         if size > max_size:

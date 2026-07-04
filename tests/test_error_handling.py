@@ -12,10 +12,11 @@ from veltix import (
     SenderError,
     VeltixError,
 )
-from veltix.network.request import HEADER_SIZE, Request as Req
-
+from veltix.network.request import HEADER_SIZE
+from veltix.network.request import Request as Req
 
 # ── Exception hierarchy ───────────────────────────────────────────────────────
+
 
 class TestExceptionHierarchy:
     def test_veltix_error_is_base(self):
@@ -43,6 +44,7 @@ class TestExceptionHierarchy:
 
 # ── MessageTypeError ──────────────────────────────────────────────────────────
 
+
 class TestMessageTypeError:
     def test_duplicate_code_raises(self):
         MessageType(code=3200, name="err_test_1")
@@ -65,6 +67,7 @@ class TestMessageTypeError:
 
 
 # ── RequestError ──────────────────────────────────────────────────────────────
+
 
 class TestRequestError:
     def test_parse_too_short(self):
@@ -102,14 +105,17 @@ class TestRequestError:
 
 # ── SenderError ───────────────────────────────────────────────────────────────
 
+
 class TestSenderError:
     def test_client_mode_without_socket(self):
         from veltix import Mode, Sender
+
         with pytest.raises(SenderError):
             Sender(mode=Mode.CLIENT, conn=None)
 
 
 # ── Network errors ────────────────────────────────────────────────────────────
+
 
 class TestNetworkErrors:
     def test_connection_refused_returns_false(self):

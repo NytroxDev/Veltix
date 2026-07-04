@@ -25,7 +25,7 @@ import time
 
 from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
 
-from ..config import PLAYER_MOVE, PLAYER_SHOOT, PORT_FPS_1, PORT_FPS_2
+from ..config import PLAYER_MOVE, PLAYER_SHOOT, PORT_FPS_1
 from ..display import header, row
 from ..models import FpsResult
 from ..utils import incr, ram_mb

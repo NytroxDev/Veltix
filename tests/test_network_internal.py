@@ -11,16 +11,18 @@ from veltix.internal.network import RecvResult, RecvStatus, recv
 from veltix.network.system_types import ERROR, INVALID_REQUEST
 from veltix.network.types import MessageTypeRegistry
 
-
 # ── Exceptions ────────────────────────────────────────────────────────────────
+
 
 class TestExceptionsCoverage:
     def test_network_error_is_veltix_error(self):
         from veltix.exceptions import VeltixError
+
         assert issubclass(NetworkError, VeltixError)
 
     def test_timeout_error_is_veltix_error(self):
         from veltix.exceptions import VeltixError
+
         assert issubclass(TimeoutError, VeltixError)
 
     def test_network_error_can_be_raised(self):
@@ -33,16 +35,19 @@ class TestExceptionsCoverage:
 
     def test_network_error_caught_as_veltix_error(self):
         from veltix.exceptions import VeltixError
+
         with pytest.raises(VeltixError):
             raise NetworkError("test")
 
     def test_timeout_error_caught_as_veltix_error(self):
         from veltix.exceptions import VeltixError
+
         with pytest.raises(VeltixError):
             raise TimeoutError("test")
 
 
 # ── RecvStatus / RecvResult / recv ────────────────────────────────────────────
+
 
 class TestRecvStatus:
     def test_enum_members(self):
@@ -110,6 +115,7 @@ class TestRecvFunction:
 
 # ── BufferSize ────────────────────────────────────────────────────────────────
 
+
 class TestBufferSize:
     def test_small_value(self):
         assert BufferSize.SMALL == 1024
@@ -131,6 +137,7 @@ class TestBufferSize:
 
 # ── Events list ───────────────────────────────────────────────────────────────
 
+
 class TestEventsList:
     def test_events_list_contains_all(self):
         assert Events.ON_RECV in events
@@ -147,6 +154,7 @@ class TestEventsList:
 
 
 # ── System types ──────────────────────────────────────────────────────────────
+
 
 class TestSystemTypes:
     def test_error_type_code(self):
@@ -170,6 +178,7 @@ class TestSystemTypes:
 
 # ── Request.respond ────────────────────────────────────────────────────────────
 
+
 class TestRequestRespond:
     def test_respond_aligns_request_id(self):
         from veltix import MessageType, Request
@@ -180,6 +189,7 @@ class TestRequestRespond:
 
         resp_id = b"\xaa\xbb\xcc\xdd"
         from veltix.network.request import Response
+
         response = Response(type=msg_type, content=b"world", hash=b"\x00" * 4, request_id=resp_id)
 
         req.respond(response)
@@ -188,6 +198,7 @@ class TestRequestRespond:
 
 
 # ── MessageTypeRegistry.list_all ──────────────────────────────────────────────
+
 
 class TestMessageTypeRegistryListAll:
     def test_list_all_returns_list(self):

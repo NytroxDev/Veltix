@@ -4,7 +4,15 @@ import time
 
 import pytest
 
-from veltix import ClientConfig, Logger, LoggerConfig, LogLevel, MessageType, ServerConfig, SocketCore
+from veltix import (
+    ClientConfig,
+    Logger,
+    LoggerConfig,
+    LogLevel,
+    MessageType,
+    ServerConfig,
+    SocketCore,
+)
 from veltix.network.types import MessageTypeRegistry
 
 Logger(LoggerConfig(LogLevel.TRACE))

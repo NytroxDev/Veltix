@@ -19,7 +19,7 @@ except ImportError:
 
 import veltix
 
-from .display import header, print_summary, row, sep
+from .display import print_summary, row, sep
 from .export import build_json, save_json
 
 ALL_BENCHMARKS = ["memory", "latency", "fps", "burst", "stress"]
@@ -161,12 +161,22 @@ def main() -> None:
         from .config import PORT_FPS_1, PORT_FPS_2
 
         fps64 = _run_runs(
-            run_fps, backends, args.runs,
-            args.fps_players, args.fps_tick_rate, args.fps_duration, PORT_FPS_1,
+            run_fps,
+            backends,
+            args.runs,
+            args.fps_players,
+            args.fps_tick_rate,
+            args.fps_duration,
+            PORT_FPS_1,
         )
         fps128 = _run_runs(
-            run_fps, backends, args.runs,
-            args.fps2_players, args.fps2_tick_rate, args.fps_duration, PORT_FPS_2,
+            run_fps,
+            backends,
+            args.runs,
+            args.fps2_players,
+            args.fps2_tick_rate,
+            args.fps_duration,
+            PORT_FPS_2,
         )
 
     if "burst" in run:

@@ -4,7 +4,7 @@ Simple Chat Client Example for Veltix
 A chat client that can send and receive messages in a group chat.
 """
 
-from veltix import Events, Client, ClientConfig, MessageType, Request
+from veltix import Client, ClientConfig, Events, MessageType, Request
 
 # Define message types (must match server)
 CHAT = MessageType(code=201, name="chat", description="Chat message")

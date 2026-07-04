@@ -93,7 +93,9 @@ class MessageBuffer:
         else:
             discarded = idx
             self._buffer = self._buffer[idx:]
-            self._logger.debug(f"Resynced: discarded {discarded} bytes, found MAGIC at offset {idx}")
+            self._logger.debug(
+                f"Resynced: discarded {discarded} bytes, found MAGIC at offset {idx}"
+            )
 
     def clear(self) -> None:
         self._buffer.clear()

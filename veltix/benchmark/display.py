@@ -15,6 +15,7 @@ from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressRe
 
 # ── Low-level helpers ─────────────────────────────────────────────────────────
 
+
 def sep(char: str = "─", width: int = WIDTH) -> None:
     print(char * width)
 
@@ -34,6 +35,7 @@ def row(label: str, value: str, width: int = 36) -> None:
 
 CW = 22  # value column width (applies in both modes)
 
+
 def _val(v: str) -> str:
     return f"{v:>{CW}}"
 
@@ -44,98 +46,100 @@ def _fmt_kb(kb: float) -> str:
 
 # ── Row helpers per benchmark ─────────────────────────────────────────────────
 
+
 def _memory_defs() -> list[tuple[str, str, str]]:
     """Return (label, attr, fmt) triples.  attr is poked via getattr."""
     return [
-        ("Baseline",          "baseline_kb",         _fmt_kb),
-        ("Idle server",       "server_idle_kb",      _fmt_kb),
-        ("Per client (avg)",  "client_cost_kb",      _fmt_kb),
-        ("Per client (min)",  "client_cost_min_kb",  _fmt_kb),
-        ("Per client (max)",  "client_cost_max_kb",  _fmt_kb),
-        ("Per client (med)",  "client_cost_median_kb", _fmt_kb),
-        ("Per client (stdev)","client_cost_stdev_kb", lambda v: f"{v:.1f} KB"),
-        ("10 clients",        "ram_10_clients_kb",   _fmt_kb),
-        ("50 clients",        "ram_50_clients_kb",   _fmt_kb),
-        ("After teardown",    "ram_after_teardown_kb", _fmt_kb),
-        ("Leak delta",        "leak_kb",             lambda v: f"{v:.1f} KB"),
+        ("Baseline", "baseline_kb", _fmt_kb),
+        ("Idle server", "server_idle_kb", _fmt_kb),
+        ("Per client (avg)", "client_cost_kb", _fmt_kb),
+        ("Per client (min)", "client_cost_min_kb", _fmt_kb),
+        ("Per client (max)", "client_cost_max_kb", _fmt_kb),
+        ("Per client (med)", "client_cost_median_kb", _fmt_kb),
+        ("Per client (stdev)", "client_cost_stdev_kb", lambda v: f"{v:.1f} KB"),
+        ("10 clients", "ram_10_clients_kb", _fmt_kb),
+        ("50 clients", "ram_50_clients_kb", _fmt_kb),
+        ("After teardown", "ram_after_teardown_kb", _fmt_kb),
+        ("Leak delta", "leak_kb", lambda v: f"{v:.1f} KB"),
     ]
 
 
 def _latency_defs() -> list[tuple[str, str, str]]:
     return [
-        ("Count",      "count",     str),
-        ("Avg",        "avg",       lambda v: f"{v:.3f} ms"),
-        ("P50",        "median",    lambda v: f"{v:.4f} ms"),
-        ("P95",        "p95",       lambda v: f"{v:.3f} ms"),
-        ("P99",        "p99",       lambda v: f"{v:.3f} ms"),
-        ("Min",        "min",       lambda v: f"{v:.3f} ms"),
-        ("Max",        "max",       lambda v: f"{v:.3f} ms"),
-        ("Stdev",      "stdev",     lambda v: f"{v:.3f} ms"),
-        ("Jitter",     "jitter_ms", lambda v: f"{v:.3f} ms"),
+        ("Count", "count", str),
+        ("Avg", "avg", lambda v: f"{v:.3f} ms"),
+        ("P50", "median", lambda v: f"{v:.4f} ms"),
+        ("P95", "p95", lambda v: f"{v:.3f} ms"),
+        ("P99", "p99", lambda v: f"{v:.3f} ms"),
+        ("Min", "min", lambda v: f"{v:.3f} ms"),
+        ("Max", "max", lambda v: f"{v:.3f} ms"),
+        ("Stdev", "stdev", lambda v: f"{v:.3f} ms"),
+        ("Jitter", "jitter_ms", lambda v: f"{v:.3f} ms"),
         ("Throughput", "throughput", lambda v: f"{v:,.1f} ping/s"),
     ]
 
 
 def _fps_defs() -> list[tuple[str, str, str]]:
     return [
-        ("Target tick",      "tick_rate",       lambda v: f"{v} Hz"),
-        ("Actual tick",      "actual_tick_rate", lambda v: f"{v:.1f} Hz"),
-        ("Duration",         "duration_s",       lambda v: f"{v:.2f} s"),
-        ("Sent total",       "total_sent",       lambda v: f"{v:,}"),
-        ("Received",         "total_recv",       lambda v: f"{v:,}"),
-        ("Success rate",     "success_rate",     lambda v: f"{v:.1f}%"),
-        ("Throughput",       "msg_per_sec",      lambda v: f"{v:,.0f} msg/s"),
-        ("RAM delta",        "ram_delta_mb",     lambda v: f"{v:+.2f} MB"),
-        ("Errors",           "errors",           lambda v: f"{v:,}"),
-        ("Tick avg",         "tick_avg_ms",      lambda v: f"{v:.3f} ms"),
-        ("Tick min",         "tick_min_ms",      lambda v: f"{v:.3f} ms"),
-        ("Tick max",         "tick_max_ms",      lambda v: f"{v:.3f} ms"),
-        ("Tick stdev",       "tick_stdev_ms",    lambda v: f"{v:.3f} ms"),
-        ("Budget comply",    "tick_budget_pct",  lambda v: f"{v:.1f}%"),
-        ("Overrun ticks",    "overrun_ticks",    str),
+        ("Target tick", "tick_rate", lambda v: f"{v} Hz"),
+        ("Actual tick", "actual_tick_rate", lambda v: f"{v:.1f} Hz"),
+        ("Duration", "duration_s", lambda v: f"{v:.2f} s"),
+        ("Sent total", "total_sent", lambda v: f"{v:,}"),
+        ("Received", "total_recv", lambda v: f"{v:,}"),
+        ("Success rate", "success_rate", lambda v: f"{v:.1f}%"),
+        ("Throughput", "msg_per_sec", lambda v: f"{v:,.0f} msg/s"),
+        ("RAM delta", "ram_delta_mb", lambda v: f"{v:+.2f} MB"),
+        ("Errors", "errors", lambda v: f"{v:,}"),
+        ("Tick avg", "tick_avg_ms", lambda v: f"{v:.3f} ms"),
+        ("Tick min", "tick_min_ms", lambda v: f"{v:.3f} ms"),
+        ("Tick max", "tick_max_ms", lambda v: f"{v:.3f} ms"),
+        ("Tick stdev", "tick_stdev_ms", lambda v: f"{v:.3f} ms"),
+        ("Budget comply", "tick_budget_pct", lambda v: f"{v:.1f}%"),
+        ("Overrun ticks", "overrun_ticks", str),
     ]
 
 
 def _burst_defs() -> list[tuple[str, str, str]]:
     return [
-        ("Messages",       "count",           lambda v: f"{v:,}"),
-        ("Payload",        "payload_bytes",   lambda v: f"{v} B"),
-        ("Send throughput","send_throughput", lambda v: f"{v:,.0f} msg/s"),
-        ("Recv throughput","recv_throughput", lambda v: f"{v:,.0f} msg/s"),
-        ("Data",           "data_mbps",       lambda v: f"{v:.2f} MB/s"),
-        ("Success rate",   "success_rate",    lambda v: f"{v:.2f}%"),
-        ("Total duration", "duration_s",      lambda v: f"{v*1000:.1f} ms"),
-        ("Send duration",  "send_duration_s", lambda v: f"{v*1000:.1f} ms"),
-        ("Drain P50",      "drain_p50_ms",    lambda v: f"{v:.1f} ms"),
-        ("Drain P95",      "drain_p95_ms",    lambda v: f"{v:.1f} ms"),
-        ("Drain P99",      "drain_p99_ms",    lambda v: f"{v:.1f} ms"),
-        ("Drain max",      "drain_max_ms",    lambda v: f"{v:.1f} ms"),
-        ("Drain jitter",   "drain_jitter_ms", lambda v: f"{v:.3f} ms"),
-        ("Recv gap avg",   "recv_gap_avg_ms", lambda v: f"{v:.3f} ms"),
+        ("Messages", "count", lambda v: f"{v:,}"),
+        ("Payload", "payload_bytes", lambda v: f"{v} B"),
+        ("Send throughput", "send_throughput", lambda v: f"{v:,.0f} msg/s"),
+        ("Recv throughput", "recv_throughput", lambda v: f"{v:,.0f} msg/s"),
+        ("Data", "data_mbps", lambda v: f"{v:.2f} MB/s"),
+        ("Success rate", "success_rate", lambda v: f"{v:.2f}%"),
+        ("Total duration", "duration_s", lambda v: f"{v * 1000:.1f} ms"),
+        ("Send duration", "send_duration_s", lambda v: f"{v * 1000:.1f} ms"),
+        ("Drain P50", "drain_p50_ms", lambda v: f"{v:.1f} ms"),
+        ("Drain P95", "drain_p95_ms", lambda v: f"{v:.1f} ms"),
+        ("Drain P99", "drain_p99_ms", lambda v: f"{v:.1f} ms"),
+        ("Drain max", "drain_max_ms", lambda v: f"{v:.1f} ms"),
+        ("Drain jitter", "drain_jitter_ms", lambda v: f"{v:.3f} ms"),
+        ("Recv gap avg", "recv_gap_avg_ms", lambda v: f"{v:.3f} ms"),
     ]
 
 
 def _stress_defs() -> list[tuple[str, str, str]]:
     return [
-        ("Clients",           "num_clients",          lambda v: f"{v:,}"),
-        ("Msgs/client",       "msgs_per_client",      lambda v: f"{v:,}"),
-        ("Sent",              "total_sent",           lambda v: f"{v:,}"),
-        ("Received",          "total_recv",           lambda v: f"{v:,}"),
-        ("Success rate",      "success_rate",         lambda v: f"{v:.2f}%"),
-        ("Throughput",        "throughput",           lambda v: f"{v:,.0f} msg/s"),
-        ("Duration",          "duration_s",           lambda v: f"{v*1000:.1f} ms"),
-        ("RAM delta",         "ram_delta_mb",         lambda v: f"{v:+.2f} MB"),
-        ("Send phase",        "send_phase_s",         lambda v: f"{v*1000:.1f} ms"),
-        ("Drain time",        "drain_time_s",         lambda v: f"{v*1000:.1f} ms"),
-        ("TTFR",              "time_to_first_recv_ms",lambda v: f"{v:.1f} ms"),
-        ("Per-client TPS avg","per_client_tps_avg",   lambda v: f"{v:,.0f}"),
-        ("Per-client TPS min","per_client_tps_min",   lambda v: f"{v:,.0f}"),
-        ("Per-client TPS max","per_client_tps_max",   lambda v: f"{v:,.0f}"),
+        ("Clients", "num_clients", lambda v: f"{v:,}"),
+        ("Msgs/client", "msgs_per_client", lambda v: f"{v:,}"),
+        ("Sent", "total_sent", lambda v: f"{v:,}"),
+        ("Received", "total_recv", lambda v: f"{v:,}"),
+        ("Success rate", "success_rate", lambda v: f"{v:.2f}%"),
+        ("Throughput", "throughput", lambda v: f"{v:,.0f} msg/s"),
+        ("Duration", "duration_s", lambda v: f"{v * 1000:.1f} ms"),
+        ("RAM delta", "ram_delta_mb", lambda v: f"{v:+.2f} MB"),
+        ("Send phase", "send_phase_s", lambda v: f"{v * 1000:.1f} ms"),
+        ("Drain time", "drain_time_s", lambda v: f"{v * 1000:.1f} ms"),
+        ("TTFR", "time_to_first_recv_ms", lambda v: f"{v:.1f} ms"),
+        ("Per-client TPS avg", "per_client_tps_avg", lambda v: f"{v:,.0f}"),
+        ("Per-client TPS min", "per_client_tps_min", lambda v: f"{v:,.0f}"),
+        ("Per-client TPS max", "per_client_tps_max", lambda v: f"{v:,.0f}"),
         ("Per-client TPS sd", "per_client_tps_stdev", lambda v: f"{v:,.0f}"),
     ]
 
 
 # ── Single-backend mode ───────────────────────────────────────────────────────
+
 
 def _show_single_section(title: str, defs: list[tuple], result) -> None:
     print(f"  {title}")
@@ -161,6 +165,7 @@ def _show_single(mem, lat, fps64, fps128, burst, stress) -> None:
 
 
 # ── Both-backends mode ────────────────────────────────────────────────────────
+
 
 def _sbw(label: str) -> str:
     """Print side-by-side value line."""
@@ -191,6 +196,7 @@ def _show_side_by_side(mem, lat, fps64, fps128, burst, stress) -> None:
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
 
 def _results(value):
     """Normalize to list or None."""

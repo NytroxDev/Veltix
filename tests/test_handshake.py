@@ -7,15 +7,12 @@ import threading
 import time
 from typing import Optional
 
-import pytest
-
 from veltix.handler.handshake_handler import HandshakeHandler
-from veltix.internal.compatibility import Version
 from veltix.internal.mode import Mode
 from veltix.version import __version__
 
-
 # ── Encode / decode ────────────────────────────────────────────────────────────
+
 
 class TestHandshakeEncodeDecode:
     def setup_method(self) -> None:
@@ -53,6 +50,7 @@ class TestHandshakeEncodeDecode:
 
 # ── Version check ──────────────────────────────────────────────────────────────
 
+
 class TestHandshakeCheckVersion:
     def setup_method(self) -> None:
         self.handler = HandshakeHandler(mode=Mode.SERVER)
@@ -71,6 +69,7 @@ class TestHandshakeCheckVersion:
 
 
 # ── Integration with real sockets ──────────────────────────────────────────────
+
 
 def _find_free_port() -> int:
     """Bind to port 0 and return the assigned port."""
