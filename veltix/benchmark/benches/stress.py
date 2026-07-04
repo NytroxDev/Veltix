@@ -25,6 +25,7 @@ import statistics
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
 
@@ -48,7 +49,7 @@ def run(
     last_recv_ts: list[float] = []
     lock = threading.Lock()
 
-    def on_recv(_c, _m) -> None:
+    def on_recv(_c: Any, _m: Any) -> None:
         incr(recv_count, lock)
         ts = time.perf_counter()
         with lock:

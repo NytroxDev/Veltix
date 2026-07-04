@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import argparse
 import sys
+from typing import Any
 
 try:
-    import psutil
+    import psutil  # type: ignore[import-untyped]
 except ImportError:
     raise ImportError(
         "psutil est requis pour le benchmark. Installez-le avec : pip install veltix[benchmark]"
@@ -89,7 +90,7 @@ def _backends_from_args(socket_core: str) -> list[str]:
     return [socket_core]
 
 
-def _run_for_backends(runner, backends: list[str], *args):
+def _run_for_backends(runner: Any, backends: list[str], *args: Any) -> list[Any]:
     results = []
     for backend in backends:
         sep("─")
@@ -102,7 +103,7 @@ def _run_for_backends(runner, backends: list[str], *args):
     return results
 
 
-def _run_runs(runner, backends: list[str], runs: int, *args):
+def _run_runs(runner: Any, backends: list[str], runs: int, *args: Any) -> list[Any]:
     """Run a bench across backends, averaging over N runs."""
     if runs <= 1:
         return _run_for_backends(runner, backends, *args)

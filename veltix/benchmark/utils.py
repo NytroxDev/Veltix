@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-import psutil
+import psutil  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     import threading
@@ -24,7 +24,7 @@ _proc = psutil.Process(os.getpid())
 
 
 def ram_bytes() -> int:
-    return _proc.memory_info().rss
+    return _proc.memory_info().rss  # type: ignore[no-any-return]
 
 
 def ram_kb() -> float:

@@ -10,9 +10,9 @@ import json
 import platform
 import sys
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-import psutil
+import psutil  # type: ignore[import-untyped]
 
 import veltix
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
 
 
-def _normalise(value):
+def _normalise(value: Any) -> Any:
     if value is None:
         return None
     if isinstance(value, list):
