@@ -48,33 +48,26 @@ class HandshakeHandler:
     # ── Encode / decode ───────────────────────────────────────────────────────
 
     @staticmethod
-    def _encode(payload: dict[str, Any]) -> Optional[bytes]:
+    def _encode(payload: dict[str, Any]) -> bytes:
         """Length-prefixed JSON encoding."""
-        try:
-            payload_encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-            data = _HANDSHAKE_STRUCT.pack(len(payload_encoded)) + payload_encoded
-            return data
-        except Exception:
-            return None
+        payload_encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        data = _HANDSHAKE_STRUCT.pack(len(payload_encoded)) + payload_encoded
+        return data
 
     @staticmethod
     def _decode(data: bytes) -> Optional[dict[str, Any]]:
         """Parse length-prefixed JSON."""
-        try:
-            payload_len = _HANDSHAKE_STRUCT.unpack(data[:2])[0]
-            return cast(dict[str, Any], json.loads(data[2 : 2 + payload_len]))
-        except Exception:
-            return None
+        payload_len = _HANDSHAKE_STRUCT.unpack(data[:2])[0]
+        return cast("dict[str, Any]", json.loads(data[2 : 2 + payload_len]))
 
     def _send_handshake(self, sock: RawSocket, payload: dict[str, Any]) -> bool:
         """Send a handshake JSON payload over a raw TCP socket."""
-        data = self._encode(payload)
-        if not data:
-            return False
         try:
+            data = self._encode(payload)
             sock.sendall(data)
             return True
-        except Exception:
+        except Exception as e:
+            self._logger.error(f"Handshake send failed: {e}")
             return False
 
     def _recv_handshake(self, sock: RawSocket, timeout: float = 5.0) -> Optional[dict[str, Any]]:
@@ -101,7 +94,8 @@ class HandshakeHandler:
             if not data or len(data) < payload_len:
                 return None
             return self._decode(header + data)
-        except Exception:
+        except Exception as e:
+            self._logger.error(f"Handshake recv failed: {e}")
             return None
 
     def _check_version(self, peer_version: str) -> bool:

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import socket
+import struct
 import threading
 import time
 from typing import Optional
+
+import pytest
 
 from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.internal.mode import Mode
@@ -35,17 +39,19 @@ class TestHandshakeEncodeDecode:
         decoded = self.handler._decode(encoded)
         assert decoded == original
 
-    def test_encode_returns_none_on_bad_input(self):
-        result = self.handler._encode({"v": object()})  # type: ignore
-        assert result is None
+    def test_encode_raises_on_bad_input(self):
+        import json
+        with pytest.raises(TypeError):
+            self.handler._encode({"v": object()})  # type: ignore
 
-    def test_decode_returns_none_on_truncated(self):
-        result = self.handler._decode(b"\x00\x05hello")
-        assert result is None
+    def test_decode_raises_on_truncated(self):
+        with pytest.raises(json.JSONDecodeError):
+            self.handler._decode(b"\x00\x05hello")
 
-    def test_decode_returns_none_on_empty(self):
-        result = self.handler._decode(b"")
-        assert result is None
+    def test_decode_raises_on_empty(self):
+        import struct
+        with pytest.raises(struct.error):
+            self.handler._decode(b"")
 
 
 # ── Version check ──────────────────────────────────────────────────────────────
