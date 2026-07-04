@@ -23,7 +23,7 @@ class MessageContext:
 class RulesManager:
     _logger = Logger.get_instance()
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._rules: list[Rule] = []
 
     def process(self, context: MessageContext) -> bool:
@@ -36,7 +36,7 @@ class RulesManager:
         self._logger.debug(f"No rule matched for message type {context.response.type}")
         return False
 
-    def add_rule(self, rule: Rule):
+    def add_rule(self, rule: Rule) -> None:
         self._logger.debug(f"Adding rule: {rule.__class__.__name__}")
         self._rules.append(rule)
 
