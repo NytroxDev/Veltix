@@ -12,10 +12,14 @@ class PingRule(Rule):
             f"Responding to PING with PONG (request_id={context.response.request_id.hex()})"
         )
         pong = Request(PONG, b"", request_id=context.response.request_id)
+        sender = context.handler.sender
+        assert sender is not None
         if context.is_server:
-            context.handler.sender.send(pong, client=context.client.conn)
+            client = context.client
+            assert client is not None
+            sender.send(pong, client=client.conn)
         else:
-            context.handler.sender.send(pong)
+            sender.send(pong)
 
     def can_handle(self, context: MessageContext) -> bool:
         return context.response.type == PING
@@ -64,12 +68,14 @@ class RouteRule(Rule):
 
 class OnRecvRule(Rule):
     def handle(self, context: MessageContext) -> None:
+        on_recv = context.handler.on_recv
+        assert on_recv is not None
         if context.is_server:
             context.handler._executor.submit(
-                context.handler.on_recv, context.client, context.response
+                on_recv, context.client, context.response
             )
         else:
-            context.handler._executor.submit(context.handler.on_recv, context.response)
+            context.handler._executor.submit(on_recv, context.response)
 
     def can_handle(self, context: MessageContext) -> bool:
         return context.handler.on_recv is not None
