@@ -3,7 +3,7 @@
 
 import socket
 import time
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.events import Events, events
@@ -42,7 +42,7 @@ class Client:
         self._logger = Logger.get_instance()
         self.config: ClientConfig = config
 
-        self._reconnect_handler = None
+        self._reconnect_handler: Optional[ReconnectHandler] = None
 
         self.on_recv: Optional[Callable[[Response], None]] = None
         self.on_connect: Optional[Callable[[], None]] = None
@@ -83,7 +83,7 @@ class Client:
         )
         self.socket.request_handler = self.request_handler
 
-        def _on_socket_disconnect():
+        def _on_socket_disconnect() -> None:
             # Ignore disconnect events during connect() or manual disconnect().
             if not self.running or self._connecting:
                 return
@@ -184,7 +184,9 @@ class Client:
 
     def _try_reconnect(self, reason: DisconnectReason) -> bool:
         """Internal reconnect entrypoint used by connect() and tests."""
-        return self._reconnect_handler.try_reconnect(reason)
+        handler = self._reconnect_handler
+        assert handler is not None
+        return handler.try_reconnect(reason)
 
     def connect(self, _from_retry: bool = False) -> bool:
         """
@@ -217,6 +219,7 @@ class Client:
 
             self.is_connected = True
             self._connecting = False
+            assert self._reconnect_handler is not None
             self._reconnect_handler.init_connect()
             self._logger.info(
                 f"Successfully connected to server {self.config.server_addr}:{self.config.port}"
@@ -308,6 +311,7 @@ class Client:
             self._logger.info("Disconnecting from server")
             self.running = False
             self.is_connected = False
+            assert self._reconnect_handler is not None
             self._reconnect_handler.stop_retry()
             self.request_handler.shutdown(wait=False)
             self.socket.close()
@@ -326,7 +330,8 @@ class Client:
 
     def stop_retry(self) -> None:
         """Cancel all pending reconnection attempts."""
-        self._reconnect_handler.stop_retry()
+        if self._reconnect_handler is not None:
+            self._reconnect_handler.stop_retry()
 
     def retry(self, max_: Optional[int] = None) -> None:
         """
@@ -335,9 +340,10 @@ class Client:
         Args:
             max_: Override retry_max for this session.
         """
-        self._reconnect_handler.retry(max_=max_)
+        if self._reconnect_handler is not None:
+            self._reconnect_handler.retry(max_=max_)
 
     @property
     def _fail_count(self) -> int:
         """Expose reconnect fail count for backward compatibility and tests."""
-        return self._reconnect_handler._fail_count
+        return self._reconnect_handler._fail_count if self._reconnect_handler else 0
