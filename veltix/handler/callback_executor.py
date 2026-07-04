@@ -1,5 +1,6 @@
 """Callback executor for Veltix."""
 
+import contextlib
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
 
@@ -23,10 +24,8 @@ class CallbackExecutor:
             except Exception as e:
                 self._logger.error(f"Error in callback {func.__name__}: {type(e).__name__}: {e}")
 
-        try:
+        with contextlib.suppress(RuntimeError):
             self._executor.submit(_safe_run)
-        except RuntimeError:
-            pass
 
     def shutdown(self, wait: bool = True) -> None:
         """Shutdown the executor, optionally waiting for in-progress callbacks."""
