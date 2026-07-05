@@ -211,3 +211,4 @@ code_review_bugs.md
 # Plans de développement (docs de travail)
 docs/plans/
 /.python-version
+/analyse-veltix.md

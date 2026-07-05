@@ -61,6 +61,7 @@ class AsyncSocket(BaseSocket):
         logger: Logger,
         request_handler: RequestHandler,
         max_message_size: int,
+        handshake_timeout: float = 5.0,
         nonblocking: bool = True,
     ) -> AsyncSocket:
         """Create a properly initialized client socket instance."""
@@ -79,7 +80,7 @@ class AsyncSocket(BaseSocket):
 
         conn.max_message_size = max_message_size
         conn.request_handler = request_handler
-        conn.handshake_timeout = 5.0
+        conn.handshake_timeout = handshake_timeout
         conn._logger = logger
 
         conn._sock = sock
@@ -192,12 +193,15 @@ class AsyncSocket(BaseSocket):
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         client_sock = AsyncSocket._create_client_instance(
-            conn, self._logger, self.request_handler, self.max_message_size, nonblocking=False
+            conn, self._logger, self.request_handler, self.max_message_size,
+            handshake_timeout=self.handshake_timeout, nonblocking=False,
         )
         client = ClientInfo(client_sock, addr, self.id_count, handshake_done=False)
         client_id = self.client_manager.add_client(client)
 
-        ok = self.request_handler.handshake_handler.do_server_handshake(conn)
+        ok = self.request_handler.handshake_handler.do_server_handshake(
+            conn, timeout=client_sock.handshake_timeout
+        )
         if not ok:
             self._logger.warning(f"Handshake failed for {addr}")
             entry = self.client_manager.get_client(client_id)

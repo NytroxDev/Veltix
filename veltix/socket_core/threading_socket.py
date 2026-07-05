@@ -59,6 +59,7 @@ class ThreadingSocket(BaseSocket):
         logger: Logger,
         request_handler: RequestHandler,
         max_message_size: int,
+        handshake_timeout: float = 5.0,
     ) -> ThreadingSocket:
         """Create a properly initialized client socket instance."""
         conn = cls.__new__(cls)
@@ -67,6 +68,7 @@ class ThreadingSocket(BaseSocket):
         conn._logger = logger
         conn.request_handler = request_handler
         conn.max_message_size = max_message_size
+        conn.handshake_timeout = handshake_timeout
         conn.running = False
         conn.client_manager = ClientsManager(max_message_size)
         conn.on_connect = None
@@ -144,7 +146,8 @@ class ThreadingSocket(BaseSocket):
 
                 conn_, addr = self._sock.accept()
                 conn = ThreadingSocket._create_client_instance(
-                    conn_, self._logger, self.request_handler, self.max_message_size
+                    conn_, self._logger, self.request_handler, self.max_message_size,
+                    handshake_timeout=self.handshake_timeout,
                 )
 
                 with self._n_th_lock:
@@ -188,7 +191,8 @@ class ThreadingSocket(BaseSocket):
         entry.info.conn.settimeout(timeout)
 
         ok = self.request_handler.handshake_handler.do_server_handshake(
-            cast(ThreadingSocket, entry.info.conn)._sock
+            cast(ThreadingSocket, entry.info.conn)._sock,
+            timeout=entry.info.conn.handshake_timeout,
         )
         if not ok:
             self._logger.warning(f"Handshake failed for {entry.info.addr}")

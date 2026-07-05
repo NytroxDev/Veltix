@@ -108,7 +108,7 @@ class HandshakeHandler:
             self._logger.error(f"Invalid peer version string: {peer_version!r}")
             return False
 
-    def do_server_handshake(self, sock: RawSocket) -> bool:
+    def do_server_handshake(self, sock: RawSocket, timeout: float = 5.0) -> bool:
         """Server-side handshake: send server info, validate client response."""
         self._logger.debug("Server handshake start")
 
@@ -116,7 +116,7 @@ class HandshakeHandler:
             self._logger.error("Failed to send server handshake")
             return False
 
-        client_payload = self._recv_handshake(sock)
+        client_payload = self._recv_handshake(sock, timeout=timeout)
         if not client_payload:
             self._logger.error("Failed to receive client handshake response")
             return False
