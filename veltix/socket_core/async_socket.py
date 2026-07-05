@@ -43,9 +43,6 @@ class AsyncSocket(BaseSocket):
         self._logger = Logger.get_instance()
 
         self._sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        with contextlib.suppress(AttributeError, OSError):
-            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         self._selector = selectors.DefaultSelector()
@@ -149,6 +146,9 @@ class AsyncSocket(BaseSocket):
 
     def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:
         self._sock.setblocking(False)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        with contextlib.suppress(AttributeError, OSError):
+            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._sock.bind((host, port))
         self._sock.listen()
         self._selector.register(self._sock, selectors.EVENT_READ, data="listen")

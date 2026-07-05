@@ -47,9 +47,6 @@ class ThreadingSocket(BaseSocket):
         self._logger = Logger.get_instance()
 
         self._sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        with contextlib.suppress(AttributeError, OSError):
-            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
     @classmethod
@@ -121,6 +118,9 @@ class ThreadingSocket(BaseSocket):
     def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:
         if self.running:
             return False
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        with contextlib.suppress(AttributeError, OSError):
+            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._sock.bind((host, port))
         self._sock.listen()
         self.running = True
