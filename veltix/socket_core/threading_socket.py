@@ -88,7 +88,8 @@ class ThreadingSocket(BaseSocket):
         try:
             self._sock.sendall(data)
             return True
-        except Exception:
+        except Exception as e:
+            self._logger.error(f"send failed: {e}")
             return False
 
     def _shutdown_socket(self) -> None:
