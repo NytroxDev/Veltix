@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import threading
 from typing import TYPE_CHECKING, Callable, Optional, Protocol, runtime_checkable
 
@@ -54,11 +53,16 @@ class ReconnectHandler:
         except Exception as e:
             self._logger.error(f"Error in on_disconnect callback: {type(e).__name__}: {e}")
 
-    def reconnect_loop(self, reason: DisconnectReason = DisconnectReason.SERVER_CLOSED) -> bool:
-        while not self._stop_retry_flag and self._fail_count < self._context.config.retry:
+    def reconnect_loop(
+        self,
+        reason: DisconnectReason = DisconnectReason.SERVER_CLOSED,
+        retry_max: Optional[int] = None,
+    ) -> bool:
+        max_retry = retry_max if retry_max is not None else self._context.config.retry
+        while not self._stop_retry_flag and self._fail_count < max_retry:
             self._fail_count += 1
             self._logger.info(
-                f"Reconnection attempt {self._fail_count}/{self._context.config.retry}..."
+                f"Reconnection attempt {self._fail_count}/{max_retry}..."
             )
 
             self.reset()
@@ -74,7 +78,7 @@ class ReconnectHandler:
 
             self.fire_on_disconnect(permanent=False, reason=reason)
 
-            if self._fail_count >= self._context.config.retry:
+            if self._fail_count >= max_retry:
                 break
 
             self._logger.info(f"Next attempt in {self._context.config.retry_delay}s...")
@@ -116,13 +120,11 @@ class ReconnectHandler:
             return
 
         try:
-            if max_ is not None:
-                self._context.config = dataclasses.replace(self._context.config, retry=max_)
             self._stop_retry_flag = False
             self._stop_event.clear()
             self._fail_count = 0
             self.reset()
-            self.reconnect_loop()
+            self.reconnect_loop(retry_max=max_)
         finally:
             self._reconnect_lock.release()
 
