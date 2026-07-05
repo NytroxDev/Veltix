@@ -154,7 +154,12 @@ def _show_single_section(title: str, defs: list[tuple[str, str, _ColFmt]], resul
 
 
 def _show_single(
-    mem: Any, lat: Any, fps64: Any, fps128: Any, burst: Any, stress: Any,
+    mem: Any,
+    lat: Any,
+    fps64: Any,
+    fps128: Any,
+    burst: Any,
+    stress: Any,
 ) -> None:
     if mem:
         _show_single_section("MEMORY", _memory_defs(), mem[0])
@@ -178,7 +183,9 @@ def _sbw(label: str) -> str:
     return f"{label:<28}"
 
 
-def _show_both_section(title: str, defs: list[tuple[str, str, _ColFmt]], results: list[Any]) -> None:
+def _show_both_section(
+    title: str, defs: list[tuple[str, str, _ColFmt]], results: list[Any]
+) -> None:
     print(f"  {title}")
     for label, attr, fmt in defs:
         parts = "".join(_val(fmt(getattr(r, attr))) for r in results)
@@ -187,7 +194,12 @@ def _show_both_section(title: str, defs: list[tuple[str, str, _ColFmt]], results
 
 
 def _show_side_by_side(
-    mem: Any, lat: Any, fps64: Any, fps128: Any, burst: Any, stress: Any,
+    mem: Any,
+    lat: Any,
+    fps64: Any,
+    fps128: Any,
+    burst: Any,
+    stress: Any,
 ) -> None:
     if mem:
         _show_both_section("MEMORY", _memory_defs(), mem)

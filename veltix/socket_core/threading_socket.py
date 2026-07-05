@@ -146,7 +146,10 @@ class ThreadingSocket(BaseSocket):
 
                 conn_, addr = self._sock.accept()
                 conn = ThreadingSocket._create_client_instance(
-                    conn_, self._logger, self.request_handler, self.max_message_size,
+                    conn_,
+                    self._logger,
+                    self.request_handler,
+                    self.max_message_size,
                     handshake_timeout=self.handshake_timeout,
                 )
 
@@ -191,7 +194,7 @@ class ThreadingSocket(BaseSocket):
         entry.info.conn.settimeout(timeout)
 
         ok = self.request_handler.handshake_handler.do_server_handshake(
-            cast(ThreadingSocket, entry.info.conn)._sock,
+            cast("ThreadingSocket", entry.info.conn)._sock,
             timeout=entry.info.conn.handshake_timeout,
         )
         if not ok:

@@ -8,7 +8,7 @@ import threading
 import time
 from collections import deque
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, TextIO, Union
+from typing import TYPE_CHECKING, Optional, TextIO
 
 if TYPE_CHECKING:
     from .config import LoggerConfig

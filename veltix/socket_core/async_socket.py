@@ -195,8 +195,12 @@ class AsyncSocket(BaseSocket):
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         client_sock = AsyncSocket._create_client_instance(
-            conn, self._logger, self.request_handler, self.max_message_size,
-            handshake_timeout=self.handshake_timeout, nonblocking=False,
+            conn,
+            self._logger,
+            self.request_handler,
+            self.max_message_size,
+            handshake_timeout=self.handshake_timeout,
+            nonblocking=False,
         )
         client = ClientInfo(client_sock, addr, self.id_count, handshake_done=False)
         client_id = self.client_manager.add_client(client)

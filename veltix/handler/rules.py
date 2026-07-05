@@ -71,9 +71,7 @@ class OnRecvRule(Rule):
         on_recv = context.handler.on_recv
         assert on_recv is not None
         if context.is_server:
-            context.handler._executor.submit(
-                on_recv, context.client, context.response
-            )
+            context.handler._executor.submit(on_recv, context.client, context.response)
         else:
             context.handler._executor.submit(on_recv, context.response)
 

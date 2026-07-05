@@ -40,7 +40,6 @@ class TestHandshakeEncodeDecode:
         assert decoded == original
 
     def test_encode_raises_on_bad_input(self):
-        import json
         with pytest.raises(TypeError):
             self.handler._encode({"v": object()})  # type: ignore
 
@@ -49,7 +48,6 @@ class TestHandshakeEncodeDecode:
             self.handler._decode(b"\x00\x05hello")
 
     def test_decode_raises_on_empty(self):
-        import struct
         with pytest.raises(struct.error):
             self.handler._decode(b"")
 
