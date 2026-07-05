@@ -171,6 +171,8 @@ class AsyncSocket(BaseSocket):
                     self._accept_client(max_client)
                 elif key.data == "client":
                     self._handle_self_read(buffer_size)
+                    if not self.running:
+                        break
                 else:
                     self._handle_server_client(key.data, buffer_size)
 
