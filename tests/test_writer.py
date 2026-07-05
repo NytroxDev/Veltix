@@ -2,10 +2,7 @@
 
 import io
 import time
-from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from veltix.logger.config import LoggerConfig
 from veltix.logger.writer import Writer
