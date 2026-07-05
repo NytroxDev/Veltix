@@ -38,8 +38,6 @@ class Writer:
 
     def _init_file(self) -> None:
         file_path = self._file_path
-        if file_path is None:
-            return
         try:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             self._file_handle = open(file_path, "a", encoding="utf-8", buffering=8192)  # noqa: SIM115
@@ -119,8 +117,6 @@ class Writer:
                     self._file_handle.close()
 
                 base_path = self._file_path
-                if base_path is None:
-                    return
                 oldest = base_path.with_suffix(
                     f"{base_path.suffix}.{self.config.file_backup_count}"
                 )

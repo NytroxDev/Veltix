@@ -3,7 +3,7 @@
 import io
 import time
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -122,6 +122,18 @@ class TestWriterRotation:
             writer.write("x" * 10)
         assert log_file.exists()
 
+    def test_rotation_error_caught(self, tmp_path):
+        log_file = tmp_path / "test.log"
+        config = LoggerConfig(
+            file_path=str(log_file),
+            file_rotation_size=1,
+            file_backup_count=2,
+        )
+        writer = Writer(config)
+        writer.write("x")
+        with patch("builtins.open", side_effect=OSError("mock rotation error")):
+            writer._rotate_file()  # should not crash, hits lines 141-142
+
 
 class TestWriterErrors:
     def test_init_file_permission_error(self, tmp_path):
@@ -159,6 +171,16 @@ class TestWriterErrors:
         writer.write("hello")
         with patch.object(writer, "_write_to_file_direct", side_effect=OSError("mock")):
             writer._flush_buffer()  # should not crash
+
+    def test_flush_buffer_toctou_guard(self, tmp_path):
+        log_file = tmp_path / "test.log"
+        config = LoggerConfig(file_path=str(log_file), async_write=True)
+        writer = Writer(config)
+        writer.write("hello")
+        mock_buffer = MagicMock()
+        mock_buffer.__bool__ = MagicMock(side_effect=[True, False])
+        with patch.object(writer, "_buffer", mock_buffer):
+            writer._flush_buffer()  # hits line 70 guard, should return silently
 
 
 class TestWriterInit:
