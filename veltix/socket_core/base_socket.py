@@ -15,6 +15,7 @@ class SocketEvents(Enum):
 @runtime_checkable
 class BaseSocket(Protocol):
     client_manager: ClientsManager
+    handshake_timeout: float
 
     def set_callback(self, event: SocketEvents, callback: Callable) -> bool: ...
     def send(self, data: bytes) -> bool: ...
