@@ -27,5 +27,8 @@ if entry not in compat:
 print(f'✅ Version {ver} is registered in COMPATIBILITY table')
 "
 
+echo "=== Tests ==="
+python -m pytest tests/ --tb=short
+
 echo ""
 echo "✅ All checks passed — ready to commit."
