@@ -29,7 +29,8 @@ class PendingRequestRule(Rule):
     _logger = Logger.get_instance()
 
     def can_handle(self, context: MessageContext) -> bool:
-        return False
+        with context.handler.pending_requests_lock:
+            return context.response.request_id in context.handler.pending_requests
 
     def handle(self, context: MessageContext) -> None:
         pass
