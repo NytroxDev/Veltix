@@ -61,9 +61,7 @@ class ReconnectHandler:
         max_retry = retry_max if retry_max is not None else self._context.config.retry
         while not self._stop_retry_flag and self._fail_count < max_retry:
             self._fail_count += 1
-            self._logger.info(
-                f"Reconnection attempt {self._fail_count}/{max_retry}..."
-            )
+            self._logger.info(f"Reconnection attempt {self._fail_count}/{max_retry}...")
 
             self.reset()
             if self._context.context_connect():
