@@ -92,7 +92,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install pytest
+        run: pip install pytest pytest-xdist pytest-cov pytest-asyncio
 
       - name: Run tests
-        run: python -m pytest tests/ -v --tb=short
+        run: python -m pytest tests/ --tb=short

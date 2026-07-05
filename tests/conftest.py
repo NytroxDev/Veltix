@@ -27,7 +27,7 @@ def cleanup_after_test():
     yield
     MessageTypeRegistry._registry.clear()
     MessageTypeRegistry._registry.update(saved_registry)
-    time.sleep(0.05)
+    time.sleep(0.01)
 
 
 @pytest.fixture
@@ -67,11 +67,15 @@ def socket_core_backend(request):
     def _server_init(self, *args, **kwargs):
         if "socket_core" not in kwargs:
             kwargs["socket_core"] = param
+        if "handshake_timeout" not in kwargs:
+            kwargs["handshake_timeout"] = 1.0
         return orig_server_init(self, *args, **kwargs)
 
     def _client_init(self, *args, **kwargs):
         if "socket_core" not in kwargs:
             kwargs["socket_core"] = param
+        if "handshake_timeout" not in kwargs:
+            kwargs["handshake_timeout"] = 1.0
         return orig_client_init(self, *args, **kwargs)
 
     ServerConfig.__init__ = _server_init

@@ -50,6 +50,7 @@ dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-xdist>=3.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
 ]
@@ -57,6 +58,7 @@ test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-xdist>=3.0",
 ]
 benchmark = [
     "psutil>=5.9.0",
@@ -95,6 +97,7 @@ addopts = [
     "--verbose",
     "--strict-markers",
     "--tb=short",
+    "-n=auto",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
