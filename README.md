@@ -105,12 +105,10 @@ transfer.
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Backend Comparison: Threading vs Async](#backend-comparison-threading-vs-async)
-- [Features](#features)
 - [Performance](#performance)
 - [When NOT to use Veltix](#when-not-to-use-veltix)
 - [Comparison](#comparison)
 - [Built with Veltix](#built-with-veltix)
-- [Roadmap](#roadmap)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -289,7 +287,7 @@ Projects using Veltix in production:
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
 
 - Bug reports : [Open an issue](https://github.com/NytroxDev/Veltix/issues)
-- Discussions : [Join the Discord](https://discord.gg/jwjEV5eze7)
+- Discussions : [Join the Discord](https://discord.gg/gz8K369a6p)
 - Pull requests : Follow the contribution guide
 
 ---
@@ -305,4 +303,4 @@ MIT License : see [LICENSE](LICENSE) for details.
 - GitHub : [NytroxDev/Veltix](https://github.com/NytroxDev/Veltix)
 - PyPI : [pypi.org/project/veltix](https://pypi.org/project/veltix)
 - Documentation : https://nytroxdev.github.io/Veltix/
-- Discord : [discord.gg/76AeXdST9m](https://discord.gg/jwjEV5eze7)
+- Discord : [discord.gg/gz8K369a6p](https://discord.gg/gz8K369a6p)

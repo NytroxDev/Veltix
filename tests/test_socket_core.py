@@ -1,4 +1,4 @@
-"""Tests for socket_core module: SocketEvents, BaseSocket Protocol."""
+"""Tests for socket_core module: SocketEvents, BaseSocket ABC."""
 
 import socket
 
@@ -33,8 +33,8 @@ class TestSocketCore:
         assert len(members) == 2
 
 
-class TestBaseSocketProtocol:
-    """Test that socket implementations satisfy the BaseSocket protocol."""
+class TestBaseSocketABC:
+    """Test that socket implementations satisfy the BaseSocket ABC."""
 
     def _make_handler(self):
         from veltix.handler.request_handler import RequestHandler
@@ -45,7 +45,7 @@ class TestBaseSocketProtocol:
         return RequestHandler(sender=sender, mode=Mode.CLIENT)
 
     def test_threading_socket_is_base_socket(self):
-        """ThreadingSocket should satisfy BaseSocket protocol at runtime."""
+        """ThreadingSocket should satisfy BaseSocket ABC at runtime."""
         from veltix.socket_core.threading_socket import ThreadingSocket
 
         handler = self._make_handler()
@@ -53,7 +53,7 @@ class TestBaseSocketProtocol:
         assert isinstance(ts, BaseSocket) is True
 
     def test_async_socket_is_base_socket(self):
-        """AsyncSocket should satisfy BaseSocket protocol at runtime."""
+        """AsyncSocket should satisfy BaseSocket ABC at runtime."""
         from veltix.socket_core.async_socket import AsyncSocket
 
         handler = self._make_handler()
