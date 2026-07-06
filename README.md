@@ -240,6 +240,8 @@ Everything else? Veltix has you covered.
 | Swappable backends     |   ✓    |    ✗     |     ✗     |    ✗    |
 | Integrated logger      |   ✓    |    ✗     |     ~     |    ✓    |
 
+> ✓ Built-in &nbsp;&nbsp; ~ Possible but requires manual setup &nbsp;&nbsp; ✗ Not provided (you implement it yourself)
+
 ---
 
 ## Performance
