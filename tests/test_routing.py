@@ -218,9 +218,7 @@ class TestClientRouting:
 
         server.set_callback(
             Events.ON_CONNECT,
-            lambda c: server.sender.send(
-                Request(test_message_type, b"from server"), client=c.conn
-            ),
+            lambda c: server.sender.send(Request(test_message_type, b"from server"), client=c.conn),
         )
 
         server.start()
@@ -250,9 +248,7 @@ class TestClientRouting:
 
         server.set_callback(
             Events.ON_CONNECT,
-            lambda c: server.sender.send(
-                Request(test_message_type, b"from server"), client=c.conn
-            ),
+            lambda c: server.sender.send(Request(test_message_type, b"from server"), client=c.conn),
         )
 
         server.start()
