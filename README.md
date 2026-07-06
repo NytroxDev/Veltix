@@ -1,6 +1,6 @@
 # Veltix
 
-> The high-level TCP library Python never had.
+> Python TCP, without the boilerplate.
 
 [![Lines of code](https://img.shields.io/endpoint?url=https://ghloc.vercel.app/api/NytroxDev/Veltix/badge)](https://ghloc.vercel.app/NytroxDev/Veltix)
 [![PyPI](https://img.shields.io/pypi/v/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
