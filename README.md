@@ -14,9 +14,9 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection  
 so you can focus on your application logic.
 
-**77k msg/s** • **0.035ms latency** • **4KB idle** • **2x throughput vs threading**
+**83k msg/s** • **0.032ms latency** • **4KB idle** • **2.6x throughput vs threading**
 
-**Mature & tested** - 377+ tests · CI on Python 3.8-3.14 · 11+ releases
+**Mature & tested** - 432+ tests · CI on Python 3.8-3.14 · 12+ releases
 
 ## Raw Socket vs Veltix
 
@@ -173,9 +173,9 @@ Veltix lets you switch between two socket backends via `SocketCore`. Pick the on
 |-----------------------|----------------------------------------------|------------------------------------------------|
 | **Model**             | One thread per client                        | Single-threaded event loop (selectors)         |
 | **Best for**          | Simple apps, < 50 clients, predictable loads | High concurrency, 100+ clients, variable loads |
-| **Concurrent stress** | ~37k msg/s                                   | **~77k msg/s (2x)**                            |
-| **Idle memory**       | 46 KB server + 36 KB per client              | **4 KB server + 12 KB per client**             |
-| **Latency**           | **0.032 ms**                                 | 0.035 ms                                       |
+| **Concurrent stress** | ~32k msg/s                                   | **~83k msg/s (2.6x)**                          |
+| **Idle memory**       | 21 KB server + 35 KB per client              | **4 KB server + 12 KB per client**             |
+| **Latency**           | **0.032 ms**                                 | 0.036 ms                                       |
 | **Debugging**         | Straightforward (stack traces = threads)     | Harder (event loop internals)                  |
 
 **Quick rule of thumb:**
@@ -197,12 +197,12 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 
 | Metric                             | Threading       | Async            |
 |------------------------------------|-----------------|------------------|
-| Concurrent stress (100 clients)    | 37,676 msg/s    | **76,929 msg/s** |
-| Burst throughput                   | 52,109 / 41,327 | 52,296 / 41,343  |
-| Average latency                    | 0.032 ms        | 0.035 ms         |
-| Idle server memory                 | 46 KB           | 4 KB             |
-| Per client memory (avg)            | 36 KB           | 12 KB            |
-| FPS simulation (64 players @ 64Hz) | 4,488 msg/s     | 4,488 msg/s      |
+| Concurrent stress (100 clients)    | 32,297 msg/s    | **82,937 msg/s** |
+| Burst throughput                   | 49,287 / 39,517 | 49,878 / 39,909  |
+| Average latency                    | 0.032 ms        | 0.036 ms         |
+| Idle server memory                 | 21 KB           | 4 KB             |
+| Per client memory (avg)            | 35 KB           | 12 KB            |
+| FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,491 msg/s      |
 
 Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
 

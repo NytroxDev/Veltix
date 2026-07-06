@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 1.8.0
+- **Version:** 1.8.1
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -25,7 +25,7 @@ boilerplate of raw sockets.
 - **Custom protocols:** you control the message types, framing, and routing
 - **IPC / inter-process communication:** lightweight进程间通信 on localhost
 - **Remote tooling:** SSH-like command execution, remote file management
-- **IoT / embedded:** minimal memory footprint (46 KB idle), no heavy dependencies
+- **IoT / embedded:** minimal memory footprint (21 KB idle), no heavy dependencies
 
 **Not ideal for:**
 
@@ -43,15 +43,15 @@ framing, handshake, ping/pong, and reconnection: zero dependencies, zero boilerp
 
 | Metric                             | Threading    | Async            |
 |------------------------------------|--------------|------------------|
-| Idle server memory                 | 45.6 KB      | 4 KB             |
-| Per client memory (avg)            | 36.08 KB     | 12.4 KB          |
-| Average latency                    | 0.032 ms     | 0.035 ms         |
-| Burst send                         | 52,109 msg/s | 52,296 msg/s     |
-| Burst receive                      | 41,327 msg/s | 41,343 msg/s     |
-| Concurrent stress (100 clients)    | 37,676 msg/s | **76,929 msg/s** |
-| FPS simulation (64 players @ 64Hz) | 4,488 msg/s  | 4,488 msg/s      |
+| Idle server memory                 | 20.8 KB      | 4 KB             |
+| Per client memory (avg)            | 34.5 KB      | 12.4 KB          |
+| Average latency                    | 0.033 ms     | 0.036 ms         |
+| Burst send                         | 49,287 msg/s | 49,878 msg/s     |
+| Burst receive                      | 39,517 msg/s | 39,909 msg/s     |
+| Concurrent stress (100 clients)    | 32,297 msg/s | **82,937 msg/s** |
+| FPS simulation (64 players @ 64Hz) | 4,490 msg/s  | 4,491 msg/s      |
 
-Async stress throughput is **2x higher** than Threading under high concurrency.
+Async stress throughput is **2.6x higher** than Threading under high concurrency.
 
 ## Tech Stack
 
@@ -115,7 +115,7 @@ veltix/
 │   └── format_size.py   # format_bytes
 ├── benchmark/           # CLI benchmarking suite
 ├── exceptions.py        # VeltixError hierarchy
-├── version.py           # __version__ = "1.8.0"
+├── version.py           # __version__ = "1.8.1"
 └── __init__.py          # Public API exports
 tests/
 ├── conftest.py          # Shared fixtures
