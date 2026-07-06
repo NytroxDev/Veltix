@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-07-06
+
+### Fixed
+
+- **`SO_REUSEADDR` moved to `bind()` only** : the socket option was being set on both server and client sockets; now
+  restricted to the listening socket only ([b117547](https://github.com/NytroxDev/Veltix/commit/b117547)).
+- **`handshake_timeout` propagated to client socket instances** : `ClientConfig.handshake_timeout` was not forwarded to
+  the underlying socket; the default timeout was always used instead of the configured value ([4e5a7db](https://github.com/NytroxDev/Veltix/commit/4e5a7db)).
+- **AsyncSocket selector loop busy-loop after self-disconnect** : when the server closed a client connection, the
+  selector could enter a busy-loop reading from a closed fd. Now breaks out immediately on self-disconnect ([7543f1d](https://github.com/NytroxDev/Veltix/commit/7543f1d)).
+- **Handshake encode/decode exceptions no longer swallowed** : `_encode()` and `_decode()` were silently catching all
+  JSON errors; exceptions now propagate properly. Also fixes a Python 3.8 compatibility regression in
+  `request_handler.py` ([feb8736](https://github.com/NytroxDev/Veltix/commit/feb8736), [6d76612](https://github.com/NytroxDev/Veltix/commit/6d76612)).
+- **Client config no longer mutated during retry** : `client.retry(max=N)` was overwriting the original
+  `ClientConfig.retry`; now uses an internal override ([91c872d](https://github.com/NytroxDev/Veltix/commit/91c872d)).
+- **Logger Writer type annotations** : `_file_path` normalized to `Optional[Path]`, `_initialized` guard uses
+  class-level `RLock`, `__post_init__` missing return type added ([ea823fe](https://github.com/NytroxDev/Veltix/commit/ea823fe), [3bfa9ad](https://github.com/NytroxDev/Veltix/commit/3bfa9ad), [f7f24b9](https://github.com/NytroxDev/Veltix/commit/f7f24b9)).
+
+### Changed
+
+- **`BaseSocket` refactored from `Protocol` to `ABC`** : stronger inheritance guarantees and slot-sharing in subclasses.
+  No user-facing changes required ([4b577b5](https://github.com/NytroxDev/Veltix/commit/4b577b5)).
+- **`PendingRequestRule.can_handle` now truthful** : previously returned `False` requiring explicit `try_handle()`
+  dispatch; now acts as a standard rule ([11c3cbb](https://github.com/NytroxDev/Veltix/commit/11c3cbb)).
+
+### Performance
+
+- **Test suite ~7× faster** : runtime reduced from ~49s to ~7s via `pytest-xdist`, reduced cleanup `sleep()`, and lower
+  `handshake_timeout` in tests ([fd26e72](https://github.com/NytroxDev/Veltix/commit/fd26e72)).
+
+### Tests
+
+- **30 new unit tests** for `ThreadingSocket` and `AsyncSocket` error paths (send failures, accept failures, handshake
+  failures) ([42b1ba5](https://github.com/NytroxDev/Veltix/commit/42b1ba5)).
+- **100% coverage on `Writer`** : comprehensive tests covering file rotation, buffer flushing, edge cases ([7195060](https://github.com/NytroxDev/Veltix/commit/7195060)).
+
+### Chore
+
+- **CI lint and typecheck jobs added** : `ruff check` and `mypy veltix/` now run in CI ([e2fa945](https://github.com/NytroxDev/Veltix/commit/e2fa945)).
+- **Release script** (`scripts/release.sh`) : ruff, mypy, version consistency, compatibility table, tests, build
+  check ([9cd5545](https://github.com/NytroxDev/Veltix/commit/9cd5545), [7abc61f](https://github.com/NytroxDev/Veltix/commit/7abc61f)).
+- **Ruff auto-fix pass** : entire codebase reformatted; all rules (B017, N806, B007, TC001, TC003, SIM110)
+  resolved ([bb28218](https://github.com/NytroxDev/Veltix/commit/bb28218), [c42d90f](https://github.com/NytroxDev/Veltix/commit/c42d90f), [41e97e8](https://github.com/NytroxDev/Veltix/commit/41e97e8)).
+- **43 commits** from v1.8.0 : full housekeeping cycle to tighten types, fix edge cases, and solidify CI.
+
+---
+
 ## [1.8.0] - 2026-07-04
 
 ### Added
@@ -82,11 +129,13 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 ### Fixed
 
 #### Socket Core
+
 - **`SO_REUSEPORT` guarded on all platforms** — `socket.SO_REUSEPORT` doesn't exist on Windows and may raise
   `AttributeError` on older Python builds ; wrapped with `contextlib.suppress` in both `ThreadingSocket` and
   `AsyncSocket` ([330be08])
 
 ### Chore
+
 - **Compatibility table updated** — `Version(1, 7, 5)` registered as compatible with 1.7.0–1.7.5
 
 ## [1.7.2] - 2026-06-20
@@ -99,11 +148,13 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 ### Fixed
 
 #### Server
+
 - **`ClientInfo.tags` locked** — tags dict now protected with `threading.Lock` across all reads/writes ; property
   returns a read-only copy ([84e586d], [1c2a60d])
 - **`_routes` dict race condition** — all reads and writes now properly locked ([1148fe4])
 
 #### Client
+
 - **`_handshake_done` cleared before reconnect** — prevents stale event state from blocking the next connection
   attempt ([7e89e74])
 - **Premature disconnect callback on connect** — guarded the window between socket bind and handshake completion
@@ -114,19 +165,24 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 - **Imports cleaned up** — unused imports removed from `client.py` ([c6cbc23])
 
 #### Logger / Writer
+
 - **`_flush_buffer` lock** — file writer flush access wrapped in thread-safe lock ([3677d1c])
 
 #### ReconnectHandler
+
 - **Log message language corrected** — French alert message fixed to proper English ([b33b39b])
 
 ### CI
+
 - **`actions/checkout` and `setup-python` versions updated** — workflow now uses latest GitHub Actions versions
   ([0592e36])
 
 ### Docs
+
 - **Guides and quickstart refined** — `retry` parameter documentation adjusted, info sections updated ([a405433])
 
 ### Chore
+
 - **Discord invite link updated** in `pyproject.toml` ([f381a2c])
 
 ---
@@ -136,33 +192,52 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 ### Fixed
 
 #### AsyncSocket
-- **`_close_server_client()` idempotent on selector unregister** — calling `unregister()` on an already-closed file descriptor no longer raises `KeyError` ([1bee90e])
-- **Selector threads set as daemons** — ensures the process can exit cleanly even if selector threads are still running during shutdown ([d2ffed4])
+
+- **`_close_server_client()` idempotent on selector unregister** — calling `unregister()` on an already-closed file
+  descriptor no longer raises `KeyError` ([1bee90e])
+- **Selector threads set as daemons** — ensures the process can exit cleanly even if selector threads are still running
+  during shutdown ([d2ffed4])
 
 #### Server
-- **`ClientInfo._id` with `__eq__`/`__hash__`** — stable identity for `ClientInfo` objects, fixing set/dict membership issues ([48cbbf2])
+
+- **`ClientInfo._id` with `__eq__`/`__hash__`** — stable identity for `ClientInfo` objects, fixing set/dict membership
+  issues ([48cbbf2])
 - **`close_client()` type hint** — `id_` parameter type fixed to `Optional[int]` ([dd991e5])
-- **Handshake version validation** — HELLO_ACK version is now validated in `_check_server_handshake`, rejecting incompatible clients earlier ([6d377ee])
+- **Handshake version validation** — HELLO_ACK version is now validated in `_check_server_handshake`, rejecting
+  incompatible clients earlier ([6d377ee])
 
 #### Client / Sender
-- **`_sock.close()` wrapped in try/except** — client cleanup is never skipped even if the socket is already closed ([24fc1e5])
-- **`request_id` bytes in log f-strings** — `.hex()` prevents `TypeError` from raw bytes interpolation in log messages ([91f68e8])
+
+- **`_sock.close()` wrapped in try/except** — client cleanup is never skipped even if the socket is already
+  closed ([24fc1e5])
+- **`request_id` bytes in log f-strings** — `.hex()` prevents `TypeError` from raw bytes interpolation in log
+  messages ([91f68e8])
 
 #### Python < 3.11 Compatibility
-- **`TimeoutError` replaced with `socket.timeout`** — `TimeoutError` is a builtin only since Python 3.11; now uses `socket.timeout` which exists in all supported versions ([2069879])
+
+- **`TimeoutError` replaced with `socket.timeout`** — `TimeoutError` is a builtin only since Python 3.11; now uses
+  `socket.timeout` which exists in all supported versions ([2069879])
 
 #### RequestHandler
-- **`sender` parameter made `Optional`** — constructor accepts `None` sender, matching usage from client-side paths ([2d20a88])
-- **Dead `handle()` replaced with no-op** — `PendingRequestRule.handle()` was unreachable (only `try_handle()` is used); no longer misleading ([56df37a])
+
+- **`sender` parameter made `Optional`** — constructor accepts `None` sender, matching usage from client-side
+  paths ([2d20a88])
+- **Dead `handle()` replaced with no-op** — `PendingRequestRule.handle()` was unreachable (only `try_handle()` is used);
+  no longer misleading ([56df37a])
 
 ### Features
-- **Export `NetworkError` and `TimeoutError` in `__all__`** — both exception classes are now part of the public API ([4a6e7a6])
+
+- **Export `NetworkError` and `TimeoutError` in `__all__`** — both exception classes are now part of the public
+  API ([4a6e7a6])
 
 ### Chores
+
 - **Remove unused `HEARTBEAT` message type** — was never registered or referenced in the codebase ([cf76069])
 
 ### Documentation
-- **AGENTS.md** — new comprehensive guide for AI agents with project conventions, API reference, and examples ([c9c3683])
+
+- **AGENTS.md** — new comprehensive guide for AI agents with project conventions, API reference, and
+  examples ([c9c3683])
 - **AGENTS.md expanded** — added performance benchmarks, detailed examples, and updated conventions ([12aff33])
 - **AGENTS.md SocketCore default** — updated to reflect `SocketCore.ASYNC` as the default backend ([b3388d4])
 - **AGENTS.md backward compatibility** — fixed constraint description to match actual policy ([a5bf915])
@@ -171,11 +246,15 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 - **README badge** — added AI guide badge linking to AGENTS.md ([8aa5b94])
 
 ### Refactors
-- **Sender instances reused** — client and server examples reuse `sender` for broadcasts and sends, improving readability ([8807f39], [55f7160])
+
+- **Sender instances reused** — client and server examples reuse `sender` for broadcasts and sends, improving
+  readability ([8807f39], [55f7160])
 - **Broadcast excluded sender** — `CHAT` handler excludes the sender client from broadcast recipients ([b83c181])
-- **`add_tag()` used in CHANNEL_JOIN handler** — replaces direct `tags` dict update with the idiomatic method ([a9b21cc])
+- **`add_tag()` used in CHANNEL_JOIN handler** — replaces direct `tags` dict update with the idiomatic
+  method ([a9b21cc])
 
 ### Tests
+
 - **Handshake version rejection** — new test verifying the server rejects an incompatible HELLO_ACK version ([b7a1d84])
 
 ---
@@ -306,39 +385,39 @@ I/O loop that replaces the one-thread-per-client model:
 
 #### Memory
 
-| Metric | threading | async |
-|---|---|---|
-| Idle server | 45.6 KB | 4 KB |
-| Per client (avg) | 36.1 KB | 12.4 KB |
-| Per client (min) | 17.6 KB | 4 KB |
-| Per client (max) | 45.6 KB | 16 KB |
-| Leak delta | 423 KB | 21 KB |
-| 50 clients | 24.39 MB | 23.63 MB |
+| Metric           | threading | async    |
+|------------------|-----------|----------|
+| Idle server      | 45.6 KB   | 4 KB     |
+| Per client (avg) | 36.1 KB   | 12.4 KB  |
+| Per client (min) | 17.6 KB   | 4 KB     |
+| Per client (max) | 45.6 KB   | 16 KB    |
+| Leak delta       | 423 KB    | 21 KB    |
+| 50 clients       | 24.39 MB  | 23.63 MB |
 
 #### Latency (250 000 pings)
 
-| Metric | threading | async |
-|---|---|---|
-| Avg | 0.032 ms | 0.035 ms |
-| P50 | 0.030 ms | 0.035 ms |
-| P95 | 0.042 ms | 0.048 ms |
-| P99 | 0.070 ms | 0.079 ms |
-| Throughput | 29 461/s | 26 625/s |
+| Metric     | threading | async    |
+|------------|-----------|----------|
+| Avg        | 0.032 ms  | 0.035 ms |
+| P50        | 0.030 ms  | 0.035 ms |
+| P95        | 0.042 ms  | 0.048 ms |
+| P99        | 0.070 ms  | 0.079 ms |
+| Throughput | 29 461/s  | 26 625/s |
 
 #### Burst (10 000 × 64 B)
 
-| Metric | threading | async |
-|---|---|---|
-| Send | 52 109 msg/s | 52 296 msg/s |
-| Recv | 41 327 msg/s | 41 343 msg/s |
-| Duration | 242.0 ms | 244.1 ms |
+| Metric   | threading    | async        |
+|----------|--------------|--------------|
+| Send     | 52 109 msg/s | 52 296 msg/s |
+| Recv     | 41 327 msg/s | 41 343 msg/s |
+| Duration | 242.0 ms     | 244.1 ms     |
 
 #### Stress (100 clients × 100 msg)
 
-| Metric | threading | async |
-|---|---|---|
+| Metric     | threading    | async        |
+|------------|--------------|--------------|
 | Throughput | 37 676 msg/s | 76 929 msg/s |
-| Duration | 267.0 ms | 136.0 ms |
+| Duration   | 267.0 ms     | 136.0 ms     |
 
 Full benchmark comparison with v1.6.10: [PERFORMANCE.md](PERFORMANCE.md)
 
@@ -351,10 +430,10 @@ Full benchmark comparison with v1.6.10: [PERFORMANCE.md](PERFORMANCE.md)
 - **Removed `PerformanceMode` enum**: `PerformanceMode.LOW / BALANCED / HIGH / AUTO` and
   `PerformanceModeSettings` dataclass deleted entirely. The socket timeout is now hardcoded
   to **0.5 s** across all configurations, matching the old `BALANCED` preset.
-  - `ServerConfig.performance_mode` and `ClientConfig.performance_mode` no longer exist
-  - `ServerConfig.__slots__` cleaned up: `_perf` attribute removed
-  - All remaining `self._perf.socket_timeout` references replaced with `0.5`
-  - Docs and guides cleared of PerformanceMode mentions
+    - `ServerConfig.performance_mode` and `ClientConfig.performance_mode` no longer exist
+    - `ServerConfig.__slots__` cleaned up: `_perf` attribute removed
+    - All remaining `self._perf.socket_timeout` references replaced with `0.5`
+    - Docs and guides cleared of PerformanceMode mentions
 
 ### Changed
 
@@ -395,11 +474,11 @@ Full benchmark comparison with v1.6.10: [PERFORMANCE.md](PERFORMANCE.md)
 
 - **Disconnect / reconnect race**: when `disconnect()` was called while a retry
   thread was mid-`connect()`, two issues arose:
-  1. Handshake timeout in the retry thread triggered a nested `disconnect()` call.
-     Fixed by skipping `self.disconnect()` when `_from_retry=True`.
-  2. `connect()` could return `True` after `stop_retry()` was set. Fixed by checking
-     `_stop_retry_flag` after `context_connect()` returns, and closing the socket.
-  Also added `context_get_socket()` to `ClientContext` protocol.
+    1. Handshake timeout in the retry thread triggered a nested `disconnect()` call.
+       Fixed by skipping `self.disconnect()` when `_from_retry=True`.
+    2. `connect()` could return `True` after `stop_retry()` was set. Fixed by checking
+       `_stop_retry_flag` after `context_connect()` returns, and closing the socket.
+       Also added `context_get_socket()` to `ClientContext` protocol.
 
 - **Client ignored `config.socket_core`**: `Client.connect()` always created a
   `ThreadingSocket` regardless of `ClientConfig.socket_core`. Now uses
@@ -593,6 +672,7 @@ Server route callbacks now receive `(client, response)` matching `on_recv`, inst
 @server.route(MY_TYPE)
 def handler(response: Response, client: ClientInfo):
     ...
+
 
 # After (v1.6.10)
 @server.route(MY_TYPE)
