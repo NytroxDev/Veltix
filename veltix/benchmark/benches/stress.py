@@ -81,7 +81,7 @@ def run(
     # ── Per-client send tracking ──────────────────────────────────────────────
     client_send_times: list[float] = [0.0] * num_clients
 
-    senders = [c.get_sender() for c in clients]
+    senders = [c.sender for c in clients]
     req_move = Request(PLAYER_MOVE, b"\x00" * 32)  # shared immutable request
 
     def _blast(idx: int, c: Client) -> None:

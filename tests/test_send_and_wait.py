@@ -21,7 +21,7 @@ class TestSendAndWait:
 
         def on_message(client_info, response2):
             echo = Request(response2.type, response2.content, request_id=response2.request_id)
-            server.get_sender().send(echo, client=client_info.conn)
+            server.sender.send(echo, client=client_info.conn)
 
         server.set_callback(Events.ON_RECV, on_message)
         server.start()
@@ -49,7 +49,7 @@ class TestSendAndWait:
 
         def on_message(response2):
             echo = Request(response2.type, response2.content, request_id=response2.request_id)
-            client.get_sender().send(echo)
+            client.sender.send(echo)
 
         client.set_callback(Events.ON_RECV, on_message)
         client.connect()

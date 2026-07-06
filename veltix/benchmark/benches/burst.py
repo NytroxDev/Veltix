@@ -59,7 +59,7 @@ def run(
     time.sleep(0.2)
 
     payload = b"X" * payload_size
-    sender = client.get_sender()  # resolve once — not inside the hot loop
+    sender = client.sender  # resolve once — not inside the hot loop
     request = Request(PLAYER_MOVE, payload)  # immutable payload, reuse same object
     gc.collect()
 

@@ -66,7 +66,7 @@ def run(
     print(" done")
 
     # Pre-resolve senders and requests outside the hot loop
-    senders = [c.get_sender() for c in clients]
+    senders = [c.sender for c in clients]
     req_move = [Request(PLAYER_MOVE, b"\x00" * 32) for _ in clients]
     req_shoot = [Request(PLAYER_SHOOT, b"\x00" * 16) for _ in clients]
 

@@ -79,7 +79,7 @@ class TestClientServer:
         assert client.connect()
 
         msg_type = MessageType(code=2300, name="test_basic")
-        client.get_sender().send(Request(msg_type, b"Hello Server"))
+        client.sender.send(Request(msg_type, b"Hello Server"))
 
         assert wait_for_condition(lambda: len(messages_received) > 0, timeout=2.0)
         assert messages_received[0] == b"Hello Server"
@@ -202,7 +202,7 @@ class TestClientServer:
         assert clients_ready.wait(timeout=10), "Not all clients connected in time"
 
         msg_type = MessageType(code=2301, name="broadcast_test")
-        server.get_sender().broadcast(
+        server.sender.broadcast(
             Request(msg_type, b"Broadcast to all"), server.get_all_clients_sockets()
         )
 
@@ -255,7 +255,7 @@ class TestClientServer:
 
         msg_type = MessageType(code=2302, name="selective_broadcast")
         exclude_socket = server.clients[0].conn
-        server.get_sender().broadcast(
+        server.sender.broadcast(
             Request(msg_type, b"Not for everyone"),
             server.get_all_clients_sockets(),
             except_clients=[exclude_socket],

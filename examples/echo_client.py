@@ -17,7 +17,7 @@ def main():
     config = ClientConfig(server_addr="127.0.0.1", port=8080)
 
     client = Client(config)
-    sender = client.get_sender()
+    sender = client.sender
 
     # Callback when message received
     def on_message(response):

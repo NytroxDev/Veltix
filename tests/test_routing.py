@@ -43,7 +43,7 @@ class TestServerRouting:
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        client.get_sender().send(Request(test_message_type, b"hello"))
+        client.sender.send(Request(test_message_type, b"hello"))
 
         assert wait_for_condition(lambda: len(received) == 1, timeout=2.0)
         assert received[0].type == test_message_type
@@ -68,7 +68,7 @@ class TestServerRouting:
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        client.get_sender().send(Request(test_message_type, b"hello"))
+        client.sender.send(Request(test_message_type, b"hello"))
 
         assert wait_for_condition(lambda: len(routed) == 1, timeout=2.0)
         assert len(fallback) == 0
@@ -88,7 +88,7 @@ class TestServerRouting:
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        client.get_sender().send(Request(test_message_type, b"hello"))
+        client.sender.send(Request(test_message_type, b"hello"))
 
         assert wait_for_condition(lambda: len(fallback) == 1, timeout=2.0)
         assert fallback[0].type == test_message_type
@@ -113,7 +113,7 @@ class TestServerRouting:
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        client.get_sender().send(Request(other_type, b"hello"))
+        client.sender.send(Request(other_type, b"hello"))
 
         time.sleep(0.2)
         assert len(routed) == 0
@@ -151,7 +151,7 @@ class TestServerRouting:
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        client.get_sender().send(Request(test_message_type, b"hello"))
+        client.sender.send(Request(test_message_type, b"hello"))
 
         assert wait_for_condition(lambda: len(fallback) == 1, timeout=2.0)
         assert len(routed) == 0
@@ -188,8 +188,8 @@ class TestServerRouting:
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
-        client.get_sender().send(Request(test_message_type, b"a"))
-        client.get_sender().send(Request(type_b, b"b"))
+        client.sender.send(Request(test_message_type, b"a"))
+        client.sender.send(Request(type_b, b"b"))
 
         assert wait_for_condition(
             lambda: len(received_a) == 1 and len(received_b) == 1, timeout=2.0
@@ -218,7 +218,7 @@ class TestClientRouting:
 
         server.set_callback(
             Events.ON_CONNECT,
-            lambda c: server.get_sender().send(
+            lambda c: server.sender.send(
                 Request(test_message_type, b"from server"), client=c.conn
             ),
         )
@@ -250,7 +250,7 @@ class TestClientRouting:
 
         server.set_callback(
             Events.ON_CONNECT,
-            lambda c: server.get_sender().send(
+            lambda c: server.sender.send(
                 Request(test_message_type, b"from server"), client=c.conn
             ),
         )
