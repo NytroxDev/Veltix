@@ -1,5 +1,50 @@
 # Migration Guide
 
+## v1.8.0 → v1.8.1
+
+**No breaking changes — wire-compatible with v1.8.0.**
+
+v1.8.1 is a maintenance release focusing on bug fixes, type cleanup, and documentation.
+
+### Changes
+
+- **`Server.sender` and `Client.sender` are now properties** : `get_sender()` is deprecated
+  and will be removed in a future version. Use `server.sender` and `client.sender` instead.
+- **`BaseSocket` refactored from `Protocol` to `ABC`** : stronger inheritance guarantees.
+  No user-facing changes required.
+- **`PendingRequestRule.can_handle` now truthful** : no longer requires explicit
+  `try_handle()` dispatch.
+- **Handshake encode/decode exceptions no longer swallowed** : JSON errors now propagate.
+- **`SO_REUSEADDR` moved to `bind()` only** : client sockets no longer inherit the option.
+- **`handshake_timeout` propagated to client socket instances** : config was previously
+  ignored on the client side.
+- **AsyncSocket selector loop fixed** : no more busy-loop after self-disconnect.
+- **Test suite ~7× faster** (49s → 7s) via `pytest-xdist`.
+- **30 new unit tests**, 100% coverage on `Writer`.
+- **Compatibility table** updated — both `1.8.0` and `1.8.1` are registered.
+
+### Action required
+
+- Migrate from `get_sender()` to `.sender` (deprecation warning, not a failure).
+
+```python
+# Before (v1.8.0)
+server.get_sender().send(request, client=client.conn)
+
+# After (v1.8.1)
+server.sender.send(request, client=client.conn)
+```
+
+```python
+# Before (v1.8.0)
+client.get_sender().send(request)
+
+# After (v1.8.1)
+client.sender.send(request)
+```
+
+---
+
 ## v1.7.5 → v1.8.0
 
 **Breaking change : handshake protocol — NOT backward compatible.**
@@ -24,7 +69,7 @@ over the TCP stream before any Veltix framing.
 - `HelloRule` removed — the handshake no longer routes through the message dispatch
   pipeline. This is an internal change only.
 - `ERROR` / `INVALID_REQUEST` system types (codes 20, 21) are kept and re-exported.
-- Compatibility table only has `Version(1, 8, 0)`.
+- Compatibility table now includes `Version(1, 8, 0)` and `Version(1, 8, 1)`.
 
 ```python
 # Before (v1.7.5) — HELLO/HELLO_ACK over Veltix wire protocol

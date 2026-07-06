@@ -244,6 +244,8 @@ class MessageType:
 ### Inheritance & Protocols
 
 - Use `Protocol` from `typing` for structural subtyping (e.g., `ClientContext`).
+- `BaseSocket` was refactored from `Protocol` to `ABC` in v1.8.1 — use `abstractmethod` for base class contracts that
+  need stronger inheritance guarantees and slot-sharing.
 - Avoid deep inheritance trees. Prefer composition.
 
 ### Logger
@@ -627,8 +629,8 @@ BufferSize.HUGE  # 1 MB
 ```python
 from veltix import Version, COMPATIBILITY
 
-v = Version(1, 8, 0)
-v2 = Version.from_str("v1.8.0")
+v = Version(1, 8, 1)
+v2 = Version.from_str("v1.8.1")
 v.is_compatible(v2)  # -> Optional[bool] (True/False/None)
 ```
 
