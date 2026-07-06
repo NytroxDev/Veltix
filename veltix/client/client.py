@@ -75,7 +75,7 @@ class Client:
             max_message_size=self.config.max_message_size,
         )
         self.socket.settimeout(0.5)
-        self.sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket)
+        self._sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket)
         self.request_handler: RequestHandler = RequestHandler(
             sender=self.sender,
             mode=Mode.CLIENT,
@@ -244,8 +244,23 @@ class Client:
             self._logger.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
             return False
 
+    @property
+    def sender(self) -> Sender:
+        """Return the sender instance for this client."""
+        return self._sender
+
     def get_sender(self) -> Sender:
-        """Return the sender instance."""
+        """
+        Deprecated: use client.sender instead.
+        """
+        import warnings
+
+        warnings.warn(
+            "Client.get_sender() is deprecated and will be removed in a future version. "
+            "Use Client.sender instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.sender
 
     def send_and_wait(self, request: Request, timeout: float = 5.0) -> Optional[Response]:

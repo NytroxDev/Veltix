@@ -17,7 +17,7 @@ def main():
     config = ServerConfig(host="0.0.0.0", port=9000, max_connection=10)
 
     server = Server(config)
-    sender = server.get_sender()
+    sender = server.sender
 
     # Track connected clients
     client_names = {}

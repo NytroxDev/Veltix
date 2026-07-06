@@ -158,7 +158,7 @@ class TestServerGetClientsSocketsByTag:
         server.clients[1].add_tag("role", value="guest")
 
         admin_sockets = server.get_clients_sockets_by_tag("role", value="admin")
-        server.get_sender().broadcast(Request(msg, b"test"), admin_sockets)
+        server.sender.broadcast(Request(msg, b"test"), admin_sockets)
 
         time.sleep(0.3)
         assert len(received) == 1

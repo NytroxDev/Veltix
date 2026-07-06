@@ -15,7 +15,7 @@ def main():
     config = ServerConfig(host="0.0.0.0", port=8080, max_connection=5)
 
     server = Server(config)
-    sender = server.get_sender()
+    sender = server.sender
 
     # Callback when client connects
     def on_connect(client: ClientInfo):

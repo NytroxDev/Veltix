@@ -106,7 +106,7 @@ class TestCallbackExecutorIntegration:
 
         msg_type = MessageType(code=2400, name="slow_test")
         for i in range(5):
-            client.get_sender().send(Request(msg_type, f"msg{i}".encode()))
+            client.sender.send(Request(msg_type, f"msg{i}".encode()))
 
         assert wait_for_condition(lambda: len(received) == 5, timeout=2.0)
 
