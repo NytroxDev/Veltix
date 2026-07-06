@@ -14,26 +14,24 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection  
 so you can focus on your application logic.
 
-**83k msg/s** • **0.032ms latency** • **4KB idle** • **2.6x throughput vs threading**
-
 **Mature & tested** - 432+ tests · CI on Python 3.8-3.14 · 12+ releases
 
 ## Why Veltix?
 
-I wrote Veltix because I was tired of rewriting the same 4,000 lines of socket boilerplate
-every time I needed two programs to talk to each other.
+I wrote Veltix because I got tired of rewriting the same networking boilerplate every time I needed two programs to talk
+to each other.
 
-Raw sockets are powerful, but they force you to reimplement framing, threading, handshakes,
-and reconnection from scratch -- every single project. `asyncio` solves some of that but
-infects your entire codebase with async/await, even when you don't need it. Twisted works,
-but good luck onboarding someone.
+Raw sockets are powerful, but they leave framing, request routing, handshakes, reconnection, and thread management
+entirely up to you. asyncio solves part of the problem, but adopting it often means committing your whole application to
+an async architecture. Twisted is incredibly capable, but it comes with its own programming model and can feel more like
+learning a framework than writing plain Python.
 
-I wanted something different: a tool that just works. Zero dependencies, zero config
-overhead, zero mental load. Plug it in, define your message types, and focus on what
-actually matters -- your application logic.
+I wanted something different: a lightweight library that handles the repetitive networking work without forcing a
+particular architecture. Define your message types, register your handlers, and focus on your application instead of
+socket plumbing.
 
-Veltix is that tool. No framework, no event loop pollution, no 4,000 lines of socket
-plumbing. TCP, done right.
+That's the idea behind Veltix: modern TCP communication with a simple, synchronous API, sensible defaults, and zero
+dependencies.
 
 ## Raw Socket vs Veltix
 
@@ -102,14 +100,15 @@ transfer.
 
 ## Table of Contents
 
+- [Why Veltix?](#why-veltix)
 - [Raw Socket vs Veltix](#raw-socket-vs-veltix)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Backend Comparison: Threading vs Async](#backend-comparison-threading-vs-async)
 - [Features](#features)
-- [Performance](#performance)
 - [When NOT to use Veltix](#when-not-to-use-veltix)
 - [Comparison](#comparison)
+- [Performance](#performance)
 - [Built with Veltix](#built-with-veltix)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
@@ -208,23 +207,6 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 
 ---
 
-## Performance
-
-> Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
-
-| Metric                             | Threading       | Async            |
-|------------------------------------|-----------------|------------------|
-| Concurrent stress (100 clients)    | 32,297 msg/s    | **82,937 msg/s** |
-| Burst throughput                   | 49,287 / 39,517 | 49,878 / 39,909  |
-| Average latency                    | 0.032 ms        | 0.036 ms         |
-| Idle server memory                 | 21 KB           | 4 KB             |
-| Per client memory (avg)            | 35 KB           | 12 KB            |
-| FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,491 msg/s      |
-
-Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
-
----
-
 ## When NOT to use Veltix
 
 Veltix is great for TCP, but not every problem is a TCP problem.
@@ -257,6 +239,23 @@ Everything else? Veltix has you covered.
 | Client tags            |   ✓    |    ✗     |     ✗     |    ✗    |
 | Swappable backends     |   ✓    |    ✗     |     ✗     |    ✗    |
 | Integrated logger      |   ✓    |    ✗     |     ~     |    ✓    |
+
+---
+
+## Performance
+
+> Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
+
+| Metric                             | Threading       | Async            |
+|------------------------------------|-----------------|------------------|
+| Concurrent stress (100 clients)    | 32,297 msg/s    | **82,937 msg/s** |
+| Burst throughput                   | 49,287 / 39,517 | 49,878 / 39,909  |
+| Average latency                    | 0.032 ms        | 0.036 ms         |
+| Idle server memory                 | 21 KB           | 4 KB             |
+| Per client memory (avg)            | 35 KB           | 12 KB            |
+| FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,491 msg/s      |
+
+Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
 
 ---
 
