@@ -64,7 +64,7 @@ custom protocols, IPC, remote tooling, file transfer.
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 377 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
+- 432 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
 
 ---
 
@@ -74,10 +74,10 @@ custom protocols, IPC, remote tooling, file transfer.
 
 | Metric                          | Threading       | Async           |
 |---------------------------------|-----------------|-----------------|
-| Concurrent stress (100 clients) | 37,676 msg/s    | **76,929 msg/s**|
-| Burst send                      | 52,109 msg/s    | 52,296 msg/s    |
-| Average latency                 | 0.032 ms        | 0.035 ms        |
-| Idle server memory              | 46 KB           | 4 KB            |
+| Concurrent stress (100 clients) | 32,297 msg/s    | **82,937 msg/s**|
+| Burst send                      | 49,287 msg/s    | 49,878 msg/s    |
+| Average latency                 | 0.033 ms        | 0.036 ms        |
+| Idle server memory              | 21 KB           | 4 KB            |
 
 Full details : [Performance](../PERFORMANCE.md)
 
