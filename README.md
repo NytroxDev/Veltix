@@ -18,6 +18,23 @@ so you can focus on your application logic.
 
 **Mature & tested** - 432+ tests · CI on Python 3.8-3.14 · 12+ releases
 
+## Why Veltix?
+
+I wrote Veltix because I was tired of rewriting the same 4,000 lines of socket boilerplate
+every time I needed two programs to talk to each other.
+
+Raw sockets are powerful, but they force you to reimplement framing, threading, handshakes,
+and reconnection from scratch -- every single project. `asyncio` solves some of that but
+infects your entire codebase with async/await, even when you don't need it. Twisted works,
+but good luck onboarding someone.
+
+I wanted something different: a tool that just works. Zero dependencies, zero config
+overhead, zero mental load. Plug it in, define your message types, and focus on what
+actually matters -- your application logic.
+
+Veltix is that tool. No framework, no event loop pollution, no 4,000 lines of socket
+plumbing. TCP, done right.
+
 ## Raw Socket vs Veltix
 
 **Echo server with raw sockets (41 lines):**
