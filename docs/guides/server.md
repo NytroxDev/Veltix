@@ -73,13 +73,13 @@ Use `@server.route()` for per-type handlers. `on_recv` is the fallback for unrou
 
 ```python
 # Send to a specific client
-server.get_sender().send(request, client=client.conn)
+server.sender.send(request, client=client.conn)
 
 # Broadcast to all clients
-server.get_sender().broadcast(request, server.get_all_clients_sockets())
+server.sender.broadcast(request, server.get_all_clients_sockets())
 
 # Broadcast with exclusion
-server.get_sender().broadcast(request, server.get_all_clients_sockets(), except_clients=[client.conn])
+server.sender.broadcast(request, server.get_all_clients_sockets(), except_clients=[client.conn])
 ```
 
 ## Ping

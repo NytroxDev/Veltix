@@ -68,7 +68,7 @@ Use `@client.route()` for per-type handlers. `on_recv` is the fallback for unrou
 ## Sending messages
 
 ```python
-client.get_sender().send(request)
+client.sender.send(request)
 ```
 
 ## Send and wait

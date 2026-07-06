@@ -418,7 +418,7 @@ server.set_callback(Events.ON_DISCONNECT, callback)  # func(client: ClientInfo)
 def on_msg(client: ClientInfo, response: Response) -> None: ...
 
 
-server.get_sender()  # -> Sender
+server.sender  # -> Sender
 server.send_and_wait(request, client, timeout=5.0)  # -> Optional[Response]
 server.ping_client(client, timeout=5.0)  # -> Optional[float] (latency ms)
 server.ping_client_async(client, callback, timeout)  # non-blocking ping
@@ -445,7 +445,7 @@ client.set_callback(Events.ON_DISCONNECT, callback)  # func(state: DisconnectSta
 def on_msg(response: Response) -> None: ...
 
 
-client.get_sender()  # -> Sender
+client.sender  # -> Sender
 client.send_and_wait(request, timeout=5.0)  # -> Optional[Response]
 client.ping_server(timeout=5.0)  # -> Optional[float] (latency ms)
 client.disconnect()  # -> bool
@@ -731,7 +731,7 @@ from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Requ
 
 CHAT = MessageType(code=200, name="chat")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
-sender = server.get_sender()
+sender = server.sender
 
 
 @server.route(CHAT)
@@ -756,7 +756,7 @@ import time
 
 CHAT = MessageType(code=200, name="chat")
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
-sender = client.get_sender()
+sender = client.sender
 
 
 @client.route(CHAT)
@@ -792,7 +792,7 @@ from veltix import Server, ServerConfig, Client, ClientConfig, MessageType, Requ
 
 ECHO = MessageType(code=201, name="echo")
 server = Server(ServerConfig(port=8080))
-sender = server.get_sender()
+sender = server.sender
 
 
 @server.route(ECHO)
@@ -822,7 +822,7 @@ from veltix import MessageType, Request, Server, ServerConfig, ClientInfo, Respo
 CHANNEL_JOIN = MessageType(code=202, name="channel_join")
 CHANNEL_MSG = MessageType(code=203, name="channel_msg")
 server = Server(ServerConfig(port=8080))
-sender = server.get_sender()
+sender = server.sender
 
 
 @server.route(CHANNEL_JOIN)

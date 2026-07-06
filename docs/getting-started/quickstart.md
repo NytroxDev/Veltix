@@ -14,7 +14,7 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
     reply = Request(ECHO, response.content, request_id=response.request_id)
-    server.get_sender().send(reply, client=client.conn)
+    server.sender.send(reply, client=client.conn)
 
 server.start()
 
@@ -37,7 +37,7 @@ def on_echo(response: Response) -> None:
 
 client.connect()  # blocks until handshake is complete
 
-client.get_sender().send(Request(ECHO, b"Hello!"))
+client.sender.send(Request(ECHO, b"Hello!"))
 
 input("Press Enter to disconnect...")
 client.disconnect()
