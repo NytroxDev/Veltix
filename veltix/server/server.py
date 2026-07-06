@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
+import warnings
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
@@ -28,7 +29,7 @@ class Server:
     and dispatches received messages through the request handler.
 
     Each client runs in a dedicated thread. Slow callbacks never block
-    message reception — all user-defined handlers execute in a thread pool
+    message reception : all user-defined handlers execute in a thread pool
     managed by the underlying RequestHandler.
 
     Usage::
@@ -37,7 +38,7 @@ class Server:
         server = Server(config)
 
         def on_message(client: ClientInfo, response: Response) -> None:
-            server.get_sender().send(Request(CHAT, b"Hello"), client=client.conn)
+            server.sender.send(Request(CHAT, b"Hello"), client=client.conn)
 
         server.set_callback(Events.ON_RECV, on_message)
         server.start()
@@ -49,7 +50,7 @@ class Server:
         "on_recv",
         "on_connect",
         "on_disconnect",
-        "sender",
+        "_sender",
         "request_handler",
         "socket",
     )
@@ -65,7 +66,7 @@ class Server:
 
         self.config: ServerConfig = config
 
-        self.sender = Sender(mode=Mode.SERVER)
+        self._sender = Sender(mode=Mode.SERVER)
         self.request_handler = RequestHandler(
             sender=self.sender, mode=Mode.SERVER, max_workers=config.max_workers
         )
@@ -143,8 +144,21 @@ class Server:
 
         return decorator
 
+    @property
+    def sender(self) -> Sender:
+        """Return the sender instance for this server."""
+        return self._sender
+
     def get_sender(self) -> Sender:
-        """Return the sender instance for sending data to clients."""
+        """
+        Deprecated: use server.sender instead.
+        """
+        warnings.warn(
+            "Server.get_sender() is deprecated and will be removed in a future version. "
+            "Use Server.sender instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.sender
 
     def send_and_wait(
