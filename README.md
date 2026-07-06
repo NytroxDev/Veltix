@@ -106,9 +106,9 @@ transfer.
 - [Quick Start](#quick-start)
 - [Backend Comparison: Threading vs Async](#backend-comparison-threading-vs-async)
 - [Features](#features)
+- [Performance](#performance)
 - [When NOT to use Veltix](#when-not-to-use-veltix)
 - [Comparison](#comparison)
-- [Performance](#performance)
 - [Built with Veltix](#built-with-veltix)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
@@ -207,6 +207,23 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 
 ---
 
+## Performance
+
+> Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
+
+| Metric                             | Threading       | Async            |
+|------------------------------------|-----------------|------------------|
+| Concurrent stress (100 clients)    | 32,297 msg/s    | **82,937 msg/s** |
+| Burst throughput                   | 49,287 / 39,517 | 49,878 / 39,909  |
+| Average latency                    | 0.032 ms        | 0.036 ms         |
+| Idle server memory                 | 21 KB           | 4 KB             |
+| Per client memory (avg)            | 35 KB           | 12 KB            |
+| FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,491 msg/s      |
+
+Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
+
+---
+
 ## When NOT to use Veltix
 
 Veltix is great for TCP, but not every problem is a TCP problem.
@@ -225,7 +242,7 @@ Everything else? Veltix has you covered.
 
 | Feature                | Veltix | `socket` | `asyncio` | Twisted |
 |------------------------|:------:|:--------:|:---------:|:-------:|
-| Simple API             |   ✓    |    ✗     |     ~     |    ✗    |
+| High-level API         |   ✓    |    ✗     |     ~     |    ✗    |
 | Zero dependencies      |   ✓    |    ✓     |     ✓     |    ✗    |
 | No async required      |   ✓    |    ✓     |     ✗     |    ✗    |
 | Message framing        |   ✓    |    ✗     |     ✗     |    ~    |
@@ -241,23 +258,6 @@ Everything else? Veltix has you covered.
 | Integrated logger      |   ✓    |    ✗     |     ~     |    ✓    |
 
 > ✓ Built-in &nbsp;&nbsp; ~ Possible but requires manual setup &nbsp;&nbsp; ✗ Not provided (you implement it yourself)
-
----
-
-## Performance
-
-> Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
-
-| Metric                             | Threading       | Async            |
-|------------------------------------|-----------------|------------------|
-| Concurrent stress (100 clients)    | 32,297 msg/s    | **82,937 msg/s** |
-| Burst throughput                   | 49,287 / 39,517 | 49,878 / 39,909  |
-| Average latency                    | 0.032 ms        | 0.036 ms         |
-| Idle server memory                 | 21 KB           | 4 KB             |
-| Per client memory (avg)            | 35 KB           | 12 KB            |
-| FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,491 msg/s      |
-
-Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
 
 ---
 
