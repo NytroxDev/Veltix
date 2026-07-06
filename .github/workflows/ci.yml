@@ -7,9 +7,9 @@ on:
     branches: [ "**" ]
 
 jobs:
-  # ── Checks (lint, format, mypy, version, compat, tests) ───────────────────
-  checks:
-    name: Checks (Python 3.12)
+  # ── Lint & format ──────────────────────────────────────────────────────────
+  lint:
+    name: Lint & format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -19,19 +19,68 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install ruff mypy pytest pytest-xdist
+      - name: Install ruff
+        run: pip install ruff
 
-      - name: Run fix.sh
-        run: bash fix.sh
+      - name: ruff check
+        run: ruff check .
 
-  # ── Tests matrix (other Python versions) ──────────────────────────────────
+      - name: ruff format check
+        run: ruff format . --check
+
+  # ── Type checking ──────────────────────────────────────────────────────────
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install mypy
+        run: pip install mypy
+
+      - name: mypy
+        run: mypy veltix/
+
+  # ── Version consistency check ──────────────────────────────────────────────
+  version-check:
+    name: Version consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check version.py vs pyproject.toml
+        run: |
+          VERSION_PY=$(python -c "import re; content = open('veltix/version.py').read(); print(re.search(r'__version__\s*=\s*[\"\'](.*?)[\"\']', content).group(1))")
+          VERSION_TOML=$(python -c "import re; content = open('pyproject.toml').read(); print(re.search(r'^version\s*=\s*[\"\'](.*?)[\"\']', content, re.MULTILINE).group(1))")
+
+          echo "version.py   : $VERSION_PY"
+          echo "pyproject.toml: $VERSION_TOML"
+
+          if [ "$VERSION_PY" != "$VERSION_TOML" ]; then
+            echo ""
+            echo "❌ Version mismatch detected!"
+            echo "   version.py    → $VERSION_PY"
+            echo "   pyproject.toml → $VERSION_TOML"
+            echo ""
+            echo "Fix: make sure both files declare the same version before releasing."
+            exit 1
+          fi
+
+          echo "✅ Versions match: $VERSION_PY"
+
+  # ── Tests ──────────────────────────────────────────────────────────────────
   tests:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    needs: version-check
     strategy:
       matrix:
-        python-version: [ "3.8", "3.10", "3.14" ]
+        python-version: [ "3.8", "3.10", "3.12", "3.14" ]
       fail-fast: false
 
     steps:
@@ -43,7 +92,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install pytest pytest-xdist
+        run: pip install pytest pytest-xdist pytest-cov pytest-asyncio
 
       - name: Run tests
         run: python -m pytest tests/ --tb=short
