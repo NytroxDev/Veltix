@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`Server.sender` / `Client.sender` now a property** : `get_sender()` is deprecated and will be removed in a future
+  version. Use `server.sender` and `client.sender` directly instead. All examples, tests, and docs have been migrated
+  ([66eb6cb](https://github.com/NytroxDev/Veltix/commit/66eb6cb), [5fbbf38](https://github.com/NytroxDev/Veltix/commit/5fbbf38)).
 - **`BaseSocket` refactored from `Protocol` to `ABC`** : stronger inheritance guarantees and slot-sharing in subclasses.
   No user-facing changes required ([4b577b5](https://github.com/NytroxDev/Veltix/commit/4b577b5)).
 - **`PendingRequestRule.can_handle` now truthful** : previously returned `False` requiring explicit `try_handle()`
