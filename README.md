@@ -67,7 +67,7 @@ from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Requ
 
 ECHO = MessageType(code=200, name="echo")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
-sender = server.get_sender()
+sender = server.sender
 
 
 @server.route(ECHO)
@@ -137,7 +137,7 @@ from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Requ
 CHAT = MessageType(code=200, name="chat")
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
-sender = server.get_sender()
+sender = server.sender
 
 
 @server.route(CHAT)
@@ -169,7 +169,7 @@ def on_message(response: Response):
 
 client.connect()
 
-client.get_sender().send(Request(CHAT, b"Hello Server!"))
+client.sender.send(Request(CHAT, b"Hello Server!"))
 input("Press Enter to disconnect...")
 client.disconnect()
 ```
