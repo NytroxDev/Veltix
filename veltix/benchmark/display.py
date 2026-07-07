@@ -20,11 +20,11 @@ if TYPE_CHECKING:
 
 _USE_COLOR = sys.stdout.isatty()
 
-_R = "\033[0m" if _USE_COLOR else ""   # reset
+_R = "\033[0m" if _USE_COLOR else ""  # reset
 _DIM = "\033[2m" if _USE_COLOR else ""  # dim
-_B = "\033[1m" if _USE_COLOR else ""    # bold
-_C = "\033[36m" if _USE_COLOR else ""   # cyan
-_G = "\033[32m" if _USE_COLOR else ""   # green
+_B = "\033[1m" if _USE_COLOR else ""  # bold
+_C = "\033[36m" if _USE_COLOR else ""  # cyan
+_G = "\033[32m" if _USE_COLOR else ""  # green
 
 # ── Low-level helpers ─────────────────────────────────────────────────────────
 

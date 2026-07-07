@@ -40,12 +40,22 @@ class BenchRunner:
         self.runs = runs
         self.errors: list[dict[str, Any]] = []
 
+    def _cancel(self) -> None:
+        """Print cancellation message and skip remaining benches."""
+        self._cancelled = True
+        print()
+        print("  Canceled by user.")
+        print()
+
     def run_all(self) -> dict[str, Any]:
         """Run every benchmark and return a ``{name: result_or_list}`` dict."""
         results: dict[str, Any] = {}
         total = len(self.benches) * len(self.backends) * self.runs
         step = 0
+        self._cancelled = False
         for bench in self.benches:
+            if self._cancelled:
+                break
             bench_results = self._run_bench(bench, total, step)
             if bench_results is not None:
                 results[bench.benchmark_name] = bench_results
@@ -63,8 +73,12 @@ class BenchRunner:
         step = start_step
 
         for backend in self.backends:
+            if self._cancelled:
+                break
             run_results: list[Any] = []
             for run_idx in range(self.runs):
+                if self._cancelled:
+                    break
                 step += 1
                 label = f"[{step}/{total}]"
                 if self.runs > 1:
@@ -77,14 +91,21 @@ class BenchRunner:
                     ):
                         result.backend = backend.name.lower()
                     run_results.append(result)
+                except KeyboardInterrupt:
+                    self._cancel()
+                    break
                 except Exception:
-                    print(f"  ERROR: benchmark {bench.benchmark_name} failed on {backend.name.lower()}:")
+                    print(
+                        f"  ERROR: benchmark {bench.benchmark_name} failed on {backend.name.lower()}:"
+                    )
                     traceback.print_exc(file=sys.stdout)
-                    self.errors.append({
-                        "benchmark": bench.benchmark_name,
-                        "backend": backend.name.lower(),
-                        "run": run_idx + 1,
-                    })
+                    self.errors.append(
+                        {
+                            "benchmark": bench.benchmark_name,
+                            "backend": backend.name.lower(),
+                            "run": run_idx + 1,
+                        }
+                    )
                     continue
 
             if not run_results:
