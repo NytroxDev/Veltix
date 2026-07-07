@@ -65,4 +65,4 @@ def save_json(data: dict, path: str) -> None:
     """Save benchmark results to a JSON file."""
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    print(f"\n  ✓ Results saved to {path}")
+    print(f"\n  [OK] Results saved to {path}")

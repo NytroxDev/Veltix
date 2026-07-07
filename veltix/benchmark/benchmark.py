@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
+from .display import header as _display_header
+
 if TYPE_CHECKING:
     from veltix.socket_core.core import SocketCore
 
@@ -30,6 +32,10 @@ class Benchmark(ABC):
     ) -> None:
         self.config: dict[str, Any] = config if config is not None else {}
         self._instance_name: Optional[str] = name
+        self._step_label: str = ""
+
+    def _header(self, title: str) -> None:
+        _display_header(title, prefix=self._step_label)
 
     @property
     def benchmark_name(self) -> str:

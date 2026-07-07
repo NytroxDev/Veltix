@@ -25,7 +25,7 @@ class FpsBench(Benchmark):
         duration = self.config.get("duration", 5.0)
         return _run_fps(
             num_players=players, tick_rate=tick_rate, duration_s=duration,
-            port=port, socket_core=backend.name.lower(),
+            port=port, socket_core=backend.name.lower(), step_label=self._step_label,
         )
 
 
@@ -43,9 +43,10 @@ def run(
 
 
 def _run_fps(
-    num_players: int, tick_rate: int, duration_s: float, port: int, socket_core: str
+    num_players: int, tick_rate: int, duration_s: float, port: int, socket_core: str,
+    step_label: str = "",
 ) -> FpsResult:
-    header(f"3 FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)")
+    header(f"3 FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]

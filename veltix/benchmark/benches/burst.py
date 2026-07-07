@@ -22,7 +22,7 @@ class BurstBench(Benchmark):
         port = self.config.get("port", PORT_BURST)
         count = self.config.get("count", 10_000)
         payload = self.config.get("payload", 64)
-        return _run_burst(count=count, payload_size=payload, port=port, socket_core=backend.name.lower())
+        return _run_burst(count=count, payload_size=payload, port=port, socket_core=backend.name.lower(), step_label=self._step_label)
 
 
 def run(
@@ -35,9 +35,10 @@ def run(
 
 
 def _run_burst(
-    count: int, payload_size: int, port: int, socket_core: str
+    count: int, payload_size: int, port: int, socket_core: str,
+    step_label: str = "",
 ) -> BurstResult:
-    header(f"4 BURST THROUGHPUT  ({count:,} msgs x {payload_size} B)")
+    header(f"4 BURST THROUGHPUT  ({count:,} msgs x {payload_size} B)", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     received_ts: list[float] = []

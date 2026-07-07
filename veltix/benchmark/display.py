@@ -22,10 +22,13 @@ def sep(char: str = "─", width: int = WIDTH) -> None:
     print(char * width)
 
 
-def header(title: str) -> None:
+def header(title: str, prefix: str = "") -> None:
     print()
     sep("═")
-    print(f"  {title}")
+    if prefix:
+        print(f"  {prefix}  {title}")
+    else:
+        print(f"  {title}")
     sep("═")
 
 
@@ -239,7 +242,7 @@ def print_summary(
     burst: Optional[Union[BurstResult, list[BurstResult]]],
     stress: Optional[Union[StressResult, list[StressResult]]],
 ) -> None:
-    header("📋  README-READY SUMMARY")
+    header("BENCHMARK RESULTS")
     print()
 
     mem = _results(mem)

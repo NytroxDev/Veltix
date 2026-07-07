@@ -40,7 +40,7 @@ class LatencyBench(Benchmark):
     def run(self, backend: SocketCore) -> LatencyStats:
         port = self.config.get("port", PORT_LATENCY)
         iterations = self.config.get("iterations", 50_000)
-        return _run_latency(iterations=iterations, port=port, socket_core=backend.name.lower())
+        return _run_latency(iterations=iterations, port=port, socket_core=backend.name.lower(), step_label=self._step_label)
 
 
 def run(
@@ -50,9 +50,9 @@ def run(
 
 
 def _run_latency(
-    iterations: int, port: int, socket_core: str
+    iterations: int, port: int, socket_core: str, step_label: str = ""
 ) -> LatencyStats:
-    header("2 PING / PONG LATENCY")
+    header("2 PING / PONG LATENCY", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
 

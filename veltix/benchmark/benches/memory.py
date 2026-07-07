@@ -19,15 +19,15 @@ class MemoryBench(Benchmark):
 
     def run(self, backend: SocketCore) -> MemoryResult:
         port = self.config.get("port", PORT_MEMORY)
-        return _run_memory(port=port, socket_core=backend.name.lower())
+        return _run_memory(port=port, socket_core=backend.name.lower(), step_label=self._step_label)
 
 
 def run(port: int = PORT_MEMORY, socket_core: str = "async") -> MemoryResult:
     return _run_memory(port=port, socket_core=socket_core)
 
 
-def _run_memory(port: int, socket_core: str) -> MemoryResult:
-    header("\u2460 BASELINE MEMORY FOOTPRINT")
+def _run_memory(port: int, socket_core: str, step_label: str = "") -> MemoryResult:
+    header("1 BASELINE MEMORY FOOTPRINT", prefix=step_label)
 
     gc.collect()
     baseline = ram_kb()

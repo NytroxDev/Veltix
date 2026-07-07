@@ -43,21 +43,33 @@ class BenchRunner:
     def run_all(self) -> dict[str, Any]:
         """Run every benchmark and return a ``{name: result_or_list}`` dict."""
         results: dict[str, Any] = {}
+        total = len(self.benches) * len(self.backends) * self.runs
+        step = 0
         for bench in self.benches:
-            bench_results = self._run_bench(bench)
+            bench_results = self._run_bench(bench, total, step)
             if bench_results is not None:
                 results[bench.benchmark_name] = bench_results
+                step += len(self.backends) * self.runs
         return results
 
-    def _run_bench(self, bench: Benchmark) -> Optional[list[Any]]:
+    def _run_bench(
+        self,
+        bench: Benchmark,
+        total: int,
+        start_step: int,
+    ) -> Optional[list[Any]]:
         """Run a single benchmark across all backends and runs."""
         per_backend: list[list[Any]] = []
+        step = start_step
 
         for backend in self.backends:
             run_results: list[Any] = []
             for run_idx in range(self.runs):
+                step += 1
+                label = f"[{step}/{total}]"
                 if self.runs > 1:
-                    print(f"\n  -- Run {run_idx + 1}/{self.runs} --")
+                    label += f" run {run_idx + 1}/{self.runs}"
+                bench._step_label = f"{label} {bench.benchmark_name} ({backend.name.lower()})"
                 try:
                     result = bench.run(backend)
                     if hasattr(result, "backend") and not isinstance(

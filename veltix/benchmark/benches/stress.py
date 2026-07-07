@@ -26,7 +26,7 @@ class StressBench(Benchmark):
         msgs = self.config.get("msgs", 100)
         return _run_stress(
             num_clients=clients, msgs_per_client=msgs,
-            port=port, socket_core=backend.name.lower(),
+            port=port, socket_core=backend.name.lower(), step_label=self._step_label,
         )
 
 
@@ -43,9 +43,10 @@ def run(
 
 
 def _run_stress(
-    num_clients: int, msgs_per_client: int, port: int, socket_core: str
+    num_clients: int, msgs_per_client: int, port: int, socket_core: str,
+    step_label: str = "",
 ) -> StressResult:
-    header(f"5 CONCURRENT STRESS  ({num_clients} clients x {msgs_per_client} msgs)")
+    header(f"5 CONCURRENT STRESS  ({num_clients} clients x {msgs_per_client} msgs)", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]
