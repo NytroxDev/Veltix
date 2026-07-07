@@ -65,7 +65,7 @@ benchmark = [
 ]
 
 [project.scripts]
-veltix-benchmark = "veltix.benchmark.cli:main"
+vltxbench = "veltix.benchmark.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/NytroxDev/Veltix"
