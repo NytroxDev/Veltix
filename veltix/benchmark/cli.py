@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 try:
     import psutil
@@ -13,13 +13,12 @@ except ImportError:
 
 import veltix
 
+from .benches import burst, fps, latency, memory, stress  # noqa: F401 - populate registry
 from .benchmark import Benchmark
 from .config import PORT_FPS_1, PORT_FPS_2
 from .display import print_summary, row, sep
 from .export import build_json, save_json
 from .runner import BenchRunner
-
-from .benches import burst, fps, latency, memory, stress  # noqa: F401 - populate registry
 
 ALL_BENCHMARKS = ["memory", "latency", "fps", "burst", "stress"]
 _BENCH_NAMES = "memory latency fps burst stress"
@@ -81,10 +80,9 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def _build_benches(args: argparse.Namespace) -> List[Benchmark]:
+def _build_benches(args: argparse.Namespace) -> list[Benchmark]:
     """Create Benchmark instances from parsed CLI arguments."""
-    _import_benches()
-    benches: List[Benchmark] = []
+    benches: list[Benchmark] = []
     selected = set(args.only)
 
     if "memory" in selected:
@@ -137,15 +135,15 @@ def _print_header(args: argparse.Namespace) -> None:
         row("Runs (avg)", str(args.runs))
 
 
-def _results_map(results: Dict[str, Any]) -> Dict[str, Any]:
+def _results_map(results: dict[str, Any]) -> dict[str, Any]:
     """Map benchmark result names to ``print_summary`` variable names."""
-    mapping: Dict[str, str] = {
+    mapping: dict[str, str] = {
         "memory": "mem",
         "latency": "lat",
         "burst": "burst",
         "stress": "stress",
     }
-    out: Dict[str, Any] = {
+    out: dict[str, Any] = {
         "mem": None, "lat": None, "fps64": None,
         "fps128": None, "burst": None, "stress": None,
     }

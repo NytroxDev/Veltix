@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import statistics
 import time
-from typing import Optional
 
 from veltix import Client, ClientConfig, Server, ServerConfig, SocketCore
 

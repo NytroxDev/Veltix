@@ -3,7 +3,6 @@ from __future__ import annotations
 import gc
 import statistics
 import time
-from typing import Any, Dict, Optional
 
 from veltix import Client, ClientConfig, Server, ServerConfig, SocketCore, format_bytes
 

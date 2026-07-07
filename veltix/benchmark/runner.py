@@ -2,19 +2,20 @@ from __future__ import annotations
 
 import sys
 import traceback
-from typing import Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 from veltix.socket_core.core import SocketCore
 
-from .benchmark import Benchmark
+if TYPE_CHECKING:
+    from .benchmark import Benchmark
 
-BACKEND_NAMES: Dict[str, SocketCore] = {
+BACKEND_NAMES: dict[str, SocketCore] = {
     "async": SocketCore.ASYNC,
     "threading": SocketCore.THREADING,
 }
 
 
-def _resolve_backends(value: str) -> List[SocketCore]:
+def _resolve_backends(value: str) -> list[SocketCore]:
     if value == "both":
         return [SocketCore.THREADING, SocketCore.ASYNC]
     if value in BACKEND_NAMES:
@@ -37,23 +38,23 @@ class BenchRunner:
         self.benches = list(benches)
         self.backends = _resolve_backends(backend)
         self.runs = runs
-        self.errors: List[Dict[str, Any]] = []
+        self.errors: list[dict[str, Any]] = []
 
-    def run_all(self) -> Dict[str, Any]:
+    def run_all(self) -> dict[str, Any]:
         """Run every benchmark and return a ``{name: result_or_list}`` dict."""
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
         for bench in self.benches:
             bench_results = self._run_bench(bench)
             if bench_results is not None:
                 results[bench.benchmark_name] = bench_results
         return results
 
-    def _run_bench(self, bench: Benchmark) -> Optional[List[Any]]:
+    def _run_bench(self, bench: Benchmark) -> Optional[list[Any]]:
         """Run a single benchmark across all backends and runs."""
-        per_backend: List[List[Any]] = []
+        per_backend: list[list[Any]] = []
 
         for backend in self.backends:
-            run_results: List[Any] = []
+            run_results: list[Any] = []
             for run_idx in range(self.runs):
                 if self.runs > 1:
                     print(f"\n  -- Run {run_idx + 1}/{self.runs} --")
@@ -79,7 +80,7 @@ class BenchRunner:
             else:
                 per_backend.append(run_results)
 
-        flattened: List[Any] = []
+        flattened: list[Any] = []
         for items in per_backend:
             flattened.extend(items)
         return flattened if flattened else None
