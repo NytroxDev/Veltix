@@ -1,24 +1,3 @@
-"""
-benches/burst.py
-----------------
-Benchmark 4 — Burst throughput.
-
-Measures:
-  - Send throughput (msg/s): how fast the client can push messages out
-  - Receive throughput (msg/s): how fast the server processes them end-to-end
-  - Data throughput (MB/s): payload bytes delivered per second
-  - Success rate: messages received / sent
-  - Total burst duration
-  - Receive latency distribution: time from first send to each received message
-      p50, p95, p99, max  (ms)
-      (measures how quickly the pipeline drains under full load)
-  - Inter-arrival jitter on the receive side: stdev of gaps between
-      consecutive received timestamps (ms) — a high value means the server
-      is batching or choking rather than processing messages steadily
-  - Send duration vs total duration split: shows how long the client was
-      blocked sending vs how long it took for all acks to arrive
-"""
-
 from __future__ import annotations
 
 import gc
@@ -28,10 +7,22 @@ import time
 
 from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
 
+from ..benchmark import Benchmark
 from ..config import PLAYER_MOVE, PORT_BURST
 from ..display import header, row
 from ..models import BurstResult
 from ..utils import append_ts
+
+
+class BurstBench(Benchmark):
+    name = "burst"
+    description = "Burst throughput measurement"
+
+    def run(self, backend: SocketCore) -> BurstResult:
+        port = self.config.get("port", PORT_BURST)
+        count = self.config.get("count", 10_000)
+        payload = self.config.get("payload", 64)
+        return _run_burst(count=count, payload_size=payload, port=port, socket_core=backend.name.lower())
 
 
 def run(
@@ -40,7 +31,13 @@ def run(
     port: int = PORT_BURST,
     socket_core: str = "async",
 ) -> BurstResult:
-    header(f"④ BURST THROUGHPUT  ({count:,} msgs × {payload_size} B)")
+    return _run_burst(count=count, payload_size=payload_size, port=port, socket_core=socket_core)
+
+
+def _run_burst(
+    count: int, payload_size: int, port: int, socket_core: str
+) -> BurstResult:
+    header(f"4 BURST THROUGHPUT  ({count:,} msgs x {payload_size} B)")
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     received_ts: list[float] = []
@@ -59,18 +56,16 @@ def run(
     time.sleep(0.2)
 
     payload = b"X" * payload_size
-    sender = client.sender  # resolve once — not inside the hot loop
-    request = Request(PLAYER_MOVE, payload)  # immutable payload, reuse same object
+    sender = client.sender
+    request = Request(PLAYER_MOVE, payload)
     gc.collect()
 
-    # ── Send burst ────────────────────────────────────────────────────────────
     t0 = time.perf_counter()
     for _ in range(count):
         sender.send(request)
     send_done = time.perf_counter()
     send_duration = send_done - t0
 
-    # ── Wait for all messages to arrive (up to 10 s) ──────────────────────────
     deadline = time.perf_counter() + 10.0
     while len(received_ts) < count and time.perf_counter() < deadline:
         time.sleep(0.05)
@@ -82,8 +77,6 @@ def run(
     data_mbps = (recv_count * payload_size) / total_elapsed / 1_048_576
     success = recv_count / count * 100
 
-    # ── Pipeline drain distribution ───────────────────────────────────────────
-    # recv_ts[i] - t0 gives elapsed time (s) until the i-th message arrived
     drain_latencies_ms: list[float] = []
     if received_ts:
         sorted_ts = sorted(received_ts)
@@ -100,7 +93,6 @@ def run(
     lat_p99 = _pct(drain_latencies_ms, 99)
     lat_max = max(drain_latencies_ms) if drain_latencies_ms else 0.0
 
-    # ── Inter-arrival jitter ──────────────────────────────────────────────────
     if len(received_ts) >= 2:
         sorted_ts = sorted(received_ts)
         gaps_ms = [(sorted_ts[i] - sorted_ts[i - 1]) * 1_000 for i in range(1, len(sorted_ts))]
@@ -110,7 +102,6 @@ def run(
         recv_jitter = 0.0
         recv_gap_avg = 0.0
 
-    # ── Display ───────────────────────────────────────────────────────────────
     row("Messages", f"{count:,}")
     row("Payload size", f"{payload_size} B")
     row("", "")
