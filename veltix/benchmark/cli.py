@@ -48,6 +48,12 @@ def parse_args() -> argparse.Namespace:
         help="Save results to a JSON file (e.g. results.json)",
     )
     p.add_argument(
+        "--tmp",
+        action="store_true",
+        default=False,
+        help="Ignore .vltxbench/ configuration, use flags only",
+    )
+    p.add_argument(
         "--socket-core",
         choices=["threading", "async", "both"],
         default="async",
@@ -135,6 +141,8 @@ def _print_header(args: argparse.Namespace) -> None:
     row("RAM", f"{psutil.virtual_memory().total / 1_073_741_824:.1f} GB")
     row("OS", sys.platform)
     row("Socket backend", args.socket_core)
+    if args.tmp:
+        row("Config", "temporary (--tmp)")
     if args.runs > 1:
         row("Runs (avg)", str(args.runs))
 
