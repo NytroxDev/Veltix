@@ -16,6 +16,8 @@ import veltix
 from .benches import burst, fps, latency, memory, stress  # noqa: F401 - populate registry
 from .benchmark import Benchmark
 from .config import PORT_FPS_1, PORT_FPS_2
+from .display import _B as _BOLD
+from .display import _R as _RESET
 from .display import print_summary, row, sep
 from .export import build_json, save_json
 from .runner import BenchRunner
@@ -120,7 +122,7 @@ def _build_benches(args: argparse.Namespace) -> list[Benchmark]:
 def _print_header(args: argparse.Namespace) -> None:
     print()
     sep("=")
-    print(f"  VELTIX BENCHMARK SUITE  -  v{veltix.__version__}")
+    print(f"  {_BOLD}VELTIX BENCHMARK SUITE  -  v{veltix.__version__}{_RESET}")
     sep("=")
     row("Python", sys.version.split()[0])
     row(

@@ -6,6 +6,7 @@ Terminal rendering helpers and the README-ready summary table.
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from veltix import format_bytes
@@ -15,25 +16,35 @@ from .config import WIDTH
 if TYPE_CHECKING:
     from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
 
+# ── ANSI helpers (auto-disabled when not a terminal) ──────────────────────────
+
+_USE_COLOR = sys.stdout.isatty()
+
+_R = "\033[0m" if _USE_COLOR else ""   # reset
+_DIM = "\033[2m" if _USE_COLOR else ""  # dim
+_B = "\033[1m" if _USE_COLOR else ""    # bold
+_C = "\033[36m" if _USE_COLOR else ""   # cyan
+_G = "\033[32m" if _USE_COLOR else ""   # green
+
 # ── Low-level helpers ─────────────────────────────────────────────────────────
 
 
 def sep(char: str = "─", width: int = WIDTH) -> None:
-    print(char * width)
+    print(f"{_DIM}{char * width}{_R}")
 
 
 def header(title: str, prefix: str = "") -> None:
     print()
     sep("═")
     if prefix:
-        print(f"  {prefix}  {title}")
+        print(f"  {_C}{prefix}{_R}  {_B}{title}{_R}")
     else:
-        print(f"  {title}")
+        print(f"  {_B}{title}{_R}")
     sep("═")
 
 
 def row(label: str, value: str, width: int = 36) -> None:
-    print(f"  {label:<{width}}: {value}")
+    print(f"  {_DIM}{label:<{width}}{_R}: {value}")
 
 
 _ColFmt = Callable[[Any], str]
@@ -149,10 +160,10 @@ def _stress_defs() -> list[tuple[str, str, _ColFmt]]:
 
 
 def _show_single_section(title: str, defs: list[tuple[str, str, _ColFmt]], result: Any) -> None:
-    print(f"  {title}")
+    print(f"  {_B}{_C}{title}{_R}")
     for label, attr, fmt in defs:
         value = getattr(result, attr)
-        print(f"    {label:<28}{_val(fmt(value))}")
+        print(f"    {_DIM}{label:<28}{_R}{_val(fmt(value))}")
     print()
 
 
@@ -189,10 +200,10 @@ def _sbw(label: str) -> str:
 def _show_both_section(
     title: str, defs: list[tuple[str, str, _ColFmt]], results: list[Any]
 ) -> None:
-    print(f"  {title}")
+    print(f"  {_B}{_C}{title}{_R}")
     for label, attr, fmt in defs:
         parts = "".join(_val(fmt(getattr(r, attr))) for r in results)
-        print(f"    {_sbw(label)}{parts}")
+        print(f"    {_DIM}{_sbw(label)}{_R}{parts}")
     print()
 
 
@@ -259,12 +270,12 @@ def print_summary(
                 backends = [r.backend for r in g]
                 break
         label_w = 28
-        header_parts = "".join(f"{b:>{CW}}" for b in backends)
+        header_parts = "".join(f"{_B}{_G}{b:>{CW}}{_R}" for b in backends)
         print(f"  {'':<{label_w}}{header_parts}")
-        sep("─")
+        sep("\u2500")
         _show_side_by_side(mem, lat, fps64, fps128, burst, stress)
     else:
         _show_single(mem, lat, fps64, fps128, burst, stress)
 
-    sep("─")
+    sep("\u2500")
     print()
