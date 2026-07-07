@@ -1,21 +1,3 @@
-"""
-benches/fps.py
---------------
-Benchmark 3 — FPS game-server simulation.
-
-Measures:
-  - Messages sent / received / lost
-  - Effective throughput (msg/s) and tick accuracy (actual vs target tick rate)
-  - Success rate and error count
-  - RAM delta during simulation
-  - Per-tick stats: avg, min, max, stdev tick duration (ms)
-    (reveals scheduling jitter — a high stdev means the OS is not giving
-     the process consistent time slices)
-  - Tick budget compliance: % of ticks that finished within the target interval
-    (a tick that overruns pushes the next one late, causing cascading lag)
-  - Shoot rate: actual PLAYER_SHOOT ratio vs expected ~10%
-"""
-
 from __future__ import annotations
 
 import gc
@@ -25,10 +7,26 @@ import time
 
 from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
 
+from ..benchmark import Benchmark
 from ..config import PLAYER_MOVE, PLAYER_SHOOT, PORT_FPS_1
 from ..display import header, row
 from ..models import FpsResult
 from ..utils import incr, ram_mb
+
+
+class FpsBench(Benchmark):
+    name = "fps"
+    description = "FPS game-server simulation"
+
+    def run(self, backend: SocketCore) -> FpsResult:
+        port = self.config.get("port", PORT_FPS_1)
+        players = self.config.get("players", 64)
+        tick_rate = self.config.get("tick_rate", 64)
+        duration = self.config.get("duration", 5.0)
+        return _run_fps(
+            num_players=players, tick_rate=tick_rate, duration_s=duration,
+            port=port, socket_core=backend.name.lower(),
+        )
 
 
 def run(
@@ -38,12 +36,16 @@ def run(
     port: int = PORT_FPS_1,
     socket_core: str = "async",
 ) -> FpsResult:
-    """
-    Simulates a realistic FPS server:
-      - Every player sends PLAYER_MOVE each tick (32 B)
-      - ~10% of players send PLAYER_SHOOT each tick (16 B)
-    """
-    header(f"③ FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)")
+    return _run_fps(
+        num_players=num_players, tick_rate=tick_rate, duration_s=duration_s,
+        port=port, socket_core=socket_core,
+    )
+
+
+def _run_fps(
+    num_players: int, tick_rate: int, duration_s: float, port: int, socket_core: str
+) -> FpsResult:
+    header(f"3 FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)")
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]
@@ -54,7 +56,6 @@ def run(
     server.start()
     time.sleep(0.5)
 
-    # ── Connect players ───────────────────────────────────────────────────────
     clients: list[Client] = []
     print(f"  Connecting {num_players} players...", end="", flush=True)
     for _ in range(num_players):
@@ -65,7 +66,6 @@ def run(
     time.sleep(0.5)
     print(" done")
 
-    # Pre-resolve senders and requests outside the hot loop
     senders = [c.sender for c in clients]
     req_move = [Request(PLAYER_MOVE, b"\x00" * 32) for _ in clients]
     req_shoot = [Request(PLAYER_SHOOT, b"\x00" * 16) for _ in clients]
@@ -76,7 +76,7 @@ def run(
     target_tick_ms = tick_interval * 1_000
 
     total_sent = errors = shoot_sent = 0
-    tick_durations: list[float] = []  # ms per tick
+    tick_durations: list[float] = []
     overrun_ticks = 0
 
     print(f"  Running simulation for {duration_s}s...")
@@ -116,7 +116,6 @@ def run(
     msg_per_sec = total_sent / actual
     actual_tick_rate = len(tick_durations) / actual
 
-    # ── Tick stats ────────────────────────────────────────────────────────────
     tick_avg = statistics.mean(tick_durations)
     tick_min = min(tick_durations)
     tick_max = max(tick_durations)
@@ -124,7 +123,6 @@ def run(
     budget_pct = (1 - overrun_ticks / len(tick_durations)) * 100 if tick_durations else 0.0
     shoot_ratio = shoot_sent / move_sent * 100 if move_sent else 0.0
 
-    # ── Display ───────────────────────────────────────────────────────────────
     row("Players", str(num_players))
     row("Target tick rate", f"{tick_rate} Hz")
     row("Actual tick rate", f"{actual_tick_rate:.1f} Hz")
