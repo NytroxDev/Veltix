@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Any, Optional
 
 try:
@@ -219,8 +220,6 @@ def _results_map(results: dict[str, Any]) -> dict[str, Any]:
 
 def _resolve_profile(args: argparse.Namespace) -> tuple[Optional[Any], str]:
     """Load profile if applicable. Returns (Profile or None, display name)."""
-    from pathlib import Path
-
     vltx_dir = Path(".vltxbench")
 
     if args.tmp:
@@ -307,6 +306,12 @@ def main() -> None:
     )
 
     if args.save:
+        save_path = args.save
+        vltx_dir = Path(".vltxbench")
+        if vltx_dir.exists():
+            saved_dir = vltx_dir / "saved"
+            saved_dir.mkdir(parents=True, exist_ok=True)
+            save_path = str(saved_dir / args.save)
         data = build_json(
             mapped["mem"],
             mapped["lat"],
@@ -315,4 +320,4 @@ def main() -> None:
             mapped["burst"],
             mapped["stress"],
         )
-        save_json(data, args.save)
+        save_json(data, save_path)
