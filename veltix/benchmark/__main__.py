@@ -11,7 +11,14 @@ Package entry point — allows running the suite with:
 from .cli import main  # noqa: E402
 
 if __name__ == "__main__":
-    from veltix import Logger, LogLevel
+    import sys
 
-    Logger.get_instance().set_level(LogLevel.ERROR)
-    main()
+    if sys.argv and len(sys.argv) > 1 and sys.argv[1] == "init":
+        from .init import run_init
+
+        run_init()
+    else:
+        from veltix import Logger, LogLevel
+
+        Logger.get_instance().set_level(LogLevel.ERROR)
+        main()

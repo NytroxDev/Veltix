@@ -1,0 +1,22 @@
+[meta]
+version = 1
+# runs = 5
+# delay = 5   # seconds between benchmarks (optional)
+
+# Run all built-in benchmarks with default settings.
+# To run only specific benchmarks, replace [benchmark.all]
+# with individual entries like:
+#
+#   [benchmark.memory]
+#   [benchmark.latency]
+#   [benchmark.fps_64]
+#   [benchmark.fps_128]
+#   [benchmark.burst]
+#   [benchmark.stress]
+#
+# You can override per-benchmark config:
+#
+#   [benchmark.latency]
+#   pings = 2000
+
+[benchmark.all]

@@ -158,6 +158,12 @@ def _results_map(results: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == "init":
+        from .init import run_init
+
+        run_init()
+        return
+
     Logger.get_instance().set_level(LogLevel.ERROR)
     args = parse_args()
     _print_header(args)

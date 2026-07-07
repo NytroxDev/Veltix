@@ -212,3 +212,4 @@ code_review_bugs.md
 docs/plans/
 /.python-version
 /analyse-veltix.md
+.idea/
