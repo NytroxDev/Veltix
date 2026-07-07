@@ -27,7 +27,7 @@ def run(port: int = PORT_MEMORY, socket_core: str = "async") -> MemoryResult:
 
 
 def _run_memory(port: int, socket_core: str, step_label: str = "") -> MemoryResult:
-    header("1 BASELINE MEMORY FOOTPRINT", prefix=step_label)
+    header("BASELINE MEMORY FOOTPRINT", prefix=step_label)
 
     gc.collect()
     baseline = ram_kb()

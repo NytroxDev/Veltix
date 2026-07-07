@@ -38,7 +38,7 @@ def _run_burst(
     count: int, payload_size: int, port: int, socket_core: str,
     step_label: str = "",
 ) -> BurstResult:
-    header(f"4 BURST THROUGHPUT  ({count:,} msgs x {payload_size} B)", prefix=step_label)
+    header(f"BURST THROUGHPUT  ({count:,} msgs x {payload_size} B)", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     received_ts: list[float] = []

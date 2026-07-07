@@ -46,7 +46,7 @@ def _run_fps(
     num_players: int, tick_rate: int, duration_s: float, port: int, socket_core: str,
     step_label: str = "",
 ) -> FpsResult:
-    header(f"3 FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)", prefix=step_label)
+    header(f"FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]

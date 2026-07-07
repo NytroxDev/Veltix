@@ -46,7 +46,7 @@ def _run_stress(
     num_clients: int, msgs_per_client: int, port: int, socket_core: str,
     step_label: str = "",
 ) -> StressResult:
-    header(f"5 CONCURRENT STRESS  ({num_clients} clients x {msgs_per_client} msgs)", prefix=step_label)
+    header(f"CONCURRENT STRESS  ({num_clients} clients x {msgs_per_client} msgs)", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]

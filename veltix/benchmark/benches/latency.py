@@ -52,7 +52,7 @@ def run(
 def _run_latency(
     iterations: int, port: int, socket_core: str, step_label: str = ""
 ) -> LatencyStats:
-    header("2 PING / PONG LATENCY", prefix=step_label)
+    header("PING / PONG LATENCY", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
 
