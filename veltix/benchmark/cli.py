@@ -28,11 +28,14 @@ ALL_BENCHMARKS = ["memory", "latency", "fps", "burst", "stress"]
 _BENCH_NAMES = "memory latency fps burst stress"
 
 
-def parse_args() -> argparse.Namespace:
+def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Veltix benchmark suite",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    sub = p.add_subparsers(dest="command", metavar="")
+    sub.add_parser("init", help="Initialize a .vltxbench/ project")
+
     p.add_argument(
         "--only",
         nargs="+",
@@ -87,7 +90,7 @@ def parse_args() -> argparse.Namespace:
     g.add_argument("--stress-clients", type=int, default=100, metavar="N")
     g.add_argument("--stress-msgs", type=int, default=100, metavar="N")
 
-    return p.parse_args()
+    return p
 
 
 def _build_benches(args: argparse.Namespace) -> list[Benchmark]:
@@ -166,14 +169,16 @@ def _results_map(results: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> None:
-    if len(sys.argv) > 1 and sys.argv[1] == "init":
+    parser = _build_parser()
+    args = parser.parse_args()
+
+    if args.command == "init":
         from .init import run_init
 
         run_init()
         return
 
     Logger.get_instance().set_level(LogLevel.ERROR)
-    args = parse_args()
     _print_header(args)
 
     benches = _build_benches(args)

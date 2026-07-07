@@ -3,22 +3,13 @@ __main__.py
 -----------
 Package entry point — allows running the suite with:
 
-    python -m benchmark
-    python -m benchmark --only latency burst
-    python -m benchmark --save results.json
+    python -m veltix.benchmark
+    python -m veltix.benchmark --only latency burst
+    python -m veltix.benchmark init
+    python -m veltix.benchmark --save results.json
 """
 
-from .cli import main  # noqa: E402
+from .cli import main
 
 if __name__ == "__main__":
-    import sys
-
-    if sys.argv and len(sys.argv) > 1 and sys.argv[1] == "init":
-        from .init import run_init
-
-        run_init()
-    else:
-        from veltix import Logger, LogLevel
-
-        Logger.get_instance().set_level(LogLevel.ERROR)
-        main()
+    main()
