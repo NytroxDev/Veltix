@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Optional
 
 import pytest
 
@@ -13,7 +13,7 @@ class _DummyBench(Benchmark):
     name = "dummy"
     description = "A test benchmark"
 
-    def __init__(self, config: Optional[Dict] = None, name: Optional[str] = None):
+    def __init__(self, config: Optional[dict] = None, name: Optional[str] = None):
         super().__init__(config=config, name=name)
         self.run_called = False
         self.last_backend = None

@@ -60,13 +60,16 @@ class BenchRunner:
                     print(f"\n  -- Run {run_idx + 1}/{self.runs} --")
                 try:
                     result = bench.run(backend)
-                    result.backend = backend.name.lower()
+                    if hasattr(result, "backend") and not isinstance(
+                        type(result).backend, property
+                    ):
+                        result.backend = backend.name.lower()
                     run_results.append(result)
                 except Exception:
-                    print(f"  ERROR: benchmark {bench.name} failed on {backend.name.lower()}:")
+                    print(f"  ERROR: benchmark {bench.benchmark_name} failed on {backend.name.lower()}:")
                     traceback.print_exc(file=sys.stdout)
                     self.errors.append({
-                        "benchmark": bench.name,
+                        "benchmark": bench.benchmark_name,
                         "backend": backend.name.lower(),
                         "run": run_idx + 1,
                     })
@@ -74,7 +77,7 @@ class BenchRunner:
 
             if not run_results:
                 per_backend.append([])
-            elif self.runs > 1:
+            elif self.runs > 1 and hasattr(run_results[0], "average"):
                 avg = run_results[0].average(run_results)
                 per_backend.append([avg])
             else:
