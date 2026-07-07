@@ -1,23 +1,3 @@
-"""
-benches/stress.py
------------------
-Benchmark 5 — Concurrent stress.
-
-Measures:
-  - Total sent / received / lost
-  - Success rate and overall throughput (msg/s)
-  - RAM delta
-  - Per-client throughput: avg, min, max, stdev
-    (reveals hot/cold spots — if stdev is high, some clients are being
-     starved while others blast through)
-  - Thread pool saturation: time from last future submitted to all futures
-    resolved (measures executor overhead under full concurrency)
-  - Drain time: how long after all sends until the last message arrives
-    (measures server-side queue depth under burst load)
-  - Time-to-first-receive: latency from t0 until the very first message
-    lands on the server (cold-start overhead)
-"""
-
 from __future__ import annotations
 
 import gc
@@ -29,10 +9,25 @@ from typing import Any
 
 from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
 
+from ..benchmark import Benchmark
 from ..config import PLAYER_MOVE, PORT_STRESS
 from ..display import header, row
 from ..models import StressResult
 from ..utils import incr, ram_mb
+
+
+class StressBench(Benchmark):
+    name = "stress"
+    description = "Concurrent stress test"
+
+    def run(self, backend: SocketCore) -> StressResult:
+        port = self.config.get("port", PORT_STRESS)
+        clients = self.config.get("clients", 100)
+        msgs = self.config.get("msgs", 100)
+        return _run_stress(
+            num_clients=clients, msgs_per_client=msgs,
+            port=port, socket_core=backend.name.lower(),
+        )
 
 
 def run(
@@ -41,7 +36,16 @@ def run(
     port: int = PORT_STRESS,
     socket_core: str = "async",
 ) -> StressResult:
-    header(f"⑤ CONCURRENT STRESS  ({num_clients} clients × {msgs_per_client} msgs)")
+    return _run_stress(
+        num_clients=num_clients, msgs_per_client=msgs_per_client,
+        port=port, socket_core=socket_core,
+    )
+
+
+def _run_stress(
+    num_clients: int, msgs_per_client: int, port: int, socket_core: str
+) -> StressResult:
+    header(f"5 CONCURRENT STRESS  ({num_clients} clients x {msgs_per_client} msgs)")
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]
@@ -63,7 +67,6 @@ def run(
     server.start()
     time.sleep(0.5)
 
-    # ── Connect clients ───────────────────────────────────────────────────────
     clients: list[Client] = []
     print(f"  Connecting {num_clients} clients...", end="", flush=True)
     for _ in range(num_clients):
@@ -78,11 +81,10 @@ def run(
     gc.collect()
     ram_before = ram_mb()
 
-    # ── Per-client send tracking ──────────────────────────────────────────────
     client_send_times: list[float] = [0.0] * num_clients
 
     senders = [c.sender for c in clients]
-    req_move = Request(PLAYER_MOVE, b"\x00" * 32)  # shared immutable request
+    req_move = Request(PLAYER_MOVE, b"\x00" * 32)
 
     def _blast(idx: int, c: Client) -> None:
         t = time.perf_counter()
@@ -91,7 +93,6 @@ def run(
             s.send(req_move)
         client_send_times[idx] = time.perf_counter() - t
 
-    # ── Fire ──────────────────────────────────────────────────────────────────
     print(f"  Firing {total_msgs:,} messages simultaneously...")
     t0 = time.perf_counter()
 
@@ -102,7 +103,6 @@ def run(
 
     sends_done_ts = time.perf_counter()
 
-    # ── Wait for all messages to arrive (up to 15 s) ──────────────────────────
     deadline = time.perf_counter() + 15.0
     while recv_count[0] < total_msgs and time.perf_counter() < deadline:
         time.sleep(0.05)
@@ -115,7 +115,6 @@ def run(
     success = recv / total_msgs * 100
     throughput = recv / elapsed
 
-    # ── Derived stats ─────────────────────────────────────────────────────────
     send_phase_duration = sends_done_ts - t0
     drain_time = elapsed - send_phase_duration
 
@@ -128,7 +127,6 @@ def run(
     ct_max = max(per_client_tps) if per_client_tps else 0.0
     ct_stdev = statistics.stdev(per_client_tps) if len(per_client_tps) > 1 else 0.0
 
-    # ── Display ───────────────────────────────────────────────────────────────
     row("Clients", str(num_clients))
     row("Messages / client", str(msgs_per_client))
     row("Total messages", f"{total_msgs:,}")
@@ -152,7 +150,7 @@ def run(
     row("    Max", f"{ct_max:,.0f}")
     row(
         "    Stdev",
-        f"{ct_stdev:,.0f}  {'✓ balanced' if ct_stdev / ct_avg < 0.2 else '⚠ uneven'}"
+        f"{ct_stdev:,.0f}  {'balanced' if ct_stdev / ct_avg < 0.2 else 'uneven'}"
         if ct_avg
         else "n/a",
     )
