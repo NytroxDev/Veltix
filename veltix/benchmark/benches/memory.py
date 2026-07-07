@@ -16,6 +16,12 @@ from ..utils import ram_kb
 class MemoryBench(Benchmark):
     name = "memory"
     description = "Baseline memory footprint"
+    outputs = [
+        "baseline RSS",
+        "idle server memory",
+        "cost per client (avg, min, max, median, stdev)",
+        "RSS after full teardown + leak delta",
+    ]
 
     def run(self, backend: SocketCore) -> MemoryResult:
         port = self.config.get("port", PORT_MEMORY)
@@ -46,52 +52,58 @@ def _run_memory(port: int, socket_core: str, step_label: str = "") -> MemoryResu
     )
 
     clients: list[Client] = []
-    costs: list[float] = []
+    try:
+        costs: list[float] = []
 
-    for _ in range(10):
+        for _ in range(10):
+            gc.collect()
+            before = ram_kb()
+            c = Client(
+                ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket)
+            )
+            c.connect()
+            time.sleep(0.05)
+            gc.collect()
+            costs.append(ram_kb() - before)
+            clients.append(c)
+
+        ram_10 = ram_kb()
+
+        cost_avg = statistics.mean(costs)
+        cost_min = min(costs)
+        cost_max = max(costs)
+        cost_median = statistics.median(costs)
+        cost_stdev = statistics.stdev(costs) if len(costs) > 1 else 0.0
+
+        row("Cost per client -- avg", format_bytes(int(cost_avg * 1_024)))
+        row("Cost per client -- min", format_bytes(int(cost_min * 1_024)))
+        row("Cost per client -- max", format_bytes(int(cost_max * 1_024)))
+        row("Cost per client -- median", format_bytes(int(cost_median * 1_024)))
+        row("Cost per client -- stdev", format_bytes(int(cost_stdev * 1_024)))
+        row("Server + 10 clients", format_bytes(int(ram_10 * 1_024)))
+
+        for _ in range(40):
+            c = Client(
+                ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket)
+            )
+            c.connect()
+            time.sleep(0.01)
+            clients.append(c)
+
+        time.sleep(0.5)
         gc.collect()
-        before = ram_kb()
-        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
-        c.connect()
-        time.sleep(0.05)
+        ram_50 = ram_kb()
+        row("Server + 50 clients", format_bytes(int(ram_50 * 1_024)))
+
+        scale_cost = (ram_50 - ram_10) / 40
+        row("Cost per client (10->50 avg)", format_bytes(int(scale_cost * 1_024)))
+
+    finally:
+        for c in clients:
+            c.disconnect()
+        server.close_all()
+        time.sleep(0.5)
         gc.collect()
-        costs.append(ram_kb() - before)
-        clients.append(c)
-
-    ram_10 = ram_kb()
-
-    cost_avg = statistics.mean(costs)
-    cost_min = min(costs)
-    cost_max = max(costs)
-    cost_median = statistics.median(costs)
-    cost_stdev = statistics.stdev(costs) if len(costs) > 1 else 0.0
-
-    row("Cost per client -- avg", format_bytes(int(cost_avg * 1_024)))
-    row("Cost per client -- min", format_bytes(int(cost_min * 1_024)))
-    row("Cost per client -- max", format_bytes(int(cost_max * 1_024)))
-    row("Cost per client -- median", format_bytes(int(cost_median * 1_024)))
-    row("Cost per client -- stdev", format_bytes(int(cost_stdev * 1_024)))
-    row("Server + 10 clients", format_bytes(int(ram_10 * 1_024)))
-
-    for _ in range(40):
-        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
-        c.connect()
-        time.sleep(0.01)
-        clients.append(c)
-
-    time.sleep(0.5)
-    gc.collect()
-    ram_50 = ram_kb()
-    row("Server + 50 clients", format_bytes(int(ram_50 * 1_024)))
-
-    scale_cost = (ram_50 - ram_10) / 40
-    row("Cost per client (10->50 avg)", format_bytes(int(scale_cost * 1_024)))
-
-    for c in clients:
-        c.disconnect()
-    server.close_all()
-    time.sleep(0.5)
-    gc.collect()
 
     ram_after = ram_kb()
     leak = ram_after - baseline

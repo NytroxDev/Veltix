@@ -17,6 +17,32 @@ from ..utils import incr, ram_mb
 class FpsBench(Benchmark):
     name = "fps"
     description = "FPS game-server simulation"
+    parameters = {
+        "players": {
+            "type": "int",
+            "default": 64,
+            "description": "Number of simulated players",
+        },
+        "tick_rate": {
+            "type": "int",
+            "default": 64,
+            "description": "Server tick rate in Hz",
+        },
+        "duration": {
+            "type": "float",
+            "default": 5.0,
+            "description": "Simulation duration in seconds",
+        },
+    }
+    outputs = [
+        "actual tick rate",
+        "messages sent (MOVE / SHOOT) / received / lost",
+        "throughput (msg/s)",
+        "success rate",
+        "tick duration (avg/min/max/stdev)",
+        "budget compliance (%)",
+        "RAM delta",
+    ]
 
     def run(self, backend: SocketCore) -> FpsResult:
         port = self.config.get("port", PORT_FPS_1)
@@ -24,8 +50,12 @@ class FpsBench(Benchmark):
         tick_rate = self.config.get("tick_rate", 64)
         duration = self.config.get("duration", 5.0)
         return _run_fps(
-            num_players=players, tick_rate=tick_rate, duration_s=duration,
-            port=port, socket_core=backend.name.lower(), step_label=self._step_label,
+            num_players=players,
+            tick_rate=tick_rate,
+            duration_s=duration,
+            port=port,
+            socket_core=backend.name.lower(),
+            step_label=self._step_label,
         )
 
 
@@ -37,16 +67,25 @@ def run(
     socket_core: str = "async",
 ) -> FpsResult:
     return _run_fps(
-        num_players=num_players, tick_rate=tick_rate, duration_s=duration_s,
-        port=port, socket_core=socket_core,
+        num_players=num_players,
+        tick_rate=tick_rate,
+        duration_s=duration_s,
+        port=port,
+        socket_core=socket_core,
     )
 
 
 def _run_fps(
-    num_players: int, tick_rate: int, duration_s: float, port: int, socket_core: str,
+    num_players: int,
+    tick_rate: int,
+    duration_s: float,
+    port: int,
+    socket_core: str,
     step_label: str = "",
 ) -> FpsResult:
-    header(f"FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)", prefix=step_label)
+    header(
+        f"FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)", prefix=step_label
+    )
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]
@@ -58,103 +97,106 @@ def _run_fps(
     time.sleep(0.5)
 
     clients: list[Client] = []
-    print(f"  Connecting {num_players} players...", end="", flush=True)
-    for _ in range(num_players):
-        c = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket))
-        c.connect()
-        clients.append(c)
-        time.sleep(0.005)
-    time.sleep(0.5)
-    print(" done")
+    try:
+        print(f"  Connecting {num_players} players...", end="", flush=True)
+        for _ in range(num_players):
+            c = Client(
+                ClientConfig(server_addr="127.0.0.1", port=port, retry=0, socket_core=_socket)
+            )
+            c.connect()
+            clients.append(c)
+            time.sleep(0.005)
+        time.sleep(0.5)
+        print(" done")
 
-    senders = [c.sender for c in clients]
-    req_move = [Request(PLAYER_MOVE, b"\x00" * 32) for _ in clients]
-    req_shoot = [Request(PLAYER_SHOOT, b"\x00" * 16) for _ in clients]
+        senders = [c.sender for c in clients]
+        req_move = [Request(PLAYER_MOVE, b"\x00" * 32) for _ in clients]
+        req_shoot = [Request(PLAYER_SHOOT, b"\x00" * 16) for _ in clients]
 
-    gc.collect()
-    ram_before = ram_mb()
-    tick_interval = 1.0 / tick_rate
-    target_tick_ms = tick_interval * 1_000
+        gc.collect()
+        ram_before = ram_mb()
+        tick_interval = 1.0 / tick_rate
+        target_tick_ms = tick_interval * 1_000
 
-    total_sent = errors = shoot_sent = 0
-    tick_durations: list[float] = []
-    overrun_ticks = 0
+        total_sent = errors = shoot_sent = 0
+        tick_durations: list[float] = []
+        overrun_ticks = 0
 
-    print(f"  Running simulation for {duration_s}s...")
-    t0 = time.perf_counter()
+        print(f"  Running simulation for {duration_s}s...")
+        t0 = time.perf_counter()
 
-    while time.perf_counter() - t0 < duration_s:
-        tick_start = time.perf_counter()
+        while time.perf_counter() - t0 < duration_s:
+            tick_start = time.perf_counter()
 
-        for i, _c in enumerate(clients):
-            try:
-                senders[i].send(req_move[i])
-                total_sent += 1
-                if i % 10 == int(time.perf_counter() * 10) % 10:
-                    senders[i].send(req_shoot[i])
+            for i, _c in enumerate(clients):
+                try:
+                    senders[i].send(req_move[i])
                     total_sent += 1
-                    shoot_sent += 1
-            except Exception:
-                errors += 1
+                    if i % 10 == int(time.perf_counter() * 10) % 10:
+                        senders[i].send(req_shoot[i])
+                        total_sent += 1
+                        shoot_sent += 1
+                except Exception:
+                    errors += 1
 
-        tick_elapsed_ms = (time.perf_counter() - tick_start) * 1_000
-        tick_durations.append(tick_elapsed_ms)
-        if tick_elapsed_ms > target_tick_ms:
-            overrun_ticks += 1
+            tick_elapsed_ms = (time.perf_counter() - tick_start) * 1_000
+            tick_durations.append(tick_elapsed_ms)
+            if tick_elapsed_ms > target_tick_ms:
+                overrun_ticks += 1
 
-        sleep_for = tick_interval - (tick_elapsed_ms / 1_000)
-        if sleep_for > 0:
-            time.sleep(sleep_for)
+            sleep_for = tick_interval - (tick_elapsed_ms / 1_000)
+            if sleep_for > 0:
+                time.sleep(sleep_for)
 
-    actual = time.perf_counter() - t0
-    time.sleep(0.5)
-    gc.collect()
-    ram_after = ram_mb()
+        actual = time.perf_counter() - t0
+        time.sleep(0.5)
+        gc.collect()
+        ram_after = ram_mb()
 
-    recv = recv_count[0]
-    move_sent = total_sent - shoot_sent
-    success = recv / total_sent * 100 if total_sent else 0.0
-    msg_per_sec = total_sent / actual
-    actual_tick_rate = len(tick_durations) / actual
+        recv = recv_count[0]
+        move_sent = total_sent - shoot_sent
+        success = recv / total_sent * 100 if total_sent else 0.0
+        msg_per_sec = total_sent / actual
+        actual_tick_rate = len(tick_durations) / actual
 
-    tick_avg = statistics.mean(tick_durations)
-    tick_min = min(tick_durations)
-    tick_max = max(tick_durations)
-    tick_stdev = statistics.stdev(tick_durations) if len(tick_durations) > 1 else 0.0
-    budget_pct = (1 - overrun_ticks / len(tick_durations)) * 100 if tick_durations else 0.0
-    shoot_ratio = shoot_sent / move_sent * 100 if move_sent else 0.0
+        tick_avg = statistics.mean(tick_durations)
+        tick_min = min(tick_durations)
+        tick_max = max(tick_durations)
+        tick_stdev = statistics.stdev(tick_durations) if len(tick_durations) > 1 else 0.0
+        budget_pct = (1 - overrun_ticks / len(tick_durations)) * 100 if tick_durations else 0.0
+        shoot_ratio = shoot_sent / move_sent * 100 if move_sent else 0.0
 
-    row("Players", str(num_players))
-    row("Target tick rate", f"{tick_rate} Hz")
-    row("Actual tick rate", f"{actual_tick_rate:.1f} Hz")
-    row("Duration", f"{actual:.2f} s")
-    row("", "")
-    row("  Messages", "")
-    row("    Sent (MOVE)", f"{move_sent:,}")
-    row("    Sent (SHOOT)", f"{shoot_sent:,}  ({shoot_ratio:.1f}% of MOVE)")
-    row("    Sent total", f"{total_sent:,}")
-    row("    Received", f"{recv:,}")
-    row("    Lost", f"{total_sent - recv:,}")
-    row("    Success rate", f"{success:.2f}%")
-    row("    Throughput", f"{msg_per_sec:,.0f} msg/s")
-    row("    Errors", str(errors))
-    row("", "")
-    row("  Tick duration (ms)", "")
-    row("    Avg", f"{tick_avg:.3f} ms")
-    row("    Min", f"{tick_min:.3f} ms")
-    row("    Max", f"{tick_max:.3f} ms")
-    row("    Stdev", f"{tick_stdev:.3f} ms")
-    row(
-        "    Budget compliance",
-        f"{budget_pct:.1f}%  ({overrun_ticks} overruns / {len(tick_durations)} ticks)",
-    )
-    row("", "")
-    row("  RAM delta", f"{ram_after - ram_before:+.2f} MB")
-
-    for c in clients:
-        c.disconnect()
-    server.close_all()
-    time.sleep(0.3)
+        row("Players", str(num_players))
+        row("Target tick rate", f"{tick_rate} Hz")
+        row("Actual tick rate", f"{actual_tick_rate:.1f} Hz")
+        row("Duration", f"{actual:.2f} s")
+        row("", "")
+        row("  Messages", "")
+        row("    Sent (MOVE)", f"{move_sent:,}")
+        row("    Sent (SHOOT)", f"{shoot_sent:,}  ({shoot_ratio:.1f}% of MOVE)")
+        row("    Sent total", f"{total_sent:,}")
+        row("    Received", f"{recv:,}")
+        row("    Lost", f"{total_sent - recv:,}")
+        row("    Success rate", f"{success:.2f}%")
+        row("    Throughput", f"{msg_per_sec:,.0f} msg/s")
+        row("    Errors", str(errors))
+        row("", "")
+        row("  Tick duration (ms)", "")
+        row("    Avg", f"{tick_avg:.3f} ms")
+        row("    Min", f"{tick_min:.3f} ms")
+        row("    Max", f"{tick_max:.3f} ms")
+        row("    Stdev", f"{tick_stdev:.3f} ms")
+        row(
+            "    Budget compliance",
+            f"{budget_pct:.1f}%  ({overrun_ticks} overruns / {len(tick_durations)} ticks)",
+        )
+        row("", "")
+        row("  RAM delta", f"{ram_after - ram_before:+.2f} MB")
+    finally:
+        for c in clients:
+            c.disconnect()
+        server.close_all()
+        time.sleep(0.3)
 
     return FpsResult(
         players=num_players,

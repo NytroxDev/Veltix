@@ -36,11 +36,32 @@ def _histogram(samples: list[float]) -> None:
 class LatencyBench(Benchmark):
     name = "latency"
     description = "Ping/pong latency measurement"
+    parameters = {
+        "pings": {
+            "type": "int",
+            "default": 50_000,
+            "description": "Number of ping/pong iterations",
+        },
+    }
+    outputs = [
+        "average latency",
+        "median (P50)",
+        "P95 / P99",
+        "min / max",
+        "stdev / jitter",
+        "throughput (ping/s)",
+        "latency histogram",
+    ]
 
     def run(self, backend: SocketCore) -> LatencyStats:
         port = self.config.get("port", PORT_LATENCY)
         iterations = self.config.get("iterations", 50_000)
-        return _run_latency(iterations=iterations, port=port, socket_core=backend.name.lower(), step_label=self._step_label)
+        return _run_latency(
+            iterations=iterations,
+            port=port,
+            socket_core=backend.name.lower(),
+            step_label=self._step_label,
+        )
 
 
 def run(
@@ -64,26 +85,27 @@ def _run_latency(
     client.connect()
     time.sleep(0.2)
 
-    warmup = LatencyStats()
-    for _ in range(_WARMUP):
-        warmup.add(client.ping_server(timeout=2.0))
-    row("Warmup iterations", str(_WARMUP))
-    row("Warmup avg", f"{warmup.avg:.3f} ms  (discarded)")
+    try:
+        warmup = LatencyStats()
+        for _ in range(_WARMUP):
+            warmup.add(client.ping_server(timeout=2.0))
+        row("Warmup iterations", str(_WARMUP))
+        row("Warmup avg", f"{warmup.avg:.3f} ms  (discarded)")
 
-    stats = LatencyStats()
-    samples_raw: list[float] = []
+        stats = LatencyStats()
+        samples_raw: list[float] = []
 
-    t0 = time.perf_counter()
-    for _ in range(iterations):
-        v = client.ping_server(timeout=2.0)
-        stats.add(v)
-        if v is not None:
-            samples_raw.append(v)
-    elapsed = time.perf_counter() - t0
-
-    client.disconnect()
-    server.close_all()
-    time.sleep(0.3)
+        t0 = time.perf_counter()
+        for _ in range(iterations):
+            v = client.ping_server(timeout=2.0)
+            stats.add(v)
+            if v is not None:
+                samples_raw.append(v)
+        elapsed = time.perf_counter() - t0
+    finally:
+        client.disconnect()
+        server.close_all()
+        time.sleep(0.3)
 
     if len(samples_raw) >= 2:
         deltas = [abs(samples_raw[i] - samples_raw[i - 1]) for i in range(1, len(samples_raw))]

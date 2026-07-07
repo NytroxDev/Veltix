@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Any
+from typing import Any, Optional
 
 try:
     import psutil
@@ -35,6 +35,34 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", metavar="")
     sub.add_parser("init", help="Initialize a .vltxbench/ project")
+    p_list = sub.add_parser("list", help="List benchmarks and/or profiles")
+    p_list.add_argument(
+        "-b",
+        "--benchmarks",
+        action="store_true",
+        default=False,
+        help="Show benchmarks only",
+    )
+    p_list.add_argument(
+        "-p",
+        "--profiles",
+        action="store_true",
+        default=False,
+        help="Show profiles only",
+    )
+    p_list.add_argument(
+        "--json",
+        action="store_true",
+        default=False,
+        help="Output in JSON format",
+    )
+    p_info = sub.add_parser("info", help="Show details about a benchmark")
+    p_info.add_argument(
+        "name",
+        metavar="NAME",
+        choices=ALL_BENCHMARKS,
+        help=f"Benchmark name. Choices: {_BENCH_NAMES}",
+    )
 
     p.add_argument(
         "--only",
@@ -49,6 +77,12 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         default=None,
         help="Save results to a JSON file (e.g. results.json)",
+    )
+    p.add_argument(
+        "--profile",
+        metavar="NAME",
+        default=None,
+        help="Profile name in .vltxbench/profiles/ (e.g. 'default' for default.toml)",
     )
     p.add_argument(
         "--tmp",
@@ -101,21 +135,27 @@ def _build_benches(args: argparse.Namespace) -> list[Benchmark]:
     if "memory" in selected:
         benches.append(Benchmark.get("memory")())
     if "latency" in selected:
-        benches.append(
-            Benchmark.get("latency")({"iterations": args.latency_iterations})
-        )
+        benches.append(Benchmark.get("latency")({"iterations": args.latency_iterations}))
     if "fps" in selected:
         benches.append(
             Benchmark.get("fps")(
-                {"players": args.fps_players, "tick_rate": args.fps_tick_rate,
-                 "duration": args.fps_duration, "port": PORT_FPS_1},
+                {
+                    "players": args.fps_players,
+                    "tick_rate": args.fps_tick_rate,
+                    "duration": args.fps_duration,
+                    "port": PORT_FPS_1,
+                },
                 name="fps_64",
             )
         )
         benches.append(
             Benchmark.get("fps")(
-                {"players": args.fps2_players, "tick_rate": args.fps2_tick_rate,
-                 "duration": args.fps_duration, "port": PORT_FPS_2},
+                {
+                    "players": args.fps2_players,
+                    "tick_rate": args.fps2_tick_rate,
+                    "duration": args.fps_duration,
+                    "port": PORT_FPS_2,
+                },
                 name="fps_128",
             )
         )
@@ -130,7 +170,10 @@ def _build_benches(args: argparse.Namespace) -> list[Benchmark]:
     return benches
 
 
-def _print_header(args: argparse.Namespace) -> None:
+def _print_header(
+    args: argparse.Namespace,
+    profile_name: str = "",
+) -> None:
     print()
     sep("=")
     print(f"  {_BOLD}VELTIX BENCHMARK SUITE  -  v{veltix.__version__}{_RESET}")
@@ -144,7 +187,9 @@ def _print_header(args: argparse.Namespace) -> None:
     row("RAM", f"{psutil.virtual_memory().total / 1_073_741_824:.1f} GB")
     row("OS", sys.platform)
     row("Socket backend", args.socket_core)
-    if args.tmp:
+    if profile_name:
+        row("Profile", profile_name)
+    elif args.tmp:
         row("Config", "temporary (--tmp)")
     if args.runs > 1:
         row("Runs (avg)", str(args.runs))
@@ -159,13 +204,51 @@ def _results_map(results: dict[str, Any]) -> dict[str, Any]:
         "stress": "stress",
     }
     out: dict[str, Any] = {
-        "mem": None, "lat": None, "fps64": None,
-        "fps128": None, "burst": None, "stress": None,
+        "mem": None,
+        "lat": None,
+        "fps64": None,
+        "fps128": None,
+        "burst": None,
+        "stress": None,
     }
     for key, value in results.items():
         var = mapping.get(key, key)
         out[var] = value
     return out
+
+
+def _resolve_profile(args: argparse.Namespace) -> tuple[Optional[Any], str]:
+    """Load profile if applicable. Returns (Profile or None, display name)."""
+    from pathlib import Path
+
+    vltx_dir = Path(".vltxbench")
+
+    if args.tmp:
+        return None, ""
+
+    if args.profile:
+        from .profile import find_profile, load_profile
+
+        profiles_dir = vltx_dir / "profiles"
+        profile_path = find_profile(args.profile, profiles_dir)
+        if not profile_path.exists():
+            sys.exit(
+                f"Profile not found: {args.profile}\n"
+                f"  Looked in: {profile_path}\n"
+                f"  Run 'vltxbench init' to create the default profile."
+            )
+        profile = load_profile(profile_path)
+        return profile, args.profile
+
+    if vltx_dir.exists():
+        default = vltx_dir / "profiles" / "default.toml"
+        if default.exists():
+            from .profile import load_profile
+
+            profile = load_profile(default)
+            return profile, "default"
+
+    return None, ""
 
 
 def main() -> None:
@@ -178,23 +261,58 @@ def main() -> None:
         run_init()
         return
 
-    Logger.get_instance().set_level(LogLevel.ERROR)
-    _print_header(args)
+    if args.command == "list":
+        from ._list import cmd_list
 
-    benches = _build_benches(args)
-    runner = BenchRunner(benches, backend=args.socket_core, runs=args.runs)
+        cmd_list(
+            show_benchmarks=not args.profiles,
+            show_profiles=not args.benchmarks,
+            as_json=args.json,
+        )
+        return
+
+    if args.command == "info":
+        from ._info import cmd_info
+
+        cmd_info(args.name)
+        return
+
+    Logger.get_instance().set_level(LogLevel.ERROR)
+
+    profile, profile_name = _resolve_profile(args)
+    benches: list[Benchmark]
+    runs: int = args.runs
+
+    if profile is not None:
+        benches = profile.benches
+        if runs == 1:
+            runs = profile.runs
+    else:
+        benches = _build_benches(args)
+
+    _print_header(args, profile_name=profile_name)
+
+    runner = BenchRunner(benches, backend=args.socket_core, runs=runs)
     results = runner.run_all()
 
     mapped = _results_map(results)
 
     print_summary(
-        mapped["mem"], mapped["lat"], mapped["fps64"],
-        mapped["fps128"], mapped["burst"], mapped["stress"],
+        mapped["mem"],
+        mapped["lat"],
+        mapped["fps64"],
+        mapped["fps128"],
+        mapped["burst"],
+        mapped["stress"],
     )
 
     if args.save:
         data = build_json(
-            mapped["mem"], mapped["lat"], mapped["fps64"],
-            mapped["fps128"], mapped["burst"], mapped["stress"],
+            mapped["mem"],
+            mapped["lat"],
+            mapped["fps64"],
+            mapped["fps128"],
+            mapped["burst"],
+            mapped["stress"],
         )
         save_json(data, args.save)

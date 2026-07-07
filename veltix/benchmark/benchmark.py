@@ -19,6 +19,8 @@ class Benchmark(ABC):
 
     name: ClassVar[str] = ""
     description: ClassVar[str] = ""
+    parameters: ClassVar[dict[str, dict[str, Any]]] = {}
+    outputs: ClassVar[list[str]] = []
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
