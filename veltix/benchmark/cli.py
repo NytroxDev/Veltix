@@ -12,6 +12,8 @@ except ImportError:
     ) from None
 
 import veltix
+from veltix.logger.core import Logger
+from veltix.logger.levels import LogLevel
 
 from .benches import burst, fps, latency, memory, stress  # noqa: F401 - populate registry
 from .benchmark import Benchmark
@@ -156,6 +158,7 @@ def _results_map(results: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> None:
+    Logger.get_instance().set_level(LogLevel.ERROR)
     args = parse_args()
     _print_header(args)
 
