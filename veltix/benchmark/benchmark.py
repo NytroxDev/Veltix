@@ -25,8 +25,18 @@ class Benchmark(ABC):
         if cls.name:
             _registry[cls.name] = cls
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        config: Optional[Dict[str, Any]] = None,
+        name: Optional[str] = None,
+    ) -> None:
         self.config: Dict[str, Any] = config if config is not None else {}
+        self._instance_name: Optional[str] = name
+
+    @property
+    def benchmark_name(self) -> str:
+        """Return instance-level name if set, otherwise class-level name."""
+        return self._instance_name if self._instance_name is not None else self.name
 
     @abstractmethod
     def run(self, backend: SocketCore) -> Any:

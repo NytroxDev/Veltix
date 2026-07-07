@@ -1,30 +1,28 @@
-"""
-cli.py
-------
-Argument parsing and main entry point.
-Orchestrates benchmark selection, execution, summary and JSON export.
-"""
-
 from __future__ import annotations
 
 import argparse
 import sys
-from typing import Any
+from typing import Any, Dict, List
 
 try:
-    import psutil  # type: ignore[import-untyped]
+    import psutil
 except ImportError:
     raise ImportError(
-        "psutil est requis pour le benchmark. Installez-le avec : pip install veltix[benchmark]"
+        "psutil is required for the benchmark suite. Install with: pip install veltix[benchmark]"
     ) from None
 
 import veltix
 
+from .benchmark import Benchmark
+from .config import PORT_FPS_1, PORT_FPS_2
 from .display import print_summary, row, sep
 from .export import build_json, save_json
+from .runner import BenchRunner
+
+from .benches import burst, fps, latency, memory, stress  # noqa: F401 - populate registry
 
 ALL_BENCHMARKS = ["memory", "latency", "fps", "burst", "stress"]
-BACKENDS = ["threading", "async"]
+_BENCH_NAMES = "memory latency fps burst stress"
 
 
 def parse_args() -> argparse.Namespace:
@@ -38,7 +36,7 @@ def parse_args() -> argparse.Namespace:
         metavar="BENCH",
         choices=ALL_BENCHMARKS,
         default=ALL_BENCHMARKS,
-        help=f"Run only the specified benchmarks. Choices: {', '.join(ALL_BENCHMARKS)}",
+        help=f"Run only the specified benchmarks. Choices: {_BENCH_NAMES}",
     )
     p.add_argument(
         "--save",
@@ -48,7 +46,7 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--socket-core",
-        choices=BACKENDS + ["both"],
+        choices=["threading", "async", "both"],
         default="async",
         help="Socket backend to benchmark ('threading', 'async', or 'both')",
     )
@@ -60,7 +58,6 @@ def parse_args() -> argparse.Namespace:
         help="Run each benchmark N times and average the results",
     )
 
-    # ── Per-benchmark knobs ───────────────────────────────────────────────────
     g = p.add_argument_group("latency")
     g.add_argument("--latency-iterations", type=int, default=50_000, metavar="N")
 
@@ -84,54 +81,49 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def _backends_from_args(socket_core: str) -> list[str]:
-    if socket_core == "both":
-        return BACKENDS
-    return [socket_core]
+def _build_benches(args: argparse.Namespace) -> List[Benchmark]:
+    """Create Benchmark instances from parsed CLI arguments."""
+    _import_benches()
+    benches: List[Benchmark] = []
+    selected = set(args.only)
+
+    if "memory" in selected:
+        benches.append(Benchmark.get("memory")())
+    if "latency" in selected:
+        benches.append(
+            Benchmark.get("latency")({"iterations": args.latency_iterations})
+        )
+    if "fps" in selected:
+        benches.append(
+            Benchmark.get("fps")(
+                {"players": args.fps_players, "tick_rate": args.fps_tick_rate,
+                 "duration": args.fps_duration, "port": PORT_FPS_1},
+                name="fps_64",
+            )
+        )
+        benches.append(
+            Benchmark.get("fps")(
+                {"players": args.fps2_players, "tick_rate": args.fps2_tick_rate,
+                 "duration": args.fps_duration, "port": PORT_FPS_2},
+                name="fps_128",
+            )
+        )
+    if "burst" in selected:
+        benches.append(
+            Benchmark.get("burst")({"count": args.burst_count, "payload": args.burst_payload})
+        )
+    if "stress" in selected:
+        benches.append(
+            Benchmark.get("stress")({"clients": args.stress_clients, "msgs": args.stress_msgs})
+        )
+    return benches
 
 
-def _run_for_backends(runner: Any, backends: list[str], *args: Any) -> list[Any]:
-    results = []
-    for backend in backends:
-        sep("─")
-        print(f"  ▶ Backend: {backend}")
-        sep("─")
-        print()
-        result = runner(*args, socket_core=backend)
-        result.backend = backend
-        results.append(result)
-    return results
-
-
-def _run_runs(runner: Any, backends: list[str], runs: int, *args: Any) -> list[Any]:
-    """Run a bench across backends, averaging over N runs."""
-    if runs <= 1:
-        return _run_for_backends(runner, backends, *args)
-
-    all_backend_results: list[list] = []
-    for run_idx in range(runs):
-        print(f"\n  ── Run {run_idx + 1}/{runs} ──")
-        all_backend_results.append(_run_for_backends(runner, backends, *args))
-
-    num_backends = len(all_backend_results[0])
-    averaged = []
-    for b_idx in range(num_backends):
-        run_specific = [run[b_idx] for run in all_backend_results]
-        avg = run_specific[0].average(run_specific)
-        averaged.append(avg)
-    return averaged
-
-
-def main() -> None:
-    args = parse_args()
-    run = set(args.only)
-    backends = _backends_from_args(args.socket_core)
-
-    # ── Suite header ──────────────────────────────────────────────────────────
+def _print_header(args: argparse.Namespace) -> None:
     print()
-    sep("═")
-    print(f"  VELTIX BENCHMARK SUITE  –  v{veltix.__version__}")
-    sep("═")
+    sep("=")
+    print(f"  VELTIX BENCHMARK SUITE  -  v{veltix.__version__}")
+    sep("=")
     row("Python", sys.version.split()[0])
     row(
         "CPU",
@@ -144,55 +136,43 @@ def main() -> None:
     if args.runs > 1:
         row("Runs (avg)", str(args.runs))
 
-    # ── Run selected benchmarks ───────────────────────────────────────────────
-    mem = lat = fps64 = fps128 = burst = stress = None
 
-    if "memory" in run:
-        from .benches.memory import run as run_memory
+def _results_map(results: Dict[str, Any]) -> Dict[str, Any]:
+    """Map benchmark result names to ``print_summary`` variable names."""
+    mapping: Dict[str, str] = {
+        "memory": "mem",
+        "latency": "lat",
+        "burst": "burst",
+        "stress": "stress",
+    }
+    out: Dict[str, Any] = {
+        "mem": None, "lat": None, "fps64": None,
+        "fps128": None, "burst": None, "stress": None,
+    }
+    for key, value in results.items():
+        var = mapping.get(key, key)
+        out[var] = value
+    return out
 
-        mem = _run_runs(run_memory, backends, args.runs)
 
-    if "latency" in run:
-        from .benches.latency import run as run_latency
+def main() -> None:
+    args = parse_args()
+    _print_header(args)
 
-        lat = _run_runs(run_latency, backends, args.runs, args.latency_iterations)
+    benches = _build_benches(args)
+    runner = BenchRunner(benches, backend=args.socket_core, runs=args.runs)
+    results = runner.run_all()
 
-    if "fps" in run:
-        from .benches.fps import run as run_fps
-        from .config import PORT_FPS_1, PORT_FPS_2
+    mapped = _results_map(results)
 
-        fps64 = _run_runs(
-            run_fps,
-            backends,
-            args.runs,
-            args.fps_players,
-            args.fps_tick_rate,
-            args.fps_duration,
-            PORT_FPS_1,
-        )
-        fps128 = _run_runs(
-            run_fps,
-            backends,
-            args.runs,
-            args.fps2_players,
-            args.fps2_tick_rate,
-            args.fps_duration,
-            PORT_FPS_2,
-        )
-
-    if "burst" in run:
-        from .benches.burst import run as run_burst
-
-        burst = _run_runs(run_burst, backends, args.runs, args.burst_count, args.burst_payload)
-
-    if "stress" in run:
-        from .benches.stress import run as run_stress
-
-        stress = _run_runs(run_stress, backends, args.runs, args.stress_clients, args.stress_msgs)
-
-    # ── Summary + export ──────────────────────────────────────────────────────
-    print_summary(mem, lat, fps64, fps128, burst, stress)
+    print_summary(
+        mapped["mem"], mapped["lat"], mapped["fps64"],
+        mapped["fps128"], mapped["burst"], mapped["stress"],
+    )
 
     if args.save:
-        data = build_json(mem, lat, fps64, fps128, burst, stress)
+        data = build_json(
+            mapped["mem"], mapped["lat"], mapped["fps64"],
+            mapped["fps128"], mapped["burst"], mapped["stress"],
+        )
         save_json(data, args.save)

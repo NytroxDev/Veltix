@@ -45,7 +45,7 @@ class BenchRunner:
         for bench in self.benches:
             bench_results = self._run_bench(bench)
             if bench_results is not None:
-                results[bench.name] = bench_results
+                results[bench.benchmark_name] = bench_results
         return results
 
     def _run_bench(self, bench: Benchmark) -> Optional[List[Any]]:
