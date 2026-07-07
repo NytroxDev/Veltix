@@ -7,11 +7,11 @@ from pathlib import Path
 
 _USE_COLOR = sys.stdout.isatty()
 
-_G = "\033[32m" if _USE_COLOR else ""   # green
-_D = "\033[2m" if _USE_COLOR else ""    # dim
-_B = "\033[1m" if _USE_COLOR else ""    # bold
-_R = "\033[0m" if _USE_COLOR else ""    # reset
-_C = "\033[36m" if _USE_COLOR else ""   # cyan
+_G = "\033[32m" if _USE_COLOR else ""  # green
+_D = "\033[2m" if _USE_COLOR else ""  # dim
+_B = "\033[1m" if _USE_COLOR else ""  # bold
+_R = "\033[0m" if _USE_COLOR else ""  # reset
+_C = "\033[36m" if _USE_COLOR else ""  # cyan
 
 # ── Templates ────────────────────────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ version = 1
 # You can override per-benchmark config:
 #
 #   [benchmark.latency]
-#   pings = 2000
+#   iterations = 100
 
 [benchmark.all]
 """
