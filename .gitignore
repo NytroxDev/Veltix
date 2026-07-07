@@ -213,3 +213,4 @@ docs/plans/
 /.python-version
 /analyse-veltix.md
 .idea/
+tmp/
