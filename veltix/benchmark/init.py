@@ -67,7 +67,8 @@ TREE = """\
 
 
 def run_init(target: str = ".vltxbench") -> None:
-    base = Path(target)
+    cwd = Path.cwd()
+    base = cwd if cwd.name == ".vltxbench" else (cwd / target).resolve()
 
     if base.exists():
         print(f"  {base}/ already initialized")
