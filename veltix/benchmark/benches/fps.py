@@ -37,13 +37,16 @@ def run(
     duration_s: float = 5.0,
     port: int = PORT_FPS_1,
     socket_core: str = "async",
+    step_label: str = "",
 ) -> FpsResult:
     """
     Simulates a realistic FPS server:
       - Every player sends PLAYER_MOVE each tick (32 B)
       - ~10% of players send PLAYER_SHOOT each tick (16 B)
     """
-    header(f"③ FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)")
+    header(
+        f"FPS SERVER SIMULATION  ({num_players} players @ {tick_rate} tick/s)", prefix=step_label
+    )
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]

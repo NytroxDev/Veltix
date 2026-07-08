@@ -25,8 +25,8 @@ from ..models import MemoryResult
 from ..utils import ram_kb
 
 
-def run(port: int = PORT_MEMORY, socket_core: str = "async") -> MemoryResult:
-    header("① BASELINE MEMORY FOOTPRINT")
+def run(port: int = PORT_MEMORY, socket_core: str = "async", step_label: str = "") -> MemoryResult:
+    header("BASELINE MEMORY FOOTPRINT", prefix=step_label)
 
     # ── Baseline ──────────────────────────────────────────────────────────────
     gc.collect()
@@ -102,7 +102,7 @@ def run(port: int = PORT_MEMORY, socket_core: str = "async") -> MemoryResult:
     leak = ram_after - baseline
     row(
         "RSS after full teardown",
-        f"{format_bytes(int(ram_after * 1_024))}  (leak delta: {'' if leak >= 0 else '-'}{format_bytes(int(abs(leak) * 1_024))}{'  ✓' if abs(leak) < 512 else '  ⚠ possible leak'})",
+        f"{format_bytes(int(ram_after * 1_024))}  (leak delta: {'' if leak >= 0 else '-'}{format_bytes(int(abs(leak) * 1_024))}{'  OK' if abs(leak) < 512 else '  possible leak'})",
     )
 
     return MemoryResult(
