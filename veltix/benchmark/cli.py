@@ -64,6 +64,13 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=ALL_BENCHMARKS,
         help=f"Benchmark name. Choices: {_BENCH_NAMES}",
     )
+    p_cmp = sub.add_parser("cmp", help="Compare two saved results")
+    sub.add_parser("compare", help="Compare two saved results")
+    p_cmp.add_argument("a", metavar="A", help="First result (version name or path)")
+    p_cmp.add_argument("b", metavar="B", help="Second result (version name or path)")
+    # compare uses the same args — add them to the shared reference
+    sub.choices["compare"].add_argument("a", metavar="A", help="First result (version name or path)")
+    sub.choices["compare"].add_argument("b", metavar="B", help="Second result (version name or path)")
 
     p.add_argument(
         "--only",
@@ -274,6 +281,12 @@ def main() -> None:
         from ._info import cmd_info
 
         cmd_info(args.name)
+        return
+
+    if args.command in ("cmp", "compare"):
+        from ._cmp import cmd_cmp
+
+        cmd_cmp(args.a, args.b)
         return
 
     Logger.get_instance().set_level(LogLevel.ERROR)

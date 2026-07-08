@@ -214,3 +214,4 @@ docs/plans/
 /analyse-veltix.md
 .idea/
 tmp/
+/.vltxbench/
