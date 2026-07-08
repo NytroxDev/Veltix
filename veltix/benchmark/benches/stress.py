@@ -40,8 +40,11 @@ def run(
     msgs_per_client: int = 100,
     port: int = PORT_STRESS,
     socket_core: str = "async",
+    step_label: str = "",
 ) -> StressResult:
-    header(f"⑤ CONCURRENT STRESS  ({num_clients} clients × {msgs_per_client} msgs)")
+    header(
+        f"CONCURRENT STRESS  ({num_clients} clients x {msgs_per_client} msgs)", prefix=step_label
+    )
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     recv_count = [0]
@@ -152,7 +155,7 @@ def run(
     row("    Max", f"{ct_max:,.0f}")
     row(
         "    Stdev",
-        f"{ct_stdev:,.0f}  {'✓ balanced' if ct_stdev / ct_avg < 0.2 else '⚠ uneven'}"
+        f"{ct_stdev:,.0f}  {'balanced' if ct_stdev / ct_avg < 0.2 else 'uneven'}"
         if ct_avg
         else "n/a",
     )

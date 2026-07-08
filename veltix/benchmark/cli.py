@@ -19,6 +19,7 @@ except ImportError:
     ) from None
 
 import veltix
+from veltix import Logger, LogLevel
 
 from .display import print_summary, row, sep
 from .export import build_json, save_json
@@ -39,6 +40,13 @@ def parse_args() -> argparse.Namespace:
         choices=ALL_BENCHMARKS,
         default=ALL_BENCHMARKS,
         help=f"Run only the specified benchmarks. Choices: {', '.join(ALL_BENCHMARKS)}",
+    )
+    p.add_argument(
+        "--compare",
+        nargs=2,
+        metavar=("A", "B"),
+        default=None,
+        help="Compare two saved benchmark JSON result files",
     )
     p.add_argument(
         "--save",
@@ -90,28 +98,40 @@ def _backends_from_args(socket_core: str) -> list[str]:
     return [socket_core]
 
 
-def _run_for_backends(runner: Any, backends: list[str], *args: Any) -> list[Any]:
+def _run_for_backends(
+    runner: Any,
+    backends: list[str],
+    step_counter: list[int],
+    bench_name: str,
+    *args: Any,
+) -> list[Any]:
     results = []
     for backend in backends:
-        sep("─")
-        print(f"  ▶ Backend: {backend}")
-        sep("─")
-        print()
-        result = runner(*args, socket_core=backend)
+        step_counter[0] += 1
+        step_label = f"[{step_counter[0]}/{step_counter[1]}] {bench_name} ({backend})"
+        result = runner(*args, socket_core=backend, step_label=step_label)
         result.backend = backend
         results.append(result)
     return results
 
 
-def _run_runs(runner: Any, backends: list[str], runs: int, *args: Any) -> list[Any]:
+def _run_runs(
+    runner: Any,
+    backends: list[str],
+    runs: int,
+    step_counter: list[int],
+    bench_name: str,
+    *args: Any,
+) -> list[Any]:
     """Run a bench across backends, averaging over N runs."""
     if runs <= 1:
-        return _run_for_backends(runner, backends, *args)
+        return _run_for_backends(runner, backends, step_counter, bench_name, *args)
 
     all_backend_results: list[list] = []
-    for run_idx in range(runs):
-        print(f"\n  ── Run {run_idx + 1}/{runs} ──")
-        all_backend_results.append(_run_for_backends(runner, backends, *args))
+    for _run_idx in range(runs):
+        all_backend_results.append(
+            _run_for_backends(runner, backends, step_counter, bench_name, *args)
+        )
 
     num_backends = len(all_backend_results[0])
     averaged = []
@@ -123,7 +143,16 @@ def _run_runs(runner: Any, backends: list[str], runs: int, *args: Any) -> list[A
 
 
 def main() -> None:
+    Logger.get_instance().set_level(LogLevel.ERROR)
+
     args = parse_args()
+
+    if args.compare:
+        from .compare import cmd_compare
+
+        cmd_compare(args.compare[0], args.compare[1])
+        return
+
     run = set(args.only)
     backends = _backends_from_args(args.socket_core)
 
@@ -144,18 +173,25 @@ def main() -> None:
     if args.runs > 1:
         row("Runs (avg)", str(args.runs))
 
+    # ── Step counter ────────────────────────────────────────────────────────────
+    selected_benches = [b for b in ["memory", "latency", "fps", "burst", "stress"] if b in run]
+    total_steps = len(selected_benches) * len(backends) * args.runs
+    step_counter: list[int] = [0, total_steps]
+
     # ── Run selected benchmarks ───────────────────────────────────────────────
     mem = lat = fps64 = fps128 = burst = stress = None
 
     if "memory" in run:
         from .benches.memory import run as run_memory
 
-        mem = _run_runs(run_memory, backends, args.runs)
+        mem = _run_runs(run_memory, backends, args.runs, step_counter, "memory")
 
     if "latency" in run:
         from .benches.latency import run as run_latency
 
-        lat = _run_runs(run_latency, backends, args.runs, args.latency_iterations)
+        lat = _run_runs(
+            run_latency, backends, args.runs, step_counter, "latency", args.latency_iterations
+        )
 
     if "fps" in run:
         from .benches.fps import run as run_fps
@@ -165,6 +201,8 @@ def main() -> None:
             run_fps,
             backends,
             args.runs,
+            step_counter,
+            "fps",
             args.fps_players,
             args.fps_tick_rate,
             args.fps_duration,
@@ -174,6 +212,8 @@ def main() -> None:
             run_fps,
             backends,
             args.runs,
+            step_counter,
+            "fps",
             args.fps2_players,
             args.fps2_tick_rate,
             args.fps_duration,
@@ -183,12 +223,28 @@ def main() -> None:
     if "burst" in run:
         from .benches.burst import run as run_burst
 
-        burst = _run_runs(run_burst, backends, args.runs, args.burst_count, args.burst_payload)
+        burst = _run_runs(
+            run_burst,
+            backends,
+            args.runs,
+            step_counter,
+            "burst",
+            args.burst_count,
+            args.burst_payload,
+        )
 
     if "stress" in run:
         from .benches.stress import run as run_stress
 
-        stress = _run_runs(run_stress, backends, args.runs, args.stress_clients, args.stress_msgs)
+        stress = _run_runs(
+            run_stress,
+            backends,
+            args.runs,
+            step_counter,
+            "stress",
+            args.stress_clients,
+            args.stress_msgs,
+        )
 
     # ── Summary + export ──────────────────────────────────────────────────────
     print_summary(mem, lat, fps64, fps128, burst, stress)

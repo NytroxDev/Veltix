@@ -51,9 +51,12 @@ def _histogram(samples: list[float]) -> None:
 
 
 def run(
-    iterations: int = 50_000, port: int = PORT_LATENCY, socket_core: str = "async"
+    iterations: int = 50_000,
+    port: int = PORT_LATENCY,
+    socket_core: str = "async",
+    step_label: str = "",
 ) -> LatencyStats:
-    header("② PING / PONG LATENCY")
+    header("PING / PONG LATENCY", prefix=step_label)
 
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
 
