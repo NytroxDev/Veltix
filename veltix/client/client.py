@@ -72,7 +72,7 @@ class Client:
             bus=self.bus,
         )
         self.socket.settimeout(0.5)
-        self._sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket)
+        self._sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket, bus=self.bus)
         self.request_handler: RequestHandler = RequestHandler(
             sender=self.sender,
             mode=Mode.CLIENT,
