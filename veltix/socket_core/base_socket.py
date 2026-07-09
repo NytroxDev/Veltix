@@ -2,9 +2,12 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 from .managers.clients_manager import ClientEntry, ClientsManager
+
+if TYPE_CHECKING:
+    from ..internal.bus import VeltixBus
 
 
 class SocketEvents(Enum):
@@ -16,12 +19,7 @@ class SocketEvents(Enum):
 class BaseSocket(ABC):
     client_manager: ClientsManager
     handshake_timeout: float
-    _on_connect_cb: Optional[Callable] = None
-    _on_disconnect_cb: Optional[Callable] = None
-    _on_recv_cb: Optional[Callable] = None
-
-    @abstractmethod
-    def set_callback(self, event: SocketEvents, callback: Callable) -> bool: ...
+    bus: VeltixBus
 
     @abstractmethod
     def send(self, data: bytes) -> bool: ...

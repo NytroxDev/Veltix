@@ -9,6 +9,7 @@ class ServerEvent(Enum):
 class ClientEvent(Enum):
     ON_CONNECT = auto()
     ON_DISCONNECT = auto()
+    SOCKET_DISCONNECTED = auto()
 
 
 class MessageEvent(Enum):

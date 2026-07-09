@@ -12,7 +12,7 @@ from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 from ..network.types import MessageType
-from ..socket_core.base_socket import BaseSocket, SocketEvents
+from ..socket_core.base_socket import BaseSocket
 from .config import ClientConfig
 from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
@@ -69,6 +69,7 @@ class Client:
         self.socket: BaseSocket = self.config.socket_core.value(
             request_handler=None,
             max_message_size=self.config.max_message_size,
+            bus=self.bus,
         )
         self.socket.settimeout(0.5)
         self._sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket)
@@ -79,18 +80,10 @@ class Client:
         )
         self.socket.request_handler = self.request_handler
 
-        def _on_socket_disconnect() -> None:
-            # Ignore disconnect events during connect() or manual disconnect().
-            if not self.running or self._connecting:
-                return
-
-            self.is_connected = False
-            self._try_reconnect(DisconnectReason.SERVER_CLOSED)
-
         if self._reconnect_handler is None:
             self._reconnect_handler = ReconnectHandler(context=self)
 
-        self.socket.set_callback(SocketEvents.DISCONNECT, _on_socket_disconnect)
+        self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
 
     # -------------------------------------------------------------------------
     # Context API
@@ -128,6 +121,13 @@ class Client:
         """Return the current socket instance."""
         return self.socket
 
+    def _on_socket_disconnect(self, event=None, payload=None) -> None:
+        """Handle socket-level disconnect from the server (triggers reconnect)."""
+        if not self.running or self._connecting:
+            return
+        self.is_connected = False
+        self._try_reconnect(DisconnectReason.SERVER_CLOSED)
+
     # -------------------------------------------------------------------------
     # Public API
     # -------------------------------------------------------------------------
@@ -144,12 +144,15 @@ class Client:
                 - ON_DISCONNECT: func(state: DisconnectState)
         """
         mapping = {
-            Events.ON_CONNECT: ClientEvent.ON_CONNECT,
-            Events.ON_DISCONNECT: ClientEvent.ON_DISCONNECT,
+            Events.ON_CONNECT: (ClientEvent.ON_CONNECT, False),
+            Events.ON_DISCONNECT: (ClientEvent.ON_DISCONNECT, True),
         }
-        for old, new in mapping.items():
+        for old, (new, has_payload) in mapping.items():
             if event == old or event == old.value:
-                self.bus.subscribe(new, lambda e, p: func(p))
+                if has_payload:
+                    self.bus.subscribe(new, lambda e, p: func(p))
+                else:
+                    self.bus.subscribe(new, lambda e, p: func())
                 self.bus.debug(f"Bound callback to event: {new}")
                 return
 

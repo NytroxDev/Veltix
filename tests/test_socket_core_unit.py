@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from veltix.internal.bus import VeltixBus
 from veltix.network.message_buffer import MessageBuffer
 from veltix.network.sender import Mode, Sender
 from veltix.server.client_info import ClientInfo
@@ -20,15 +21,16 @@ def _make_handler():
     return RequestHandler(sender=sender, mode=Mode.CLIENT)
 
 
+def _make_bus():
+    return VeltixBus()
+
+
 class TestThreadingSocketUnit:
     @pytest.fixture
     def sock(self):
         from veltix.socket_core.threading_socket import ThreadingSocket
 
-        return ThreadingSocket(request_handler=_make_handler(), max_message_size=1024)
-
-    def test_set_callback_unknown_event(self, sock):
-        assert sock.set_callback("unknown", lambda: None) is False  # type: ignore
+        return ThreadingSocket(request_handler=_make_handler(), max_message_size=1024, bus=_make_bus())
 
     def test_settimeout_failure(self, sock):
         with patch.object(socket.socket, "settimeout", side_effect=OSError("mock")):
@@ -47,12 +49,15 @@ class TestThreadingSocketUnit:
         assert sock.close_client(entry) is True
 
     def test_close_client_with_registered_id(self, sock):
+        from veltix.internal.events import ServerEvent
+
         info = ClientInfo(conn=MagicMock(), addr=("127.0.0.1", 0), thread_id=1)
         client_id = sock.client_manager.add_client(info)
-        cb = MagicMock()
-        sock.on_disconnect = cb
+
+        received = []
+        sock.bus.subscribe(ServerEvent.ON_DISCONNECT, lambda e, p: received.append(p))
         assert sock.close_client(client_id) is True
-        cb.assert_called_once_with(info)
+        assert received == [info]
 
     def test_handle_server_client_not_found(self, sock):
         with pytest.raises(ValueError, match="not found"):
@@ -77,10 +82,7 @@ class TestThreadingSocketUnit:
 
     def test_accept_loop_generic_exception(self, sock):
         sock.running = True
-        with patch.object(socket.socket, "accept", side_effect=Exception("mock")), patch.object(
-            sock,
-            "_logger",
-        ):
+        with patch.object(socket.socket, "accept", side_effect=Exception("mock")):
             sock._accept_loop("0.0.0.0", 8080, -1, 1024, 0.5)
         assert sock.running is False
 
@@ -97,7 +99,7 @@ class TestThreadingSocketUnit:
             sock.request_handler.handshake_handler,
             "do_client_handshake",
             side_effect=RuntimeError("boom"),
-        ), patch.object(sock, "_logger"):
+        ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
 
 
@@ -106,10 +108,7 @@ class TestAsyncSocketUnit:
     def sock(self):
         from veltix.socket_core.async_socket import AsyncSocket
 
-        return AsyncSocket(request_handler=_make_handler(), max_message_size=1024)
-
-    def test_set_callback_unknown_event(self, sock):
-        assert sock.set_callback("unknown", lambda: None) is False  # type: ignore
+        return AsyncSocket(request_handler=_make_handler(), max_message_size=1024, bus=_make_bus())
 
     def test_settimeout_failure(self, sock):
         with patch.object(socket.socket, "settimeout", side_effect=OSError("mock")):
@@ -137,8 +136,7 @@ class TestAsyncSocketUnit:
 
     def test_accept_client_max_clients_reached(self, sock):
         sock.client_manager.add_client(sock)  # type: ignore
-        with patch.object(sock, "_logger"):
-            sock._accept_client(max_client=1)
+        sock._accept_client(max_client=1)
 
     def test_accept_client_blockingioerror(self, sock):
         sock.running = True
@@ -147,10 +145,7 @@ class TestAsyncSocketUnit:
 
     def test_accept_client_oserror(self, sock):
         sock.running = True
-        with patch.object(socket.socket, "accept", side_effect=OSError("mock")), patch.object(
-            sock,
-            "_logger",
-        ):
+        with patch.object(socket.socket, "accept", side_effect=OSError("mock")):
             sock._accept_client(max_client=-1)
 
     def test_handle_server_client_not_found(self, sock):
@@ -160,13 +155,16 @@ class TestAsyncSocketUnit:
         assert sock.close_client(9999) is False
 
     def test_close_client_with_entry(self, sock):
-        cb = MagicMock()
-        sock.on_disconnect = cb
+        from veltix.internal.events import ServerEvent
+
         info = ClientInfo(conn=MagicMock(), addr=("127.0.0.1", 0), thread_id=1)
         entry = ClientEntry(id=1, info=info, buffer=MessageBuffer(1024))
         sock.client_manager.add_client(info)
+
+        received = []
+        sock.bus.subscribe(ServerEvent.ON_DISCONNECT, lambda e, p: received.append(p))
         assert sock.close_client(entry) is True
-        cb.assert_called_once_with(info)
+        assert received == [info]
 
     def test_disconnect_not_running(self, sock):
         result = sock.disconnect()
@@ -176,14 +174,10 @@ class TestAsyncSocketUnit:
         result = sock.close()
         assert result is False
 
-    def test_close_all_not_running(self, sock):
-        result = sock.close()
-        assert result is False
-
     def test_connect_handshake_failure(self, sock):
         with patch.object(socket.socket, "connect"), patch.object(
             sock.request_handler.handshake_handler,
             "do_client_handshake",
             return_value=(False, None),
-        ), patch.object(sock, "_logger"):
+        ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
