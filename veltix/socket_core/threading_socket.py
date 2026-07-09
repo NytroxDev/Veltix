@@ -8,7 +8,7 @@ import threading
 import time
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from ..internal.events import ClientEvent, ServerEvent
+from ..internal.events import ClientEvent, MessageEvent, ServerEvent
 from ..internal.network import RecvResult, recv
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -219,6 +219,11 @@ class ThreadingSocket(BaseSocket):
                 self.bus.debug(
                     f"Message from {entry.info.addr}: {response.type.name} (code={response.type.code})"
                 )
+                self.bus.emit(MessageEvent.RECEIVED, {
+                    "type": response.type,
+                    "length": len(response.content),
+                    "client": entry.info.addr,
+                })
 
                 handler_result = self.request_handler.handle(response, entry.info)
                 if isinstance(handler_result, Exception):
@@ -329,6 +334,11 @@ class ThreadingSocket(BaseSocket):
                     self.bus.debug(
                         f"Message from server: {response.type.name} (code={response.type.code})"
                     )
+                    self.bus.emit(MessageEvent.RECEIVED, {
+                        "type": response.type,
+                        "length": len(response.content),
+                        "from": "server",
+                    })
 
                     handler_result = self.request_handler.handle(response)
                     if isinstance(handler_result, Exception):
