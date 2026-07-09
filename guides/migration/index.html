@@ -828,6 +828,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v180-v181" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.8.0 → v1.8.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.8.0 → v1.8.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#action-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Action required
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v175-v180" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -840,7 +879,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#action-required" class="md-nav__link">
+  <a href="#action-required_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Action required
@@ -879,7 +918,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#action-required_1" class="md-nav__link">
+  <a href="#action-required_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Action required
@@ -907,7 +946,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changes" class="md-nav__link">
+  <a href="#changes_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changes
@@ -918,7 +957,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#action-required_2" class="md-nav__link">
+  <a href="#action-required_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Action required
@@ -946,7 +985,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#action-required_3" class="md-nav__link">
+  <a href="#action-required_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Action required
@@ -1659,6 +1698,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v180-v181" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v1.8.0 → v1.8.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.8.0 → v1.8.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#action-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Action required
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v175-v180" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1671,7 +1749,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#action-required" class="md-nav__link">
+  <a href="#action-required_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Action required
@@ -1710,7 +1788,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#action-required_1" class="md-nav__link">
+  <a href="#action-required_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Action required
@@ -1738,7 +1816,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changes" class="md-nav__link">
+  <a href="#changes_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changes
@@ -1749,7 +1827,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#action-required_2" class="md-nav__link">
+  <a href="#action-required_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Action required
@@ -1777,7 +1855,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#action-required_3" class="md-nav__link">
+  <a href="#action-required_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Action required
@@ -2018,12 +2096,49 @@
 
 
 <h1 id="migration-guide">Migration Guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h1>
+<h2 id="v180-v181">v1.8.0 → v1.8.1<a class="headerlink" href="#v180-v181" title="Permanent link">&para;</a></h2>
+<p><strong>No breaking changes — wire-compatible with v1.8.0.</strong></p>
+<p>v1.8.1 is a maintenance release focusing on bug fixes, type cleanup, and documentation.</p>
+<h3 id="changes">Changes<a class="headerlink" href="#changes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>Server.sender</code> and <code>Client.sender</code> are now properties</strong> : <code>get_sender()</code> is deprecated
+  and will be removed in a future version. Use <code>server.sender</code> and <code>client.sender</code> instead.</li>
+<li><strong><code>BaseSocket</code> refactored from <code>Protocol</code> to <code>ABC</code></strong> : stronger inheritance guarantees.
+  No user-facing changes required.</li>
+<li><strong><code>PendingRequestRule.can_handle</code> now truthful</strong> : no longer requires explicit
+  <code>try_handle()</code> dispatch.</li>
+<li><strong>Handshake encode/decode exceptions no longer swallowed</strong> : JSON errors now propagate.</li>
+<li><strong><code>SO_REUSEADDR</code> moved to <code>bind()</code> only</strong> : client sockets no longer inherit the option.</li>
+<li><strong><code>handshake_timeout</code> propagated to client socket instances</strong> : config was previously
+  ignored on the client side.</li>
+<li><strong>AsyncSocket selector loop fixed</strong> : no more busy-loop after self-disconnect.</li>
+<li><strong>Test suite ~7× faster</strong> (49s → 7s) via <code>pytest-xdist</code>.</li>
+<li><strong>30 new unit tests</strong>, 100% coverage on <code>Writer</code>.</li>
+<li><strong>Compatibility table</strong> updated — both <code>1.8.0</code> and <code>1.8.1</code> are registered.</li>
+</ul>
+<h3 id="action-required">Action required<a class="headerlink" href="#action-required" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Migrate from <code>get_sender()</code> to <code>.sender</code> (deprecation warning, not a failure).</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Before (v1.8.0)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">server</span><span class="o">.</span><span class="n">get_sender</span><span class="p">()</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">conn</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># After (v1.8.1)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">server</span><span class="o">.</span><span class="n">sender</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">conn</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Before (v1.8.0)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">client</span><span class="o">.</span><span class="n">get_sender</span><span class="p">()</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># After (v1.8.1)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">client</span><span class="o">.</span><span class="n">sender</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</code></pre></div>
+<hr />
 <h2 id="v175-v180">v1.7.5 → v1.8.0<a class="headerlink" href="#v175-v180" title="Permanent link">&para;</a></h2>
 <p><strong>Breaking change : handshake protocol — NOT backward compatible.</strong></p>
 <p>v1.8.0 replaces the old HELLO/HELLO_ACK message-based handshake with a <strong>JSON raw-socket
 protocol</strong>. Handshake now exchanges JSON payloads (<code>{"v": "1.8.0", "meta": {}}</code>) directly
 over the TCP stream before any Veltix framing.</p>
-<h3 id="action-required">Action required<a class="headerlink" href="#action-required" title="Permanent link">&para;</a></h3>
+<h3 id="action-required_1">Action required<a class="headerlink" href="#action-required_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>All clients and servers must be upgraded together</strong> — mixed-version handshakes will
   fail (v1.7.x sends a binary Veltix frame as HELLO, v1.8.0 expects a JSON payload).</li>
@@ -2039,26 +2154,26 @@ over the TCP stream before any Veltix framing.</p>
 <li><code>HelloRule</code> removed — the handshake no longer routes through the message dispatch
   pipeline. This is an internal change only.</li>
 <li><code>ERROR</code> / <code>INVALID_REQUEST</code> system types (codes 20, 21) are kept and re-exported.</li>
-<li>Compatibility table only has <code>Version(1, 8, 0)</code>.</li>
+<li>Compatibility table now includes <code>Version(1, 8, 0)</code> and <code>Version(1, 8, 1)</code>.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Before (v1.7.5) — HELLO/HELLO_ACK over Veltix wire protocol</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># After (v1.8.0) — JSON over raw TCP, then normal Veltix protocol</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># No code changes required.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Before (v1.7.5) — HELLO/HELLO_ACK over Veltix wire protocol</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># After (v1.8.0) — JSON over raw TCP, then normal Veltix protocol</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># No code changes required.</span>
 </code></pre></div>
 <hr />
 <h2 id="v171-v172">v1.7.1 → v1.7.2<a class="headerlink" href="#v171-v172" title="Permanent link">&para;</a></h2>
 <p><strong>No breaking changes — wire-compatible with v1.7.0/v1.7.1.</strong></p>
 <p>v1.7.2 is a stability release with 10 bug fixes, +108 tests, and documentation polish.
 No protocol changes.</p>
-<h3 id="action-required_1">Action required<a class="headerlink" href="#action-required_1" title="Permanent link">&para;</a></h3>
+<h3 id="action-required_2">Action required<a class="headerlink" href="#action-required_2" title="Permanent link">&para;</a></h3>
 <p>None — drop-in upgrade.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>veltix
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>veltix
 </code></pre></div>
 <hr />
 <h2 id="v170-v171">v1.7.0 → v1.7.1<a class="headerlink" href="#v170-v171" title="Permanent link">&para;</a></h2>
 <p><strong>No breaking changes — wire-compatible with v1.7.0.</strong></p>
 <p>v1.7.1 is a stability release with 6 bug fixes and no protocol changes.</p>
-<h3 id="changes">Changes<a class="headerlink" href="#changes" title="Permanent link">&para;</a></h3>
+<h3 id="changes_1">Changes<a class="headerlink" href="#changes_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Fixed:</strong> <code>AsyncSocket</code> selector idempotency on <code>_close_server_client</code></li>
 <li><strong>Fixed:</strong> <code>ClientInfo._id</code> with <code>__eq__</code>/<code>__hash__</code> for stable identity</li>
@@ -2068,21 +2183,21 @@ No protocol changes.</p>
 <li><strong>Fixed:</strong> HELLO_ACK version validation in <code>_check_server_handshake</code></li>
 <li><strong>New public exports:</strong> <code>NetworkError</code>, <code>TimeoutError</code></li>
 </ul>
-<h3 id="action-required_2">Action required<a class="headerlink" href="#action-required_2" title="Permanent link">&para;</a></h3>
+<h3 id="action-required_3">Action required<a class="headerlink" href="#action-required_3" title="Permanent link">&para;</a></h3>
 <p>None — drop-in upgrade.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>veltix
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>veltix
 </code></pre></div>
 <hr />
 <h2 id="v1610-v170">v1.6.10 → v1.7.0<a class="headerlink" href="#v1610-v170" title="Permanent link">&para;</a></h2>
 <p><strong>Breaking change : wire format — NOT backward compatible.</strong></p>
 <p>v1.7.0 adds <strong>2 MAGIC bytes</strong> (<code>b"VX"</code>) at the start of every frame. The header size
 increases from 14 to 16 bytes. v1.7.0 <strong>cannot communicate</strong> with earlier versions.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Before (v1.6.10) : [2B  size][2B  code][4B CRC][4B request_id][     content     ]
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>After  (v1.7.0)  : [2B MAGIC][2B  size][2B  code][4B CRC][4B request_id][content ]
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>                    ^^^^^^^^
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>                    new — always 0x56 0x58 (&quot;VX&quot;)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Before (v1.6.10) : [2B  size][2B  code][4B CRC][4B request_id][     content     ]
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>After  (v1.7.0)  : [2B MAGIC][2B  size][2B  code][4B CRC][4B request_id][content ]
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>                    ^^^^^^^^
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                    new — always 0x56 0x58 (&quot;VX&quot;)
 </code></pre></div>
-<h3 id="action-required_3">Action required<a class="headerlink" href="#action-required_3" title="Permanent link">&para;</a></h3>
+<h3 id="action-required_4">Action required<a class="headerlink" href="#action-required_4" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>All clients and servers must be upgraded together</strong> — mixed-version communication
   will fail with <code>RequestError("Invalid magic bytes")</code>.</li>
@@ -2105,51 +2220,51 @@ increases from 14 to 16 bytes. v1.7.0 <strong>cannot communicate</strong> with e
 <h3 id="performancemode-removed"><code>PerformanceMode</code> removed<a class="headerlink" href="#performancemode-removed" title="Permanent link">&para;</a></h3>
 <p><code>PerformanceMode</code> enum and <code>ServerConfig.performance_mode</code> / <code>ClientConfig.performance_mode</code> no longer exist. The socket
 timeout is now hardcoded. If you were setting a performance mode, remove that configuration.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Before (v1.6.9)</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">PerformanceMode</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">performance_mode</span><span class="o">=</span><span class="n">PerformanceMode</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># After (v1.6.10) — just remove the parameter</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Before (v1.6.9)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">PerformanceMode</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">performance_mode</span><span class="o">=</span><span class="n">PerformanceMode</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># After (v1.6.10) — just remove the parameter</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="serverroute-callback-order-flipped"><code>@server.route</code> callback order flipped<a class="headerlink" href="#serverroute-callback-order-flipped" title="Permanent link">&para;</a></h3>
 <p>Server route callbacks now receive <code>(client, response)</code> instead of <code>(response, client)</code>. Client routes
 (<code>@client.route</code>) are unaffected — they still use <code>(response, client=None)</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Before (v1.6.9)</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="o">...</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># After (v1.6.10)</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="o">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Before (v1.6.9)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="o">...</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># After (v1.6.10)</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="o">...</span>
 </code></pre></div>
 <h3 id="responselatency-and-responsetimestamp-removed"><code>Response.latency</code> and <code>Response.timestamp</code> removed<a class="headerlink" href="#responselatency-and-responsetimestamp-removed" title="Permanent link">&para;</a></h3>
 <p>The <code>latency</code> and <code>timestamp</code> fields have been removed from <code>Response</code>. Use <code>client.ping_server()</code> /
 <code>server.ping_client()</code> for latency measurement instead.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Before (v1.6.9)</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">send_and_wait</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">latency</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># After (v1.6.10)</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">send_and_wait</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Before (v1.6.9)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">send_and_wait</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">latency</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># After (v1.6.10)</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">send_and_wait</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="serverclients-now-returns-listclientinfo"><code>server.clients</code> now returns <code>list[ClientInfo]</code><a class="headerlink" href="#serverclients-now-returns-listclientinfo" title="Permanent link">&para;</a></h3>
 <p>The <code>clients</code> property on <code>Server</code> now returns <code>list[ClientInfo]</code> directly instead of internal <code>ClientEntry</code> objects.
 Access patterns are simplified :</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Before (v1.6.9)</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">entry</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">entry</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">conn</span>         <span class="c1"># client connection</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">entry</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">addr</span>         <span class="c1"># client address</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># After (v1.6.10)</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">client</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">client</span><span class="o">.</span><span class="n">conn</span>             <span class="c1"># client connection (same)</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="n">client</span><span class="o">.</span><span class="n">addr</span>             <span class="c1"># client address (same)</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">client</span><span class="o">.</span><span class="n">handshake_done</span>   <span class="c1"># handshake status (same)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Before (v1.6.9)</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">entry</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">entry</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">conn</span>         <span class="c1"># client connection</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">entry</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">addr</span>         <span class="c1"># client address</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># After (v1.6.10)</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">client</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="n">client</span><span class="o">.</span><span class="n">conn</span>             <span class="c1"># client connection (same)</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">client</span><span class="o">.</span><span class="n">addr</span>             <span class="c1"># client address (same)</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="n">client</span><span class="o">.</span><span class="n">handshake_done</span>   <span class="c1"># handshake status (same)</span>
 </code></pre></div>
 <h2 id="v166-v168">v1.6.6 → v1.6.8<a class="headerlink" href="#v166-v168" title="Permanent link">&para;</a></h2>
 <p>No breaking changes to public API.</p>
@@ -2165,17 +2280,17 @@ Access patterns are simplified :</p>
 affect the public API : all exports go through <code>veltix/__init__.py</code>.</p>
 <h3 id="serverclients-now-returns-listcliententry"><code>server.clients</code> now returns <code>list[ClientEntry]</code><a class="headerlink" href="#serverclients-now-returns-listcliententry" title="Permanent link">&para;</a></h3>
 <p>If you iterate over <code>server.clients</code>, update access patterns:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Before (v1.6.3 and earlier)</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">client</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">client</span><span class="o">.</span><span class="n">conn</span>  <span class="c1"># raw socket</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">client</span><span class="o">.</span><span class="n">handshake_done</span>  <span class="c1"># bool</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># After (v1.6.4)</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">entry</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">entry</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">conn</span>  <span class="c1"># client connection</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="n">entry</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">handshake_done</span>  <span class="c1"># handshake status</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">entry</span><span class="o">.</span><span class="n">buffer</span>  <span class="c1"># MessageBuffer</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">entry</span><span class="o">.</span><span class="n">id</span>  <span class="c1"># client ID</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Before (v1.6.3 and earlier)</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">client</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">client</span><span class="o">.</span><span class="n">conn</span>  <span class="c1"># raw socket</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">client</span><span class="o">.</span><span class="n">handshake_done</span>  <span class="c1"># bool</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1"># After (v1.6.4)</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">entry</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">entry</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">conn</span>  <span class="c1"># client connection</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">entry</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">handshake_done</span>  <span class="c1"># handshake status</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">entry</span><span class="o">.</span><span class="n">buffer</span>  <span class="c1"># MessageBuffer</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="n">entry</span><span class="o">.</span><span class="n">id</span>  <span class="c1"># client ID</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -2191,18 +2306,18 @@ pattern.</p>
 <li>Minimum supported Python version is now <strong>3.8+</strong></li>
 </ul>
 <h3 id="custom-request-id-migration">Custom request id migration<a class="headerlink" href="#custom-request-id-migration" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Before</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="s2">&quot;my-id&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># After</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x02\x03\x04</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Before</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="s2">&quot;my-id&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># After</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x02\x03\x04</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="loggingdisplay-migration">Logging/display migration<a class="headerlink" href="#loggingdisplay-migration" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Before</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># After</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="o">.</span><span class="n">hex</span><span class="p">()[:</span><span class="mi">8</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Before</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># After</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="o">.</span><span class="n">hex</span><span class="p">()[:</span><span class="mi">8</span><span class="p">]</span>
 </code></pre></div>
 <h2 id="v150-v160">v1.5.0 → v1.6.0<a class="headerlink" href="#v150-v160" title="Permanent link">&para;</a></h2>
 <p>No breaking changes to public API.</p>
@@ -2216,11 +2331,11 @@ pattern.</p>
 </ul>
 <h2 id="v140-v150">v1.4.0 → v1.5.0<a class="headerlink" href="#v140-v150" title="Permanent link">&para;</a></h2>
 <p><strong>Breaking change:</strong> <code>on_disconnect</code> on the client now receives a <code>DisconnectState</code> argument.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Before (v1.4.0)</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Disconnected&quot;</span><span class="p">))</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># After (v1.5.0)</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Disconnected — permanent=</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">permanent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Before (v1.4.0)</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Disconnected&quot;</span><span class="p">))</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># After (v1.5.0)</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Disconnected — permanent=</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">permanent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
 </code></pre></div>
 <p>New optional fields in <code>ClientConfig</code>: <code>retry</code>, <code>retry_delay</code>, <code>buffer_size</code>.</p>
 <p>New optional fields in <code>ServerConfig</code>: <code>buffer_size</code>.</p>
@@ -2237,15 +2352,15 @@ pattern.</p>
 <h2 id="v12x-v130">v1.2.x → v1.3.0<a class="headerlink" href="#v12x-v130" title="Permanent link">&para;</a></h2>
 <p>No breaking changes to public API.</p>
 <h2 id="v11x-v120">v1.1.x → v1.2.0<a class="headerlink" href="#v11x-v120" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Before</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Bindings</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">server</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">Bindings</span><span class="o">.</span><span class="n">ON_RECV</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># After</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Events</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="n">server</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_RECV</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Before</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Bindings</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="n">server</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">Bindings</span><span class="o">.</span><span class="n">ON_RECV</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="c1"># After</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Events</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="n">server</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_RECV</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
 </code></pre></div>
 
 
@@ -2321,7 +2436,7 @@ pattern.</p>
       
       
     
-    <a href="https://discord.gg/NrEjSHtfMp" target="_blank" rel="noopener" title="discord.gg" class="md-social__link">
+    <a href="https://discord.gg/gz8K369a6p" target="_blank" rel="noopener" title="discord.gg" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M492.5 69.8c-.2-.3-.4-.6-.8-.7-38.1-17.5-78.4-30-119.7-37.1-.4-.1-.8 0-1.1.1s-.6.4-.8.8c-5.5 9.9-10.5 20.2-14.9 30.6-44.6-6.8-89.9-6.8-134.4 0-4.5-10.5-9.5-20.7-15.1-30.6-.2-.3-.5-.6-.8-.8s-.7-.2-1.1-.2C162.5 39 122.2 51.5 84.1 69c-.3.1-.6.4-.8.7C7.1 183.5-13.8 294.6-3.6 404.2c0 .3.1.5.2.8s.3.4.5.6c44.4 32.9 94 58 146.8 74.2.4.1.8.1 1.1 0s.7-.4.9-.7c11.3-15.4 21.4-31.8 30-48.8.1-.2.2-.5.2-.8s0-.5-.1-.8-.2-.5-.4-.6-.4-.3-.7-.4c-15.8-6.1-31.2-13.4-45.9-21.9-.3-.2-.5-.4-.7-.6s-.3-.6-.3-.9 0-.6.2-.9.3-.5.6-.7c3.1-2.3 6.2-4.7 9.1-7.1.3-.2.6-.4.9-.4s.7 0 1 .1c96.2 43.9 200.4 43.9 295.5 0 .3-.1.7-.2 1-.2s.7.2.9.4c2.9 2.4 6 4.9 9.1 7.2.2.2.4.4.6.7s.2.6.2.9-.1.6-.3.9-.4.5-.6.6c-14.7 8.6-30 15.9-45.9 21.8-.2.1-.5.2-.7.4s-.3.4-.4.7-.1.5-.1.8.1.5.2.8c8.8 17 18.8 33.3 30 48.8.2.3.6.6.9.7s.8.1 1.1 0c52.9-16.2 102.6-41.3 147.1-74.2.2-.2.4-.4.5-.6s.2-.5.2-.8c12.3-126.8-20.5-236.9-86.9-334.5zm-302 267.7c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.4 59.2-52.8 59.2m195.4 0c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.2 59.2-52.8 59.2"/></svg>
     </a>
   
