@@ -125,10 +125,11 @@ class TestCallbackExecutorIntegration:
         import socket
 
         from veltix.handler.request_handler import RequestHandler
+        from veltix.internal.bus import VeltixBus
         from veltix.network.sender import Mode, Sender
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sender = Sender(mode=Mode.CLIENT, conn=sock)
-        handler = RequestHandler(sender=sender, mode=Mode.CLIENT, max_workers=8)
+        handler = RequestHandler(sender=sender, mode=Mode.CLIENT, max_workers=8, bus=VeltixBus())
 
         assert handler._executor._max_workers == 8

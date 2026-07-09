@@ -12,6 +12,7 @@ from typing import Optional
 import pytest
 
 from veltix.handler.handshake_handler import HandshakeHandler
+from veltix.internal.bus import VeltixBus
 from veltix.internal.mode import Mode
 from veltix.version import __version__
 
@@ -20,7 +21,7 @@ from veltix.version import __version__
 
 class TestHandshakeEncodeDecode:
     def setup_method(self) -> None:
-        self.handler = HandshakeHandler(mode=Mode.SERVER)
+        self.handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
 
     def test_encode_returns_bytes(self):
         result = self.handler._encode({"v": "1.8.0", "meta": {}})
@@ -57,7 +58,7 @@ class TestHandshakeEncodeDecode:
 
 class TestHandshakeCheckVersion:
     def setup_method(self) -> None:
-        self.handler = HandshakeHandler(mode=Mode.SERVER)
+        self.handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
 
     def test_compatible_version(self):
         assert self.handler._check_version(__version__) is True
@@ -87,8 +88,8 @@ class TestHandshakeIntegration:
 
     def test_server_client_handshake_success(self):
         port = _find_free_port()
-        server_handler = HandshakeHandler(mode=Mode.SERVER)
-        client_handler = HandshakeHandler(mode=Mode.CLIENT)
+        server_handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        client_handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
 
         results: dict[str, Optional[bool]] = {"server": None, "client": None}
 
@@ -124,8 +125,8 @@ class TestHandshakeIntegration:
 
     def test_version_mismatch_rejected(self):
         port = _find_free_port()
-        server_handler = HandshakeHandler(mode=Mode.SERVER)
-        client_handler = HandshakeHandler(mode=Mode.CLIENT)
+        server_handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        client_handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
 
         results: dict[str, Optional[bool]] = {"server": None, "client": None}
 
@@ -162,7 +163,7 @@ class TestHandshakeIntegration:
 
     def test_handshake_timeout(self):
         port = _find_free_port()
-        handler = HandshakeHandler(mode=Mode.SERVER)
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -201,7 +202,7 @@ class TestHandshakeIntegration:
 
     def test_multiple_clients_sequential(self):
         port = _find_free_port()
-        server_handler = HandshakeHandler(mode=Mode.SERVER)
+        server_handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
 
         server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -230,7 +231,7 @@ class TestHandshakeIntegration:
             client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_sock.settimeout(3.0)
             client_sock.connect(("127.0.0.1", port))
-            client_handler = HandshakeHandler(mode=Mode.CLIENT)
+            client_handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
             success, _ = client_handler.do_client_handshake(client_sock)
             assert success is True
             client_sock.close()

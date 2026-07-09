@@ -13,10 +13,10 @@ from ..internal.events import Events, ServerEvent
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
-from ..socket_core.base_socket import BaseSocket
 
 if TYPE_CHECKING:
     from ..network.types import MessageType
+    from ..socket_core.base_socket import BaseSocket
     from .client_info import ClientInfo
     from .config import ServerConfig
 
@@ -65,7 +65,7 @@ class Server:
 
         self._sender = Sender(mode=Mode.SERVER)
         self.request_handler = RequestHandler(
-            sender=self.sender, mode=Mode.SERVER, max_workers=config.max_workers
+            sender=self.sender, mode=Mode.SERVER, max_workers=config.max_workers, bus=self.bus
         )
 
         self.socket: BaseSocket = self.config.socket_core.value(

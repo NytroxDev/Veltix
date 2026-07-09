@@ -1,13 +1,14 @@
 """Base socket abstract class for Veltix."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, Union
 
-from .managers.clients_manager import ClientEntry, ClientsManager
-
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
+    from .managers.clients_manager import ClientEntry, ClientsManager
 
 
 class SocketEvents(Enum):

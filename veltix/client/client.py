@@ -77,6 +77,7 @@ class Client:
             sender=self.sender,
             mode=Mode.CLIENT,
             max_workers=self.config.max_workers,
+            bus=self.bus,
         )
         self.socket.request_handler = self.request_handler
 
