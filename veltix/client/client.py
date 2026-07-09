@@ -104,11 +104,17 @@ class Client:
 
     def context_set_running(self, value: bool) -> None:
         """Set whether the client is considered running."""
+        old = self.running
         self.running = value
+        if old != value:
+            self.bus.info(f"Client running state: {value}")
 
     def context_set_connected(self, value: bool) -> None:
         """Set the connection flag without triggering side effects."""
+        old = self.is_connected
         self.is_connected = value
+        if old != value:
+            self.bus.info(f"Client connected state: {value}")
 
     def context_get_request_handler(self) -> Optional[RequestHandler]:
         """Return the current request handler instance."""

@@ -282,10 +282,6 @@ class Server:
     def close_all(self) -> None:
         """Stop the server and close all client connections."""
         self.bus.info("Shutting down server")
-        self.bus.emit(ServerEvent.STOPPED, {
-            "host": self.config.host,
-            "port": self.config.port,
-        })
 
         try:
             self.request_handler.shutdown(wait=False)
@@ -293,3 +289,8 @@ class Server:
             self.bus.info("Server socket closed")
         except Exception as e:
             self.bus.error(f"Error closing server socket: {e}")
+
+        self.bus.emit(ServerEvent.STOPPED, {
+            "host": self.config.host,
+            "port": self.config.port,
+        })
