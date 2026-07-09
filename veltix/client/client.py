@@ -82,7 +82,7 @@ class Client:
         self.socket.request_handler = self.request_handler
 
         if self._reconnect_handler is None:
-            self._reconnect_handler = ReconnectHandler(context=self)
+            self._reconnect_handler = ReconnectHandler(context=self, bus=self.bus)
 
         self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
 
