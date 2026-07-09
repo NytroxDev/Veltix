@@ -63,7 +63,7 @@ class Server:
 
         self.config: ServerConfig = config
 
-        self._sender = Sender(mode=Mode.SERVER)
+        self._sender = Sender(mode=Mode.SERVER, bus=self.bus)
         self.request_handler = RequestHandler(
             sender=self.sender, mode=Mode.SERVER, max_workers=config.max_workers, bus=self.bus
         )
