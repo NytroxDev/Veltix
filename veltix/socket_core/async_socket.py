@@ -8,7 +8,7 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from ..internal.events import ClientEvent, ServerEvent
+from ..internal.events import ClientEvent, MessageEvent, ServerEvent
 from ..internal.network import recv as _network_recv
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -236,6 +236,11 @@ class AsyncSocket(BaseSocket):
         if messages:
             self.bus.debug(f"client {client_id} extracted {len(messages)} messages")
             for message in messages:
+                self.bus.emit(MessageEvent.RECEIVED, {
+                    "type": message.type,
+                    "length": len(message.content),
+                    "client": entry.info.addr,
+                })
                 self.request_handler.handle(message, entry.info)
 
     def _handle_self_read(self, buffer_size: int) -> None:
@@ -257,6 +262,11 @@ class AsyncSocket(BaseSocket):
         if messages:
             self.bus.debug(f"self_read: extracted {len(messages)} messages")
             for message in messages:
+                self.bus.emit(MessageEvent.RECEIVED, {
+                    "type": message.type,
+                    "length": len(message.content),
+                    "from": "server",
+                })
                 self.request_handler.handle(message)
 
     def close_client(self, client: Union[ClientEntry, int]) -> bool:
