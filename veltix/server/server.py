@@ -8,8 +8,8 @@ import warnings
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
-from ..internal.events import Events, events
-from ..logger.core import Logger
+from ..internal.bus import VeltixBus
+from ..internal.events import Events, ServerEvent
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
@@ -45,11 +45,8 @@ class Server:
     """
 
     __slots__ = (
-        "_logger",
         "config",
-        "on_recv",
-        "on_connect",
-        "on_disconnect",
+        "bus",
         "_sender",
         "request_handler",
         "socket",
@@ -62,7 +59,7 @@ class Server:
         Args:
             config: Server configuration.
         """
-        self._logger = Logger.get_instance()
+        self.bus = VeltixBus()
 
         self.config: ServerConfig = config
 
@@ -77,8 +74,8 @@ class Server:
         self.socket.handshake_timeout = self.config.handshake_timeout
         self.socket.set_callback(SocketEvents.RECV, self.request_handler.handle)
 
-        self._logger.info(f"Server initialized on {self.config.host}:{self.config.port}")
-        self._logger.debug(
+        self.bus.info(f"Server initialized on {self.config.host}:{self.config.port}")
+        self.bus.debug(
             f"Server config: buffer_size={self.config.buffer_size}, "
             f"max_connections={self.config.max_connection}"
         )
@@ -105,22 +102,22 @@ class Server:
                 - ON_CONNECT:    func(client: ClientInfo)
                 - ON_DISCONNECT: func(client: ClientInfo)
         """
-        for event_ in events:
-            if event == event_ or event == event_.value:
-                setattr(self, event_.value, func)
-
-                if event_ == Events.ON_RECV:
-                    self.request_handler.set_on_recv(func)
-                else:
-                    if event_ == Events.ON_CONNECT:
-                        self.socket.set_callback(SocketEvents.CONNECT, func)
-                    elif event_ == Events.ON_DISCONNECT:
-                        self.socket.set_callback(SocketEvents.DISCONNECT, func)
-
-                self._logger.debug(f"Bound callback to event: {event_.value}")
+        mapping = {
+            Events.ON_CONNECT: ServerEvent.ON_CONNECT,
+            Events.ON_DISCONNECT: ServerEvent.ON_DISCONNECT,
+        }
+        for old, new in mapping.items():
+            if event == old or event == old.value:
+                self.bus.subscribe(new, lambda e, p: func(p))
+                self.bus.debug(f"Bound callback to event: {new}")
                 return
 
-        self._logger.warning(f"Unknown event type for binding: {event}")
+        if event == Events.ON_RECV or event == Events.ON_RECV.value:
+            self.request_handler.set_on_recv(func)
+            self.bus.debug("Bound callback to event: on_recv")
+            return
+
+        self.bus.warning(f"Unknown event type for binding: {event}")
 
     def route(self, type_: MessageType) -> Callable:
         """
@@ -176,12 +173,12 @@ class Server:
             Matching Response, or None on timeout or send failure.
         """
         request_id = request.request_id
-        self._logger.debug(f"send_and_wait: {request_id.hex()}... → {client.addr}")
+        self.bus.debug(f"send_and_wait: {request_id.hex()}... → {client.addr}")
 
         self.request_handler.register(request_id)
 
         if not self.sender.send(request, client=client.conn):
-            self._logger.error(f"Failed to send request {request_id.hex()}... to {client.addr}")
+            self.bus.error(f"Failed to send request {request_id.hex()}... to {client.addr}")
             self.request_handler.unregister(request_id)
             return None
 
@@ -198,7 +195,7 @@ class Server:
         Returns:
             Latency in milliseconds, or None on timeout.
         """
-        self._logger.debug(f"Pinging client {client.addr}")
+        self.bus.debug(f"Pinging client {client.addr}")
         request = Request(PING, b"")
         t_send = time.perf_counter()
         response = self.send_and_wait(request, client, timeout=timeout)
@@ -206,10 +203,10 @@ class Server:
 
         if response:
             rtt = (t_recv - t_send) * 1000
-            self._logger.info(f"Ping {client.addr}: {rtt:.2f}ms")
+            self.bus.info(f"Ping {client.addr}: {rtt:.2f}ms")
             return rtt
 
-        self._logger.warning(f"Ping timeout for client {client.addr}")
+        self.bus.warning(f"Ping timeout for client {client.addr}")
         return None
 
     def ping_client_async(
@@ -231,7 +228,7 @@ class Server:
             try:
                 callback(self.ping_client(client, timeout=timeout))
             except Exception as e:
-                self._logger.error(f"Error in async ping: {e}")
+                self.bus.error(f"Error in async ping: {e}")
                 callback(None)
 
         threading.Thread(target=_ping, daemon=True).start()
@@ -279,11 +276,11 @@ class Server:
 
     def close_all(self) -> None:
         """Stop the server and close all client connections."""
-        self._logger.info("Shutting down server")
+        self.bus.info("Shutting down server")
 
         try:
             self.request_handler.shutdown(wait=False)
             self.socket.close()
-            self._logger.info("Server socket closed")
+            self.bus.info("Server socket closed")
         except Exception as e:
-            self._logger.error(f"Error closing server socket: {e}")
+            self.bus.error(f"Error closing server socket: {e}")
