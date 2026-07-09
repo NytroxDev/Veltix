@@ -1,35 +1,53 @@
-from __future__ import annotations
-
 from enum import Enum, auto
 
 
-class VeltixEvent(Enum):
-    # ── Lifecycle ──────────────────────────────────────────────────────────────
+class ServerEvent(Enum):
     ON_CONNECT = auto()
     ON_DISCONNECT = auto()
-    ON_RECV = auto()
 
-    # ── Messages ───────────────────────────────────────────────────────────────
-    MESSAGE = auto()
 
-    # ── Protocol ───────────────────────────────────────────────────────────────
+class ClientEvent(Enum):
+    ON_CONNECT = auto()
+    ON_DISCONNECT = auto()
+
+
+class MessageEvent(Enum):
+    RECEIVED = auto()
+    SENT = auto()
+    UNHANDLED = auto()
+
+
+class ProtocolEvent(Enum):
     PING = auto()
     PONG = auto()
     HANDSHAKE_START = auto()
     HANDSHAKE_DONE = auto()
     HANDSHAKE_FAIL = auto()
 
-    # ── Logging ────────────────────────────────────────────────────────────────
-    LOG_TRACE = auto()
-    LOG_DEBUG = auto()
-    LOG_INFO = auto()
-    LOG_SUCCESS = auto()
-    LOG_WARNING = auto()
-    LOG_ERROR = auto()
-    LOG_CRITICAL = auto()
 
-    # ── Reconnection ───────────────────────────────────────────────────────────
-    RECONNECT_ATTEMPT = auto()
-    RECONNECT_FAIL = auto()
-    RECONNECT_SUCCESS = auto()
-    RECONNECT_CANCELLED = auto()
+class LogEvent(Enum):
+    TRACE = auto()
+    DEBUG = auto()
+    INFO = auto()
+    SUCCESS = auto()
+    WARNING = auto()
+    ERROR = auto()
+    CRITICAL = auto()
+
+
+class ReconnectEvent(Enum):
+    ATTEMPT = auto()
+    FAIL = auto()
+    SUCCESS = auto()
+    CANCELLED = auto()
+
+
+# ── Backward compat (to remove once migration is done) ─────────────────────
+
+class Events(Enum):
+    ON_RECV = "on_recv"
+    ON_CONNECT = "on_connect"
+    ON_DISCONNECT = "on_disconnect"
+
+
+events = [Events.ON_RECV, Events.ON_CONNECT, Events.ON_DISCONNECT]
