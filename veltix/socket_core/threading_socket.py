@@ -8,7 +8,7 @@ import threading
 import time
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from ..internal.events import ClientEvent, MessageEvent, ServerEvent
+from ..internal.events import ClientEvent, ErrorEvent, MessageEvent, ServerEvent
 from ..internal.network import RecvResult, recv
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -81,6 +81,7 @@ class ThreadingSocket(BaseSocket):
             self._sock.sendall(data)
             return True
         except Exception as e:
+            self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
             self.bus.error(f"send failed: {e}")
             return False
 
@@ -160,10 +161,12 @@ class ThreadingSocket(BaseSocket):
             except socket.timeout:
                 continue
             except OSError:
+                self.bus.emit(ErrorEvent.ACCEPT, {"error": "OSError"})
                 self.running = False
                 return
             except Exception as e:
                 if self.running:
+                    self.bus.emit(ErrorEvent.ACCEPT, {"error": f"{type(e).__name__}: {e}"})
                     self.bus.error(f"Accept error: {type(e).__name__}: {e}")
                 self.running = False
                 return
@@ -227,9 +230,11 @@ class ThreadingSocket(BaseSocket):
 
                 handler_result = self.request_handler.handle(response, entry.info)
                 if isinstance(handler_result, Exception):
+                    self.bus.emit(ErrorEvent.HANDLER, {"error": str(handler_result), "client": entry.info.addr})
                     self.bus.error(f"Handler error for {entry.info.addr}: {handler_result}")
 
         except Exception as e:
+            self.bus.emit(ErrorEvent.HANDLER, {"error": str(e), "client": entry.info.addr})
             self.bus.error(
                 f"Error processing message from {entry.info.addr}: {type(e).__name__}: {e}"
             )
@@ -306,10 +311,12 @@ class ThreadingSocket(BaseSocket):
             return True
 
         except (socket.timeout, ConnectionRefusedError) as e:
+            self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
             return False
 
         except Exception as e:
+            self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.error(f"Unexpected connection error: {type(e).__name__}: {e}")
             return False
 
@@ -342,9 +349,11 @@ class ThreadingSocket(BaseSocket):
 
                     handler_result = self.request_handler.handle(response)
                     if isinstance(handler_result, Exception):
+                        self.bus.emit(ErrorEvent.HANDLER, {"error": str(handler_result)})
                         self.bus.error(f"Handler error: {handler_result}")
 
             except Exception as e:
+                self.bus.emit(ErrorEvent.HANDLER, {"error": str(e)})
                 self.bus.error(f"Error processing server message: {type(e).__name__}: {e}")
 
     def disconnect(self, timeout: float = 5.0) -> bool:

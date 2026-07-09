@@ -8,7 +8,7 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from ..internal.events import ClientEvent, MessageEvent, ServerEvent
+from ..internal.events import ClientEvent, ErrorEvent, MessageEvent, ServerEvent
 from ..internal.network import recv as _network_recv
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -101,9 +101,11 @@ class AsyncSocket(BaseSocket):
                 self._sock.setblocking(False)
                 return True
             except Exception as e:
+                self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
                 self.bus.debug(f"send BlockingIOError fallback failed: {e}")
                 return False
         except Exception as e:
+            self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
             self.bus.debug(f"send failed: {e}")
             return False
 
@@ -158,14 +160,20 @@ class AsyncSocket(BaseSocket):
         return self._sock.fileno()
 
     def _accept_client(self, max_client: int) -> None:
-        if (max_client != -1 and self.client_manager.count() >= max_client) or not self.running:
-            self.bus.debug("_accept_client: max clients reached or server not running")
+        if max_client != -1 and self.client_manager.count() >= max_client:
+            self.bus.emit(ErrorEvent.CONNECTION_REFUSED, {
+                "max_client": max_client,
+                "current": self.client_manager.count(),
+            })
+            return
+        if not self.running:
             return
         try:
             conn, addr = self._sock.accept()
         except BlockingIOError:
             return
         except OSError as e:
+            self.bus.emit(ErrorEvent.ACCEPT, {"error": str(e)})
             self.bus.error(f"accept failed: {e}")
             return
         self.bus.debug(f"accepted client from {addr}")
@@ -338,9 +346,11 @@ class AsyncSocket(BaseSocket):
             self.bus.debug(f"connected to {host}:{port}")
             return True
         except (socket.timeout, ConnectionRefusedError) as e:
+            self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.debug(f"connect to {host}:{port} failed: {e}")
             return False
         except Exception as e:
+            self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.debug(f"connect to {host}:{port} failed: {e}")
             return False
 

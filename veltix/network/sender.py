@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import SenderError
-from ..internal.events import MessageEvent
+from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
 
 if TYPE_CHECKING:
@@ -78,12 +78,14 @@ class Sender:
             return True
         except (ConnectionResetError, BrokenPipeError) as e:
             if self.bus:
+                self.bus.emit(ErrorEvent.SEND, {"error": str(e), "mode": self.mode.value if self.mode else "unknown"})
                 self.bus.warning(f"Connection error during send: {type(e).__name__}")
             if self.is_client:
                 self.conn = None
             return False
         except Exception as e:
             if self.bus:
+                self.bus.emit(ErrorEvent.SEND, {"error": str(e), "mode": self.mode.value if self.mode else "unknown"})
                 self.bus.error(f"Unexpected send error: {type(e).__name__}: {e}")
             return False
 

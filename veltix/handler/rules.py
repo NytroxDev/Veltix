@@ -1,4 +1,4 @@
-from ..internal.events import ProtocolEvent
+from ..internal.events import MessageEvent, ProtocolEvent
 from ..network.request import Request
 from ..network.system_types import PING, PONG
 from .rules_manager import MessageContext, Rule
@@ -44,6 +44,9 @@ class PendingRequestRule(Rule):
         if queue is None:
             return False
         queue.put(context.response)
+        context.handler.bus.emit(MessageEvent.PENDING_SATISFIED, {
+            "request_id": context.response.request_id.hex(),
+        })
         context.handler.bus.debug(
             f"Routing response to pending request (request_id={context.response.request_id.hex()})"
         )
@@ -59,6 +62,11 @@ class RouteRule(Rule):
                 f"Route for type {context.response.type} disappeared before dispatch"
             )
             return
+        context.handler.bus.emit(MessageEvent.ROUTED, {
+            "type": context.response.type,
+            "route": "registered",
+            "source": "server" if context.is_server else "client",
+        })
         if context.is_server:
             context.handler._executor.submit(route, context.client, context.response)
         else:
@@ -72,6 +80,11 @@ class OnRecvRule(Rule):
     def handle(self, context: MessageContext) -> None:
         on_recv = context.handler.on_recv
         assert on_recv is not None
+        context.handler.bus.emit(MessageEvent.ROUTED, {
+            "type": context.response.type,
+            "route": "on_recv",
+            "source": "server" if context.is_server else "client",
+        })
         if context.is_server:
             context.handler._executor.submit(on_recv, context.client, context.response)
         else:
@@ -88,6 +101,11 @@ class UnhandledRule(Rule):
             src = f"client {addr}"
         else:
             src = "server"
+        context.handler.bus.emit(MessageEvent.UNHANDLED, {
+            "type": context.response.type,
+            "length": len(context.response.content),
+            "source": "server" if context.is_server else "client",
+        })
         context.handler.bus.warning(f"No handler registered for message from {src}")
 
     def can_handle(self, context: MessageContext) -> bool:

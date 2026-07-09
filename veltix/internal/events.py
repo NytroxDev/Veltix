@@ -6,6 +6,7 @@ class ServerEvent(Enum):
     ON_DISCONNECT = auto()
     STARTED = auto()
     STOPPED = auto()
+    CLIENT_REJECTED = auto()
 
 
 class ClientEvent(Enum):
@@ -14,12 +15,21 @@ class ClientEvent(Enum):
     SOCKET_DISCONNECTED = auto()
     CONNECTING = auto()
     DISCONNECTING = auto()
+    TAG_ADDED = auto()
+    TAG_REMOVED = auto()
+    TAG_CLEARED = auto()
 
 
 class MessageEvent(Enum):
     RECEIVED = auto()
     SENT = auto()
+    ROUTED = auto()
     UNHANDLED = auto()
+    PENDING_REGISTERED = auto()
+    PENDING_SATISFIED = auto()
+    PENDING_TIMEOUT = auto()
+    ROUTE_REGISTERED = auto()
+    ROUTE_UNREGISTERED = auto()
 
 
 class ProtocolEvent(Enum):
@@ -28,6 +38,15 @@ class ProtocolEvent(Enum):
     HANDSHAKE_START = auto()
     HANDSHAKE_DONE = auto()
     HANDSHAKE_FAIL = auto()
+
+
+class ErrorEvent(Enum):
+    NETWORK = auto()
+    HANDLER = auto()
+    CALLBACK = auto()
+    SEND = auto()
+    ACCEPT = auto()
+    CONNECTION_REFUSED = auto()
 
 
 class LogEvent(Enum):

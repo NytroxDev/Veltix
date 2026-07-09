@@ -4,8 +4,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
-from ..internal.events import MessageEvent
-
 if TYPE_CHECKING:
     from ..network.request import Response
     from ..server.client_info import ClientInfo
@@ -31,11 +29,6 @@ class RulesManager:
                     f"{rule.__class__.__name__} handling message type {context.response.type}"
                 )
                 return True
-        context.handler.bus.emit(MessageEvent.UNHANDLED, {
-            "type": context.response.type,
-            "length": len(context.response.content),
-            "source": "server" if context.is_server else "client",
-        })
         context.handler.bus.debug(f"No rule matched for message type {context.response.type}")
         return False
 
