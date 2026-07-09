@@ -13,7 +13,7 @@ from ..internal.events import Events, ServerEvent
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
-from ..socket_core.base_socket import BaseSocket, SocketEvents
+from ..socket_core.base_socket import BaseSocket
 
 if TYPE_CHECKING:
     from ..network.types import MessageType
@@ -69,10 +69,11 @@ class Server:
         )
 
         self.socket: BaseSocket = self.config.socket_core.value(
-            request_handler=self.request_handler, max_message_size=self.config.max_message_size
+            request_handler=self.request_handler,
+            max_message_size=self.config.max_message_size,
+            bus=self.bus,
         )
         self.socket.handshake_timeout = self.config.handshake_timeout
-        self.socket.set_callback(SocketEvents.RECV, self.request_handler.handle)
 
         self.bus.info(f"Server initialized on {self.config.host}:{self.config.port}")
         self.bus.debug(

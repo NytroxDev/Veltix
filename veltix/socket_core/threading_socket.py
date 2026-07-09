@@ -8,23 +8,23 @@ import threading
 import time
 from typing import TYPE_CHECKING, Optional, Union, cast
 
+from ..internal.events import ClientEvent, ServerEvent
 from ..internal.network import RecvResult, recv
-from ..logger import Logger
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
-from .base_socket import BaseSocket, SocketEvents
+from .base_socket import BaseSocket
 from .managers.clients_manager import ClientEntry, ClientsManager
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from ..handler.request_handler import RequestHandler
+    from ..internal.bus import VeltixBus
 
 
 class ThreadingSocket(BaseSocket):
     """Threading-based socket implementation for Veltix (one thread per client)."""
 
-    def __init__(self, request_handler: RequestHandler, max_message_size: int) -> None:
+    def __init__(self, request_handler: RequestHandler, max_message_size: int, bus: VeltixBus) -> None:
+        self.bus = bus
         self.n_th = 0
         self._n_th_lock = threading.Lock()
 
@@ -37,14 +37,9 @@ class ThreadingSocket(BaseSocket):
         self.start_th: Optional[threading.Thread] = None
         self.thread_handler: Optional[threading.Thread] = None
 
-        self._on_connect_cb: Optional[Callable] = None
-        self._on_disconnect_cb: Optional[Callable] = None
-        self._on_recv_cb: Optional[Callable] = None
-
         self.max_message_size = max_message_size
         self.request_handler = request_handler
         self.handshake_timeout: float = 5.0
-        self._logger = Logger.get_instance()
 
         self._sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -53,24 +48,21 @@ class ThreadingSocket(BaseSocket):
     def _create_client_instance(
         cls,
         sock: socket.socket,
-        logger: Logger,
+        bus: VeltixBus,
         request_handler: RequestHandler,
         max_message_size: int,
         handshake_timeout: float = 5.0,
     ) -> ThreadingSocket:
         """Create a properly initialized client socket instance."""
         conn = cls.__new__(cls)
+        conn.bus = bus
         conn._sock = sock
         conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        conn._logger = logger
         conn.request_handler = request_handler
         conn.max_message_size = max_message_size
         conn.handshake_timeout = handshake_timeout
         conn.running = False
         conn.client_manager = ClientsManager(max_message_size)
-        conn._on_connect_cb = None
-        conn._on_disconnect_cb = None
-        conn._on_recv_cb = None
         conn.start_th = None
         conn.thread_handler = None
         conn.threads = {}
@@ -89,7 +81,7 @@ class ThreadingSocket(BaseSocket):
             self._sock.sendall(data)
             return True
         except Exception as e:
-            self._logger.error(f"send failed: {e}")
+            self.bus.error(f"send failed: {e}")
             return False
 
     def _shutdown_socket(self) -> None:
@@ -102,17 +94,6 @@ class ThreadingSocket(BaseSocket):
             return True
         except Exception:
             return False
-
-    def set_callback(self, event: SocketEvents, callback: Callable) -> bool:
-        if event == SocketEvents.RECV:
-            self._on_recv_cb = callback
-        elif event == SocketEvents.CONNECT:
-            self._on_connect_cb = callback
-        elif event == SocketEvents.DISCONNECT:
-            self._on_disconnect_cb = callback
-        else:
-            return False
-        return True
 
     # ── Server ────────────────────────────────────────────────────────────────
 
@@ -137,7 +118,7 @@ class ThreadingSocket(BaseSocket):
         self, host: str, port: int, max_client: int, buffer_size: int, timeout: float
     ) -> None:
         self._sock.settimeout(timeout)
-        self._logger.info(f"Server listening on {host}:{port}")
+        self.bus.info(f"Server listening on {host}:{port}")
 
         while self.running:
             try:
@@ -148,7 +129,7 @@ class ThreadingSocket(BaseSocket):
                 conn_, addr = self._sock.accept()
                 conn = ThreadingSocket._create_client_instance(
                     conn_,
-                    self._logger,
+                    self.bus,
                     self.request_handler,
                     self.max_message_size,
                     handshake_timeout=self.handshake_timeout,
@@ -162,7 +143,7 @@ class ThreadingSocket(BaseSocket):
 
                 client_id = self.client_manager.add_client(client)
 
-                self._logger.info(
+                self.bus.info(
                     f"New client connected: {addr} (total: {self.client_manager.count()}/{max_client})"
                 )
 
@@ -183,7 +164,7 @@ class ThreadingSocket(BaseSocket):
                 return
             except Exception as e:
                 if self.running:
-                    self._logger.error(f"Accept error: {type(e).__name__}: {e}")
+                    self.bus.error(f"Accept error: {type(e).__name__}: {e}")
                 self.running = False
                 return
 
@@ -199,20 +180,17 @@ class ThreadingSocket(BaseSocket):
             timeout=entry.info.conn.handshake_timeout,
         )
         if not ok:
-            self._logger.warning(f"Handshake failed for {entry.info.addr}")
+            self.bus.warning(f"Handshake failed for {entry.info.addr}")
             self._close_server_client(entry)
             return
 
         entry.info.handshake_done = True
-        self._logger.debug(f"Handshake complete for {entry.info.addr}")
+        self.bus.debug(f"Handshake complete for {entry.info.addr}")
 
-        if self._on_connect_cb:
-            try:
-                self._on_connect_cb(entry.info)
-            except Exception as e:
-                self._logger.error(
-                    f"_on_connect_cb error for {entry.info.addr}: {type(e).__name__}: {e}"
-                )
+        try:
+            self.bus.emit(ServerEvent.ON_CONNECT, entry.info)
+        except Exception as e:
+            self.bus.error(f"ServerEvent.ON_CONNECT error: {type(e).__name__}: {e}")
 
         while self.running:
             result = recv(entry.info.conn, buffer_size)
@@ -228,7 +206,7 @@ class ThreadingSocket(BaseSocket):
             return True
 
         if result.disconnected:
-            self._logger.info(f"Client {entry.info.addr} disconnected")
+            self.bus.info(f"Client {entry.info.addr} disconnected")
             self._close_server_client(entry)
             return False
 
@@ -237,16 +215,16 @@ class ThreadingSocket(BaseSocket):
             messages = entry.buffer.extract_messages()
 
             for response in messages:
-                self._logger.debug(
+                self.bus.debug(
                     f"Message from {entry.info.addr}: {response.type.name} (code={response.type.code})"
                 )
 
                 handler_result = self.request_handler.handle(response, entry.info)
                 if isinstance(handler_result, Exception):
-                    self._logger.error(f"Handler error for {entry.info.addr}: {handler_result}")
+                    self.bus.error(f"Handler error for {entry.info.addr}: {handler_result}")
 
         except Exception as e:
-            self._logger.error(
+            self.bus.error(
                 f"Error processing message from {entry.info.addr}: {type(e).__name__}: {e}"
             )
 
@@ -262,8 +240,10 @@ class ThreadingSocket(BaseSocket):
 
         self.client_manager.remove_client(entry.id)
 
-        if self._on_disconnect_cb:
-            self._on_disconnect_cb(entry.info)
+        try:
+            self.bus.emit(ServerEvent.ON_DISCONNECT, entry.info)
+        except Exception as e:
+            self.bus.error(f"ServerEvent.ON_DISCONNECT error: {type(e).__name__}: {e}")
 
     def close_client(self, client: Union[ClientEntry, int]) -> bool:
         if isinstance(client, ClientEntry):
@@ -298,12 +278,12 @@ class ThreadingSocket(BaseSocket):
 
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool:
         try:
-            self._logger.info(f"Connecting to {host}:{port}")
+            self.bus.info(f"Connecting to {host}:{port}")
             self._sock.connect((host, port))
 
             success, meta = self.request_handler.handshake_handler.do_client_handshake(self._sock)
             if not success:
-                self._logger.error("Client handshake failed")
+                self.bus.error("Client handshake failed")
                 self._sock.close()
                 return False
 
@@ -320,11 +300,11 @@ class ThreadingSocket(BaseSocket):
             return True
 
         except (socket.timeout, ConnectionRefusedError) as e:
-            self._logger.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
+            self.bus.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
             return False
 
         except Exception as e:
-            self._logger.error(f"Unexpected connection error: {type(e).__name__}: {e}")
+            self.bus.error(f"Unexpected connection error: {type(e).__name__}: {e}")
             return False
 
     def _handle_client(self, buffer_size: int, timeout: float) -> None:
@@ -337,25 +317,24 @@ class ThreadingSocket(BaseSocket):
                 continue
 
             if result.disconnected:
-                self._logger.info("Disconnected from server")
-                if self._on_disconnect_cb:
-                    self._on_disconnect_cb()
+                self.bus.info("Disconnected from server")
+                self.bus.emit(ClientEvent.SOCKET_DISCONNECTED)
                 break
 
             try:
                 message_buffer.add_data(result.data or b"")
 
                 for response in message_buffer.extract_messages():
-                    self._logger.debug(
+                    self.bus.debug(
                         f"Message from server: {response.type.name} (code={response.type.code})"
                     )
 
                     handler_result = self.request_handler.handle(response)
                     if isinstance(handler_result, Exception):
-                        self._logger.error(f"Handler error: {handler_result}")
+                        self.bus.error(f"Handler error: {handler_result}")
 
             except Exception as e:
-                self._logger.error(f"Error processing server message: {type(e).__name__}: {e}")
+                self.bus.error(f"Error processing server message: {type(e).__name__}: {e}")
 
     def disconnect(self, timeout: float = 5.0) -> bool:
         try:
@@ -366,9 +345,9 @@ class ThreadingSocket(BaseSocket):
             if self.thread_handler and threading.current_thread() != self.thread_handler:
                 self.thread_handler.join(timeout=timeout + 0.1)
 
-            self._logger.info("Disconnected from server")
+            self.bus.info("Disconnected from server")
             return True
 
         except Exception as e:
-            self._logger.error(f"Disconnect error: {type(e).__name__}: {e}")
+            self.bus.error(f"Disconnect error: {type(e).__name__}: {e}")
             return False
