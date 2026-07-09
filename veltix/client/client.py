@@ -122,7 +122,7 @@ class Client:
         """Return the current socket instance."""
         return self.socket
 
-    def _on_socket_disconnect(self, event=None, payload=None) -> None:
+    def _on_socket_disconnect(self, event: object = None, payload: object = None) -> None:
         """Handle socket-level disconnect from the server (triggers reconnect)."""
         if not self.running or self._connecting:
             return
@@ -206,6 +206,10 @@ class Client:
             True if connection and handshake succeeded, False otherwise.
         """
         try:
+            self.bus.emit(ClientEvent.CONNECTING, {
+                "host": self.config.server_addr,
+                "port": self.config.port,
+            })
             self.bus.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
             self._connecting = True
             connected = self.socket.connect(
@@ -323,6 +327,7 @@ class Client:
             True if disconnection succeeded, False on unexpected error.
         """
         try:
+            self.bus.emit(ClientEvent.DISCONNECTING)
             self.bus.info("Disconnecting from server")
             self.running = False
             self.is_connected = False

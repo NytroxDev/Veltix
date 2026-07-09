@@ -4,12 +4,16 @@ from enum import Enum, auto
 class ServerEvent(Enum):
     ON_CONNECT = auto()
     ON_DISCONNECT = auto()
+    STARTED = auto()
+    STOPPED = auto()
 
 
 class ClientEvent(Enum):
     ON_CONNECT = auto()
     ON_DISCONNECT = auto()
     SOCKET_DISCONNECTED = auto()
+    CONNECTING = auto()
+    DISCONNECTING = auto()
 
 
 class MessageEvent(Enum):
