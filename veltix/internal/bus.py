@@ -4,6 +4,7 @@ from .._vendor.avyra import EventBus
 from ..logger.core import Logger
 from .events import (
     ClientEvent,
+    ErrorEvent,
     LogEvent,
     MessageEvent,
     ProtocolEvent,
@@ -11,7 +12,7 @@ from .events import (
     ServerEvent,
 )
 
-_ALL_EVENTS = [ServerEvent, ClientEvent, MessageEvent, ProtocolEvent, LogEvent, ReconnectEvent]
+_ALL_EVENTS = [ServerEvent, ClientEvent, MessageEvent, ProtocolEvent, ErrorEvent, LogEvent, ReconnectEvent]
 
 
 class VeltixBus(EventBus):

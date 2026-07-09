@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.callback_executor import CallbackExecutor
 from ..handler.handshake_handler import HandshakeHandler
+from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
 from .rules import ALL_RULES
 from .rules_manager import MessageContext, RulesManager
@@ -77,6 +78,7 @@ class RequestHandler:
             self.rules_manager.process(ctx)
         except Exception as e:
             source = f"client {client.addr}" if (self.is_server and client) else "server"
+            self.bus.emit(ErrorEvent.HANDLER, {"error": str(e), "source": source})
             self.bus.critical(f"Unexpected error handling message from {source}: {e}")
             return e
 
@@ -91,6 +93,9 @@ class RequestHandler:
         queue: Queue = Queue(maxsize=1)
         with self.pending_requests_lock:
             self.pending_requests[request_id] = queue
+        self.bus.emit(MessageEvent.PENDING_REGISTERED, {
+            "request_id": request_id.hex(),
+        })
         return queue
 
     def unregister(self, request_id: bytes) -> None:
@@ -115,6 +120,10 @@ class RequestHandler:
         try:
             return queue.get(timeout=timeout)  # type: ignore[no-any-return]
         except Empty:
+            self.bus.emit(MessageEvent.PENDING_TIMEOUT, {
+                "request_id": request_id.hex(),
+                "timeout": timeout,
+            })
             self.bus.warning(
                 f"Timeout waiting for response (id={request_id.hex()}) after {timeout}s"
             )

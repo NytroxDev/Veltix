@@ -6,6 +6,8 @@ import contextlib
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable
 
+from ..internal.events import ErrorEvent
+
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
 
@@ -26,6 +28,7 @@ class CallbackExecutor:
                 func(*args)
             except Exception as e:
                 if self.bus:
+                    self.bus.emit(ErrorEvent.CALLBACK, {"error": str(e), "func": func.__name__})
                     self.bus.error(f"Error in callback {func.__name__}: {type(e).__name__}: {e}")
 
         with contextlib.suppress(RuntimeError):
