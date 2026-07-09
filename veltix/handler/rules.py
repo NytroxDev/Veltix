@@ -1,3 +1,4 @@
+from ..internal.events import ProtocolEvent
 from ..network.request import Request
 from ..network.system_types import PING, PONG
 from .rules_manager import MessageContext, Rule
@@ -5,6 +6,10 @@ from .rules_manager import MessageContext, Rule
 
 class PingRule(Rule):
     def handle(self, context: MessageContext) -> None:
+        context.handler.bus.emit(ProtocolEvent.PING, {
+            "request_id": context.response.request_id.hex(),
+            "from": "client" if context.is_server else "server",
+        })
         context.handler.bus.debug(
             f"Responding to PING with PONG (request_id={context.response.request_id.hex()})"
         )
@@ -17,6 +22,9 @@ class PingRule(Rule):
             sender.send(pong, client=client.conn)
         else:
             sender.send(pong)
+        context.handler.bus.emit(ProtocolEvent.PONG, {
+            "request_id": context.response.request_id.hex(),
+        })
 
     def can_handle(self, context: MessageContext) -> bool:
         return context.response.type == PING
