@@ -14,11 +14,12 @@ from veltix.socket_core.managers.clients_manager import ClientEntry
 
 def _make_handler():
     from veltix.handler.request_handler import RequestHandler
+    from veltix.internal.bus import VeltixBus
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.close()
     sender = Sender(mode=Mode.CLIENT, conn=s)
-    return RequestHandler(sender=sender, mode=Mode.CLIENT)
+    return RequestHandler(sender=sender, mode=Mode.CLIENT, bus=VeltixBus())
 
 
 def _make_bus():

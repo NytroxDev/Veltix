@@ -1,14 +1,11 @@
-from ..logger.core import Logger
 from ..network.request import Request
 from ..network.system_types import PING, PONG
 from .rules_manager import MessageContext, Rule
 
 
 class PingRule(Rule):
-    _logger = Logger.get_instance()
-
     def handle(self, context: MessageContext) -> None:
-        self._logger.debug(
+        context.handler.bus.debug(
             f"Responding to PING with PONG (request_id={context.response.request_id.hex()})"
         )
         pong = Request(PONG, b"", request_id=context.response.request_id)
@@ -26,8 +23,6 @@ class PingRule(Rule):
 
 
 class PendingRequestRule(Rule):
-    _logger = Logger.get_instance()
-
     def can_handle(self, context: MessageContext) -> bool:
         with context.handler.pending_requests_lock:
             return context.response.request_id in context.handler.pending_requests
@@ -41,20 +36,18 @@ class PendingRequestRule(Rule):
         if queue is None:
             return False
         queue.put(context.response)
-        self._logger.debug(
+        context.handler.bus.debug(
             f"Routing response to pending request (request_id={context.response.request_id.hex()})"
         )
         return True
 
 
 class RouteRule(Rule):
-    _logger = Logger.get_instance()
-
     def handle(self, context: MessageContext) -> None:
-        self._logger.debug(f"Dispatching to registered route for type {context.response.type}")
+        context.handler.bus.debug(f"Dispatching to registered route for type {context.response.type}")
         route = context.handler.get_route(context.response.type)
         if route is None:
-            self._logger.warning(
+            context.handler.bus.warning(
                 f"Route for type {context.response.type} disappeared before dispatch"
             )
             return
@@ -81,15 +74,13 @@ class OnRecvRule(Rule):
 
 
 class UnhandledRule(Rule):
-    _logger = Logger.get_instance()
-
     def handle(self, context: MessageContext) -> None:
         if context.is_server:
             addr = getattr(context.client, "addr", "unknown")
             src = f"client {addr}"
         else:
             src = "server"
-        self._logger.warning(f"No handler registered for message from {src}")
+        context.handler.bus.warning(f"No handler registered for message from {src}")
 
     def can_handle(self, context: MessageContext) -> bool:
         return True

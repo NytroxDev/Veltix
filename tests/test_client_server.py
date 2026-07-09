@@ -8,6 +8,7 @@ import pytest
 
 from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
 from veltix.handler.handshake_handler import HandshakeHandler
+from veltix.internal.bus import VeltixBus
 from veltix.internal.mode import Mode
 
 
@@ -51,7 +52,7 @@ class TestClientServer:
         sock.settimeout(3.0)
         sock.connect(("127.0.0.1", port))
 
-        handler = HandshakeHandler(mode=Mode.CLIENT)
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
         server_payload = handler._recv_handshake(sock)
         assert server_payload is not None
 

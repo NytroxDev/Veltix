@@ -39,11 +39,12 @@ class TestBaseSocketABC:
 
     def _make_handler(self):
         from veltix.handler.request_handler import RequestHandler
+        from veltix.internal.bus import VeltixBus
         from veltix.network.sender import Mode, Sender
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sender = Sender(mode=Mode.CLIENT, conn=s)
-        return RequestHandler(sender=sender, mode=Mode.CLIENT)
+        return RequestHandler(sender=sender, mode=Mode.CLIENT, bus=VeltixBus())
 
     def _make_bus(self):
         return VeltixBus()
