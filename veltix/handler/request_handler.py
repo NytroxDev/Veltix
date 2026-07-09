@@ -153,7 +153,11 @@ class RequestHandler:
                 self.bus.warning(f"Route for type {type_} already registered — ignoring")
                 return False
             self._routes[type_] = function
-            return True
+        self.bus.emit(MessageEvent.ROUTE_REGISTERED, {
+            "type": type_,
+            "name": type_.name,
+        })
+        return True
 
     def unregister_route(self, type_: MessageType) -> bool:
         with self._routes_lock:
@@ -161,7 +165,11 @@ class RequestHandler:
                 self.bus.warning(f"Route for type {type_} not registered — ignoring")
                 return False
             self._routes.pop(type_)
-            return True
+        self.bus.emit(MessageEvent.ROUTE_UNREGISTERED, {
+            "type": type_,
+            "name": type_.name,
+        })
+        return True
 
     def shutdown(self, wait: bool = True) -> None:
         self._executor.shutdown(wait=wait)

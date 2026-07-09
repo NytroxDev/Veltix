@@ -188,7 +188,7 @@ class AsyncSocket(BaseSocket):
             handshake_timeout=self.handshake_timeout,
             nonblocking=False,
         )
-        client = ClientInfo(client_sock, addr, self.id_count, handshake_done=False)
+        client = ClientInfo(client_sock, addr, self.id_count, handshake_done=False, bus=self.bus)
         client_id = self.client_manager.add_client(client)
 
         client.handshake_done = True

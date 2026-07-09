@@ -140,7 +140,7 @@ class ThreadingSocket(BaseSocket):
                     self.n_th += 1
                     thread_id = self.n_th
 
-                client = ClientInfo(conn=conn, addr=addr, thread_id=thread_id, handshake_done=False)
+                client = ClientInfo(conn=conn, addr=addr, thread_id=thread_id, handshake_done=False, bus=self.bus)
 
                 client_id = self.client_manager.add_client(client)
 
