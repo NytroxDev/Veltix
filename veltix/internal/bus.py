@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .._vendor.avyra import EventBus
+from ..logger.core import Logger
 from .events import (
     ClientEvent,
     LogEvent,
@@ -9,7 +10,6 @@ from .events import (
     ReconnectEvent,
     ServerEvent,
 )
-from ..logger.core import Logger
 
 _ALL_EVENTS = [ServerEvent, ClientEvent, MessageEvent, ProtocolEvent, LogEvent, ReconnectEvent]
 

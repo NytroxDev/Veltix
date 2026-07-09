@@ -37,9 +37,9 @@ class ThreadingSocket(BaseSocket):
         self.start_th: Optional[threading.Thread] = None
         self.thread_handler: Optional[threading.Thread] = None
 
-        self.on_connect: Optional[Callable] = None
-        self.on_disconnect: Optional[Callable] = None
-        self.on_recv: Optional[Callable] = None
+        self._on_connect_cb: Optional[Callable] = None
+        self._on_disconnect_cb: Optional[Callable] = None
+        self._on_recv_cb: Optional[Callable] = None
 
         self.max_message_size = max_message_size
         self.request_handler = request_handler
@@ -68,9 +68,9 @@ class ThreadingSocket(BaseSocket):
         conn.handshake_timeout = handshake_timeout
         conn.running = False
         conn.client_manager = ClientsManager(max_message_size)
-        conn.on_connect = None
-        conn.on_disconnect = None
-        conn.on_recv = None
+        conn._on_connect_cb = None
+        conn._on_disconnect_cb = None
+        conn._on_recv_cb = None
         conn.start_th = None
         conn.thread_handler = None
         conn.threads = {}
@@ -105,11 +105,11 @@ class ThreadingSocket(BaseSocket):
 
     def set_callback(self, event: SocketEvents, callback: Callable) -> bool:
         if event == SocketEvents.RECV:
-            self.on_recv = callback
+            self._on_recv_cb = callback
         elif event == SocketEvents.CONNECT:
-            self.on_connect = callback
+            self._on_connect_cb = callback
         elif event == SocketEvents.DISCONNECT:
-            self.on_disconnect = callback
+            self._on_disconnect_cb = callback
         else:
             return False
         return True
@@ -206,12 +206,12 @@ class ThreadingSocket(BaseSocket):
         entry.info.handshake_done = True
         self._logger.debug(f"Handshake complete for {entry.info.addr}")
 
-        if self.on_connect:
+        if self._on_connect_cb:
             try:
-                self.on_connect(entry.info)
+                self._on_connect_cb(entry.info)
             except Exception as e:
                 self._logger.error(
-                    f"on_connect error for {entry.info.addr}: {type(e).__name__}: {e}"
+                    f"_on_connect_cb error for {entry.info.addr}: {type(e).__name__}: {e}"
                 )
 
         while self.running:
@@ -262,8 +262,8 @@ class ThreadingSocket(BaseSocket):
 
         self.client_manager.remove_client(entry.id)
 
-        if self.on_disconnect:
-            self.on_disconnect(entry.info)
+        if self._on_disconnect_cb:
+            self._on_disconnect_cb(entry.info)
 
     def close_client(self, client: Union[ClientEntry, int]) -> bool:
         if isinstance(client, ClientEntry):
@@ -338,8 +338,8 @@ class ThreadingSocket(BaseSocket):
 
             if result.disconnected:
                 self._logger.info("Disconnected from server")
-                if self.on_disconnect:
-                    self.on_disconnect()
+                if self._on_disconnect_cb:
+                    self._on_disconnect_cb()
                 break
 
             try:
