@@ -33,9 +33,9 @@ class AsyncSocket(BaseSocket):
 
         self._selector_thread: Optional[threading.Thread] = None
 
-        self.on_connect: Optional[Callable] = None
-        self.on_disconnect: Optional[Callable] = None
-        self.on_recv: Optional[Callable] = None
+        self._on_connect_cb: Optional[Callable] = None
+        self._on_disconnect_cb: Optional[Callable] = None
+        self._on_recv_cb: Optional[Callable] = None
 
         self.max_message_size = max_message_size
         self.request_handler = request_handler
@@ -71,9 +71,9 @@ class AsyncSocket(BaseSocket):
 
         conn._selector_thread = None
 
-        conn.on_connect = None
-        conn.on_disconnect = None
-        conn.on_recv = None
+        conn._on_connect_cb = None
+        conn._on_disconnect_cb = None
+        conn._on_recv_cb = None
 
         conn.max_message_size = max_message_size
         conn.request_handler = request_handler
@@ -131,11 +131,11 @@ class AsyncSocket(BaseSocket):
 
     def set_callback(self, event: SocketEvents, callback: Callable) -> bool:
         if event == SocketEvents.RECV:
-            self.on_recv = callback
+            self._on_recv_cb = callback
         elif event == SocketEvents.CONNECT:
-            self.on_connect = callback
+            self._on_connect_cb = callback
         elif event == SocketEvents.DISCONNECT:
-            self.on_disconnect = callback
+            self._on_disconnect_cb = callback
         else:
             self._logger.debug(f"set_callback: unknown event {event}")
             return False
@@ -227,11 +227,11 @@ class AsyncSocket(BaseSocket):
             f"New client connected: {addr} (total: {self.client_manager.count()}/{max_client})"
         )
 
-        if self.on_connect:
+        if self._on_connect_cb:
             try:
-                self.on_connect(client)
+                self._on_connect_cb(client)
             except Exception as e:
-                self._logger.error(f"on_connect error for {addr}: {type(e).__name__}: {e}")
+                self._logger.error(f"_on_connect_cb error for {addr}: {type(e).__name__}: {e}")
 
     def _handle_server_client(self, client_id: int, buffer_size: int) -> None:
         entry = self.client_manager.get_client(client_id)
@@ -267,8 +267,8 @@ class AsyncSocket(BaseSocket):
 
         if result.disconnected:
             self._logger.debug("self_read: disconnected from server")
-            if self.on_disconnect:
-                self.on_disconnect()
+            if self._on_disconnect_cb:
+                self._on_disconnect_cb()
             self.disconnect(0.5)
             return
 
@@ -305,8 +305,8 @@ class AsyncSocket(BaseSocket):
 
         self.client_manager.remove_client(entry.id)
 
-        if self.on_disconnect:
-            self.on_disconnect(entry.info)
+        if self._on_disconnect_cb:
+            self._on_disconnect_cb(entry.info)
 
     def close(self) -> bool:
         try:
