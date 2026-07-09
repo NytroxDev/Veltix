@@ -183,10 +183,13 @@ class AsyncSocket(BaseSocket):
         client = ClientInfo(client_sock, addr, self.id_count, handshake_done=False)
         client_id = self.client_manager.add_client(client)
 
+        client.handshake_done = True
+
         ok = self.request_handler.handshake_handler.do_server_handshake(
             conn, timeout=client_sock.handshake_timeout
         )
         if not ok:
+            client.handshake_done = False
             self.bus.warning(f"Handshake failed for {addr}")
             entry = self.client_manager.get_client(client_id)
             if entry:
@@ -197,7 +200,6 @@ class AsyncSocket(BaseSocket):
                     conn.close()
             return
 
-        client.handshake_done = True
         conn.setblocking(False)
         self._selector.register(client_sock, selectors.EVENT_READ, data=client_id)
         self.id_count += 1
