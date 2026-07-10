@@ -54,10 +54,21 @@ class MessageType:
     __slots__ = ("code", "name", "description")
 
     def __init__(
-        self, code: int, name: Optional[str] = None, description: Optional[str] = None
+        self,
+        code: int,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        *,
+        _system: bool = False,
     ) -> None:
         if not (0 <= code <= 65535):
             raise MessageTypeError(f"Code must be between 0 and 65535, got: {code}")
+
+        if code < 200 and not _system:
+            raise MessageTypeError(
+                f"Code {code} is reserved for system messages (0-199). "
+                f"Use a code between 200 and 499 for user messages."
+            )
 
         self.code: int = code
         self.name: str = name or f"type_{code}"
