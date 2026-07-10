@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from ._base import Subscriber, _BaseEventBus
 
@@ -20,9 +20,9 @@ class EventBus(_BaseEventBus):
     """
 
     def emit(
-            self,
-            event: Enum,
-            payload: object = None,
+        self,
+        event: Enum,
+        payload: object = None,
     ) -> list[tuple[Subscriber, Exception]]:
         """Dispatch *event* with *payload* to all its subscribers.
 
@@ -57,9 +57,9 @@ class EventBus(_BaseEventBus):
         return failed
 
     def once(
-            self,
-            event_type,
-            function: Subscriber,
+        self,
+        event_type: Union[Enum, type, list],
+        function: Subscriber,
     ) -> None:
         """Register *function* to fire at most once for *event_type*.
 
@@ -77,6 +77,7 @@ class EventBus(_BaseEventBus):
                 nor an ``Enum`` class.
             ValueError: If a member is unknown.
         """
+
         def wrapper(event: Enum, payload: object) -> None:
             try:
                 function(event, payload)

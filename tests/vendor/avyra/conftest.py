@@ -39,4 +39,5 @@ def results() -> list:
 def collector(results: list) -> callable:
     def _(event, payload):
         results.append((event, payload))
+
     return _

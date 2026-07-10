@@ -6,10 +6,13 @@ from .rules_manager import MessageContext, Rule
 
 class PingRule(Rule):
     def handle(self, context: MessageContext) -> None:
-        context.handler.bus.emit(ProtocolEvent.PING, {
-            "request_id": context.response.request_id.hex(),
-            "from": "client" if context.is_server else "server",
-        })
+        context.handler.bus.emit(
+            ProtocolEvent.PING,
+            {
+                "request_id": context.response.request_id.hex(),
+                "from": "client" if context.is_server else "server",
+            },
+        )
         context.handler.bus.debug(
             f"Responding to PING with PONG (request_id={context.response.request_id.hex()})"
         )
@@ -22,9 +25,12 @@ class PingRule(Rule):
             sender.send(pong, client=client.conn)
         else:
             sender.send(pong)
-        context.handler.bus.emit(ProtocolEvent.PONG, {
-            "request_id": context.response.request_id.hex(),
-        })
+        context.handler.bus.emit(
+            ProtocolEvent.PONG,
+            {
+                "request_id": context.response.request_id.hex(),
+            },
+        )
 
     def can_handle(self, context: MessageContext) -> bool:
         return context.response.type == PING
@@ -44,9 +50,12 @@ class PendingRequestRule(Rule):
         if queue is None:
             return False
         queue.put(context.response)
-        context.handler.bus.emit(MessageEvent.PENDING_SATISFIED, {
-            "request_id": context.response.request_id.hex(),
-        })
+        context.handler.bus.emit(
+            MessageEvent.PENDING_SATISFIED,
+            {
+                "request_id": context.response.request_id.hex(),
+            },
+        )
         context.handler.bus.debug(
             f"Routing response to pending request (request_id={context.response.request_id.hex()})"
         )
@@ -55,18 +64,23 @@ class PendingRequestRule(Rule):
 
 class RouteRule(Rule):
     def handle(self, context: MessageContext) -> None:
-        context.handler.bus.debug(f"Dispatching to registered route for type {context.response.type}")
+        context.handler.bus.debug(
+            f"Dispatching to registered route for type {context.response.type}"
+        )
         route = context.handler.get_route(context.response.type)
         if route is None:
             context.handler.bus.warning(
                 f"Route for type {context.response.type} disappeared before dispatch"
             )
             return
-        context.handler.bus.emit(MessageEvent.ROUTED, {
-            "type": context.response.type,
-            "route": "registered",
-            "source": "server" if context.is_server else "client",
-        })
+        context.handler.bus.emit(
+            MessageEvent.ROUTED,
+            {
+                "type": context.response.type,
+                "route": "registered",
+                "source": "server" if context.is_server else "client",
+            },
+        )
         if context.is_server:
             context.handler._executor.submit(route, context.client, context.response)
         else:
@@ -80,11 +94,14 @@ class OnRecvRule(Rule):
     def handle(self, context: MessageContext) -> None:
         on_recv = context.handler.on_recv
         assert on_recv is not None
-        context.handler.bus.emit(MessageEvent.ROUTED, {
-            "type": context.response.type,
-            "route": "on_recv",
-            "source": "server" if context.is_server else "client",
-        })
+        context.handler.bus.emit(
+            MessageEvent.ROUTED,
+            {
+                "type": context.response.type,
+                "route": "on_recv",
+                "source": "server" if context.is_server else "client",
+            },
+        )
         if context.is_server:
             context.handler._executor.submit(on_recv, context.client, context.response)
         else:
@@ -101,11 +118,14 @@ class UnhandledRule(Rule):
             src = f"client {addr}"
         else:
             src = "server"
-        context.handler.bus.emit(MessageEvent.UNHANDLED, {
-            "type": context.response.type,
-            "length": len(context.response.content),
-            "source": "server" if context.is_server else "client",
-        })
+        context.handler.bus.emit(
+            MessageEvent.UNHANDLED,
+            {
+                "type": context.response.type,
+                "length": len(context.response.content),
+                "source": "server" if context.is_server else "client",
+            },
+        )
         context.handler.bus.warning(f"No handler registered for message from {src}")
 
     def can_handle(self, context: MessageContext) -> bool:

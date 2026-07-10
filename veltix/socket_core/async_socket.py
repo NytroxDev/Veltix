@@ -23,7 +23,9 @@ if TYPE_CHECKING:
 class AsyncSocket(BaseSocket):
     """Selector-based socket implementation for Veltix."""
 
-    def __init__(self, request_handler: RequestHandler, max_message_size: int, bus: VeltixBus) -> None:
+    def __init__(
+        self, request_handler: RequestHandler, max_message_size: int, bus: VeltixBus
+    ) -> None:
         self.bus = bus
         self.client_manager = ClientsManager(max_message_size, bus=bus)
 
@@ -137,9 +139,7 @@ class AsyncSocket(BaseSocket):
             target=self._selector_loop, args=(max_client, buffer_size), daemon=True
         )
         self._selector_thread.start()
-        self.bus.debug(
-            f"bound to {host}:{port}, max_client={max_client}, running={self.running}"
-        )
+        self.bus.debug(f"bound to {host}:{port}, max_client={max_client}, running={self.running}")
         return self.running
 
     def _selector_loop(self, max_client: int, buffer_size: int) -> None:
@@ -161,15 +161,21 @@ class AsyncSocket(BaseSocket):
 
     def _accept_client(self, max_client: int) -> None:
         if max_client != -1 and self.client_manager.count() >= max_client:
-            self.bus.emit(ErrorEvent.CONNECTION_REFUSED, {
-                "max_client": max_client,
-                "current": self.client_manager.count(),
-            })
-            self.bus.emit(ServerEvent.CLIENT_REJECTED, {
-                "max_client": max_client,
-                "current": self.client_manager.count(),
-                "reason": "max_connections",
-            })
+            self.bus.emit(
+                ErrorEvent.CONNECTION_REFUSED,
+                {
+                    "max_client": max_client,
+                    "current": self.client_manager.count(),
+                },
+            )
+            self.bus.emit(
+                ServerEvent.CLIENT_REJECTED,
+                {
+                    "max_client": max_client,
+                    "current": self.client_manager.count(),
+                    "reason": "max_connections",
+                },
+            )
             return
         if not self.running:
             return
@@ -249,11 +255,14 @@ class AsyncSocket(BaseSocket):
         if messages:
             self.bus.debug(f"client {client_id} extracted {len(messages)} messages")
             for message in messages:
-                self.bus.emit(MessageEvent.RECEIVED, {
-                    "type": message.type,
-                    "length": len(message.content),
-                    "client": entry.info.addr,
-                })
+                self.bus.emit(
+                    MessageEvent.RECEIVED,
+                    {
+                        "type": message.type,
+                        "length": len(message.content),
+                        "client": entry.info.addr,
+                    },
+                )
                 self.request_handler.handle(message, entry.info)
 
     def _handle_self_read(self, buffer_size: int) -> None:
@@ -275,11 +284,14 @@ class AsyncSocket(BaseSocket):
         if messages:
             self.bus.debug(f"self_read: extracted {len(messages)} messages")
             for message in messages:
-                self.bus.emit(MessageEvent.RECEIVED, {
-                    "type": message.type,
-                    "length": len(message.content),
-                    "from": "server",
-                })
+                self.bus.emit(
+                    MessageEvent.RECEIVED,
+                    {
+                        "type": message.type,
+                        "length": len(message.content),
+                        "from": "server",
+                    },
+                )
                 self.request_handler.handle(message)
 
     def close_client(self, client: Union[ClientEntry, int]) -> bool:

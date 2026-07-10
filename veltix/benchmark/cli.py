@@ -139,10 +139,7 @@ def main() -> None:
     try:
         import psutil  # type: ignore[import-untyped]  # noqa: F401
     except ImportError:
-        print(
-            "psutil is required for benchmarks.\n"
-            "Install it with:  pip install veltix[benchmark]"
-        )
+        print("psutil is required for benchmarks.\nInstall it with:  pip install veltix[benchmark]")
         sys.exit(1)
 
     Logger.get_instance().set_level(LogLevel.ERROR)

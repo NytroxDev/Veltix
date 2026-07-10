@@ -19,6 +19,7 @@ def test_concurrent_subscribe_unique_functions():
         def subscriber(event, payload):
             with lock:
                 results.append(i)
+
         return subscriber
 
     n = 50

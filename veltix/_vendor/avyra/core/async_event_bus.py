@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from ._base import Subscriber, _BaseEventBus
 
@@ -20,9 +20,9 @@ class AsyncEventBus(_BaseEventBus):
     """
 
     async def emit(
-            self,
-            event: Enum,
-            payload: object = None,
+        self,
+        event: Enum,
+        payload: object = None,
     ) -> list[tuple[Subscriber, Exception]]:
         """Dispatch *event* with *payload* to all its subscribers.
 
@@ -47,9 +47,9 @@ class AsyncEventBus(_BaseEventBus):
         return failed
 
     def once(
-            self,
-            event_type,
-            function: Subscriber,
+        self,
+        event_type: Union[Enum, type, list],
+        function: Subscriber,
     ) -> None:
         """Register *function* to fire at most once for *event_type*.
 
@@ -57,6 +57,7 @@ class AsyncEventBus(_BaseEventBus):
         unsubscribes after the first :meth:`emit` — even if the
         function raises.
         """
+
         async def wrapper(event: Enum, payload: object) -> None:
             try:
                 result = function(event, payload)

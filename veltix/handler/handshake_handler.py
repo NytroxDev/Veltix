@@ -128,7 +128,10 @@ class HandshakeHandler:
 
         peer_version = client_payload.get("v", "")
         if not self._check_version(peer_version):
-            self.bus.emit(ProtocolEvent.HANDSHAKE_FAIL, {"role": "server", "reason": "version_mismatch", "peer_version": peer_version})
+            self.bus.emit(
+                ProtocolEvent.HANDSHAKE_FAIL,
+                {"role": "server", "reason": "version_mismatch", "peer_version": peer_version},
+            )
             self.bus.error(f"Client version {peer_version} is incompatible")
             return False
 
@@ -137,7 +140,9 @@ class HandshakeHandler:
             self.bus.error("Failed to send handshake acknowledgment")
             return False
 
-        self.bus.emit(ProtocolEvent.HANDSHAKE_DONE, {"role": "server", "peer_version": peer_version})
+        self.bus.emit(
+            ProtocolEvent.HANDSHAKE_DONE, {"role": "server", "peer_version": peer_version}
+        )
         return True
 
     def do_client_handshake(self, sock: RawSocket) -> tuple[bool, Optional[dict[str, Any]]]:
@@ -152,7 +157,10 @@ class HandshakeHandler:
 
         peer_version = server_payload.get("v", "")
         if not self._check_version(peer_version):
-            self.bus.emit(ProtocolEvent.HANDSHAKE_FAIL, {"role": "client", "reason": "version_mismatch", "peer_version": peer_version})
+            self.bus.emit(
+                ProtocolEvent.HANDSHAKE_FAIL,
+                {"role": "client", "reason": "version_mismatch", "peer_version": peer_version},
+            )
             self.bus.error(f"Server version {peer_version} is incompatible")
             return False, None
 
@@ -168,5 +176,7 @@ class HandshakeHandler:
             return False, None
 
         meta = server_payload.get("meta", {})
-        self.bus.emit(ProtocolEvent.HANDSHAKE_DONE, {"role": "client", "peer_version": peer_version})
+        self.bus.emit(
+            ProtocolEvent.HANDSHAKE_DONE, {"role": "client", "peer_version": peer_version}
+        )
         return True, meta
