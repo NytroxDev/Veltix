@@ -47,5 +47,6 @@ class TestOriginalSub:
         assert _original_sub(wrapper) is f
 
     def test_lambda(self):
-        f = lambda: None
+        def f():
+            pass
         assert _original_sub(f) is f

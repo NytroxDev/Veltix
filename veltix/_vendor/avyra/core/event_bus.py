@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import List, Tuple
+from typing import TYPE_CHECKING
 
 from ._base import Subscriber, _BaseEventBus
+
+if TYPE_CHECKING:
+    from enum import Enum
 
 
 class EventBus(_BaseEventBus):
@@ -21,7 +23,7 @@ class EventBus(_BaseEventBus):
             self,
             event: Enum,
             payload: object = None,
-    ) -> List[Tuple[Subscriber, Exception]]:
+    ) -> list[tuple[Subscriber, Exception]]:
         """Dispatch *event* with *payload* to all its subscribers.
 
         Subscribers are invoked synchronously in registration order. A
@@ -46,7 +48,7 @@ class EventBus(_BaseEventBus):
         if not subs:
             return []
 
-        failed = []  # type: List[Tuple[Subscriber, Exception]]
+        failed: list[tuple[Subscriber, Exception]] = []
         for sub in subs:
             try:
                 sub(event, payload)

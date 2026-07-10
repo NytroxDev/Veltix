@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-07-10
+
+### Added
+
+- **VeltixBus event system** : new `VeltixBus` (powered by vendored Avyra `EventBus`) replaces the Logger singleton
+  across all core modules. Emits structured `ServerEvent`, `ClientEvent`, `MessageEvent`, `ProtocolEvent`,
+  `ErrorEvent`, `ReconnectEvent`, and `LogEvent` for full observability via a single subscription.
+- **Benchmark now optional** : `psutil` is no longer a hard dependency. Install with `pip install veltix[bench]`
+  to use the benchmark suite (entries `vltxbench`, `veltix-benchmark`, and `python -m veltix.benchmark`).
+
+### Changed
+
+- **Internal architecture** : Logger singleton replaced with per-instance `VeltixBus` injected into `Server`,
+  `Client`, `BaseSocket`, `RequestHandler`, `Sender`, `ReconnectHandler`, `ClientsManager`, and `MessageBuffer`.
+- **Vendored Avyra v1.0.0** : event-bus library copied into `veltix/_vendor/avyra/` with Python 3.8 compat
+  (`from __future__ import annotations`, `Union`/`Optional`).
+- **Backward compatible** : public API is unchanged; the old `Events` enum is kept for compatibility.
+
 ## [1.8.1] - 2026-07-07
 
 ### Fixed

@@ -11,13 +11,6 @@ import argparse
 import sys
 from typing import Any
 
-try:
-    import psutil  # type: ignore[import-untyped]
-except ImportError:
-    raise ImportError(
-        "psutil est requis pour le benchmark. Installez-le avec : pip install veltix[benchmark]"
-    ) from None
-
 import veltix
 from veltix import Logger, LogLevel
 
@@ -143,6 +136,15 @@ def _run_runs(
 
 
 def main() -> None:
+    try:
+        import psutil  # type: ignore[import-untyped]  # noqa: F401
+    except ImportError:
+        print(
+            "psutil is required for benchmarks.\n"
+            "Install it with:  pip install veltix[bench]"
+        )
+        sys.exit(1)
+
     Logger.get_instance().set_level(LogLevel.ERROR)
 
     args = parse_args()
