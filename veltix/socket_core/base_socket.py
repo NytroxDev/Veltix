@@ -1,10 +1,14 @@
 """Base socket abstract class for Veltix."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Callable, Union
+from typing import TYPE_CHECKING, Union
 
-from .managers.clients_manager import ClientEntry, ClientsManager
+if TYPE_CHECKING:
+    from ..internal.bus import VeltixBus
+    from .managers.clients_manager import ClientEntry, ClientsManager
 
 
 class SocketEvents(Enum):
@@ -16,9 +20,7 @@ class SocketEvents(Enum):
 class BaseSocket(ABC):
     client_manager: ClientsManager
     handshake_timeout: float
-
-    @abstractmethod
-    def set_callback(self, event: SocketEvents, callback: Callable) -> bool: ...
+    bus: VeltixBus
 
     @abstractmethod
     def send(self, data: bytes) -> bool: ...

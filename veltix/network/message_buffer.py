@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import struct
+from typing import TYPE_CHECKING, Optional
 
-from ..logger.core import Logger
 from .request import HEADER_SIZE, MAGIC, Request, Response
+
+if TYPE_CHECKING:
+    from ..internal.bus import VeltixBus
 
 _MAGIC_SIZE = len(MAGIC)
 _MAGIC_AND_SIZE = struct.Struct(">2s2xI")
@@ -24,24 +27,26 @@ class MessageBuffer:
     - Thread-safe when used with a single reader thread per instance
     """
 
-    __slots__ = ("_buffer", "_max_message_size", "_logger", "_max_buffer_size")
+    __slots__ = ("_buffer", "_max_message_size", "_bus", "_max_buffer_size")
 
     def __init__(
         self,
         max_message_size: int = 10 * 1024 * 1024,
         max_buffer_size: int = MAX_BUFFER_SIZE,
+        bus: Optional[VeltixBus] = None,
     ) -> None:
         self._buffer = bytearray()
         self._max_message_size = max_message_size
         self._max_buffer_size = max_buffer_size
-        self._logger = Logger.get_instance()
+        self._bus = bus
 
     def add_data(self, data: bytes) -> None:
         if len(self._buffer) + len(data) > self._max_buffer_size:
-            self._logger.error(
-                f"Buffer size {len(self._buffer) + len(data)} exceeds maximum "
-                f"{self._max_buffer_size} — clearing buffer."
-            )
+            if self._bus:
+                self._bus.error(
+                    f"Buffer size {len(self._buffer) + len(data)} exceeds maximum "
+                    f"{self._max_buffer_size} — clearing buffer."
+                )
             self.clear()
             return
         self._buffer.extend(data)
@@ -61,10 +66,11 @@ class MessageBuffer:
             total_size = HEADER_SIZE + content_size
 
             if total_size > self._max_message_size:
-                self._logger.error(
-                    f"Message size {total_size} exceeds maximum {self._max_message_size} — "
-                    f"possible corruption. Resyncing."
-                )
+                if self._bus:
+                    self._bus.error(
+                        f"Message size {total_size} exceeds maximum {self._max_message_size} — "
+                        f"possible corruption. Resyncing."
+                    )
                 self._resync()
                 continue
 
@@ -78,10 +84,11 @@ class MessageBuffer:
                 self._buffer = self._buffer[total_size:]
                 messages.append(response)
             except Exception as e:
-                self._logger.error(
-                    f"Failed to parse message ({len(message_data)} bytes): {type(e).__name__}: {e}. "
-                    f"Resyncing."
-                )
+                if self._bus:
+                    self._bus.error(
+                        f"Failed to parse message ({len(message_data)} bytes): {type(e).__name__}: {e}. "
+                        f"Resyncing."
+                    )
                 self._resync()
 
         return messages
@@ -93,9 +100,10 @@ class MessageBuffer:
         else:
             discarded = idx
             self._buffer = self._buffer[idx:]
-            self._logger.debug(
-                f"Resynced: discarded {discarded} bytes, found MAGIC at offset {idx}"
-            )
+            if self._bus:
+                self._bus.debug(
+                    f"Resynced: discarded {discarded} bytes, found MAGIC at offset {idx}"
+                )
 
     def clear(self) -> None:
         self._buffer.clear()

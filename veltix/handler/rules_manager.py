@@ -4,8 +4,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
-from ..logger.core import Logger
-
 if TYPE_CHECKING:
     from ..network.request import Response
     from ..server.client_info import ClientInfo
@@ -21,23 +19,20 @@ class MessageContext:
 
 
 class RulesManager:
-    _logger = Logger.get_instance()
-
     def __init__(self) -> None:
         self._rules: list[Rule] = []
 
     def process(self, context: MessageContext) -> bool:
         for rule in self._rules:
             if rule.try_handle(context):
-                self._logger.debug(
+                context.handler.bus.debug(
                     f"{rule.__class__.__name__} handling message type {context.response.type}"
                 )
                 return True
-        self._logger.debug(f"No rule matched for message type {context.response.type}")
+        context.handler.bus.debug(f"No rule matched for message type {context.response.type}")
         return False
 
     def add_rule(self, rule: Rule) -> None:
-        self._logger.debug(f"Adding rule: {rule.__class__.__name__}")
         self._rules.append(rule)
 
 

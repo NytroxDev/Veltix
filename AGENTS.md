@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 1.8.1
+- **Version:** 1.9.0
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -99,7 +99,8 @@ veltix/
 │   └── managers/
 │       └── clients_manager.py
 ├── internal/            # Internal helpers
-│   ├── events.py        # Events enum
+│   ├── bus.py           # VeltixBus (wraps Avyra EventBus)
+│   ├── events.py        # Event enums (ServerEvent, ClientEvent, …)
 │   ├── buffer_size.py   # BufferSize enum
 │   ├── compatibility.py # Version, COMPATIBILITY
 │   ├── mode.py          # Mode enum
@@ -113,9 +114,11 @@ veltix/
 ├── utils/               # Small utilities
 │   ├── encoding.py      # encode/decode utf8 & json
 │   └── format_size.py   # format_bytes
-├── benchmark/           # CLI benchmarking suite
+├── _vendor/             # Vendored third-party libs
+│   └── avyra/           # EventBus library (Avyra v1.0.0, Python 3.8 compat)
+├── benchmark/           # CLI benchmarking suite (optional: pip install veltix[benchmark])
 ├── exceptions.py        # VeltixError hierarchy
-├── version.py           # __version__ = "1.8.1"
+├── version.py           # __version__ = "1.9.0"
 └── __init__.py          # Public API exports
 tests/
 ├── conftest.py          # Shared fixtures
@@ -248,19 +251,26 @@ class MessageType:
   need stronger inheritance guarantees and slot-sharing.
 - Avoid deep inheritance trees. Prefer composition.
 
-### Logger
+### Logger & VeltixBus
 
-Always use the singleton logger:
+Internal modules use `VeltixBus` for structured observability. A `Logger` singleton is auto-subscribed
+to `LogEvent.*` so all `bus.*()` calls produce log output. Prefer the bus in new code:
 
 ```python
 from ..logger.core import Logger
+from ..internal.bus import VeltixBus
 
+# Via bus (preferred for internal modules — emits structured events)
+self.bus = VeltixBus()
+self.bus.debug("Some message")
+self.bus.error("Something went wrong: %s", error)
+
+# Direct Logger (still works, auto-subscribed to bus)
 self._logger = Logger.get_instance()
 self._logger.debug("Some message")
-self._logger.error("Something went wrong: %s", error)
 ```
 
-Levels: `trace`, `debug`, `info`, `success`, `warning`, `error`, `critical`.
+Levels (same for both): `trace`, `debug`, `info`, `success`, `warning`, `error`, `critical`.
 
 ### Thread Safety
 
@@ -348,7 +358,9 @@ in `handler/rules.py`.
 
 ### Adding a new event
 
-Add member to `Events` enum in `internal/events.py` and add to the `events` list.
+Add a member to the appropriate event enum in `internal/events.py` (`ServerEvent`, `ClientEvent`,
+`MessageEvent`, `ProtocolEvent`, `ErrorEvent`, `LogEvent`, or `ReconnectEvent`). Do NOT add to
+the old `Events` enum (kept for backward compat only, to remove in v2.0).
 
 ### Adding a new exception
 
@@ -409,11 +421,18 @@ The public API is defined in `veltix/__init__.py`. Anything not listed in `__all
 ```python
 from veltix import Server, ServerConfig
 
-server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.THREADING))
+server = Server(ServerConfig(host="0.0.0.0", port=8080))
 server.start()  # Non-blocking, starts accept loop in thread
+
+# Legacy callback style (still works)
 server.set_callback(Events.ON_RECV, callback)  # func(client: ClientInfo, response: Response)
 server.set_callback(Events.ON_CONNECT, callback)  # func(client: ClientInfo)
 server.set_callback(Events.ON_DISCONNECT, callback)  # func(client: ClientInfo)
+
+# Structured event bus (v1.9.0+)
+from veltix.internal.events import ServerEvent
+server.bus.subscribe(ServerEvent.ON_CONNECT, callback)
+server.bus.subscribe(ServerEvent.ON_DISCONNECT, callback)
 
 
 @server.route(MY_TYPE)  # Decorator: func(client, response)
@@ -429,6 +448,7 @@ server.close_all()  # stop server + disconnect all
 server.clients  # -> list[ClientInfo]
 server.get_all_clients_sockets()  # -> list[BaseSocket]
 server.get_clients_sockets_by_tag(tag, value=None)  # -> list[BaseSocket]
+server.bus  # -> VeltixBus (subscribe to ServerEvent, ClientEvent, MessageEvent, …)
 ```
 
 #### `Client(config: ClientConfig)`
@@ -438,9 +458,15 @@ from veltix import Client, ClientConfig
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, retry=3, retry_delay=1.0))
 client.connect()  # Blocks until handshake done -> bool
+# Legacy callback style (still works)
 client.set_callback(Events.ON_RECV, callback)  # func(response: Response)
 client.set_callback(Events.ON_CONNECT, callback)  # func()
 client.set_callback(Events.ON_DISCONNECT, callback)  # func(state: DisconnectState)
+
+# Structured event bus (v1.9.0+)
+from veltix.internal.events import ClientEvent
+client.bus.subscribe(ClientEvent.ON_CONNECT, callback)
+client.bus.subscribe(ClientEvent.ON_DISCONNECT, callback)
 
 
 @client.route(MY_TYPE)  # Decorator: func(response, client=None)
@@ -453,6 +479,7 @@ client.ping_server(timeout=5.0)  # -> Optional[float] (latency ms)
 client.disconnect()  # -> bool
 client.stop_retry()  # cancel pending reconnection
 client.retry(max_=None)  # force reconnection attempts
+client.bus  # -> VeltixBus (subscribe to ClientEvent, MessageEvent, …)
 ```
 
 ### Configuration
@@ -585,6 +612,71 @@ Events.ON_CONNECT  # "on_connect"
 Events.ON_DISCONNECT  # "on_disconnect"
 ```
 
+#### Structured Event Bus (v1.9.0+, events accessible via `veltix.internal.events`)
+
+```python
+from veltix.internal.events import ServerEvent, ClientEvent, MessageEvent, ProtocolEvent, ErrorEvent, LogEvent, ReconnectEvent
+
+# Subscribe via server.bus / client.bus
+server.bus.subscribe(ServerEvent.ON_CONNECT, callback)
+
+# Server lifecycle
+ServerEvent.ON_DISCONNECT
+ServerEvent.STARTED
+ServerEvent.STOPPED
+ServerEvent.CLIENT_REJECTED
+
+# Client lifecycle
+ClientEvent.ON_CONNECT
+ClientEvent.ON_DISCONNECT
+ClientEvent.CONNECTING
+ClientEvent.DISCONNECTING
+ClientEvent.TAG_ADDED
+ClientEvent.TAG_REMOVED
+ClientEvent.TAG_CLEARED
+
+# Message flow
+MessageEvent.RECEIVED
+MessageEvent.SENT
+MessageEvent.ROUTED
+MessageEvent.UNHANDLED
+MessageEvent.PENDING_REGISTERED
+MessageEvent.PENDING_SATISFIED
+MessageEvent.PENDING_TIMEOUT
+MessageEvent.ROUTE_REGISTERED
+MessageEvent.ROUTE_UNREGISTERED
+
+# Protocol
+ProtocolEvent.PING
+ProtocolEvent.PONG
+ProtocolEvent.HANDSHAKE_START
+ProtocolEvent.HANDSHAKE_DONE
+ProtocolEvent.HANDSHAKE_FAIL
+
+# Errors
+ErrorEvent.NETWORK
+ErrorEvent.HANDLER
+ErrorEvent.CALLBACK
+ErrorEvent.SEND
+ErrorEvent.ACCEPT
+ErrorEvent.CONNECTION_REFUSED
+
+# Logging (auto-subscribed to Logger)
+LogEvent.TRACE
+LogEvent.DEBUG
+LogEvent.INFO
+LogEvent.SUCCESS
+LogEvent.WARNING
+LogEvent.ERROR
+LogEvent.CRITICAL
+
+# Reconnection
+ReconnectEvent.ATTEMPT
+ReconnectEvent.FAIL
+ReconnectEvent.SUCCESS
+ReconnectEvent.CANCELLED
+```
+
 ### Socket Backends
 
 ```python
@@ -629,8 +721,8 @@ BufferSize.HUGE  # 1 MB
 ```python
 from veltix import Version, COMPATIBILITY
 
-v = Version(1, 8, 1)
-v2 = Version.from_str("v1.8.1")
+v = Version(1, 9, 0)
+v2 = Version.from_str("v1.9.0")
 v.is_compatible(v2)  # -> Optional[bool] (True/False/None)
 ```
 

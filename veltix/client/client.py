@@ -1,21 +1,26 @@
 # client.py
 """TCP client implementation for Veltix."""
 
+from __future__ import annotations
+
 import socket
 import time
-from typing import Callable, Optional, Union
+import warnings
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
-from ..internal.events import Events, events
-from ..logger.core import Logger
+from ..internal.bus import VeltixBus
+from ..internal.events import ClientEvent, ErrorEvent, Events
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
-from ..network.types import MessageType
-from ..socket_core.base_socket import BaseSocket, SocketEvents
-from .config import ClientConfig
+from .config import ClientConfig  # noqa: TC001 — re-exported by __init__.py
 from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
+
+if TYPE_CHECKING:
+    from ..network.types import MessageType
+    from ..socket_core.base_socket import BaseSocket
 
 
 class Client:
@@ -39,14 +44,10 @@ class Client:
         Args:
             config: Client configuration.
         """
-        self._logger = Logger.get_instance()
+        self.bus = VeltixBus()
         self.config: ClientConfig = config
 
         self._reconnect_handler: Optional[ReconnectHandler] = None
-
-        self.on_recv: Optional[Callable[[Response], None]] = None
-        self.on_connect: Optional[Callable[[], None]] = None
-        self.on_disconnect: Optional[Callable] = None
 
         self.is_connected: bool = False
         self._connecting: bool = False
@@ -54,7 +55,7 @@ class Client:
 
         self.init_components()
 
-        self._logger.debug(f"Client initialized for {self.config.server_addr}:{self.config.port}")
+        self.bus.debug(f"Client initialized for {self.config.server_addr}:{self.config.port}")
 
     # -------------------------------------------------------------------------
     # Internal initialization
@@ -73,28 +74,22 @@ class Client:
         self.socket: BaseSocket = self.config.socket_core.value(
             request_handler=None,
             max_message_size=self.config.max_message_size,
+            bus=self.bus,
         )
         self.socket.settimeout(0.5)
-        self._sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket)
+        self._sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket, bus=self.bus)
         self.request_handler: RequestHandler = RequestHandler(
             sender=self.sender,
             mode=Mode.CLIENT,
             max_workers=self.config.max_workers,
+            bus=self.bus,
         )
         self.socket.request_handler = self.request_handler
 
-        def _on_socket_disconnect() -> None:
-            # Ignore disconnect events during connect() or manual disconnect().
-            if not self.running or self._connecting:
-                return
-
-            self.is_connected = False
-            self._try_reconnect(DisconnectReason.SERVER_CLOSED)
-
         if self._reconnect_handler is None:
-            self._reconnect_handler = ReconnectHandler(context=self)
+            self._reconnect_handler = ReconnectHandler(context=self, bus=self.bus)
 
-        self.socket.set_callback(SocketEvents.DISCONNECT, _on_socket_disconnect)
+        self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
 
     # -------------------------------------------------------------------------
     # Context API
@@ -105,9 +100,8 @@ class Client:
         return self.connect(_from_retry=True)
 
     def context_on_disconnect(self, state: DisconnectState) -> None:
-        """Forward disconnect state to the public on_disconnect callback."""
-        if self.on_disconnect:
-            self.on_disconnect(state)
+        """Forward disconnect state to subscribers."""
+        self.bus.emit(ClientEvent.ON_DISCONNECT, state)
 
     def context_init(self) -> None:
         """Reinitialise components before a reconnection attempt."""
@@ -115,11 +109,17 @@ class Client:
 
     def context_set_running(self, value: bool) -> None:
         """Set whether the client is considered running."""
+        old = self.running
         self.running = value
+        if old != value:
+            self.bus.info(f"Client running state: {value}")
 
     def context_set_connected(self, value: bool) -> None:
         """Set the connection flag without triggering side effects."""
+        old = self.is_connected
         self.is_connected = value
+        if old != value:
+            self.bus.info(f"Client connected state: {value}")
 
     def context_get_request_handler(self) -> Optional[RequestHandler]:
         """Return the current request handler instance."""
@@ -127,11 +127,18 @@ class Client:
 
     def context_get_on_recv(self) -> Optional[Callable]:
         """Return the current on_recv callback."""
-        return self.on_recv
+        return self.request_handler.on_recv if self.request_handler else None
 
     def context_get_socket(self) -> Optional[BaseSocket]:
         """Return the current socket instance."""
         return self.socket
+
+    def _on_socket_disconnect(self, event: object = None, payload: object = None) -> None:
+        """Handle socket-level disconnect from the server (triggers reconnect)."""
+        if not self.running or self._connecting:
+            return
+        self.is_connected = False
+        self._try_reconnect(DisconnectReason.SERVER_CLOSED)
 
     # -------------------------------------------------------------------------
     # Public API
@@ -148,17 +155,25 @@ class Client:
                 - ON_CONNECT:    func()
                 - ON_DISCONNECT: func(state: DisconnectState)
         """
-        for event_ in events:
-            if event == event_ or event == event_.value:
-                setattr(self, event_.value, func)
-
-                if event_ == Events.ON_RECV:
-                    self.request_handler.set_on_recv(func)
-
-                self._logger.debug(f"Bound callback to event: {event_.value}")
+        mapping = {
+            Events.ON_CONNECT: (ClientEvent.ON_CONNECT, False),
+            Events.ON_DISCONNECT: (ClientEvent.ON_DISCONNECT, True),
+        }
+        for old, (new, has_payload) in mapping.items():
+            if event == old or event == old.value:
+                if has_payload:
+                    self.bus.subscribe(new, lambda e, p: func(p))
+                else:
+                    self.bus.subscribe(new, lambda e, p: func())
+                self.bus.debug(f"Bound callback to event: {new}")
                 return
 
-        self._logger.warning(f"Unknown event type: {event}")
+        if event == Events.ON_RECV or event == Events.ON_RECV.value:
+            self.request_handler.set_on_recv(func)
+            self.bus.debug("Bound callback to event: on_recv")
+            return
+
+        self.bus.warning(f"Unknown event type: {event}")
 
     def route(self, type_: MessageType) -> Callable:
         """
@@ -202,7 +217,14 @@ class Client:
             True if connection and handshake succeeded, False otherwise.
         """
         try:
-            self._logger.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
+            self.bus.emit(
+                ClientEvent.CONNECTING,
+                {
+                    "host": self.config.server_addr,
+                    "port": self.config.port,
+                },
+            )
+            self.bus.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
             self._connecting = True
             connected = self.socket.connect(
                 self.config.server_addr,
@@ -212,36 +234,46 @@ class Client:
             )
             if not connected:
                 self._connecting = False
-                self._logger.error(
-                    f"Connection failed to {self.config.server_addr}:{self.config.port}"
-                )
+                self.bus.error(f"Connection failed to {self.config.server_addr}:{self.config.port}")
                 return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
             self.is_connected = True
             self._connecting = False
             assert self._reconnect_handler is not None
             self._reconnect_handler.init_connect()
-            self._logger.info(
+            self.bus.info(
                 f"Successfully connected to server {self.config.server_addr}:{self.config.port}"
             )
 
-            if self.on_connect:
-                try:
-                    self.on_connect()
-                except Exception as e:
-                    self._logger.error(f"on_connect error: {type(e).__name__}: {e}")
+            self.bus.emit(ClientEvent.ON_CONNECT, None)
 
             return True
 
         except (socket.timeout, ConnectionRefusedError) as e:
-            self._logger.error(
+            self.bus.emit(
+                ErrorEvent.NETWORK,
+                {
+                    "error": str(e),
+                    "host": self.config.server_addr,
+                    "port": self.config.port,
+                },
+            )
+            self.bus.error(
                 f"Connection failed to {self.config.server_addr}:{self.config.port}: "
                 f"{type(e).__name__}"
             )
             return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
         except Exception as e:
-            self._logger.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
+            self.bus.emit(
+                ErrorEvent.NETWORK,
+                {
+                    "error": str(e),
+                    "host": self.config.server_addr,
+                    "port": self.config.port,
+                },
+            )
+            self.bus.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
             return False
 
     @property
@@ -253,8 +285,6 @@ class Client:
         """
         Deprecated: use client.sender instead.
         """
-        import warnings
-
         warnings.warn(
             "Client.get_sender() is deprecated and will be removed in a future version. "
             "Use Client.sender instead.",
@@ -278,12 +308,12 @@ class Client:
             Matching Response, or None on timeout or send failure.
         """
         request_id = request.request_id
-        self._logger.debug(f"send_and_wait: registering request {request_id.hex()}...")
+        self.bus.debug(f"send_and_wait: registering request {request_id.hex()}...")
 
         self.request_handler.register(request_id)
 
         if not self.sender.send(request):
-            self._logger.error(f"Failed to send request {request_id.hex()}...")
+            self.bus.error(f"Failed to send request {request_id.hex()}...")
             self.request_handler.unregister(request_id)
             return None
 
@@ -299,7 +329,7 @@ class Client:
         Returns:
             Latency in milliseconds, or None on timeout.
         """
-        self._logger.debug("Pinging server")
+        self.bus.debug("Pinging server")
         request = Request(PING, b"")
         t_send = time.perf_counter()
         response = self.send_and_wait(request, timeout=timeout)
@@ -307,10 +337,10 @@ class Client:
 
         if response:
             rtt = (t_recv - t_send) * 1000
-            self._logger.info(f"Ping: {rtt:.2f}ms")
+            self.bus.info(f"Ping: {rtt:.2f}ms")
             return rtt
 
-        self._logger.warning("Ping timed out")
+        self.bus.warning("Ping timed out")
         return None
 
     def disconnect(self) -> bool:
@@ -323,24 +353,25 @@ class Client:
             True if disconnection succeeded, False on unexpected error.
         """
         try:
-            self._logger.info("Disconnecting from server")
+            self.bus.emit(ClientEvent.DISCONNECTING)
+            self.bus.info("Disconnecting from server")
             self.running = False
             self.is_connected = False
             assert self._reconnect_handler is not None
             self._reconnect_handler.stop_retry()
             self.request_handler.shutdown(wait=False)
             self.socket.close()
-            self._logger.debug("Socket closed")
+            self.bus.debug("Socket closed")
 
             self._reconnect_handler.fire_on_disconnect(
                 permanent=True, reason=DisconnectReason.MANUAL
             )
 
-            self._logger.info("Successfully disconnected from server")
+            self.bus.info("Successfully disconnected from server")
             return True
 
         except Exception as e:
-            self._logger.error(f"Error during disconnection: {type(e).__name__}: {e}")
+            self.bus.error(f"Error during disconnection: {type(e).__name__}: {e}")
             return False
 
     def stop_retry(self) -> None:

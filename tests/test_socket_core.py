@@ -2,6 +2,7 @@
 
 import socket
 
+from veltix.internal.bus import VeltixBus
 from veltix.socket_core.base_socket import BaseSocket, SocketEvents
 from veltix.socket_core.core import SocketCore
 
@@ -38,18 +39,22 @@ class TestBaseSocketABC:
 
     def _make_handler(self):
         from veltix.handler.request_handler import RequestHandler
+        from veltix.internal.bus import VeltixBus
         from veltix.network.sender import Mode, Sender
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sender = Sender(mode=Mode.CLIENT, conn=s)
-        return RequestHandler(sender=sender, mode=Mode.CLIENT)
+        return RequestHandler(sender=sender, mode=Mode.CLIENT, bus=VeltixBus())
+
+    def _make_bus(self):
+        return VeltixBus()
 
     def test_threading_socket_is_base_socket(self):
         """ThreadingSocket should satisfy BaseSocket ABC at runtime."""
         from veltix.socket_core.threading_socket import ThreadingSocket
 
         handler = self._make_handler()
-        ts = ThreadingSocket(request_handler=handler, max_message_size=1024)
+        ts = ThreadingSocket(request_handler=handler, max_message_size=1024, bus=self._make_bus())
         assert isinstance(ts, BaseSocket) is True
 
     def test_async_socket_is_base_socket(self):
@@ -57,7 +62,7 @@ class TestBaseSocketABC:
         from veltix.socket_core.async_socket import AsyncSocket
 
         handler = self._make_handler()
-        aio = AsyncSocket(request_handler=handler, max_message_size=1024)
+        aio = AsyncSocket(request_handler=handler, max_message_size=1024, bus=self._make_bus())
         assert isinstance(aio, BaseSocket) is True
 
     def test_socket_core_creates_threading(self):
@@ -65,7 +70,7 @@ class TestBaseSocketABC:
         from veltix.socket_core.threading_socket import ThreadingSocket
 
         handler = self._make_handler()
-        instance = SocketCore.THREADING.value(handler, 1024)
+        instance = SocketCore.THREADING.value(handler, 1024, self._make_bus())
         assert isinstance(instance, ThreadingSocket)
 
     def test_socket_core_creates_async(self):
@@ -73,7 +78,7 @@ class TestBaseSocketABC:
         from veltix.socket_core.async_socket import AsyncSocket
 
         handler = self._make_handler()
-        instance = SocketCore.ASYNC.value(handler, 1024)
+        instance = SocketCore.ASYNC.value(handler, 1024, self._make_bus())
         assert isinstance(instance, AsyncSocket)
 
     def test_socket_core_str(self):

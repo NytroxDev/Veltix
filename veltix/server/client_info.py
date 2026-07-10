@@ -3,7 +3,10 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING, Any, Optional
 
+from ..internal.events import ClientEvent
+
 if TYPE_CHECKING:
+    from ..internal.bus import VeltixBus
     from ..socket_core.base_socket import BaseSocket
 
 _id_lock = threading.Lock()
@@ -18,7 +21,16 @@ def _generate_id() -> int:
 
 
 class ClientInfo:
-    __slots__ = ("_id", "conn", "addr", "thread_id", "handshake_done", "_tags", "_tags_lock")
+    __slots__ = (
+        "_id",
+        "conn",
+        "addr",
+        "thread_id",
+        "handshake_done",
+        "_tags",
+        "_tags_lock",
+        "_bus",
+    )
 
     def __init__(
         self,
@@ -26,6 +38,7 @@ class ClientInfo:
         addr: tuple[str, int],
         thread_id: int,
         handshake_done: bool = False,
+        bus: Optional[VeltixBus] = None,
     ) -> None:
         self._id = _generate_id()
         self.conn = conn
@@ -34,6 +47,7 @@ class ClientInfo:
         self.handshake_done = handshake_done
         self._tags: dict[str, Any] = {}
         self._tags_lock = threading.Lock()
+        self._bus = bus
 
     @property
     def tags(self) -> dict[str, Any]:
@@ -61,7 +75,16 @@ class ClientInfo:
             if name in self._tags:
                 return False
             self._tags[name] = value
-            return True
+        if self._bus:
+            self._bus.emit(
+                ClientEvent.TAG_ADDED,
+                {
+                    "client": self.addr,
+                    "tag": name,
+                    "value": value,
+                },
+            )
+        return True
 
     def has_tag(self, name: str) -> bool:
         with self._tags_lock:
@@ -84,8 +107,23 @@ class ClientInfo:
             if name not in self._tags:
                 return False
             self._tags.pop(name)
-            return True
+        if self._bus:
+            self._bus.emit(
+                ClientEvent.TAG_REMOVED,
+                {
+                    "client": self.addr,
+                    "tag": name,
+                },
+            )
+        return True
 
     def clear_tags(self) -> None:
         with self._tags_lock:
             self._tags.clear()
+        if self._bus:
+            self._bus.emit(
+                ClientEvent.TAG_CLEARED,
+                {
+                    "client": self.addr,
+                },
+            )
