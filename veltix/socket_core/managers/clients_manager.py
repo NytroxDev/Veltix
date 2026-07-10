@@ -8,6 +8,7 @@ from ...network.message_buffer import MessageBuffer
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from ...internal.bus import VeltixBus
     from ...server.client_info import ClientInfo
     from ...socket_core.base_socket import BaseSocket
 
@@ -22,17 +23,19 @@ class ClientEntry:
 
 
 class ClientsManager:
-    def __init__(self, max_message_size: Optional[int] = None):
+    def __init__(self, max_message_size: Optional[int] = None, bus: Optional[VeltixBus] = None):
         self.max_message_size = max_message_size or (10 * 1024 * 1024)
         self.clients: dict[int, ClientEntry] = {}
         self._clients_lock = Lock()
         self.id_count = 0
+        self._bus = bus
 
     def add_client(self, client_info: ClientInfo) -> int:
         with self._clients_lock:
             self.id_count += 1
             self.clients[self.id_count] = ClientEntry(
-                id=self.id_count, info=client_info, buffer=MessageBuffer(self.max_message_size)
+                id=self.id_count, info=client_info,
+                buffer=MessageBuffer(self.max_message_size, bus=self._bus),
             )
             return self.id_count
 

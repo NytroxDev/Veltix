@@ -28,7 +28,7 @@ class ThreadingSocket(BaseSocket):
         self.n_th = 0
         self._n_th_lock = threading.Lock()
 
-        self.client_manager = ClientsManager(max_message_size)
+        self.client_manager = ClientsManager(max_message_size, bus=bus)
 
         self.threads: dict[int, threading.Thread] = {}
         self._threads_lock = threading.Lock()
@@ -62,7 +62,7 @@ class ThreadingSocket(BaseSocket):
         conn.max_message_size = max_message_size
         conn.handshake_timeout = handshake_timeout
         conn.running = False
-        conn.client_manager = ClientsManager(max_message_size)
+        conn.client_manager = ClientsManager(max_message_size, bus=bus)
         conn.start_th = None
         conn.thread_handler = None
         conn.threads = {}
