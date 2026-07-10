@@ -6,7 +6,6 @@ import pytest
 
 from veltix.exceptions import NetworkError, TimeoutError
 from veltix.internal.buffer_size import BufferSize
-from veltix.internal.events import Events, events
 from veltix.internal.network import RecvResult, RecvStatus, recv
 from veltix.network.system_types import ERROR, INVALID_REQUEST
 from veltix.network.types import MessageTypeRegistry
@@ -133,24 +132,6 @@ class TestBufferSize:
     def test_is_int_enum(self):
         assert isinstance(BufferSize.SMALL, int)
         assert int(BufferSize.MEDIUM) == 8192
-
-
-# ── Events list ───────────────────────────────────────────────────────────────
-
-
-class TestEventsList:
-    def test_events_list_contains_all(self):
-        assert Events.ON_RECV in events
-        assert Events.ON_CONNECT in events
-        assert Events.ON_DISCONNECT in events
-
-    def test_events_list_length(self):
-        assert len(events) == 3
-
-    def test_events_list_order(self):
-        assert events[0] == Events.ON_RECV
-        assert events[1] == Events.ON_CONNECT
-        assert events[2] == Events.ON_DISCONNECT
 
 
 # ── System types ──────────────────────────────────────────────────────────────

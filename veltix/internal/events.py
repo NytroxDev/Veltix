@@ -66,12 +66,9 @@ class ReconnectEvent(Enum):
     CANCELLED = auto()
 
 
-# ── Backward compat (to remove once migration is done) ─────────────────────
+# ── Backward compat (to remove in v2.0) ───────────────────────────────────
 
 class Events(Enum):
     ON_RECV = "on_recv"
     ON_CONNECT = "on_connect"
     ON_DISCONNECT = "on_disconnect"
-
-
-events = [Events.ON_RECV, Events.ON_CONNECT, Events.ON_DISCONNECT]

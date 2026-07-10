@@ -1,19 +1,22 @@
 """
 Veltix benchmark suite.
 
+Requires ``psutil`` — install with ``pip install veltix[benchmark]``.
+
 Usage
 -----
     # Run all benchmarks
-    python -m benchmark
+    python -m veltix.benchmark
 
     # Run specific benchmarks
-    python -m benchmark --only memory latency burst
+    python -m veltix.benchmark --only memory latency burst
 
     # Save results to JSON
-    python -m benchmark --save results.json
+    python -m veltix.benchmark --save results.json
 
-    # Adjust parameters
-    python -m benchmark --latency-iterations 5000 --stress-clients 200
+    # CLI entry points (installed with ``veltix[benchmark]``)
+    vltxbench
+    veltix-benchmark
 
 Available benchmark IDs: memory, latency, fps, burst, stress
 """
