@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import os
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -12,6 +13,8 @@ from .config import LoggerConfig
 from .formatter import Formatter
 from .levels import LogLevel
 from .writer import Writer
+
+_VELTIX_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.sep
 
 
 class Logger:
@@ -100,12 +103,10 @@ class Logger:
         try:
             frame = inspect.currentframe()
             while frame:
-                if "logger" not in frame.f_code.co_filename.lower():
-                    break
+                filename = os.path.abspath(frame.f_code.co_filename)
+                if not filename.startswith(_VELTIX_ROOT):
+                    return f"{Path(frame.f_code.co_filename).name}:{frame.f_lineno}"
                 frame = frame.f_back
-
-            if frame:
-                return f"{Path(frame.f_code.co_filename).name}:{frame.f_lineno}"
         except Exception:
             pass
         return None
