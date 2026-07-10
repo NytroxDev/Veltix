@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 from enum import Enum
-from typing import Awaitable, Callable, List, Optional, Union
+from typing import Awaitable, Callable, Optional, Union
 
 Subscriber = Union[
     Callable[[Enum, Optional[object]], None],
@@ -19,7 +19,7 @@ def _iter_members(event_type):
     if isinstance(event_type, list):
         return event_type
     raise TypeError(
-        "Expected an Enum member or an Enum class, got {}".format(type(event_type).__name__)
+        f"Expected an Enum member or an Enum class, got {type(event_type).__name__}"
     )
 
 
@@ -65,14 +65,14 @@ class _BaseEventBus:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
                     raise ValueError(
-                        "Unknown event type: {}".format(member)
+                        f"Unknown event type: {member}"
                     )
 
                 if any(
                     _original_sub(s) is function for s in self._subscribers[member]
                 ):
                     raise ValueError(
-                        "Function {!r} is already subscribed to {}".format(function, member)
+                        f"Function {function!r} is already subscribed to {member}"
                     )
 
                 self._subscribers[member].append(function)
@@ -83,7 +83,7 @@ class _BaseEventBus:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
                     raise ValueError(
-                        "Unknown event type: {}".format(member)
+                        f"Unknown event type: {member}"
                     )
 
                 for i, s in enumerate(self._subscribers[member]):
@@ -92,7 +92,7 @@ class _BaseEventBus:
                         break
                 else:
                     raise ValueError(
-                        "Function {!r} is not subscribed to {}".format(function, member)
+                        f"Function {function!r} is not subscribed to {member}"
                     )
 
     def has_subscriber(self, event_type, function):
@@ -129,6 +129,6 @@ class _BaseEventBus:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
                     raise ValueError(
-                        "Unknown event type: {}".format(member)
+                        f"Unknown event type: {member}"
                     )
                 self._subscribers[member].clear()

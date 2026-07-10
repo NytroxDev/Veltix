@@ -1,8 +1,11 @@
 # client.py
 """TCP client implementation for Veltix."""
 
+from __future__ import annotations
+
 import socket
 import time
+import warnings
 from typing import Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
@@ -263,8 +266,6 @@ class Client:
         """
         Deprecated: use client.sender instead.
         """
-        import warnings
-
         warnings.warn(
             "Client.get_sender() is deprecated and will be removed in a future version. "
             "Use Client.sender instead.",
