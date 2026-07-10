@@ -258,14 +258,11 @@ class Server:
     # Server lifecycle
     # -------------------------------------------------------------------------
 
-    def start(self, _on_th: bool = False) -> None:
+    def start(self) -> None:
         """
         Start the server and begin accepting connections.
 
         Non-blocking — starts a background thread and returns immediately.
-
-        Args:
-            _on_th: Internal parameter, do not use.
         """
         self.socket.bind(
             host=self.config.host,
