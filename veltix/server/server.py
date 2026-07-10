@@ -51,6 +51,8 @@ class Server:
         "request_handler",
         "socket",
         "_shutdown_event",
+        "_started",
+        "_closed",
     )
 
     def __init__(self, config: ServerConfig) -> None:
@@ -63,25 +65,30 @@ class Server:
         self.bus = VeltixBus()
 
         self.config: ServerConfig = config
-
-        self._sender = Sender(mode=Mode.SERVER, bus=self.bus)
-        self.request_handler = RequestHandler(
-            sender=self.sender, mode=Mode.SERVER, max_workers=config.max_workers, bus=self.bus
-        )
-
-        self.socket: BaseSocket = self.config.socket_core.value(
-            request_handler=self.request_handler,
-            max_message_size=self.config.max_message_size,
-            bus=self.bus,
-        )
-        self.socket.handshake_timeout = self.config.handshake_timeout
         self._shutdown_event = threading.Event()
+        self._started = False
+        self._closed = False
+
+        self._init_components()
 
         self.bus.info(f"Server initialized on {self.config.host}:{self.config.port}")
         self.bus.debug(
             f"Server config: buffer_size={self.config.buffer_size}, "
             f"max_connections={self.config.max_connection}"
         )
+
+    def _init_components(self) -> None:
+        """(Re)create internal components (sender, handler, socket)."""
+        self._sender = Sender(mode=Mode.SERVER, bus=self.bus)
+        self.request_handler = RequestHandler(
+            sender=self.sender, mode=Mode.SERVER, max_workers=self.config.max_workers, bus=self.bus
+        )
+        self.socket: BaseSocket = self.config.socket_core.value(
+            request_handler=self.request_handler,
+            max_message_size=self.config.max_message_size,
+            bus=self.bus,
+        )
+        self.socket.handshake_timeout = self.config.handshake_timeout
 
     # -------------------------------------------------------------------------
     # Public API
@@ -266,6 +273,15 @@ class Server:
 
         Non-blocking — starts a background thread and returns immediately.
         """
+        if self._started:
+            self.bus.warning("Server is already started")
+            return
+
+        self._started = True
+        self._shutdown_event.clear()
+        if self._closed:
+            self._closed = False
+            self._init_components()
         self.socket.bind(
             host=self.config.host,
             port=self.config.port,
@@ -292,6 +308,8 @@ class Server:
         except Exception as e:
             self.bus.error(f"Error closing server socket: {e}")
 
+        self._started = False
+        self._closed = True
         self._shutdown_event.set()
 
         self.bus.emit(
