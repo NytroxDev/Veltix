@@ -24,6 +24,7 @@ def _get_proc() -> psutil.Process:
     global _proc
     if _proc is None:
         import psutil  # runtime import (TYPE_CHECKING is False at runtime)
+
         _proc = psutil.Process(os.getpid())
     return _proc
 

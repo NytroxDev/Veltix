@@ -34,6 +34,7 @@ class TestOriginalSub:
     def test_plain_function(self):
         def f():
             pass
+
         assert _original_sub(f) is f
 
     def test_wrapper_with_original(self):
@@ -49,4 +50,5 @@ class TestOriginalSub:
     def test_lambda(self):
         def f():
             pass
+
         assert _original_sub(f) is f

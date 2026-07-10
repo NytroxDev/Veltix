@@ -93,9 +93,12 @@ class RequestHandler:
         queue: Queue = Queue(maxsize=1)
         with self.pending_requests_lock:
             self.pending_requests[request_id] = queue
-        self.bus.emit(MessageEvent.PENDING_REGISTERED, {
-            "request_id": request_id.hex(),
-        })
+        self.bus.emit(
+            MessageEvent.PENDING_REGISTERED,
+            {
+                "request_id": request_id.hex(),
+            },
+        )
         return queue
 
     def unregister(self, request_id: bytes) -> None:
@@ -120,10 +123,13 @@ class RequestHandler:
         try:
             return queue.get(timeout=timeout)  # type: ignore[no-any-return]
         except Empty:
-            self.bus.emit(MessageEvent.PENDING_TIMEOUT, {
-                "request_id": request_id.hex(),
-                "timeout": timeout,
-            })
+            self.bus.emit(
+                MessageEvent.PENDING_TIMEOUT,
+                {
+                    "request_id": request_id.hex(),
+                    "timeout": timeout,
+                },
+            )
             self.bus.warning(
                 f"Timeout waiting for response (id={request_id.hex()}) after {timeout}s"
             )
@@ -153,10 +159,13 @@ class RequestHandler:
                 self.bus.warning(f"Route for type {type_} already registered — ignoring")
                 return False
             self._routes[type_] = function
-        self.bus.emit(MessageEvent.ROUTE_REGISTERED, {
-            "type": type_,
-            "name": type_.name,
-        })
+        self.bus.emit(
+            MessageEvent.ROUTE_REGISTERED,
+            {
+                "type": type_,
+                "name": type_.name,
+            },
+        )
         return True
 
     def unregister_route(self, type_: MessageType) -> bool:
@@ -165,10 +174,13 @@ class RequestHandler:
                 self.bus.warning(f"Route for type {type_} not registered — ignoring")
                 return False
             self._routes.pop(type_)
-        self.bus.emit(MessageEvent.ROUTE_UNREGISTERED, {
-            "type": type_,
-            "name": type_.name,
-        })
+        self.bus.emit(
+            MessageEvent.ROUTE_UNREGISTERED,
+            {
+                "type": type_,
+                "name": type_.name,
+            },
+        )
         return True
 
     def shutdown(self, wait: bool = True) -> None:

@@ -10,7 +10,7 @@ Subscriber = Union[
 ]
 
 
-def _iter_members(event_type):
+def _iter_members(event_type: Union[Enum, type, list]) -> list[Enum]:
     """Resolve an Enum member, an Enum class, or a list into a list of members."""
     if isinstance(event_type, Enum):
         return [event_type]
@@ -18,12 +18,10 @@ def _iter_members(event_type):
         return list(event_type)
     if isinstance(event_type, list):
         return event_type
-    raise TypeError(
-        f"Expected an Enum member or an Enum class, got {type(event_type).__name__}"
-    )
+    raise TypeError(f"Expected an Enum member or an Enum class, got {type(event_type).__name__}")
 
 
-def _original_sub(func):
+def _original_sub(func: Callable) -> Callable:
     """Return the original function wrapped by *func*, or *func* itself."""
     return getattr(func, "_original", func)
 
@@ -39,13 +37,13 @@ class _BaseEventBus:
         self._subscribers = {}  # type: dict[Enum, list[Subscriber]]
         self._sub_lock = threading.RLock()
 
-    def _get_sub(self, event_type):
+    def _get_sub(self, event_type: Enum) -> Optional[list[Subscriber]]:
         """Return a lock-safe shallow copy of the subscriber list."""
         with self._sub_lock:
             lst = self._subscribers.get(event_type, None)
             return list(lst) if lst is not None else None
 
-    def register(self, event_types):
+    def register(self, event_types: Union[Enum, type, list]) -> None:
         """Register additional event types after creation.
 
         Already-registered members are silently skipped.
@@ -59,55 +57,43 @@ class _BaseEventBus:
                 if member not in self._subscribers:
                     self._subscribers[member] = []
 
-    def subscribe(self, event_type, function):
+    def subscribe(self, event_type: Union[Enum, type, list], function: Subscriber) -> None:
         """Register *function* as a subscriber for *event_type*."""
         with self._sub_lock:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
-                    raise ValueError(
-                        f"Unknown event type: {member}"
-                    )
+                    raise ValueError(f"Unknown event type: {member}")
 
-                if any(
-                    _original_sub(s) is function for s in self._subscribers[member]
-                ):
-                    raise ValueError(
-                        f"Function {function!r} is already subscribed to {member}"
-                    )
+                if any(_original_sub(s) is function for s in self._subscribers[member]):
+                    raise ValueError(f"Function {function!r} is already subscribed to {member}")
 
                 self._subscribers[member].append(function)
 
-    def unsubscribe(self, event_type, function):
+    def unsubscribe(self, event_type: Union[Enum, type, list], function: Subscriber) -> None:
         """Remove *function* from the subscriber list for *event_type*."""
         with self._sub_lock:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
-                    raise ValueError(
-                        f"Unknown event type: {member}"
-                    )
+                    raise ValueError(f"Unknown event type: {member}")
 
                 for i, s in enumerate(self._subscribers[member]):
                     if _original_sub(s) is function:
                         del self._subscribers[member][i]
                         break
                 else:
-                    raise ValueError(
-                        f"Function {function!r} is not subscribed to {member}"
-                    )
+                    raise ValueError(f"Function {function!r} is not subscribed to {member}")
 
-    def has_subscriber(self, event_type, function):
+    def has_subscriber(self, event_type: Union[Enum, type, list], function: Subscriber) -> bool:
         """Check whether *function* is registered for *event_type*."""
         with self._sub_lock:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
                     return False
-                if not any(
-                    _original_sub(s) is function for s in self._subscribers[member]
-                ):
+                if not any(_original_sub(s) is function for s in self._subscribers[member]):
                     return False
             return True
 
-    def on(self, event_type):
+    def on(self, event_type: Union[Enum, type, list]) -> Callable[[Subscriber], Subscriber]:
         """Decorator shorthand for :meth:`subscribe`.
 
         Usage::
@@ -118,17 +104,17 @@ class _BaseEventBus:
 
         This is equivalent to ``bus.subscribe(Event.FOO, handler)``.
         """
-        def decorator(function):
+
+        def decorator(function: Subscriber) -> Subscriber:
             self.subscribe(event_type, function)
             return function
+
         return decorator
 
-    def clear(self, event_type):
+    def clear(self, event_type: Union[Enum, type, list]) -> None:
         """Remove all subscribers for *event_type*."""
         with self._sub_lock:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
-                    raise ValueError(
-                        f"Unknown event type: {member}"
-                    )
+                    raise ValueError(f"Unknown event type: {member}")
                 self._subscribers[member].clear()

@@ -68,6 +68,7 @@ class ReconnectEvent(Enum):
 
 # ── Backward compat (to remove in v2.0) ───────────────────────────────────
 
+
 class Events(Enum):
     ON_RECV = "on_recv"
     ON_CONNECT = "on_connect"

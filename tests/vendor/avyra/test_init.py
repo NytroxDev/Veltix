@@ -1,5 +1,3 @@
-
-
 from veltix._vendor.avyra import EventBus
 
 from .conftest import Event, OtherEvent
@@ -34,8 +32,10 @@ class TestInit:
     def test_register_allows_subscribe_after(self):
         bus = EventBus()
         bus.register(Event)
+
         def handler(e, p):
             pass
+
         bus.subscribe(Event.FOO, handler)
         assert bus.has_subscriber(Event.FOO, handler)
 

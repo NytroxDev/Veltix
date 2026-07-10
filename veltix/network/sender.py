@@ -22,7 +22,12 @@ class Sender:
     SERVER: sends to individual clients or broadcasts.
     """
 
-    def __init__(self, mode: Union[Mode, str], conn: Optional[BaseSocket] = None, bus: Optional[VeltixBus] = None) -> None:
+    def __init__(
+        self,
+        mode: Union[Mode, str],
+        conn: Optional[BaseSocket] = None,
+        bus: Optional[VeltixBus] = None,
+    ) -> None:
         """Initialize the sender with a mode and an optional connection.
 
         Args:
@@ -70,22 +75,31 @@ class Sender:
         try:
             target.send(data.compile())
             if self.bus:
-                self.bus.emit(MessageEvent.SENT, {
-                    "type": data.type,
-                    "length": len(data.content),
-                    "mode": "client" if self.is_client else "server",
-                })
+                self.bus.emit(
+                    MessageEvent.SENT,
+                    {
+                        "type": data.type,
+                        "length": len(data.content),
+                        "mode": "client" if self.is_client else "server",
+                    },
+                )
             return True
         except (ConnectionResetError, BrokenPipeError) as e:
             if self.bus:
-                self.bus.emit(ErrorEvent.SEND, {"error": str(e), "mode": self.mode.value if self.mode else "unknown"})
+                self.bus.emit(
+                    ErrorEvent.SEND,
+                    {"error": str(e), "mode": self.mode.value if self.mode else "unknown"},
+                )
                 self.bus.warning(f"Connection error during send: {type(e).__name__}")
             if self.is_client:
                 self.conn = None
             return False
         except Exception as e:
             if self.bus:
-                self.bus.emit(ErrorEvent.SEND, {"error": str(e), "mode": self.mode.value if self.mode else "unknown"})
+                self.bus.emit(
+                    ErrorEvent.SEND,
+                    {"error": str(e), "mode": self.mode.value if self.mode else "unknown"},
+                )
                 self.bus.error(f"Unexpected send error: {type(e).__name__}: {e}")
             return False
 
@@ -123,11 +137,14 @@ class Sender:
             try:
                 client.send(compiled)
                 if self.bus:
-                    self.bus.emit(MessageEvent.SENT, {
-                        "type": data.type,
-                        "length": len(data.content),
-                        "mode": "broadcast",
-                    })
+                    self.bus.emit(
+                        MessageEvent.SENT,
+                        {
+                            "type": data.type,
+                            "length": len(data.content),
+                            "mode": "broadcast",
+                        },
+                    )
             except (ConnectionResetError, BrokenPipeError):
                 all_ok = False
             except Exception:

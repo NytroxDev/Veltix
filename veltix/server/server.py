@@ -274,10 +274,13 @@ class Server:
             buffer_size=self.config.buffer_size,
             timeout=0.5,
         )
-        self.bus.emit(ServerEvent.STARTED, {
-            "host": self.config.host,
-            "port": self.config.port,
-        })
+        self.bus.emit(
+            ServerEvent.STARTED,
+            {
+                "host": self.config.host,
+                "port": self.config.port,
+            },
+        )
 
     def close_all(self) -> None:
         """Stop the server and close all client connections."""
@@ -290,7 +293,10 @@ class Server:
         except Exception as e:
             self.bus.error(f"Error closing server socket: {e}")
 
-        self.bus.emit(ServerEvent.STOPPED, {
-            "host": self.config.host,
-            "port": self.config.port,
-        })
+        self.bus.emit(
+            ServerEvent.STOPPED,
+            {
+                "host": self.config.host,
+                "port": self.config.port,
+            },
+        )

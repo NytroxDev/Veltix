@@ -12,7 +12,15 @@ from .events import (
     ServerEvent,
 )
 
-_ALL_EVENTS = [ServerEvent, ClientEvent, MessageEvent, ProtocolEvent, ErrorEvent, LogEvent, ReconnectEvent]
+_ALL_EVENTS = [
+    ServerEvent,
+    ClientEvent,
+    MessageEvent,
+    ProtocolEvent,
+    ErrorEvent,
+    LogEvent,
+    ReconnectEvent,
+]
 
 
 class VeltixBus(EventBus):

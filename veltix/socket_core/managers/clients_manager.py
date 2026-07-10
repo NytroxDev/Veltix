@@ -34,7 +34,8 @@ class ClientsManager:
         with self._clients_lock:
             self.id_count += 1
             self.clients[self.id_count] = ClientEntry(
-                id=self.id_count, info=client_info,
+                id=self.id_count,
+                info=client_info,
                 buffer=MessageBuffer(self.max_message_size, bus=self._bus),
             )
             return self.id_count

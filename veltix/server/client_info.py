@@ -21,7 +21,16 @@ def _generate_id() -> int:
 
 
 class ClientInfo:
-    __slots__ = ("_id", "conn", "addr", "thread_id", "handshake_done", "_tags", "_tags_lock", "_bus")
+    __slots__ = (
+        "_id",
+        "conn",
+        "addr",
+        "thread_id",
+        "handshake_done",
+        "_tags",
+        "_tags_lock",
+        "_bus",
+    )
 
     def __init__(
         self,
@@ -67,11 +76,14 @@ class ClientInfo:
                 return False
             self._tags[name] = value
         if self._bus:
-            self._bus.emit(ClientEvent.TAG_ADDED, {
-                "client": self.addr,
-                "tag": name,
-                "value": value,
-            })
+            self._bus.emit(
+                ClientEvent.TAG_ADDED,
+                {
+                    "client": self.addr,
+                    "tag": name,
+                    "value": value,
+                },
+            )
         return True
 
     def has_tag(self, name: str) -> bool:
@@ -96,16 +108,22 @@ class ClientInfo:
                 return False
             self._tags.pop(name)
         if self._bus:
-            self._bus.emit(ClientEvent.TAG_REMOVED, {
-                "client": self.addr,
-                "tag": name,
-            })
+            self._bus.emit(
+                ClientEvent.TAG_REMOVED,
+                {
+                    "client": self.addr,
+                    "tag": name,
+                },
+            )
         return True
 
     def clear_tags(self) -> None:
         with self._tags_lock:
             self._tags.clear()
         if self._bus:
-            self._bus.emit(ClientEvent.TAG_CLEARED, {
-                "client": self.addr,
-            })
+            self._bus.emit(
+                ClientEvent.TAG_CLEARED,
+                {
+                    "client": self.addr,
+                },
+            )

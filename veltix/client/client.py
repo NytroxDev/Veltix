@@ -217,10 +217,13 @@ class Client:
             True if connection and handshake succeeded, False otherwise.
         """
         try:
-            self.bus.emit(ClientEvent.CONNECTING, {
-                "host": self.config.server_addr,
-                "port": self.config.port,
-            })
+            self.bus.emit(
+                ClientEvent.CONNECTING,
+                {
+                    "host": self.config.server_addr,
+                    "port": self.config.port,
+                },
+            )
             self.bus.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
             self._connecting = True
             connected = self.socket.connect(
@@ -231,9 +234,7 @@ class Client:
             )
             if not connected:
                 self._connecting = False
-                self.bus.error(
-                    f"Connection failed to {self.config.server_addr}:{self.config.port}"
-                )
+                self.bus.error(f"Connection failed to {self.config.server_addr}:{self.config.port}")
                 return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
             self.is_connected = True
@@ -249,9 +250,14 @@ class Client:
             return True
 
         except (socket.timeout, ConnectionRefusedError) as e:
-            self.bus.emit(ErrorEvent.NETWORK, {
-                "error": str(e), "host": self.config.server_addr, "port": self.config.port,
-            })
+            self.bus.emit(
+                ErrorEvent.NETWORK,
+                {
+                    "error": str(e),
+                    "host": self.config.server_addr,
+                    "port": self.config.port,
+                },
+            )
             self.bus.error(
                 f"Connection failed to {self.config.server_addr}:{self.config.port}: "
                 f"{type(e).__name__}"
@@ -259,9 +265,14 @@ class Client:
             return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
         except Exception as e:
-            self.bus.emit(ErrorEvent.NETWORK, {
-                "error": str(e), "host": self.config.server_addr, "port": self.config.port,
-            })
+            self.bus.emit(
+                ErrorEvent.NETWORK,
+                {
+                    "error": str(e),
+                    "host": self.config.server_addr,
+                    "port": self.config.port,
+                },
+            )
             self.bus.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
             return False
 

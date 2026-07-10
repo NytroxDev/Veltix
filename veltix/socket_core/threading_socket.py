@@ -23,7 +23,9 @@ if TYPE_CHECKING:
 class ThreadingSocket(BaseSocket):
     """Threading-based socket implementation for Veltix (one thread per client)."""
 
-    def __init__(self, request_handler: RequestHandler, max_message_size: int, bus: VeltixBus) -> None:
+    def __init__(
+        self, request_handler: RequestHandler, max_message_size: int, bus: VeltixBus
+    ) -> None:
         self.bus = bus
         self.n_th = 0
         self._n_th_lock = threading.Lock()
@@ -124,15 +126,21 @@ class ThreadingSocket(BaseSocket):
         while self.running:
             try:
                 if 0 < max_client <= self.client_manager.count():
-                    self.bus.emit(ErrorEvent.CONNECTION_REFUSED, {
-                        "max_client": max_client,
-                        "current": self.client_manager.count(),
-                    })
-                    self.bus.emit(ServerEvent.CLIENT_REJECTED, {
-                        "max_client": max_client,
-                        "current": self.client_manager.count(),
-                        "reason": "max_connections",
-                    })
+                    self.bus.emit(
+                        ErrorEvent.CONNECTION_REFUSED,
+                        {
+                            "max_client": max_client,
+                            "current": self.client_manager.count(),
+                        },
+                    )
+                    self.bus.emit(
+                        ServerEvent.CLIENT_REJECTED,
+                        {
+                            "max_client": max_client,
+                            "current": self.client_manager.count(),
+                            "reason": "max_connections",
+                        },
+                    )
                     time.sleep(0.1)
                     continue
 
@@ -149,7 +157,9 @@ class ThreadingSocket(BaseSocket):
                     self.n_th += 1
                     thread_id = self.n_th
 
-                client = ClientInfo(conn=conn, addr=addr, thread_id=thread_id, handshake_done=False, bus=self.bus)
+                client = ClientInfo(
+                    conn=conn, addr=addr, thread_id=thread_id, handshake_done=False, bus=self.bus
+                )
 
                 client_id = self.client_manager.add_client(client)
 
@@ -231,15 +241,21 @@ class ThreadingSocket(BaseSocket):
                 self.bus.debug(
                     f"Message from {entry.info.addr}: {response.type.name} (code={response.type.code})"
                 )
-                self.bus.emit(MessageEvent.RECEIVED, {
-                    "type": response.type,
-                    "length": len(response.content),
-                    "client": entry.info.addr,
-                })
+                self.bus.emit(
+                    MessageEvent.RECEIVED,
+                    {
+                        "type": response.type,
+                        "length": len(response.content),
+                        "client": entry.info.addr,
+                    },
+                )
 
                 handler_result = self.request_handler.handle(response, entry.info)
                 if isinstance(handler_result, Exception):
-                    self.bus.emit(ErrorEvent.HANDLER, {"error": str(handler_result), "client": entry.info.addr})
+                    self.bus.emit(
+                        ErrorEvent.HANDLER,
+                        {"error": str(handler_result), "client": entry.info.addr},
+                    )
                     self.bus.error(f"Handler error for {entry.info.addr}: {handler_result}")
 
         except Exception as e:
@@ -350,11 +366,14 @@ class ThreadingSocket(BaseSocket):
                     self.bus.debug(
                         f"Message from server: {response.type.name} (code={response.type.code})"
                     )
-                    self.bus.emit(MessageEvent.RECEIVED, {
-                        "type": response.type,
-                        "length": len(response.content),
-                        "from": "server",
-                    })
+                    self.bus.emit(
+                        MessageEvent.RECEIVED,
+                        {
+                            "type": response.type,
+                            "length": len(response.content),
+                            "from": "server",
+                        },
+                    )
 
                     handler_result = self.request_handler.handle(response)
                     if isinstance(handler_result, Exception):

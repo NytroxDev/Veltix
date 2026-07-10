@@ -31,7 +31,9 @@ class TestThreadingSocketUnit:
     def sock(self):
         from veltix.socket_core.threading_socket import ThreadingSocket
 
-        return ThreadingSocket(request_handler=_make_handler(), max_message_size=1024, bus=_make_bus())
+        return ThreadingSocket(
+            request_handler=_make_handler(), max_message_size=1024, bus=_make_bus()
+        )
 
     def test_settimeout_failure(self, sock):
         with patch.object(socket.socket, "settimeout", side_effect=OSError("mock")):
