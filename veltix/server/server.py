@@ -50,6 +50,7 @@ class Server:
         "_sender",
         "request_handler",
         "socket",
+        "_shutdown_event",
     )
 
     def __init__(self, config: ServerConfig) -> None:
@@ -74,6 +75,7 @@ class Server:
             bus=self.bus,
         )
         self.socket.handshake_timeout = self.config.handshake_timeout
+        self._shutdown_event = threading.Event()
 
         self.bus.info(f"Server initialized on {self.config.host}:{self.config.port}")
         self.bus.debug(
@@ -290,6 +292,8 @@ class Server:
         except Exception as e:
             self.bus.error(f"Error closing server socket: {e}")
 
+        self._shutdown_event.set()
+
         self.bus.emit(
             ServerEvent.STOPPED,
             {
@@ -297,3 +301,7 @@ class Server:
                 "port": self.config.port,
             },
         )
+
+    def wait_until_closed(self) -> None:
+        """Block until the server is shut down via close_all()."""
+        self._shutdown_event.wait()

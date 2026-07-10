@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import socket
+import threading
 import time
 import warnings
 from typing import TYPE_CHECKING, Callable, Optional, Union
@@ -52,6 +53,7 @@ class Client:
         self.is_connected: bool = False
         self._connecting: bool = False
         self.running: bool = True
+        self._shutdown_event = threading.Event()
 
         self.init_components()
 
@@ -113,6 +115,8 @@ class Client:
         self.running = value
         if old != value:
             self.bus.info(f"Client running state: {value}")
+            if not value:
+                self._shutdown_event.set()
 
     def context_set_connected(self, value: bool) -> None:
         """Set the connection flag without triggering side effects."""
@@ -239,6 +243,7 @@ class Client:
 
             self.is_connected = True
             self._connecting = False
+            self._shutdown_event.clear()
             assert self._reconnect_handler is not None
             self._reconnect_handler.init_connect()
             self.bus.info(
@@ -368,6 +373,7 @@ class Client:
             )
 
             self.bus.info("Successfully disconnected from server")
+            self._shutdown_event.set()
             return True
 
         except Exception as e:
@@ -378,6 +384,10 @@ class Client:
         """Cancel all pending reconnection attempts."""
         if self._reconnect_handler is not None:
             self._reconnect_handler.stop_retry()
+
+    def wait_until_closed(self) -> None:
+        """Block until the client is disconnected (via disconnect() or server close)."""
+        self._shutdown_event.wait()
 
     def retry(self, max_: Optional[int] = None) -> None:
         """
