@@ -281,7 +281,13 @@ class Server:
         self._shutdown_event.clear()
         if self._closed:
             self._closed = False
+            old_routes = self.request_handler.copy_routes()
+            old_on_recv = self.request_handler.on_recv
             self._init_components()
+            for type_, func in old_routes.items():
+                self.request_handler.register_route(type_, func)
+            if old_on_recv:
+                self.request_handler.set_on_recv(old_on_recv)
         self.socket.bind(
             host=self.config.host,
             port=self.config.port,
@@ -299,6 +305,10 @@ class Server:
 
     def close_all(self) -> None:
         """Stop the server and close all client connections."""
+        if self._closed:
+            self.bus.warning("Server is already closed")
+            return
+
         self.bus.info("Shutting down server")
 
         try:
@@ -323,3 +333,8 @@ class Server:
     def wait_until_closed(self) -> None:
         """Block until the server is shut down via close_all()."""
         self._shutdown_event.wait()
+
+    def restart(self) -> None:
+        """Stop the server and start it again, preserving routes and callbacks."""
+        self.close_all()
+        self.start()
