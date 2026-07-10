@@ -165,6 +165,11 @@ class AsyncSocket(BaseSocket):
                 "max_client": max_client,
                 "current": self.client_manager.count(),
             })
+            self.bus.emit(ServerEvent.CLIENT_REJECTED, {
+                "max_client": max_client,
+                "current": self.client_manager.count(),
+                "reason": "max_connections",
+            })
             return
         if not self.running:
             return

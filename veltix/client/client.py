@@ -10,7 +10,7 @@ from typing import Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
-from ..internal.events import ClientEvent, Events
+from ..internal.events import ClientEvent, ErrorEvent, Events
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
@@ -247,6 +247,9 @@ class Client:
             return True
 
         except (socket.timeout, ConnectionRefusedError) as e:
+            self.bus.emit(ErrorEvent.NETWORK, {
+                "error": str(e), "host": self.config.server_addr, "port": self.config.port,
+            })
             self.bus.error(
                 f"Connection failed to {self.config.server_addr}:{self.config.port}: "
                 f"{type(e).__name__}"
@@ -254,6 +257,9 @@ class Client:
             return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
         except Exception as e:
+            self.bus.emit(ErrorEvent.NETWORK, {
+                "error": str(e), "host": self.config.server_addr, "port": self.config.port,
+            })
             self.bus.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
             return False
 

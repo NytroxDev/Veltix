@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class CallbackExecutor:
     """Executes user callbacks in a thread pool to avoid blocking the recv loop."""
 
-    def __init__(self, max_workers: int = 4, bus: VeltixBus = None) -> None:  # type: ignore[assignment]
+    def __init__(self, max_workers: int = 4, bus: Optional[VeltixBus] = None) -> None:
         self.bus = bus
         self._max_workers = max_workers
         self._executor = ThreadPoolExecutor(max_workers=max_workers)

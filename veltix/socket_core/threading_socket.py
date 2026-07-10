@@ -124,6 +124,15 @@ class ThreadingSocket(BaseSocket):
         while self.running:
             try:
                 if 0 < max_client <= self.client_manager.count():
+                    self.bus.emit(ErrorEvent.CONNECTION_REFUSED, {
+                        "max_client": max_client,
+                        "current": self.client_manager.count(),
+                    })
+                    self.bus.emit(ServerEvent.CLIENT_REJECTED, {
+                        "max_client": max_client,
+                        "current": self.client_manager.count(),
+                        "reason": "max_connections",
+                    })
                     time.sleep(0.1)
                     continue
 
