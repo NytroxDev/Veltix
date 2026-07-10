@@ -13,6 +13,8 @@ from .formatter import Formatter
 from .levels import LogLevel
 from .writer import Writer
 
+_SKIP_PATTERNS = ("logger", "bus", "avyra")
+
 
 class Logger:
     """
@@ -99,7 +101,8 @@ class Logger:
         try:
             frame = inspect.currentframe()
             while frame:
-                if "logger" not in frame.f_code.co_filename.lower():
+                name = frame.f_code.co_filename.lower()
+                if not any(pat in name for pat in _SKIP_PATTERNS):
                     break
                 frame = frame.f_back
 
