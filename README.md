@@ -92,6 +92,7 @@ No manual framing. No thread management. No boilerplate.
 - **Thread-safe callbacks**: slow handlers never block reception
 - **Client tagging**: attach metadata, broadcast to groups
 - **Integrated logger**: colorized, rotating, thread-safe
+- **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra) — subscribe to lifecycle, message, protocol, and error events
 
 **Designed for:** LAN tools, multiplayer games, real-time dashboards, custom protocols, IPC, remote tooling, file
 transfer.
