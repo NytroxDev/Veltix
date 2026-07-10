@@ -25,6 +25,9 @@ class ClientConfig:
         retry:             Number of reconnection attempts on failure (default: 0 = disabled).
                            Applies both to the initial connect() and to mid-session disconnections.
         retry_delay:       Seconds to wait between reconnection attempts (default: 1.0).
+        socket_core:       Socket implementation to use (default: ASYNC).
+                            Switch to THREADING or RUST (v3.0.0) without changing
+                            any other code.
     """
 
     server_addr: str = "127.0.0.1"

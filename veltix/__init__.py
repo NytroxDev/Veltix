@@ -57,6 +57,8 @@ __all__ = [
     # Socket
     "SocketCore",
     # System types
+    "ERROR",
+    "INVALID_REQUEST",
     "PING",
     "PONG",
     # Utils
@@ -65,6 +67,7 @@ __all__ = [
     "encode_json",
     "encode_utf8",
     "format_bytes",
+    # Events
     "Events",
     "BufferSize",
     # Logger

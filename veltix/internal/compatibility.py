@@ -27,7 +27,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Optional
 
-from ..logger import Logger
+from ..logger.core import Logger
 
 _logger = Logger.get_instance()
 
@@ -119,6 +119,7 @@ class Version:
 # ---------------------------------------------------------------------------
 
 COMPATIBILITY: dict[Version, list[Version]] = {
+    Version(1, 9, 0): [Version(1, 9, 0)],
     Version(1, 8, 1): [Version(1, 8, 1)],
     Version(1, 8, 0): [Version(1, 8, 0)],
 }

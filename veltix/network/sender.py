@@ -5,10 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import SenderError
+from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
-from ..logger.core import Logger
 
 if TYPE_CHECKING:
+    from ..internal.bus import VeltixBus
     from ..socket_core.base_socket import BaseSocket
     from .request import Request
 
@@ -21,17 +22,23 @@ class Sender:
     SERVER: sends to individual clients or broadcasts.
     """
 
-    def __init__(self, mode: Union[Mode, str], conn: Optional[BaseSocket] = None) -> None:
+    def __init__(
+        self,
+        mode: Union[Mode, str],
+        conn: Optional[BaseSocket] = None,
+        bus: Optional[VeltixBus] = None,
+    ) -> None:
         """Initialize the sender with a mode and an optional connection.
 
         Args:
             mode: CLIENT or SERVER mode.
             conn: Connection socket (required in CLIENT mode).
+            bus: Event bus instance.
 
         Raises:
             SenderError: If mode is CLIENT without a connection.
         """
-        self._logger = Logger.get_instance()
+        self.bus = bus
 
         if isinstance(mode, str):
             mode = Mode(mode)
@@ -59,21 +66,41 @@ class Sender:
         target = self.conn if self.is_client else client
 
         if target is None:
-            self._logger.error(
-                "No connection available" if self.is_client else "No client socket provided"
-            )
+            if self.bus:
+                self.bus.error(
+                    "No connection available" if self.is_client else "No client socket provided"
+                )
             return False
 
         try:
             target.send(data.compile())
+            if self.bus:
+                self.bus.emit(
+                    MessageEvent.SENT,
+                    {
+                        "type": data.type,
+                        "length": len(data.content),
+                        "mode": "client" if self.is_client else "server",
+                    },
+                )
             return True
         except (ConnectionResetError, BrokenPipeError) as e:
-            self._logger.warning(f"Connection error during send: {type(e).__name__}")
+            if self.bus:
+                self.bus.emit(
+                    ErrorEvent.SEND,
+                    {"error": str(e), "mode": self.mode.value if self.mode else "unknown"},
+                )
+                self.bus.warning(f"Connection error during send: {type(e).__name__}")
             if self.is_client:
                 self.conn = None
             return False
         except Exception as e:
-            self._logger.error(f"Unexpected send error: {type(e).__name__}: {e}")
+            if self.bus:
+                self.bus.emit(
+                    ErrorEvent.SEND,
+                    {"error": str(e), "mode": self.mode.value if self.mode else "unknown"},
+                )
+                self.bus.error(f"Unexpected send error: {type(e).__name__}: {e}")
             return False
 
     def broadcast(
@@ -93,7 +120,8 @@ class Sender:
             True if all sends succeeded, False otherwise.
         """
         if self.is_client:
-            self._logger.error("Broadcast not available in CLIENT mode")
+            if self.bus:
+                self.bus.error("Broadcast not available in CLIENT mode")
             return False
 
         if not list_of_client:
@@ -108,6 +136,15 @@ class Sender:
                 continue
             try:
                 client.send(compiled)
+                if self.bus:
+                    self.bus.emit(
+                        MessageEvent.SENT,
+                        {
+                            "type": data.type,
+                            "length": len(data.content),
+                            "mode": "broadcast",
+                        },
+                    )
             except (ConnectionResetError, BrokenPipeError):
                 all_ok = False
             except Exception:

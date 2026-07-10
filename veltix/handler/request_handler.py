@@ -8,12 +8,13 @@ from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.callback_executor import CallbackExecutor
 from ..handler.handshake_handler import HandshakeHandler
+from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
-from ..logger.core import Logger
 from .rules import ALL_RULES
 from .rules_manager import MessageContext, RulesManager
 
 if TYPE_CHECKING:
+    from ..internal.bus import VeltixBus
     from ..network.request import Response
     from ..network.sender import Sender
     from ..network.types import MessageType
@@ -33,18 +34,22 @@ class RequestHandler:
     """
 
     def __init__(
-        self, mode: Union[Mode, str], max_workers: int = 4, sender: Optional[Sender] = None
+        self,
+        mode: Union[Mode, str],
+        bus: VeltixBus,
+        max_workers: int = 4,
+        sender: Optional[Sender] = None,
     ) -> None:
         if isinstance(mode, str):
             mode = Mode(mode)
+        self.bus = bus
         self.on_recv = None
         self.mode = mode
         self.is_server = self.mode == Mode.SERVER
         self.sender = sender
 
-        self._logger = Logger.get_instance()
-        self.handshake_handler = HandshakeHandler(mode=mode)
-        self._executor = CallbackExecutor(max_workers=max_workers)
+        self.handshake_handler = HandshakeHandler(mode=mode, bus=self.bus)
+        self._executor = CallbackExecutor(max_workers=max_workers, bus=self.bus)
 
         self.pending_requests: dict[bytes, Queue] = {}
         self.pending_requests_lock = Lock()
@@ -73,7 +78,8 @@ class RequestHandler:
             self.rules_manager.process(ctx)
         except Exception as e:
             source = f"client {client.addr}" if (self.is_server and client) else "server"
-            self._logger.critical(f"Unexpected error handling message from {source}: {e}")
+            self.bus.emit(ErrorEvent.HANDLER, {"error": str(e), "source": source})
+            self.bus.critical(f"Unexpected error handling message from {source}: {e}")
             return e
 
         return True
@@ -87,6 +93,12 @@ class RequestHandler:
         queue: Queue = Queue(maxsize=1)
         with self.pending_requests_lock:
             self.pending_requests[request_id] = queue
+        self.bus.emit(
+            MessageEvent.PENDING_REGISTERED,
+            {
+                "request_id": request_id.hex(),
+            },
+        )
         return queue
 
     def unregister(self, request_id: bytes) -> None:
@@ -103,7 +115,7 @@ class RequestHandler:
             queue = self.pending_requests.get(request_id)
 
         if queue is None:
-            self._logger.error(
+            self.bus.error(
                 f"No registered request for id={request_id.hex()}. Call register() first."
             )
             return None
@@ -111,7 +123,14 @@ class RequestHandler:
         try:
             return queue.get(timeout=timeout)  # type: ignore[no-any-return]
         except Empty:
-            self._logger.warning(
+            self.bus.emit(
+                MessageEvent.PENDING_TIMEOUT,
+                {
+                    "request_id": request_id.hex(),
+                    "timeout": timeout,
+                },
+            )
+            self.bus.warning(
                 f"Timeout waiting for response (id={request_id.hex()}) after {timeout}s"
             )
             return None
@@ -137,18 +156,32 @@ class RequestHandler:
     def register_route(self, type_: MessageType, function: Callable) -> bool:
         with self._routes_lock:
             if type_ in self._routes:
-                self._logger.warning(f"Route for type {type_} already registered — ignoring")
+                self.bus.warning(f"Route for type {type_} already registered — ignoring")
                 return False
             self._routes[type_] = function
-            return True
+        self.bus.emit(
+            MessageEvent.ROUTE_REGISTERED,
+            {
+                "type": type_,
+                "name": type_.name,
+            },
+        )
+        return True
 
     def unregister_route(self, type_: MessageType) -> bool:
         with self._routes_lock:
             if type_ not in self._routes:
-                self._logger.warning(f"Route for type {type_} not registered — ignoring")
+                self.bus.warning(f"Route for type {type_} not registered — ignoring")
                 return False
             self._routes.pop(type_)
-            return True
+        self.bus.emit(
+            MessageEvent.ROUTE_UNREGISTERED,
+            {
+                "type": type_,
+                "name": type_.name,
+            },
+        )
+        return True
 
     def shutdown(self, wait: bool = True) -> None:
         self._executor.shutdown(wait=wait)
