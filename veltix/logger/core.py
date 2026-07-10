@@ -13,8 +13,6 @@ from .formatter import Formatter
 from .levels import LogLevel
 from .writer import Writer
 
-_SKIP_PATTERNS = ("logger", "bus", "avyra")
-
 
 class Logger:
     """
@@ -75,12 +73,13 @@ class Logger:
         with cls._lock:
             cls._instance = None
 
-    def _log(self, level: LogLevel, message: str) -> None:
+    def _log(self, level: LogLevel, message: str, caller: Optional[str] = None) -> None:
         with self._lock:
             if not self.config.enabled or level < self.config.level:
                 return
 
-            caller = self._get_caller_info() if self.config.show_caller else None
+            if caller is None and self.config.show_caller:
+                caller = self._get_caller_info()
             timestamp = datetime.now() if self.config.show_timestamp else None
 
             formatted = self._formatter.format(
@@ -101,8 +100,7 @@ class Logger:
         try:
             frame = inspect.currentframe()
             while frame:
-                name = frame.f_code.co_filename.lower()
-                if not any(pat in name for pat in _SKIP_PATTERNS):
+                if "logger" not in frame.f_code.co_filename.lower():
                     break
                 frame = frame.f_back
 
@@ -112,26 +110,26 @@ class Logger:
             pass
         return None
 
-    def trace(self, message: str) -> None:
-        self._log(LogLevel.TRACE, message)
+    def trace(self, message: str, caller: Optional[str] = None) -> None:
+        self._log(LogLevel.TRACE, message, caller=caller)
 
-    def debug(self, message: str) -> None:
-        self._log(LogLevel.DEBUG, message)
+    def debug(self, message: str, caller: Optional[str] = None) -> None:
+        self._log(LogLevel.DEBUG, message, caller=caller)
 
-    def info(self, message: str) -> None:
-        self._log(LogLevel.INFO, message)
+    def info(self, message: str, caller: Optional[str] = None) -> None:
+        self._log(LogLevel.INFO, message, caller=caller)
 
-    def success(self, message: str) -> None:
-        self._log(LogLevel.SUCCESS, message)
+    def success(self, message: str, caller: Optional[str] = None) -> None:
+        self._log(LogLevel.SUCCESS, message, caller=caller)
 
-    def warning(self, message: str) -> None:
-        self._log(LogLevel.WARNING, message)
+    def warning(self, message: str, caller: Optional[str] = None) -> None:
+        self._log(LogLevel.WARNING, message, caller=caller)
 
-    def error(self, message: str) -> None:
-        self._log(LogLevel.ERROR, message)
+    def error(self, message: str, caller: Optional[str] = None) -> None:
+        self._log(LogLevel.ERROR, message, caller=caller)
 
-    def critical(self, message: str) -> None:
-        self._log(LogLevel.CRITICAL, message)
+    def critical(self, message: str, caller: Optional[str] = None) -> None:
+        self._log(LogLevel.CRITICAL, message, caller=caller)
 
     def set_level(self, level: LogLevel) -> None:
         with self._lock:
