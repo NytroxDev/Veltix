@@ -215,3 +215,6 @@ docs/plans/
 
 # Internal dev changelog (not for public docs)
 docs/changelog-avyra.md
+
+# Benchmark output (regenerated on each run)
+bench.json
