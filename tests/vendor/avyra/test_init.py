@@ -34,7 +34,8 @@ class TestInit:
     def test_register_allows_subscribe_after(self):
         bus = EventBus()
         bus.register(Event)
-        handler = lambda e, p: None
+        def handler(e, p):
+            pass
         bus.subscribe(Event.FOO, handler)
         assert bus.has_subscriber(Event.FOO, handler)
 

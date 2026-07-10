@@ -179,7 +179,8 @@ class TestHasSubscriber:
         assert bus.has_subscriber(Event, collector) is False
 
     def test_false_with_other_function(self, bus: EventBus, collector):
-        other = lambda e, p: None
+        def other(e, p):
+            pass
         bus.subscribe(Event.FOO, collector)
         assert bus.has_subscriber(Event.FOO, other) is False
 

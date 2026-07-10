@@ -9,22 +9,30 @@ Shared low-level helpers used across benchmarks:
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
-
-import psutil  # type: ignore[import-untyped]
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     import threading
 
-# ── psutil process handle ─────────────────────────────────────────────────────
-_proc = psutil.Process(os.getpid())
+    import psutil  # type: ignore[import-untyped]
+
+# ── psutil process handle (lazy) ─────────────────────────────────────────────
+_proc: Optional[psutil.Process] = None
+
+
+def _get_proc() -> psutil.Process:
+    global _proc
+    if _proc is None:
+        import psutil  # runtime import (TYPE_CHECKING is False at runtime)
+        _proc = psutil.Process(os.getpid())
+    return _proc
 
 
 # ── RAM helpers ───────────────────────────────────────────────────────────────
 
 
 def ram_bytes() -> int:
-    return _proc.memory_info().rss  # type: ignore[no-any-return]
+    return _get_proc().memory_info().rss  # type: ignore[no-any-return]
 
 
 def ram_kb() -> float:

@@ -12,8 +12,6 @@ import sys
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-import psutil  # type: ignore[import-untyped]
-
 import veltix
 
 if TYPE_CHECKING:
@@ -28,6 +26,21 @@ def _normalise(value: Any) -> Any:
     return value.to_dict()
 
 
+def _get_system_info() -> dict:
+    import psutil  # type: ignore[import-untyped]
+
+    return {
+        "python": sys.version.split()[0],
+        "cpu_logical": psutil.cpu_count(logical=True),
+        "cpu_physical": psutil.cpu_count(logical=False),
+        "cpu_model": platform.processor() or "unknown",
+        "ram_gb": round(psutil.virtual_memory().total / 1_073_741_824, 1),
+        "os": sys.platform,
+        "os_version": platform.version(),
+        "machine": platform.machine(),
+    }
+
+
 def build_json(
     mem: Optional[Union[MemoryResult, list[MemoryResult]]],
     lat: Optional[Union[LatencyStats, list[LatencyStats]]],
@@ -40,16 +53,7 @@ def build_json(
     return {
         "veltix_version": veltix.__version__,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "system": {
-            "python": sys.version.split()[0],
-            "cpu_logical": psutil.cpu_count(logical=True),
-            "cpu_physical": psutil.cpu_count(logical=False),
-            "cpu_model": platform.processor() or "unknown",
-            "ram_gb": round(psutil.virtual_memory().total / 1_073_741_824, 1),
-            "os": sys.platform,
-            "os_version": platform.version(),
-            "machine": platform.machine(),
-        },
+        "system": _get_system_info(),
         "results": {
             "memory": _normalise(mem),
             "latency": _normalise(lat),
