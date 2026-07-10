@@ -19,6 +19,12 @@ class MessageTypeRegistry:
         with cls._lock:
             if msg_type.code in cls._registry:
                 existing = cls._registry[msg_type.code]
+                if msg_type.code < 200:
+                    raise MessageTypeError(
+                        f"Code {msg_type.code} is reserved for system messages (0-199). "
+                        f"'{existing.name}' is already registered there. "
+                        f"Use a code between 200 and 499 for user messages."
+                    )
                 raise MessageTypeError(
                     f"Code {msg_type.code} already registered as '{existing.name}'"
                 )
