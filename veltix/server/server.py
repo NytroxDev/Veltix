@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
-from ..internal.events import ErrorEvent, Events, ServerEvent
+from ..internal.events import Events, ServerEvent
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING

@@ -25,7 +25,7 @@ class AsyncSocket(BaseSocket):
 
     def __init__(self, request_handler: RequestHandler, max_message_size: int, bus: VeltixBus) -> None:
         self.bus = bus
-        self.client_manager = ClientsManager(max_message_size)
+        self.client_manager = ClientsManager(max_message_size, bus=bus)
 
         self.id_count = 0
 
@@ -59,7 +59,7 @@ class AsyncSocket(BaseSocket):
         """Create a properly initialized client socket instance."""
         conn = cls.__new__(cls)
         conn.bus = bus
-        conn.client_manager = ClientsManager(max_message_size)
+        conn.client_manager = ClientsManager(max_message_size, bus=bus)
 
         conn.id_count = 0
 

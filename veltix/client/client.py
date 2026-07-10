@@ -6,7 +6,7 @@ from __future__ import annotations
 import socket
 import time
 import warnings
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
@@ -14,11 +14,13 @@ from ..internal.events import ClientEvent, ErrorEvent, Events
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
-from ..network.types import MessageType
-from ..socket_core.base_socket import BaseSocket
-from .config import ClientConfig
+from .config import ClientConfig  # noqa: TC001 — re-exported by __init__.py
 from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
+
+if TYPE_CHECKING:
+    from ..network.types import MessageType
+    from ..socket_core.base_socket import BaseSocket
 
 
 class Client:

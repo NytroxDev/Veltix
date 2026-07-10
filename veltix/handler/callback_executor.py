@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import contextlib
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from ..internal.events import ErrorEvent
 
