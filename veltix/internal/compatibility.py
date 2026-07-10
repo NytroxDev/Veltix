@@ -27,7 +27,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Optional
 
-from ..logger import Logger
+from ..logger.core import Logger
 
 _logger = Logger.get_instance()
 

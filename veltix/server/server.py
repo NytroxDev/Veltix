@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
-from ..internal.events import Events, ServerEvent
+from ..internal.events import ErrorEvent, Events, ServerEvent
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
@@ -89,7 +89,7 @@ class Server:
     def clients(self) -> list[ClientInfo]:
         return [e.info for e in self.socket.client_manager.get_all_clients()]
 
-    def get_all_clients_sockets(self) -> list:
+    def get_all_clients_sockets(self) -> list[BaseSocket]:
         return [entry.info.conn for entry in self.socket.client_manager.get_all_clients()]
 
     def set_callback(self, event: Union[str, Events], func: Callable) -> None:

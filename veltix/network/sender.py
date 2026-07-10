@@ -22,7 +22,7 @@ class Sender:
     SERVER: sends to individual clients or broadcasts.
     """
 
-    def __init__(self, mode: Union[Mode, str], conn: Optional[BaseSocket] = None, bus: VeltixBus = None) -> None:  # type: ignore[assignment]
+    def __init__(self, mode: Union[Mode, str], conn: Optional[BaseSocket] = None, bus: Optional[VeltixBus] = None) -> None:
         """Initialize the sender with a mode and an optional connection.
 
         Args:
