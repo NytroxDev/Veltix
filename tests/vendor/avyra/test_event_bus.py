@@ -1,6 +1,7 @@
 import pytest
 
 from veltix._vendor.avyra import EventBus
+
 from .conftest import Event, OtherEvent
 
 

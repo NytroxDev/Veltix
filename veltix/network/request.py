@@ -10,7 +10,6 @@ import zlib
 from typing import Optional, Union
 
 from ..exceptions import RequestError
-from ..logger.core import Logger
 from .types import MessageType, MessageTypeRegistry
 
 MAGIC = b"VX"
@@ -45,7 +44,6 @@ class Request:
         self.type = _type
         self.content = content
         self.request_id: bytes = request_id or generate_random_id().to_bytes(4, "big")
-        self._logger = Logger.get_instance()
 
     def respond(self, response: Response) -> None:
         """Align this request's ID with a received response for correlation."""

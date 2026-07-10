@@ -3,6 +3,7 @@ import asyncio
 import pytest
 
 from veltix._vendor.avyra import AsyncEventBus
+
 from .conftest import Event
 
 

@@ -1,6 +1,6 @@
-import pytest
-
 from enum import Enum, auto
+
+import pytest
 
 from veltix._vendor.avyra.core._base import _iter_members, _original_sub
 
