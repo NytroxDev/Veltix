@@ -141,7 +141,7 @@ def main() -> None:
     except ImportError:
         print(
             "psutil is required for benchmarks.\n"
-            "Install it with:  pip install veltix[bench]"
+            "Install it with:  pip install veltix[benchmark]"
         )
         sys.exit(1)
 

@@ -20,9 +20,9 @@ class ServerConfig:
         handshake_timeout: Maximum time to wait for handshake completion in seconds (default: 5.0).
         max_workers:       Number of worker threads for callback execution (default: 4).
                            Increase if your on_recv callback is slow or blocking.
-        socket_core:       Socket implementation to use (default: THREADING).
-                           Switch to ASYNC (v1.7.0) or RUST (v3.0.0) without changing
-                           any other code.
+        socket_core:       Socket implementation to use (default: ASYNC).
+                            Switch to THREADING or RUST (v3.0.0) without changing
+                            any other code.
     """
 
     host: str = "0.0.0.0"

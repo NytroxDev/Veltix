@@ -11,17 +11,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **VeltixBus event system** : new `VeltixBus` (powered by vendored Avyra `EventBus`) replaces the Logger singleton
   across all core modules. Emits structured `ServerEvent`, `ClientEvent`, `MessageEvent`, `ProtocolEvent`,
-  `ErrorEvent`, `ReconnectEvent`, and `LogEvent` for full observability via a single subscription.
-- **Benchmark now optional** : `psutil` is no longer a hard dependency. Install with `pip install veltix[bench]`
-  to use the benchmark suite (entries `vltxbench`, `veltix-benchmark`, and `python -m veltix.benchmark`).
+  `ErrorEvent`, `ReconnectEvent`, and `LogEvent` for full observability via a single subscription
+  ([a1c70e2](https://github.com/NytroxDev/Veltix/commit/a1c70e2),
+  [fe9e5bb](https://github.com/NytroxDev/Veltix/commit/fe9e5bb),
+  [3aebb27](https://github.com/NytroxDev/Veltix/commit/3aebb27)).
+- **Benchmark now optional** : `psutil` is no longer a hard dependency. Install with `pip install veltix[benchmark]`
+  to use the benchmark suite
+  ([0437d05](https://github.com/NytroxDev/Veltix/commit/0437d05)).
 
 ### Changed
 
 - **Internal architecture** : Logger singleton replaced with per-instance `VeltixBus` injected into `Server`,
-  `Client`, `BaseSocket`, `RequestHandler`, `Sender`, `ReconnectHandler`, `ClientsManager`, and `MessageBuffer`.
+  `Client`, `BaseSocket`, `RequestHandler`, `Sender`, `ReconnectHandler`, `ClientsManager`, and `MessageBuffer`
+  ([80bded4](https://github.com/NytroxDev/Veltix/commit/80bded4),
+  [14fb528](https://github.com/NytroxDev/Veltix/commit/14fb528),
+  [9ac46b8](https://github.com/NytroxDev/Veltix/commit/9ac46b8),
+  [2cf3390](https://github.com/NytroxDev/Veltix/commit/2cf3390),
+  [36ddf0d](https://github.com/NytroxDev/Veltix/commit/36ddf0d),
+  [73fae89](https://github.com/NytroxDev/Veltix/commit/73fae89),
+  [efe2a58](https://github.com/NytroxDev/Veltix/commit/efe2a58),
+  [4b09253](https://github.com/NytroxDev/Veltix/commit/4b09253)).
 - **Vendored Avyra v1.0.0** : event-bus library copied into `veltix/_vendor/avyra/` with Python 3.8 compat
-  (`from __future__ import annotations`, `Union`/`Optional`).
+  ([a1c70e2](https://github.com/NytroxDev/Veltix/commit/a1c70e2)).
 - **Backward compatible** : public API is unchanged; the old `Events` enum is kept for compatibility.
+
+### Fixed
+
+- **Race condition in handshake** : `handshake_done = True` now set before `do_server_handshake()` to close a race
+  condition ([6e9069f](https://github.com/NytroxDev/Veltix/commit/6e9069f)).
+- **Dead Logger singleton removed from `request.py`** : the last Logger references in the request module were cleaned up
+  ([4a19b32](https://github.com/NytroxDev/Veltix/commit/4a19b32)).
+
+### Tests
+
+- **Avyra vendor tests added** : 70 tests for the vendored event-bus library, plus a version test; total suite reaches
+  497 tests ([077ff45](https://github.com/NytroxDev/Veltix/commit/077ff45),
+  [2f75f16](https://github.com/NytroxDev/Veltix/commit/2f75f16)).
 
 ## [1.8.1] - 2026-07-07
 
@@ -30,16 +55,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`SO_REUSEADDR` moved to `bind()` only** : the socket option was being set on both server and client sockets; now
   restricted to the listening socket only ([b117547](https://github.com/NytroxDev/Veltix/commit/b117547)).
 - **`handshake_timeout` propagated to client socket instances** : `ClientConfig.handshake_timeout` was not forwarded to
-  the underlying socket; the default timeout was always used instead of the configured value ([4e5a7db](https://github.com/NytroxDev/Veltix/commit/4e5a7db)).
+  the underlying socket; the default timeout was always used instead of the configured
+  value ([4e5a7db](https://github.com/NytroxDev/Veltix/commit/4e5a7db)).
 - **AsyncSocket selector loop busy-loop after self-disconnect** : when the server closed a client connection, the
-  selector could enter a busy-loop reading from a closed fd. Now breaks out immediately on self-disconnect ([7543f1d](https://github.com/NytroxDev/Veltix/commit/7543f1d)).
+  selector could enter a busy-loop reading from a closed fd. Now breaks out immediately on
+  self-disconnect ([7543f1d](https://github.com/NytroxDev/Veltix/commit/7543f1d)).
 - **Handshake encode/decode exceptions no longer swallowed** : `_encode()` and `_decode()` were silently catching all
   JSON errors; exceptions now propagate properly. Also fixes a Python 3.8 compatibility regression in
   `request_handler.py` ([feb8736](https://github.com/NytroxDev/Veltix/commit/feb8736), [6d76612](https://github.com/NytroxDev/Veltix/commit/6d76612)).
 - **Client config no longer mutated during retry** : `client.retry(max=N)` was overwriting the original
   `ClientConfig.retry`; now uses an internal override ([91c872d](https://github.com/NytroxDev/Veltix/commit/91c872d)).
 - **Logger Writer type annotations** : `_file_path` normalized to `Optional[Path]`, `_initialized` guard uses
-  class-level `RLock`, `__post_init__` missing return type added ([ea823fe](https://github.com/NytroxDev/Veltix/commit/ea823fe), [3bfa9ad](https://github.com/NytroxDev/Veltix/commit/3bfa9ad), [f7f24b9](https://github.com/NytroxDev/Veltix/commit/f7f24b9)).
+  class-level `RLock`, `__post_init__` missing return type
+  added ([ea823fe](https://github.com/NytroxDev/Veltix/commit/ea823fe), [3bfa9ad](https://github.com/NytroxDev/Veltix/commit/3bfa9ad), [f7f24b9](https://github.com/NytroxDev/Veltix/commit/f7f24b9)).
 
 ### Changed
 
@@ -60,11 +88,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **30 new unit tests** for `ThreadingSocket` and `AsyncSocket` error paths (send failures, accept failures, handshake
   failures) ([42b1ba5](https://github.com/NytroxDev/Veltix/commit/42b1ba5)).
-- **100% coverage on `Writer`** : comprehensive tests covering file rotation, buffer flushing, edge cases ([7195060](https://github.com/NytroxDev/Veltix/commit/7195060)).
+- **100% coverage on `Writer`** : comprehensive tests covering file rotation, buffer flushing, edge
+  cases ([7195060](https://github.com/NytroxDev/Veltix/commit/7195060)).
 
 ### Chore
 
-- **CI lint and typecheck jobs added** : `ruff check` and `mypy veltix/` now run in CI ([e2fa945](https://github.com/NytroxDev/Veltix/commit/e2fa945)).
+- **CI lint and typecheck jobs added** : `ruff check` and `mypy veltix/` now run in
+  CI ([e2fa945](https://github.com/NytroxDev/Veltix/commit/e2fa945)).
 - **Release script** (`scripts/release.sh`) : ruff, mypy, version consistency, compatibility table, tests, build
   check ([9cd5545](https://github.com/NytroxDev/Veltix/commit/9cd5545), [7abc61f](https://github.com/NytroxDev/Veltix/commit/7abc61f)).
 - **Ruff auto-fix pass** : entire codebase reformatted; all rules (B017, N806, B007, TC001, TC003, SIM110)
