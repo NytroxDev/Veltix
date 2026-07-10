@@ -302,6 +302,7 @@ class Server:
                 "port": self.config.port,
             },
         )
+        self.bus.info(f"Server started on {self.config.host}:{self.config.port}")
 
     def close_all(self) -> None:
         """Stop the server and close all client connections."""
