@@ -114,7 +114,7 @@ class Sender:
         self,
         data: Request,
         list_of_client: Optional[list[BaseSocket]] = None,
-        except_clients: Optional[list[BaseSocket]] = None,
+        except_clients: Optional[list] = None,
     ) -> bool:
         """Send a request to multiple clients (SERVER mode only).
 

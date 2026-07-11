@@ -172,6 +172,37 @@ class Server:
         )
         return self.sender
 
+    def send(self, request: Request, client: Union[ClientInfo, BaseSocket]) -> bool:
+        """Send a request to a client. Accepts ClientInfo or BaseSocket.
+
+        Args:
+            request: Request to send.
+            target: ClientInfo or BaseSocket to send to.
+
+        Returns:
+            True if the send succeeded.
+        """
+        from .client_info import ClientInfo
+
+        socket = client.conn if isinstance(client, ClientInfo) else client
+        return self.sender.send(request, client=socket)
+
+    def broadcast(
+        self,
+        request: Request,
+        except_clients: Optional[list[Union[ClientInfo, BaseSocket]]] = None,
+    ) -> bool:
+        """Broadcast a request to all connected clients.
+
+        Args:
+            request: Request to broadcast.
+            except_clients: Clients to exclude (ClientInfo or BaseSocket).
+
+        Returns:
+            True if all sends succeeded.
+        """
+        return self.sender.broadcast(request, except_clients=except_clients)
+
     def send_and_wait(
         self, request: Request, client: ClientInfo, timeout: float = 5.0
     ) -> Optional[Response]:
