@@ -363,8 +363,11 @@ class Server:
         )
 
     def wait_until_closed(self) -> None:
-        """Block until the server is shut down via close_all()."""
-        self._shutdown_event.wait()
+        """Block until the server is shut down via close_all() or Ctrl+C."""
+        try:
+            self._shutdown_event.wait()
+        except KeyboardInterrupt:
+            self.close_all()
 
     def restart(self) -> None:
         """Stop the server and start it again, preserving routes and callbacks."""
