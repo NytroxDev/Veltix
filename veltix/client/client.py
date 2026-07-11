@@ -298,6 +298,17 @@ class Client:
         )
         return self.sender
 
+    def send(self, request: Request) -> bool:
+        """Send a request to the server.
+
+        Args:
+            request: Request to send.
+
+        Returns:
+            True if the send succeeded.
+        """
+        return self.sender.send(request)
+
     def send_and_wait(self, request: Request, timeout: float = 5.0) -> Optional[Response]:
         """
         Send a request and block until the matching response is received.
