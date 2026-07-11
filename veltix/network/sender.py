@@ -113,15 +113,15 @@ class Sender:
     def broadcast(
         self,
         data: Request,
-        list_of_client: Optional[list[BaseSocket]] = None,
+        list_of_client: Optional[list] = None,
         except_clients: Optional[list] = None,
     ) -> bool:
         """Send a request to multiple clients (SERVER mode only).
 
         Args:
             data: Request to broadcast.
-            list_of_client: Target client sockets. Defaults to all connected clients.
-            except_clients: Clients to exclude (accepts BaseSocket or ClientInfo).
+            list_of_client: Target clients. Accepts BaseSocket or ClientInfo. Defaults to all connected clients.
+            except_clients: Clients to exclude. Accepts BaseSocket or ClientInfo.
 
         Returns:
             True if all sends succeeded, False otherwise.
@@ -146,10 +146,11 @@ class Sender:
         all_ok = True
 
         for client in list_of_client:
-            if client in except_set:
+            socket = self._resolve_socket(client)
+            if socket in except_set:
                 continue
             try:
-                client.send(compiled)
+                socket.send(compiled)
                 if self.bus:
                     self.bus.emit(
                         MessageEvent.SENT,
