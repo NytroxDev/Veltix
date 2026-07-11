@@ -27,7 +27,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
+from veltix import Client, ClientConfig, Request, Server, ServerConfig, SocketCore
 
 from ..config import PLAYER_MOVE, PORT_STRESS
 from ..display import header, row
@@ -62,7 +62,7 @@ def run(
             last_recv_ts.append(ts)
 
     server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
-    server.set_callback(Events.ON_RECV, on_recv)
+    server.on_recv(on_recv)
     server.start()
     time.sleep(0.5)
 

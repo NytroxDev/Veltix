@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
+from veltix import Client, ClientConfig, MessageType, Request, Server, ServerConfig
 from veltix.network.request import Response
 from veltix.server.client_info import ClientInfo
 
@@ -64,7 +64,7 @@ class TestServerRouting:
         def on_msg(client: ClientInfo, response: Response):
             routed.append(True)
 
-        server.set_callback(Events.ON_RECV, lambda c, r: fallback.append(True))
+        server.on_recv(lambda c, r: fallback.append(True))
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
@@ -84,7 +84,7 @@ class TestServerRouting:
 
         fallback = []
 
-        server.set_callback(Events.ON_RECV, lambda c, r: fallback.append(r))
+        server.on_recv(lambda c, r: fallback.append(r))
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
@@ -146,7 +146,7 @@ class TestServerRouting:
         def on_msg(client: ClientInfo, response: Response):
             routed.append(True)
 
-        server.set_callback(Events.ON_RECV, lambda c, r: fallback.append(True))
+        server.on_recv(lambda c, r: fallback.append(True))
         server.request_handler.unregister_route(test_message_type)
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
@@ -216,8 +216,7 @@ class TestClientRouting:
         def on_msg(response: Response, client=None):
             received.append(response)
 
-        server.set_callback(
-            Events.ON_CONNECT,
+        server.on_connect(
             lambda c: server.sender.send(Request(test_message_type, b"from server"), client=c.conn),
         )
 
@@ -244,10 +243,9 @@ class TestClientRouting:
         def on_msg(response: Response, client=None):
             routed.append(True)
 
-        client.set_callback(Events.ON_RECV, lambda r: fallback.append(True))
+        client.on_recv(lambda r: fallback.append(True))
 
-        server.set_callback(
-            Events.ON_CONNECT,
+        server.on_connect(
             lambda c: server.sender.send(Request(test_message_type, b"from server"), client=c.conn),
         )
 

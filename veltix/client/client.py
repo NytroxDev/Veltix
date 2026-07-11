@@ -7,11 +7,11 @@ import socket
 import threading
 import time
 import warnings
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional
 
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
-from ..internal.events import ClientEvent, ErrorEvent, Events
+from ..internal.events import ClientEvent, ErrorEvent
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
@@ -148,36 +148,29 @@ class Client:
     # Public API
     # -------------------------------------------------------------------------
 
-    def set_callback(self, event: Union[str, Events], func: Callable) -> None:
-        """
-        Bind a callback function to a client event.
+    def on_recv(self, func: Callable) -> None:
+        """Register a callback for all received messages (before routing).
 
         Args:
-            event: Event type (Events enum or string).
-            func: Callback function:
-                - ON_RECV:       func(response: Response)
-                - ON_CONNECT:    func()
-                - ON_DISCONNECT: func(state: DisconnectState)
+            func: func(response: Response)
         """
-        mapping = {
-            Events.ON_CONNECT: (ClientEvent.ON_CONNECT, False),
-            Events.ON_DISCONNECT: (ClientEvent.ON_DISCONNECT, True),
-        }
-        for old, (new, has_payload) in mapping.items():
-            if event == old or event == old.value:
-                if has_payload:
-                    self.bus.subscribe(new, lambda e, p: func(p))
-                else:
-                    self.bus.subscribe(new, lambda e, p: func())
-                self.bus.debug(f"Bound callback to event: {new}")
-                return
+        self.request_handler.set_on_recv(func)
 
-        if event == Events.ON_RECV or event == Events.ON_RECV.value:
-            self.request_handler.set_on_recv(func)
-            self.bus.debug("Bound callback to event: on_recv")
-            return
+    def on_connect(self, func: Callable) -> None:
+        """Register a callback for successful connection.
 
-        self.bus.warning(f"Unknown event type: {event}")
+        Args:
+            func: func()
+        """
+        self.bus.subscribe(ClientEvent.ON_CONNECT, lambda e, p: func())
+
+    def on_disconnect(self, func: Callable) -> None:
+        """Register a callback for disconnection.
+
+        Args:
+            func: func(state: DisconnectState)
+        """
+        self.bus.subscribe(ClientEvent.ON_DISCONNECT, lambda e, p: func(p))
 
     def route(self, type_: MessageType) -> Callable:
         """

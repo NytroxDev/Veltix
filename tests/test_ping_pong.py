@@ -52,7 +52,7 @@ class TestPingPong:
                 client_info, lambda latency: ping_results.append(latency), timeout=2.0
             )
 
-        server.set_callback("on_connect", on_connect)
+        server.on_connect(on_connect)
         server.start()
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))

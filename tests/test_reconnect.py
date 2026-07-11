@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from veltix import Client, ClientConfig, Events, Server, ServerConfig
+from veltix import Client, ClientConfig, Server, ServerConfig
 
 
 def find_free_port() -> int:
@@ -144,7 +144,7 @@ class TestAutoReconnect:
                 handshake_timeout=1.0,
             )
         )
-        client.set_callback(Events.ON_CONNECT, lambda: reconnected.append(True))
+        client.on_connect(lambda: reconnected.append(True))
         assert client.connect()
         assert len(reconnected) == 1
 
@@ -170,7 +170,7 @@ class TestAutoReconnect:
 
         disconnected = []
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
-        client.set_callback(Events.ON_DISCONNECT, lambda state: disconnected.append(True))
+        client.on_disconnect(lambda state: disconnected.append(True))
         client.connect()
 
         server.close_all()
@@ -210,7 +210,7 @@ class TestAutoReconnect:
                 handshake_timeout=1.0,
             )
         )
-        client.set_callback(Events.ON_CONNECT, lambda: received.append("connected"))
+        client.on_connect(lambda: received.append("connected"))
         client.connect()
 
         server.close_all()

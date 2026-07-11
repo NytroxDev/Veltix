@@ -4,7 +4,7 @@ Echo Server Example for Veltix
 A simple server that echoes back any message it receives.
 """
 
-from veltix import ClientInfo, Events, MessageType, Request, Response, Server, ServerConfig
+from veltix import ClientInfo, MessageType, Request, Response, Server, ServerConfig
 
 # Define message type
 ECHO = MessageType(code=200, name="echo", description="Echo message")
@@ -38,8 +38,8 @@ def main():
             print(f"[{client.ip}] Failed to send echo")
 
     # Bind callbacks
-    server.set_callback(Events.ON_CONNECT, on_connect)
-    server.set_callback(Events.ON_RECV, on_message)
+    server.on_connect(on_connect)
+    server.on_recv(on_message)
 
     # Start server
     print(f"Echo server starting on {config.host}:{config.port}...")

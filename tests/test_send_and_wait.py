@@ -4,7 +4,7 @@ import socket
 
 import pytest
 
-from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
+from veltix import Client, ClientConfig, MessageType, Request, Server, ServerConfig
 
 
 def find_free_port() -> int:
@@ -23,7 +23,7 @@ class TestSendAndWait:
             echo = Request(response2.type, response2.content, request_id=response2.request_id)
             server.sender.send(echo, client=client_info.conn)
 
-        server.set_callback(Events.ON_RECV, on_message)
+        server.on_recv(on_message)
         server.start()
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
@@ -51,7 +51,7 @@ class TestSendAndWait:
             echo = Request(response2.type, response2.content, request_id=response2.request_id)
             client.sender.send(echo)
 
-        client.set_callback(Events.ON_RECV, on_message)
+        client.on_recv(on_message)
         client.connect()
 
         msg_type = MessageType(code=2304, name="server_echo")
@@ -67,7 +67,7 @@ class TestSendAndWait:
     def test_send_and_wait_timeout(self):
         port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
-        server.set_callback(Events.ON_RECV, lambda _c, _r: None)
+        server.on_recv(lambda _c, _r: None)
         server.start()
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))

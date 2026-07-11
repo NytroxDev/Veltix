@@ -6,7 +6,7 @@ A simple client that sends messages to the echo server and prints responses.
 
 import time
 
-from veltix import Client, ClientConfig, Events, MessageType, Request
+from veltix import Client, ClientConfig, MessageType, Request
 
 # Define message type (must match server)
 ECHO = MessageType(code=200, name="echo", description="Echo message")
@@ -25,7 +25,7 @@ def main():
         print(f"Server response: {echo}")
 
     # Bind callback
-    client.set_callback(Events.ON_RECV, on_message)
+    client.on_recv(on_message)
 
     # Connect to server
     print("Connecting to server...")

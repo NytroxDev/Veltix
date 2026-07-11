@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
+from veltix import Client, ClientConfig, MessageType, Request, Server, ServerConfig
 from veltix.handler.callback_executor import CallbackExecutor
 
 
@@ -98,7 +98,7 @@ class TestCallbackExecutorIntegration:
             time.sleep(0.2)  # Simulate heavy work
             received.append(response.content)
 
-        server.set_callback(Events.ON_RECV, slow_callback)
+        server.on_recv(slow_callback)
         server.start()
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))

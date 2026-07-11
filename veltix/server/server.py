@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
-from ..internal.events import Events, ServerEvent
+from ..internal.events import ServerEvent
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
@@ -40,7 +40,7 @@ class Server:
         def on_message(client: ClientInfo, response: Response) -> None:
             server.sender.send(Request(CHAT, b"Hello"), client=client.conn)
 
-        server.set_callback(Events.ON_RECV, on_message)
+        server.on_recv(on_message)
         server.start()
     """
 
@@ -105,33 +105,29 @@ class Server:
     def get_all_clients_sockets(self) -> list[BaseSocket]:
         return [entry.info.conn for entry in self.socket.client_manager.get_all_clients()]
 
-    def set_callback(self, event: Union[str, Events], func: Callable) -> None:
-        """
-        Bind a callback function to a server event.
+    def on_recv(self, func: Callable) -> None:
+        """Register a callback for all received messages (before routing).
 
         Args:
-            event: Event type (Events enum or string).
-            func: Callback function:
-                - ON_RECV:       func(client: ClientInfo, response: Response)
-                - ON_CONNECT:    func(client: ClientInfo)
-                - ON_DISCONNECT: func(client: ClientInfo)
+            func: func(client: ClientInfo, response: Response)
         """
-        mapping = {
-            Events.ON_CONNECT: ServerEvent.ON_CONNECT,
-            Events.ON_DISCONNECT: ServerEvent.ON_DISCONNECT,
-        }
-        for old, new in mapping.items():
-            if event == old or event == old.value:
-                self.bus.subscribe(new, lambda e, p: func(p))
-                self.bus.debug(f"Bound callback to event: {new}")
-                return
+        self.request_handler.set_on_recv(func)
 
-        if event == Events.ON_RECV or event == Events.ON_RECV.value:
-            self.request_handler.set_on_recv(func)
-            self.bus.debug("Bound callback to event: on_recv")
-            return
+    def on_connect(self, func: Callable) -> None:
+        """Register a callback for client connections.
 
-        self.bus.warning(f"Unknown event type for binding: {event}")
+        Args:
+            func: func(client: ClientInfo)
+        """
+        self.bus.subscribe(ServerEvent.ON_CONNECT, lambda e, p: func(p))
+
+    def on_disconnect(self, func: Callable) -> None:
+        """Register a callback for client disconnections.
+
+        Args:
+            func: func(client: ClientInfo)
+        """
+        self.bus.subscribe(ServerEvent.ON_DISCONNECT, lambda e, p: func(p))
 
     def route(self, type_: MessageType) -> Callable:
         """

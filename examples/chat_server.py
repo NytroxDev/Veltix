@@ -4,7 +4,7 @@ Simple Chat Server Example for Veltix
 A chat server that broadcasts messages to all connected clients.
 """
 
-from veltix import ClientInfo, Events, MessageType, Request, Response, Server, ServerConfig
+from veltix import ClientInfo, MessageType, Request, Response, Server, ServerConfig
 
 # Define message types
 CHAT = MessageType(code=201, name="chat", description="Chat message")
@@ -48,8 +48,8 @@ def main():
         sender.broadcast(broadcast, server.get_all_clients_sockets(), [client.conn])
 
     # Bind callbacks
-    server.set_callback(Events.ON_CONNECT, on_connect)
-    server.set_callback(Events.ON_RECV, on_message)
+    server.on_connect(on_connect)
+    server.on_recv(on_message)
 
     # Start server
     print(f"Chat server starting on port {config.port}...")

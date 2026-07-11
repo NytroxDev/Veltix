@@ -149,8 +149,8 @@ class TestServerGetClientsSocketsByTag:
 
         client1 = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client2 = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        client1.set_callback("on_recv", lambda r: received.append("client1"))
-        client2.set_callback("on_recv", lambda r: received.append("client2"))
+        client1.on_recv(lambda r: received.append("client1"))
+        client2.on_recv(lambda r: received.append("client2"))
         client1.connect()
         client2.connect()
 

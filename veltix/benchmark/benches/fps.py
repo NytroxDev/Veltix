@@ -23,7 +23,7 @@ import statistics
 import threading
 import time
 
-from veltix import Client, ClientConfig, Events, Request, Server, ServerConfig, SocketCore
+from veltix import Client, ClientConfig, Request, Server, ServerConfig, SocketCore
 
 from ..config import PLAYER_MOVE, PLAYER_SHOOT, PORT_FPS_1
 from ..display import header, row
@@ -53,7 +53,7 @@ def run(
     lock = threading.Lock()
 
     server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
-    server.set_callback(Events.ON_RECV, lambda _c, _m: incr(recv_count, lock))
+    server.on_recv(lambda _c, _m: incr(recv_count, lock))
     server.start()
     time.sleep(0.5)
 

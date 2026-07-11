@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from veltix import Client, ClientConfig, Events, MessageType, Request, Server, ServerConfig
+from veltix import Client, ClientConfig, MessageType, Request, Server, ServerConfig
 from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.internal.bus import VeltixBus
 from veltix.internal.mode import Mode
@@ -73,7 +73,7 @@ class TestClientServer:
         def on_message(_client, response):
             messages_received.append(response.content)
 
-        server.set_callback(Events.ON_RECV, on_message)
+        server.on_recv(on_message)
         server.start()
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
@@ -107,7 +107,7 @@ class TestClientServer:
         server = Server(ServerConfig(host="127.0.0.1", port=port))
         connected_clients = []
 
-        server.set_callback(Events.ON_CONNECT, lambda c: connected_clients.append(c.addr))
+        server.on_connect(lambda c: connected_clients.append(c.addr))
         server.start()
 
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
@@ -125,7 +125,7 @@ class TestClientServer:
 
         connected = []
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        client.set_callback(Events.ON_CONNECT, lambda: connected.append(True))
+        client.on_connect(lambda: connected.append(True))
         client.connect()
 
         assert wait_for_condition(lambda: len(connected) == 1, timeout=2.0)
@@ -140,7 +140,7 @@ class TestClientServer:
 
         disconnected = []
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        client.set_callback(Events.ON_DISCONNECT, lambda state: disconnected.append(True))
+        client.on_disconnect(lambda state: disconnected.append(True))
         client.connect()
         client.disconnect()
 
@@ -185,7 +185,7 @@ class TestClientServer:
 
                 return callback
 
-            client.set_callback(Events.ON_RECV, make_callback(i))
+            client.on_recv(make_callback(i))
 
             def make_ready_callback(idx):
                 def callback():
@@ -196,7 +196,7 @@ class TestClientServer:
 
                 return callback
 
-            client.set_callback(Events.ON_CONNECT, make_ready_callback(i))
+            client.on_connect(make_ready_callback(i))
             client.connect()
             clients.append(client)
 
@@ -237,7 +237,7 @@ class TestClientServer:
 
                 return callback
 
-            client.set_callback(Events.ON_RECV, make_callback(i))
+            client.on_recv(make_callback(i))
 
             def make_ready_callback(idx):
                 def callback():
@@ -248,7 +248,7 @@ class TestClientServer:
 
                 return callback
 
-            client.set_callback(Events.ON_CONNECT, make_ready_callback(i))
+            client.on_connect(make_ready_callback(i))
             client.connect()
             clients.append(client)
 

@@ -64,12 +64,3 @@ class ReconnectEvent(Enum):
     FAIL = auto()
     SUCCESS = auto()
     CANCELLED = auto()
-
-
-# ── Backward compat (to remove in v2.0) ───────────────────────────────────
-
-
-class Events(Enum):
-    ON_RECV = "on_recv"
-    ON_CONNECT = "on_connect"
-    ON_DISCONNECT = "on_disconnect"
