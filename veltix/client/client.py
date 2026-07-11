@@ -94,22 +94,22 @@ class Client:
         self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
 
     # -------------------------------------------------------------------------
-    # Context API
+    # Internal context (used by ReconnectHandler)
     # -------------------------------------------------------------------------
 
-    def context_connect(self) -> bool:
+    def _context_connect(self) -> bool:
         """Connect from within a retry context (suppresses own reconnect)."""
         return self.connect(_from_retry=True)
 
-    def context_on_disconnect(self, state: DisconnectState) -> None:
+    def _context_on_disconnect(self, state: DisconnectState) -> None:
         """Forward disconnect state to subscribers."""
         self.bus.emit(ClientEvent.ON_DISCONNECT, state)
 
-    def context_init(self) -> None:
+    def _context_init(self) -> None:
         """Reinitialise components before a reconnection attempt."""
         self.init_components()
 
-    def context_set_running(self, value: bool) -> None:
+    def _context_set_running(self, value: bool) -> None:
         """Set whether the client is considered running."""
         old = self.running
         self.running = value
@@ -118,22 +118,22 @@ class Client:
             if not value:
                 self._shutdown_event.set()
 
-    def context_set_connected(self, value: bool) -> None:
+    def _context_set_connected(self, value: bool) -> None:
         """Set the connection flag without triggering side effects."""
         old = self.is_connected
         self.is_connected = value
         if old != value:
             self.bus.info(f"Client connected state: {value}")
 
-    def context_get_request_handler(self) -> Optional[RequestHandler]:
+    def _context_get_request_handler(self) -> Optional[RequestHandler]:
         """Return the current request handler instance."""
         return self.request_handler
 
-    def context_get_on_recv(self) -> Optional[Callable]:
+    def _context_get_on_recv(self) -> Optional[Callable]:
         """Return the current on_recv callback."""
         return self.request_handler.on_recv if self.request_handler else None
 
-    def context_get_socket(self) -> Optional[BaseSocket]:
+    def _context_get_socket(self) -> Optional[BaseSocket]:
         """Return the current socket instance."""
         return self.socket
 

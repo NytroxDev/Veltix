@@ -175,21 +175,21 @@ class TestClientContextAPI:
     def test_context_get_socket(self):
         port = find_free_port()
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        sock = client.context_get_socket()
+        sock = client._context_get_socket()
         assert sock is not None
         client.disconnect()
 
     def test_context_get_request_handler(self):
         port = find_free_port()
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        handler = client.context_get_request_handler()
+        handler = client._context_get_request_handler()
         assert handler is not None
         client.disconnect()
 
     def test_context_get_on_recv(self):
         port = find_free_port()
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
-        result = client.context_get_on_recv()
+        result = client._context_get_on_recv()
         assert result is None  # no callback set by default
         client.disconnect()
 
@@ -197,7 +197,7 @@ class TestClientContextAPI:
         port = find_free_port()
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         assert client.running is True
-        client.context_set_running(False)
+        client._context_set_running(False)
         assert client.running is False
         client.disconnect()
 
@@ -205,7 +205,7 @@ class TestClientContextAPI:
         port = find_free_port()
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         assert client.is_connected is False
-        client.context_set_connected(True)
+        client._context_set_connected(True)
         assert client.is_connected is True
         client.disconnect()
 
@@ -215,7 +215,7 @@ class TestClientContextAPI:
         old_socket = client.socket
         old_handler = client.request_handler
 
-        client.context_init()
+        client._context_init()
 
         assert client.socket is not old_socket
         assert client.request_handler is not old_handler

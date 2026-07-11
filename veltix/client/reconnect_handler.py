@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 class ClientContext(Protocol):
     config: ClientConfig
 
-    def context_connect(self) -> bool: ...
-    def context_on_disconnect(self, state: DisconnectState) -> None: ...
-    def context_init(self) -> None: ...
-    def context_set_running(self, value: bool) -> None: ...
-    def context_set_connected(self, value: bool) -> None: ...
-    def context_get_request_handler(self) -> Optional[RequestHandler]: ...
-    def context_get_on_recv(self) -> Optional[Callable]: ...
-    def context_get_socket(self) -> Optional[BaseSocket]: ...
+    def _context_connect(self) -> bool: ...
+    def _context_on_disconnect(self, state: DisconnectState) -> None: ...
+    def _context_init(self) -> None: ...
+    def _context_set_running(self, value: bool) -> None: ...
+    def _context_set_connected(self, value: bool) -> None: ...
+    def _context_get_request_handler(self) -> Optional[RequestHandler]: ...
+    def _context_get_on_recv(self) -> Optional[Callable]: ...
+    def _context_get_socket(self) -> Optional[BaseSocket]: ...
 
 
 class ReconnectHandler:
@@ -50,7 +50,7 @@ class ReconnectHandler:
             reason=reason,
         )
         try:
-            self._context.context_on_disconnect(state)
+            self._context._context_on_disconnect(state)
         except Exception as e:
             if self.bus:
                 self.bus.error(f"Error in on_disconnect callback: {type(e).__name__}: {e}")
@@ -74,7 +74,7 @@ class ReconnectHandler:
                 )
 
             self.reset()
-            if self._context.context_connect():
+            if self._context._context_connect():
                 if self._stop_retry_flag:
                     if self.bus:
                         self.bus.info("Reconnection cancelled during connect")
@@ -84,10 +84,10 @@ class ReconnectHandler:
                                 "attempt": self._fail_count,
                             },
                         )
-                    sock = self._context.context_get_socket()
+                    sock = self._context._context_get_socket()
                     if sock:
                         sock.close()
-                    self._context.context_set_connected(False)
+                    self._context._context_set_connected(False)
                     return False
                 if self.bus:
                     self.bus.emit(
@@ -165,15 +165,15 @@ class ReconnectHandler:
     def reset(self) -> None:
         if self.bus:
             self.bus.debug("Resetting client state for reconnection")
-        old_handler = self._context.context_get_request_handler()
+        old_handler = self._context._context_get_request_handler()
         old_routes = old_handler.copy_routes() if old_handler else {}
 
-        self._context.context_set_connected(False)
-        self._context.context_set_running(True)
-        self._context.context_init()
+        self._context._context_set_connected(False)
+        self._context._context_set_running(True)
+        self._context._context_init()
 
-        on_recv = self._context.context_get_on_recv()
-        request_handler = self._context.context_get_request_handler()
+        on_recv = self._context._context_get_on_recv()
+        request_handler = self._context._context_get_request_handler()
         if request_handler:
             if on_recv:
                 request_handler.set_on_recv(on_recv)
