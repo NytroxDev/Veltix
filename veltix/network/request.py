@@ -31,8 +31,8 @@ class Response:
 
     type: MessageType
     content: bytes
-    hash: bytes
-    request_id: bytes
+    _hash: bytes = dataclasses.field(repr=False)
+    _request_id: bytes = dataclasses.field(repr=False)
 
 
 class Request:
@@ -47,7 +47,7 @@ class Request:
 
     def respond(self, response: Response) -> None:
         """Align this request's ID with a received response for correlation."""
-        self.request_id = response.request_id
+        self.request_id = response._request_id
 
     @staticmethod
     def parse(data: Union[bytes, bytearray], max_message_size: int = 10 * 1024 * 1024) -> Response:
@@ -80,8 +80,8 @@ class Request:
         return Response(
             type=msg_type,
             content=bytes(content),
-            hash=hash_received,
-            request_id=request_id,
+            _hash=hash_received,
+            _request_id=request_id,
         )
 
     def compile(self) -> bytes:

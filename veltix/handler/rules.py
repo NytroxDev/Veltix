@@ -9,14 +9,14 @@ class PingRule(Rule):
         context.handler.bus.emit(
             ProtocolEvent.PING,
             {
-                "request_id": context.response.request_id.hex(),
+                "request_id": context.response._request_id.hex(),
                 "from": "client" if context.is_server else "server",
             },
         )
         context.handler.bus.debug(
-            f"Responding to PING with PONG (request_id={context.response.request_id.hex()})"
+            f"Responding to PING with PONG (request_id={context.response._request_id.hex()})"
         )
-        pong = Request(PONG, b"", request_id=context.response.request_id)
+        pong = Request(PONG, b"", request_id=context.response._request_id)
         sender = context.handler.sender
         assert sender is not None
         if context.is_server:
@@ -28,7 +28,7 @@ class PingRule(Rule):
         context.handler.bus.emit(
             ProtocolEvent.PONG,
             {
-                "request_id": context.response.request_id.hex(),
+                "request_id": context.response._request_id.hex(),
             },
         )
 
@@ -39,25 +39,25 @@ class PingRule(Rule):
 class PendingRequestRule(Rule):
     def can_handle(self, context: MessageContext) -> bool:
         with context.handler.pending_requests_lock:
-            return context.response.request_id in context.handler.pending_requests
+            return context.response._request_id in context.handler.pending_requests
 
     def handle(self, context: MessageContext) -> None:
         pass
 
     def try_handle(self, context: MessageContext) -> bool:
         with context.handler.pending_requests_lock:
-            queue = context.handler.pending_requests.get(context.response.request_id)
+            queue = context.handler.pending_requests.get(context.response._request_id)
         if queue is None:
             return False
         queue.put(context.response)
         context.handler.bus.emit(
             MessageEvent.PENDING_SATISFIED,
             {
-                "request_id": context.response.request_id.hex(),
+                "request_id": context.response._request_id.hex(),
             },
         )
         context.handler.bus.debug(
-            f"Routing response to pending request (request_id={context.response.request_id.hex()})"
+            f"Routing response to pending request (request_id={context.response._request_id.hex()})"
         )
         return True
 

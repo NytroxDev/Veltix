@@ -171,7 +171,7 @@ class TestRequestRespond:
         resp_id = b"\xaa\xbb\xcc\xdd"
         from veltix.network.request import Response
 
-        response = Response(type=msg_type, content=b"world", hash=b"\x00" * 4, request_id=resp_id)
+        response = Response(type=msg_type, content=b"world", _hash=b"\x00" * 4, _request_id=resp_id)
 
         req.respond(response)
         assert req.request_id == resp_id

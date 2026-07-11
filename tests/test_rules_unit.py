@@ -29,7 +29,7 @@ def make_context(
     """Helper to create a MessageContext for testing."""
     if msg_type is None:
         msg_type = MessageType(code=9900, name="test_rule_type")
-    response = Response(type=msg_type, content=content, hash=b"\x00" * 4, request_id=request_id)
+    response = Response(type=msg_type, content=content, _hash=b"\x00" * 4, _request_id=request_id)
 
     if handler is None:
         handler = MagicMock()
