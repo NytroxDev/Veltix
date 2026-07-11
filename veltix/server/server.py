@@ -79,7 +79,11 @@ class Server:
 
     def _init_components(self) -> None:
         """(Re)create internal components (sender, handler, socket)."""
-        self._sender = Sender(mode=Mode.SERVER, bus=self.bus)
+        self._sender = Sender(
+            mode=Mode.SERVER,
+            bus=self.bus,
+            get_all_clients=self.get_all_clients_sockets,
+        )
         self.request_handler = RequestHandler(
             sender=self.sender, mode=Mode.SERVER, max_workers=self.config.max_workers, bus=self.bus
         )

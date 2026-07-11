@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..exceptions import SenderError
 from ..internal.events import ErrorEvent, MessageEvent
@@ -27,6 +27,7 @@ class Sender:
         mode: Union[Mode, str],
         conn: Optional[BaseSocket] = None,
         bus: Optional[VeltixBus] = None,
+        get_all_clients: Optional[Callable[[], list[BaseSocket]]] = None,
     ) -> None:
         """Initialize the sender with a mode and an optional connection.
 
@@ -34,9 +35,7 @@ class Sender:
             mode: CLIENT or SERVER mode.
             conn: Connection socket (required in CLIENT mode).
             bus: Event bus instance.
-
-        Raises:
-            SenderError: If mode is CLIENT without a connection.
+            get_all_clients: Callable returning all connected client sockets (SERVER mode).
         """
         self.bus = bus
 
@@ -49,6 +48,7 @@ class Sender:
         self.mode = mode
         self.is_client = mode == Mode.CLIENT
         self.conn: Optional[BaseSocket] = conn
+        self._get_all_clients = get_all_clients
 
     def send(self, data: Request, client: Optional[BaseSocket] = None) -> bool:
         """Send a request over the network.
@@ -103,18 +103,25 @@ class Sender:
                 self.bus.error(f"Unexpected send error: {type(e).__name__}: {e}")
             return False
 
+    @staticmethod
+    def _resolve_socket(client: BaseSocket) -> BaseSocket:
+        """Extract the socket from a BaseSocket or ClientInfo."""
+        from ..server.client_info import ClientInfo
+
+        return client.conn if isinstance(client, ClientInfo) else client
+
     def broadcast(
         self,
         data: Request,
-        list_of_client: list[BaseSocket],
+        list_of_client: Optional[list[BaseSocket]] = None,
         except_clients: Optional[list[BaseSocket]] = None,
     ) -> bool:
         """Send a request to multiple clients (SERVER mode only).
 
         Args:
             data: Request to broadcast.
-            list_of_client: List of target client sockets.
-            except_clients: Optional list of clients to exclude.
+            list_of_client: Target client sockets. Defaults to all connected clients.
+            except_clients: Clients to exclude (accepts BaseSocket or ClientInfo).
 
         Returns:
             True if all sends succeeded, False otherwise.
@@ -124,10 +131,17 @@ class Sender:
                 self.bus.error("Broadcast not available in CLIENT mode")
             return False
 
+        if list_of_client is None:
+            if self._get_all_clients is None:
+                if self.bus:
+                    self.bus.error("No client list provided and no get_all_clients callback")
+                return False
+            list_of_client = self._get_all_clients()
+
         if not list_of_client:
             return True
 
-        except_set = set(except_clients) if except_clients else set()
+        except_set = {self._resolve_socket(c) for c in except_clients} if except_clients else set()
         compiled = data.compile()
         all_ok = True
 
