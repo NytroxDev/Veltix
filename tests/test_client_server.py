@@ -204,7 +204,7 @@ class TestClientServer:
 
         msg_type = MessageType(code=2301, name="broadcast_test")
         server.sender.broadcast(
-            Request(msg_type, b"Broadcast to all"), server.get_all_clients_sockets()
+            Request(msg_type, b"Broadcast to all")
         )
 
         assert wait_for_condition(
@@ -258,7 +258,6 @@ class TestClientServer:
         exclude_socket = server.clients[0].conn
         server.sender.broadcast(
             Request(msg_type, b"Not for everyone"),
-            server.get_all_clients_sockets(),
             except_clients=[exclude_socket],
         )
 

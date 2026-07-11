@@ -32,7 +32,7 @@ def main():
         # Notify all clients
         join_msg = f"{addr} joined the chat"
         notification_join = Request(JOIN, join_msg.encode("utf-8"))
-        sender.broadcast(notification_join, server.get_all_clients_sockets())
+        sender.broadcast(notification_join)
 
     # Callback when message received
     def on_message(client: ClientInfo, response: Response):
@@ -45,7 +45,7 @@ def main():
         chat_msg = f"[{sender_name}] {message}"
         broadcast = Request(CHAT, chat_msg.encode("utf-8"))
 
-        sender.broadcast(broadcast, server.get_all_clients_sockets(), [client.conn])
+        sender.broadcast(broadcast, except_clients=[client])
 
     # Bind callbacks
     server.on_connect(on_connect)
@@ -69,7 +69,7 @@ def main():
         # Notify clients
         leave_msg = "Server is shutting down"
         notification = Request(LEAVE, leave_msg.encode("utf-8"))
-        sender.broadcast(notification, server.get_all_clients_sockets())
+        sender.broadcast(notification)
 
         server.close_all()
         print("Chat server stopped.")

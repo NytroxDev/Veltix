@@ -82,7 +82,7 @@ class Server:
         self._sender = Sender(
             mode=Mode.SERVER,
             bus=self.bus,
-            get_all_clients=self.get_all_clients_sockets,
+            get_all_clients=lambda: self.clients,
         )
         self.request_handler = RequestHandler(
             sender=self.sender, mode=Mode.SERVER, max_workers=self.config.max_workers, bus=self.bus
@@ -101,9 +101,6 @@ class Server:
     @property
     def clients(self) -> list[ClientInfo]:
         return [e.info for e in self.socket.client_manager.get_all_clients()]
-
-    def get_all_clients_sockets(self) -> list[BaseSocket]:
-        return [entry.info.conn for entry in self.socket.client_manager.get_all_clients()]
 
     def on_recv(self, func: Callable) -> None:
         """Register a callback for all received messages (before routing).
@@ -289,10 +286,18 @@ class Server:
             return False
         return self.socket.close_client(entry)
 
-    def get_clients_sockets_by_tag(self, tag: str, value: Any = None) -> list[BaseSocket]:
-        """Get all clients that have a specific tag, optionally matching a value."""
+    def get_clients_by_tag(self, tag: str, value: Any = None) -> list[ClientInfo]:
+        """Get all clients that have a specific tag, optionally matching a value.
+
+        Args:
+            tag: Tag name to filter by.
+            value: Optional value to match. If None, matches any value.
+
+        Returns:
+            List of matching ClientInfo objects.
+        """
         entries = self.socket.client_manager.get_clients_by_tag(tag, value)
-        return self.socket.client_manager.to_sockets(entries)
+        return [e.info for e in entries]
 
     # -------------------------------------------------------------------------
     # Server lifecycle

@@ -53,8 +53,8 @@ class TestClientInfoProperties:
 
 
 @pytest.mark.usefixtures("socket_core_backend")
-class TestServerGetClientsSocketsByTag:
-    """Tests for Server.get_clients_sockets_by_tag()."""
+class TestServerGetClientsByTag:
+    """Tests for Server.get_clients_by_tag()."""
 
     def test_get_by_tag_no_value(self):
         port = find_free_port()
@@ -69,13 +69,13 @@ class TestServerGetClientsSocketsByTag:
         server.clients[0].add_tag("admin")
         server.clients[1].add_tag("guest")
 
-        admin_sockets = server.get_clients_sockets_by_tag("admin")
-        guest_sockets = server.get_clients_sockets_by_tag("guest")
+        admin_clients = server.get_clients_by_tag("admin")
+        guest_clients = server.get_clients_by_tag("guest")
 
-        assert len(admin_sockets) == 1
-        assert len(guest_sockets) == 1
-        assert admin_sockets[0] == server.clients[0].conn
-        assert guest_sockets[0] == server.clients[1].conn
+        assert len(admin_clients) == 1
+        assert len(guest_clients) == 1
+        assert admin_clients[0] == server.clients[0]
+        assert guest_clients[0] == server.clients[1]
 
         client1.disconnect()
         client2.disconnect()
@@ -94,11 +94,11 @@ class TestServerGetClientsSocketsByTag:
         server.clients[0].add_tag("role", value="admin")
         server.clients[1].add_tag("role", value="guest")
 
-        admin_sockets = server.get_clients_sockets_by_tag("role", value="admin")
-        guest_sockets = server.get_clients_sockets_by_tag("role", value="guest")
+        admin_clients = server.get_clients_by_tag("role", value="admin")
+        guest_clients = server.get_clients_by_tag("role", value="guest")
 
-        assert len(admin_sockets) == 1
-        assert len(guest_sockets) == 1
+        assert len(admin_clients) == 1
+        assert len(guest_clients) == 1
 
         client1.disconnect()
         client2.disconnect()
@@ -112,7 +112,7 @@ class TestServerGetClientsSocketsByTag:
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
         client.connect()
 
-        result = server.get_clients_sockets_by_tag("nonexistent")
+        result = server.get_clients_by_tag("nonexistent")
         assert result == []
 
         client.disconnect()
@@ -128,8 +128,8 @@ class TestServerGetClientsSocketsByTag:
 
         server.clients[0].add_tag("admin")
 
-        with_value = server.get_clients_sockets_by_tag("admin", value="nonexistent")
-        without_value = server.get_clients_sockets_by_tag("admin")
+        with_value = server.get_clients_by_tag("admin", value="nonexistent")
+        without_value = server.get_clients_by_tag("admin")
         assert len(with_value) == 0
         assert len(without_value) == 1
 
@@ -137,7 +137,7 @@ class TestServerGetClientsSocketsByTag:
         server.close_all()
 
     def test_server_route_with_tag_filtering(self):
-        """Integration: tag-based socket filtering with routing."""
+        """Integration: tag-based filtering with routing."""
         import time
 
         port = find_free_port()
@@ -157,8 +157,8 @@ class TestServerGetClientsSocketsByTag:
         server.clients[0].add_tag("role", value="admin")
         server.clients[1].add_tag("role", value="guest")
 
-        admin_sockets = server.get_clients_sockets_by_tag("role", value="admin")
-        server.sender.broadcast(Request(msg, b"test"), admin_sockets)
+        admin_clients = server.get_clients_by_tag("role", value="admin")
+        server.sender.broadcast(Request(msg, b"test"), admin_clients)
 
         time.sleep(0.3)
         assert len(received) == 1
