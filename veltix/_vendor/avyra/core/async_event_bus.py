@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from enum import Enum
+from typing import TYPE_CHECKING
 
 from ._base import Subscriber, _BaseEventBus
+
+if TYPE_CHECKING:
+    from enum import Enum
 
 
 class AsyncEventBus(_BaseEventBus):
@@ -18,9 +21,9 @@ class AsyncEventBus(_BaseEventBus):
     """
 
     async def emit(
-            self,
-            event: Enum,
-            payload: object | None = None,
+        self,
+        event: Enum,
+        payload: object | None = None,
     ) -> list[tuple[Subscriber, Exception]]:
         """Dispatch *event* with *payload* to all its subscribers.
 
@@ -45,9 +48,9 @@ class AsyncEventBus(_BaseEventBus):
         return failed
 
     def once(
-            self,
-            event_type: Enum | type[Enum],
-            function: Subscriber,
+        self,
+        event_type: Enum | type[Enum],
+        function: Subscriber,
     ) -> None:
         """Register *function* to fire at most once for *event_type*.
 
@@ -55,6 +58,7 @@ class AsyncEventBus(_BaseEventBus):
         unsubscribes after the first :meth:`emit` — even if the
         function raises.
         """
+
         @functools.wraps(function)
         async def wrapper(event: Enum, payload: object | None) -> None:
             try:

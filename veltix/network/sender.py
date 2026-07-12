@@ -27,7 +27,7 @@ class Sender:
         mode: Union[Mode, str],
         conn: Optional[BaseSocket] = None,
         bus: Optional[VeltixBus] = None,
-        get_all_clients: Optional[Callable[[], list[BaseSocket]]] = None,
+        get_all_clients: Optional[Callable[[], list]] = None,
     ) -> None:
         """Initialize the sender with a mode and an optional connection.
 

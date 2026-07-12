@@ -4,7 +4,9 @@ import threading
 from enum import Enum
 from typing import Awaitable, Callable
 
-Subscriber = Callable[[Enum, object | None], None] | Callable[[Enum, object | None], Awaitable[None]]
+Subscriber = (
+    Callable[[Enum, object | None], None] | Callable[[Enum, object | None], Awaitable[None]]
+)
 
 
 def _iter_members(event_type: Enum | type[Enum] | list[Enum]) -> list[Enum]:
@@ -15,9 +17,7 @@ def _iter_members(event_type: Enum | type[Enum] | list[Enum]) -> list[Enum]:
         return list(event_type)
     if isinstance(event_type, list):
         return event_type
-    raise TypeError(
-        f"Expected an Enum member or an Enum class, got {type(event_type).__name__}"
-    )
+    raise TypeError(f"Expected an Enum member or an Enum class, got {type(event_type).__name__}")
 
 
 def _original_sub(func: Subscriber) -> Subscriber:
@@ -57,68 +57,56 @@ class _BaseEventBus:
                     self._subscribers[member] = []
 
     def subscribe(
-            self,
-            event_type: Enum | type[Enum],
-            function: Subscriber,
+        self,
+        event_type: Enum | type[Enum],
+        function: Subscriber,
     ) -> None:
         """Register *function* as a subscriber for *event_type*."""
         with self._sub_lock:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
-                    raise ValueError(
-                        f"Unknown event type: {member}"
-                    )
+                    raise ValueError(f"Unknown event type: {member}")
 
-                if any(
-                    _original_sub(s) is function for s in self._subscribers[member]
-                ):
-                    raise ValueError(
-                        f"Function {function!r} is already subscribed to {member}"
-                    )
+                if any(_original_sub(s) is function for s in self._subscribers[member]):
+                    raise ValueError(f"Function {function!r} is already subscribed to {member}")
 
                 self._subscribers[member].append(function)
 
     def unsubscribe(
-            self,
-            event_type: Enum | type[Enum],
-            function: Subscriber,
+        self,
+        event_type: Enum | type[Enum],
+        function: Subscriber,
     ) -> None:
         """Remove *function* from the subscriber list for *event_type*."""
         with self._sub_lock:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
-                    raise ValueError(
-                        f"Unknown event type: {member}"
-                    )
+                    raise ValueError(f"Unknown event type: {member}")
 
                 for i, s in enumerate(self._subscribers[member]):
                     if _original_sub(s) is function:
                         del self._subscribers[member][i]
                         break
                 else:
-                    raise ValueError(
-                        f"Function {function!r} is not subscribed to {member}"
-                    )
+                    raise ValueError(f"Function {function!r} is not subscribed to {member}")
 
     def has_subscriber(
-            self,
-            event_type: Enum | type[Enum],
-            function: Subscriber,
+        self,
+        event_type: Enum | type[Enum],
+        function: Subscriber,
     ) -> bool:
         """Check whether *function* is registered for *event_type*."""
         with self._sub_lock:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
                     return False
-                if not any(
-                    _original_sub(s) is function for s in self._subscribers[member]
-                ):
+                if not any(_original_sub(s) is function for s in self._subscribers[member]):
                     return False
             return True
 
     def on(
-            self,
-            event_type: Enum | type[Enum],
+        self,
+        event_type: Enum | type[Enum],
     ) -> Callable[[Subscriber], Subscriber]:
         """Decorator shorthand for :meth:`subscribe`.
 
@@ -130,9 +118,11 @@ class _BaseEventBus:
 
         This is equivalent to ``bus.subscribe(Event.FOO, handler)``.
         """
+
         def decorator(function: Subscriber) -> Subscriber:
             self.subscribe(event_type, function)
             return function
+
         return decorator
 
     def clear(self, event_type: Enum | type[Enum]) -> None:
@@ -140,7 +130,5 @@ class _BaseEventBus:
         with self._sub_lock:
             for member in _iter_members(event_type):
                 if member not in self._subscribers:
-                    raise ValueError(
-                        f"Unknown event type: {member}"
-                    )
+                    raise ValueError(f"Unknown event type: {member}")
                 self._subscribers[member].clear()

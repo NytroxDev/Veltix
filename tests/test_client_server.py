@@ -203,9 +203,7 @@ class TestClientServer:
         assert clients_ready.wait(timeout=10), "Not all clients connected in time"
 
         msg_type = MessageType(code=2301, name="broadcast_test")
-        server.sender.broadcast(
-            Request(msg_type, b"Broadcast to all")
-        )
+        server.sender.broadcast(Request(msg_type, b"Broadcast to all"))
 
         assert wait_for_condition(
             lambda: all(len(msgs) > 0 for msgs in messages_received), timeout=2.0
