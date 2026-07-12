@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Callable, Optional
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ClientEvent, ErrorEvent
+from ..network.id_allocator import IDAllocator
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
@@ -79,7 +80,10 @@ class Client:
             bus=self.bus,
         )
         self.socket.settimeout(0.5)
-        self._sender: Sender = Sender(mode=Mode.CLIENT, conn=self.socket, bus=self.bus)
+        self._id_allocator = IDAllocator(max_ids=30000)
+        self._sender: Sender = Sender(
+            mode=Mode.CLIENT, conn=self.socket, bus=self.bus, id_allocator=self._id_allocator,
+        )
         self.request_handler: RequestHandler = RequestHandler(
             sender=self.sender,
             mode=Mode.CLIENT,
@@ -237,6 +241,11 @@ class Client:
             self.is_connected = True
             self._connecting = False
             self._shutdown_event.clear()
+
+            handshake_meta = getattr(self.socket, "_handshake_meta", None) or {}
+            id_window = handshake_meta.get("id_window", 30000)
+            self._id_allocator._max = id_window
+
             assert self._reconnect_handler is not None
             self._reconnect_handler.init_connect()
             self.bus.info(
@@ -316,13 +325,16 @@ class Client:
         Returns:
             Matching Response, or None on timeout or send failure.
         """
+        if request.request_id is None:
+            request.request_id = self._id_allocator.allocate()
+
         request_id = request.request_id
-        self.bus.debug(f"send_and_wait: registering request {request_id.hex()}...")
+        self.bus.debug(f"send_and_wait: registering request {request_id}...")
 
         self.request_handler.register(request_id)
 
         if not self.sender.send(request):
-            self.bus.error(f"Failed to send request {request_id.hex()}...")
+            self.bus.error(f"Failed to send request {request_id}...")
             self.request_handler.unregister(request_id)
             return None
 
