@@ -27,6 +27,7 @@ class ClientInfo:
         "addr",
         "thread_id",
         "handshake_done",
+        "id_offset",
         "_tags",
         "_tags_lock",
         "_bus",
@@ -39,12 +40,14 @@ class ClientInfo:
         thread_id: int,
         handshake_done: bool = False,
         bus: Optional[VeltixBus] = None,
+        id_offset: int = 0,
     ) -> None:
         self._id = _generate_id()
         self.conn = conn
         self.addr = addr
         self.thread_id = thread_id
         self.handshake_done = handshake_done
+        self.id_offset = id_offset
         self._tags: dict[str, Any] = {}
         self._tags_lock = threading.Lock()
         self._bus = bus
