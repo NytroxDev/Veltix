@@ -39,10 +39,11 @@ class HandshakeHandler:
     waits for the server ack before returning.
     """
 
-    def __init__(self, mode: Mode, bus: VeltixBus) -> None:
+    def __init__(self, mode: Mode, bus: VeltixBus, id_window: int = 30000) -> None:
         self.mode = mode
         self.is_server = mode == Mode.SERVER
         self.bus = bus
+        self.id_window = id_window
         self.version = Version.from_str(__version__)
         self.bus.debug(
             f"[Handshake] {self.mode.name.lower()} handshake handler initialized (version={__version__})"
@@ -115,7 +116,7 @@ class HandshakeHandler:
         """Server-side handshake: send server info, validate client response."""
         self.bus.emit(ProtocolEvent.HANDSHAKE_START, {"role": "server"})
 
-        if not self._send_handshake(sock, {"v": __version__, "meta": {}}):
+        if not self._send_handshake(sock, {"v": __version__, "meta": {"id_window": self.id_window}}):
             self.bus.emit(ProtocolEvent.HANDSHAKE_FAIL, {"role": "server", "reason": "send_failed"})
             self.bus.error("Failed to send server handshake")
             return False
