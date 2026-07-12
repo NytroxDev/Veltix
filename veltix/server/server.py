@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ServerEvent
+from ..network.id_allocator import ClientAllocator, IDAllocator
 from ..network.request import Request, Response
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
@@ -53,6 +54,8 @@ class Server:
         "_shutdown_event",
         "_started",
         "_closed",
+        "client_allocator",
+        "_id_allocator",
     )
 
     def __init__(self, config: ServerConfig) -> None:
@@ -79,10 +82,13 @@ class Server:
 
     def _init_components(self) -> None:
         """(Re)create internal components (sender, handler, socket)."""
+        self.client_allocator = ClientAllocator(range_size=self.config.id_window)
+        self._id_allocator = IDAllocator(max_ids=self.config.id_window)
         self._sender = Sender(
             mode=Mode.SERVER,
             bus=self.bus,
             get_all_clients=lambda: self.clients,
+            id_allocator=self._id_allocator,
         )
         self.request_handler = RequestHandler(
             sender=self.sender, mode=Mode.SERVER, max_workers=self.config.max_workers, bus=self.bus
@@ -210,13 +216,16 @@ class Server:
         Returns:
             Matching Response, or None on timeout or send failure.
         """
+        if request.request_id is None:
+            request.request_id = self._id_allocator.allocate()
+
         request_id = request.request_id
-        self.bus.debug(f"send_and_wait: {request_id.hex()}... → {client.addr}")
+        self.bus.debug(f"send_and_wait: {request_id}... → {client.addr}")
 
         self.request_handler.register(request_id)
 
         if not self.sender.send(request, client=client.conn):
-            self.bus.error(f"Failed to send request {request_id.hex()}... to {client.addr}")
+            self.bus.error(f"Failed to send request {request_id}... to {client.addr}")
             self.request_handler.unregister(request_id)
             return None
 

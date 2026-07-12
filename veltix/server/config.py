@@ -23,6 +23,8 @@ class ServerConfig:
         socket_core:       Socket implementation to use (default: ASYNC).
                             Switch to THREADING or RUST (v3.0.0) without changing
                             any other code.
+        id_window:         Number of unique IDs per direction in the protocol (default: 30000).
+                            Sent to clients during the handshake. Must fit in REQUEST_ID_SIZE bytes.
     """
 
     host: str = "0.0.0.0"
@@ -33,3 +35,4 @@ class ServerConfig:
     handshake_timeout: float = 5.0
     max_workers: int = 4
     socket_core: SocketCore = SocketCore.ASYNC
+    id_window: int = 30000
