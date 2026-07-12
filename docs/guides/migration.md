@@ -1,5 +1,49 @@
 # Migration Guide
 
+## v1.9.0 → v2.0.0
+
+**Breaking changes in public API.**
+
+### `MessageType` code is now optional
+
+`MessageType` no longer requires an explicit integer code. You can now pass a name string as the first argument and the
+code will be auto-allocated in the 200–9999 range.
+
+```python
+# Before (v1.x)
+CHAT = MessageType(code=200, name="chat")
+FILE = MessageType(code=201, name="file")
+
+# After (v2.0)
+CHAT = MessageType("chat")           # auto-allocates code 200
+FILE = MessageType("file")           # auto-allocates code 201
+
+# Or keyword style
+CHAT = MessageType(name="chat")
+
+# Explicit code still works
+CHAT = MessageType(code=200, name="chat")
+```
+
+### Code ranges expanded
+
+| Range       | Usage              |
+|-------------|--------------------|
+| 0–199       | System (reserved)  |
+| 200–9999    | User application   |
+| 10000–65535 | Plugins            |
+
+The previous range was 200–499 for user messages. The protocol supports up to 65535 (uint16).
+
+### Action required
+
+- **If you use explicit codes** — no changes needed, everything is backward compatible.
+- **If you want auto-allocation** — replace `MessageType(code=200, name="chat")` with `MessageType("chat")`.
+- **Plugins using codes 500–9999** — these codes are now in the user range. If you had plugin codes in 500–9999,
+  they remain valid and are now treated as user codes.
+
+---
+
 ## v1.8.0 → v1.8.1
 
 **No breaking changes — wire-compatible with v1.8.0.**

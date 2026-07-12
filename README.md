@@ -65,7 +65,7 @@ while True:
 ```python
 from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request
 
-ECHO = MessageType(code=200, name="echo")
+ECHO = MessageType("echo")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 sender = server.sender
 
@@ -133,7 +133,7 @@ Requirements: Python 3.8+, no additional dependencies.
 ```python
 from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request
 
-CHAT = MessageType(code=200, name="chat")
+CHAT = MessageType("chat")
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 sender = server.sender
@@ -156,7 +156,7 @@ server.close_all()
 ```python
 from veltix import Client, ClientConfig, Response, MessageType, Request
 
-CHAT = MessageType(code=200, name="chat")
+CHAT = MessageType("chat")
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 

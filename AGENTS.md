@@ -338,10 +338,10 @@ Both `ruff` and `mypy` must pass cleanly in CI.
 ```python
 from veltix import MessageType
 
-MY_TYPE = MessageType(code=300, name="my_type")
+MY_TYPE = MessageType("my_type")
 ```
 
-Codes: 0-199 system, 200-499 user, 500+ plugins.
+Codes: 0-199 system, 200-9999 user, 10000+ plugins.
 
 ### Adding a route
 
@@ -556,10 +556,10 @@ sender.broadcast(request, list_of_clients, except_clients=[...])
 ```python
 from veltix import MessageType
 
-MY_TYPE = MessageType(code=300, name="my_type")
+MY_TYPE = MessageType("my_type")
 ```
 
-Code ranges: **0-199** system, **200-499** user, **500+** plugins.
+Code ranges: **0-199** system, **200-9999** user, **10000-65535** plugins.
 
 #### System Types (pre-registered)
 
@@ -823,7 +823,7 @@ class TimeoutError(VeltixError): ...  # operation timeout
 ```python
 from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request, Events
 
-CHAT = MessageType(code=200, name="chat")
+CHAT = MessageType("chat")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 sender = server.sender
 
@@ -848,7 +848,7 @@ from veltix import Client, ClientConfig, Response, MessageType, Request
 import threading
 import time
 
-CHAT = MessageType(code=200, name="chat")
+CHAT = MessageType("chat")
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 sender = client.sender
 
@@ -884,7 +884,7 @@ except (KeyboardInterrupt, SystemExit):
 ```python
 from veltix import Server, ServerConfig, Client, ClientConfig, MessageType, Request, Response, ClientInfo
 
-ECHO = MessageType(code=201, name="echo")
+ECHO = MessageType("echo")
 server = Server(ServerConfig(port=8080))
 sender = server.sender
 
@@ -913,8 +913,8 @@ server.close_all()
 ```python
 from veltix import MessageType, Request, Server, ServerConfig, ClientInfo, Response
 
-CHANNEL_JOIN = MessageType(code=202, name="channel_join")
-CHANNEL_MSG = MessageType(code=203, name="channel_msg")
+CHANNEL_JOIN = MessageType("channel_join")
+CHANNEL_MSG = MessageType("channel_msg")
 server = Server(ServerConfig(port=8080))
 sender = server.sender
 

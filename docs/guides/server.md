@@ -32,8 +32,8 @@ thread pool.
 ```python
 from veltix import MessageType, Request
 
-CHAT = MessageType(code=200, name="chat")
-STATUS = MessageType(code=201, name="status")
+CHAT = MessageType("chat")
+STATUS = MessageType("status")
 
 
 @server.route(CHAT)

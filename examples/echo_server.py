@@ -7,7 +7,7 @@ A simple server that echoes back any message it receives.
 from veltix import ClientInfo, MessageType, Request, Response, Server, ServerConfig
 
 # Define message type
-ECHO = MessageType(code=200, name="echo", description="Echo message")
+ECHO = MessageType("echo", description="Echo message")
 
 
 def main():

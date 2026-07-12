@@ -37,7 +37,7 @@ thread pool.
 ```python
 from veltix import MessageType
 
-CHAT = MessageType(code=200, name="chat")
+CHAT = MessageType("chat")
 
 
 @client.route(CHAT)

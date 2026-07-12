@@ -9,7 +9,7 @@ import time
 from veltix import Client, ClientConfig, MessageType, Request
 
 # Define message type (must match server)
-ECHO = MessageType(code=200, name="echo", description="Echo message")
+ECHO = MessageType("echo", description="Echo message")
 
 
 def main():

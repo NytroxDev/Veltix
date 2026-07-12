@@ -7,9 +7,9 @@ A chat client that can send and receive messages in a group chat.
 from veltix import Client, ClientConfig, MessageType, Request
 
 # Define message types (must match server)
-CHAT = MessageType(code=201, name="chat", description="Chat message")
-JOIN = MessageType(code=202, name="join", description="User joined")
-LEAVE = MessageType(code=203, name="leave", description="User left")
+CHAT = MessageType("chat", description="Chat message")
+JOIN = MessageType("join", description="User joined")
+LEAVE = MessageType("leave", description="User left")
 
 
 def main():

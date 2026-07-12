@@ -67,7 +67,7 @@ while True:
 ```python
 from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request
 
-ECHO = MessageType(code=200, name="echo")
+ECHO = MessageType("echo")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 sender = server.sender
 

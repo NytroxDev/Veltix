@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import threading
 from enum import Enum
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, Union
 
-Subscriber = (
-    Callable[[Enum, object | None], None] | Callable[[Enum, object | None], Awaitable[None]]
-)
+Subscriber = Union[
+    Callable[[Enum, Union[object, None]], None],
+    Callable[[Enum, Union[object, None]], Awaitable[None]],
+]
 
 
 def _iter_members(event_type: Enum | type[Enum] | list[Enum]) -> list[Enum]:

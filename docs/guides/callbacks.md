@@ -42,7 +42,7 @@ For per-type handling, prefer `@server.route()` / `@client.route()` over a globa
 run in the thread pool just like `on_recv`.
 
 ```python
-CHAT = MessageType(code=200, name="chat")
+CHAT = MessageType("chat")
 
 
 @server.route(CHAT)

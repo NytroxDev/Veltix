@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import threading
-from typing import Optional
+from typing import Optional, Union
 
 from ..exceptions import MessageTypeError
+
+_USER_CODE_MIN = 200
+_USER_CODE_MAX = 9999
+_PLUGIN_CODE_MIN = 10000
+_PROTOCOL_MAX = 65535
 
 
 class MessageTypeRegistry:
@@ -19,16 +24,24 @@ class MessageTypeRegistry:
         with cls._lock:
             if msg_type.code in cls._registry:
                 existing = cls._registry[msg_type.code]
-                if msg_type.code < 200:
+                if msg_type.code < _USER_CODE_MIN:
                     raise MessageTypeError(
-                        f"Code {msg_type.code} is reserved for system messages (0-199). "
-                        f"'{existing.name}' is already registered there. "
-                        f"Use a code between 200 and 499 for user messages."
+                        f"Code {msg_type.code} is reserved for system messages "
+                        f"(0-{_USER_CODE_MIN - 1}). "
+                        f"'{existing.name}' is already registered there."
                     )
                 raise MessageTypeError(
                     f"Code {msg_type.code} already registered as '{existing.name}'"
                 )
             cls._registry[msg_type.code] = msg_type
+
+    @classmethod
+    def _next_code(cls) -> int:
+        """Find the next available user code (200-9999)."""
+        for code in range(_USER_CODE_MIN, _USER_CODE_MAX + 1):
+            if code not in cls._registry:
+                return code
+        raise MessageTypeError(f"No available codes in range {_USER_CODE_MIN}-{_USER_CODE_MAX}")
 
     @classmethod
     def get(cls, code: int) -> Optional[MessageType]:
@@ -46,28 +59,54 @@ class MessageType:
     Defines a message type in the Veltix protocol.
 
     Code ranges:
-    - 0-199:   System messages (reserved)
-    - 200-499: User application messages
-    - 500+:    Plugin/extension messages
+    - 0-199:    System messages (reserved)
+    - 200-9999: User application messages (auto-allocatable)
+    - 10000+:   Plugin/extension messages
+    - Max:      65535 (uint16 protocol limit)
+
+    Usage:
+        MessageType(200, "chat")        # explicit code
+        MessageType("chat")             # auto-allocate code
+        MessageType(name="chat")        # auto-allocate code
     """
 
     __slots__ = ("code", "name", "description")
 
     def __init__(
         self,
-        code: int,
+        code: Union[int, str, None] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         *,
         _system: bool = False,
     ) -> None:
-        if not (0 <= code <= 65535):
-            raise MessageTypeError(f"Code must be between 0 and 65535, got: {code}")
+        # Handle MessageType("chat") — first arg is a string (the name)
+        if isinstance(code, str):
+            if name is not None:
+                raise MessageTypeError(
+                    "Cannot pass a name as both first argument and 'name' keyword"
+                )
+            name = code
+            code = None
 
-        if code < 200 and not _system:
+        # Auto-allocate code when not provided
+        if code is None:
+            if _system:
+                raise MessageTypeError("System messages must have an explicit code")
+            code = MessageTypeRegistry._next_code()
+
+        if not isinstance(code, int):
+            raise MessageTypeError(f"Code must be an int, str, or None, got: {type(code).__name__}")
+
+        if not (0 <= code <= _PROTOCOL_MAX):
+            raise MessageTypeError(f"Code must be between 0 and {_PROTOCOL_MAX}, got: {code}")
+
+        if code < _USER_CODE_MIN and not _system:
             raise MessageTypeError(
-                f"Code {code} is reserved for system messages (0-199). "
-                f"Use a code between 200 and 499 for user messages."
+                f"Code {code} is reserved for system messages "
+                f"(0-{_USER_CODE_MIN - 1}). "
+                f"Use a code between {_USER_CODE_MIN} and {_USER_CODE_MAX} "
+                f"for user messages."
             )
 
         self.code: int = code

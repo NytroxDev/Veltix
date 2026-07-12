@@ -8,8 +8,8 @@ priority over `on_recv` and run in the thread pool.
 ```python
 from veltix import Server, ServerConfig, MessageType, Response, ClientInfo
 
-CHAT = MessageType(code=200, name="chat")
-STATUS = MessageType(code=201, name="status")
+CHAT = MessageType("chat")
+STATUS = MessageType("status")
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
@@ -32,7 +32,7 @@ server.start()
 ```python
 from veltix import Client, ClientConfig, MessageType, Response
 
-CHAT = MessageType(code=200, name="chat")
+CHAT = MessageType("chat")
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 

@@ -7,9 +7,9 @@ A chat server that broadcasts messages to all connected clients.
 from veltix import ClientInfo, MessageType, Request, Response, Server, ServerConfig
 
 # Define message types
-CHAT = MessageType(code=201, name="chat", description="Chat message")
-JOIN = MessageType(code=202, name="join", description="User joined")
-LEAVE = MessageType(code=203, name="leave", description="User left")
+CHAT = MessageType("chat", description="Chat message")
+JOIN = MessageType("join", description="User joined")
+LEAVE = MessageType("leave", description="User left")
 
 
 def main():

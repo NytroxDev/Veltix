@@ -4,6 +4,8 @@
 
 Every message in Veltix has a type. Types are identified by a unique integer code and a name.
 
+### Explicit code
+
 ```python
 from veltix import MessageType
 
@@ -11,17 +13,32 @@ CHAT = MessageType(code=200, name="chat", description="Chat message")
 FILE = MessageType(code=201, name="file", description="File transfer")
 ```
 
+### Auto-allocated code
+
+Omit the code (or pass a name string as the first argument) and Veltix will automatically assign the next available code in the 200–9999 range:
+
+```python
+from veltix import MessageType
+
+CHAT = MessageType("chat")                    # auto-allocates code 200
+FILE = MessageType("file", description="...")  # auto-allocates code 201
+STATUS = MessageType(name="status")            # keyword style, same result
+```
+
+!!! tip
+    Auto-allocation is ideal for quick prototyping. Use explicit codes when you need stable, predictable wire values across multiple services.
+
 ### Code ranges
 
-| Range    | Usage              |
-|----------|--------------------|
-| 0–9      | Reserved (system)  |
-| 10–199   | System messages    |
-| 200–499  | Application        |
-| 500+     | Plugins            |
+| Range       | Usage              |
+|-------------|--------------------|
+| 0–199       | System (reserved)  |
+| 200–9999    | User application   |
+| 10000–65535 | Plugins            |
 
 !!! warning
     Codes 0–199 are reserved by Veltix. Use 200+ for your own message types.
+    The protocol supports codes up to 65535 (uint16).
 
 ## Request
 

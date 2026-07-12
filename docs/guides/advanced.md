@@ -90,15 +90,15 @@ Message type codes are divided into ranges by convention:
 ```python
 from veltix import MessageType
 
-# System messages (0–199)
-PING = MessageType(0, "ping", "System ping")
+# System messages (0–199) — reserved, internal use only
+PING = MessageType(0, "ping", "System ping")  # _system=True internally
 
-# Application messages (200–499)
+# Application messages (200–9999) — explicit codes
 CHAT = MessageType(200, "chat", "Chat message")
 FILE_TRANSFER = MessageType(201, "file", "File transfer")
 
-# Plugin messages (500+)
-CUSTOM = MessageType(500, "plugin", "Custom plugin message")
+# Or auto-allocate the next available code
+PLUGIN = MessageType("plugin", "Custom plugin message")
 ```
 
 ## Configuring the Thread Pool
