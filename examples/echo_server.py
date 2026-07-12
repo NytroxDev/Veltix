@@ -1,61 +1,19 @@
-"""
-Echo Server Example for Veltix
-
-A simple server that echoes back any message it receives.
-"""
-
 from veltix import ClientInfo, MessageType, Request, Response, Server, ServerConfig
 
-# Define message type
-ECHO = MessageType("echo", description="Echo message")
+ECHO = MessageType("echo")
+
+server = Server(ServerConfig(port=8080))
 
 
-def main():
-    # Configure server
-    config = ServerConfig(host="0.0.0.0", port=8080, max_connection=5)
-
-    server = Server(config)
-    sender = server.sender
-
-    # Callback when client connects
-    def on_connect(client: ClientInfo):
-        print(f"[+] Client connected: {client.ip}:{client.port}")
-
-    # Callback when message received
-    def on_message(client: ClientInfo, response: Response):
-        original = response.content.decode("utf-8")
-        print(f"[{client.ip}] Received: {original}")
-
-        # Echo back
-        echo_msg = f"Echo: {original}"
-        reply = Request(ECHO, echo_msg.encode("utf-8"))
-
-        result = sender.send(reply, client=client.conn)
-
-        if result:
-            print(f"[{client.ip}] Sent: {echo_msg}")
-        else:
-            print(f"[{client.ip}] Failed to send echo")
-
-    # Bind callbacks
-    server.on_connect(on_connect)
-    server.on_recv(on_message)
-
-    # Start server
-    print(f"Echo server starting on {config.host}:{config.port}...")
-    print("Press Ctrl+C to stop")
-
-    server.start()
-
-    try:
-        # Keep running
-        while True:
-            pass
-    except KeyboardInterrupt:
-        print("\nShutting down server...")
-        server.close_all()
-        print("Server stopped.")
+@server.route(ECHO)
+def on_echo(client: ClientInfo, response: Response) -> None:
+    print(f"[{client.ip}] {response.content.decode()}")
+    server.send(Request(ECHO, response.content), client)
 
 
-if __name__ == "__main__":
-    main()
+server.on_connect(lambda c: print(f"+ {c.ip}:{c.port}"))
+server.on_disconnect(lambda c: print(f"- {c.ip}:{c.port}"))
+
+server.start()
+print("Echo server running on port 8080")
+server.wait_until_closed()

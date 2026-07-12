@@ -1,71 +1,46 @@
-"""
-Simple Chat Client Example for Veltix
-
-A chat client that can send and receive messages in a group chat.
-"""
+import sys
 
 from veltix import Client, ClientConfig, MessageType, Request
 
-# Define message types (must match server)
-CHAT = MessageType("chat", description="Chat message")
-JOIN = MessageType("join", description="User joined")
-LEAVE = MessageType("leave", description="User left")
+CHAT = MessageType("chat")
+JOIN = MessageType("join")
+LEAVE = MessageType("leave")
+
+name = input("Your name: ") or "anonymous"
+
+client = Client(ClientConfig(port=9000))
 
 
-def main():
-    # Configure client
-    config = ClientConfig(server_addr="127.0.0.1", port=9000)
-
-    client = Client(config)
-    sender = client.sender
-
-    # Callback when message received
-    def on_message(response):
-        message = response.content.decode("utf-8")
-
-        # Clear current input line and print message
-        print(f"\r{message}")
-        print("You: ", end="", flush=True)
-
-    # Bind callback
-    client.on_recv(on_message)
-
-    # Connect to server
-    print("Connecting to chat server...")
-    if not client.connect():
-        print("Failed to connect to server!")
-        return
-
-    print("Connected to chat!")
-    print("Type your messages and press Enter to send")
-    print("Type 'quit' to exit")
-    print("-" * 50)
-
-    try:
-        while True:
-            # Get user input
-            message = input("You: ")
-
-            if message.lower() == "quit":
-                break
-
-            if not message.strip():
-                continue
-
-            # Send message
-            request = Request(CHAT, message.encode("utf-8"))
-
-            if not sender.send(request):
-                print("Failed to send message!")
-
-    except KeyboardInterrupt:
-        print("\nInterrupted by user")
-
-    finally:
-        print("\nDisconnecting from chat...")
-        client.disconnect()
-        print("Disconnected.")
+@client.route(CHAT)
+def on_chat(response):
+    print(f"\r{response.content.decode()}")
 
 
-if __name__ == "__main__":
-    main()
+@client.route(JOIN)
+def on_join(response):
+    print(f"\r⚡ {response.content.decode()}")
+
+
+@client.route(LEAVE)
+def on_leave(response):
+    print(f"\r⚡ {response.content.decode()}")
+
+
+if not client.connect():
+    print("Failed to connect")
+    sys.exit(1)
+
+client.send(Request(JOIN, name.encode()))
+
+try:
+    while True:
+        msg = input()
+        if msg == "/quit":
+            break
+        if msg.strip():
+            client.send(Request(CHAT, msg.encode()))
+except KeyboardInterrupt:
+    pass
+
+client.send(Request(LEAVE, b""))
+client.disconnect()
