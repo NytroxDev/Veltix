@@ -11,6 +11,7 @@ from ..internal.mode import Mode
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
     from ..socket_core.base_socket import BaseSocket
+    from .id_allocator import IDAllocator
     from .request import Request
 
 
@@ -28,6 +29,7 @@ class Sender:
         conn: Optional[BaseSocket] = None,
         bus: Optional[VeltixBus] = None,
         get_all_clients: Optional[Callable[[], list]] = None,
+        id_allocator: Optional[IDAllocator] = None,
     ) -> None:
         """Initialize the sender with a mode and an optional connection.
 
@@ -36,8 +38,10 @@ class Sender:
             conn: Connection socket (required in CLIENT mode).
             bus: Event bus instance.
             get_all_clients: Callable returning all connected client sockets (SERVER mode).
+            id_allocator: ID allocator for auto-assigning request IDs.
         """
         self.bus = bus
+        self._id_allocator = id_allocator
 
         if isinstance(mode, str):
             mode = Mode(mode)
@@ -71,6 +75,9 @@ class Sender:
                     "No connection available" if self.is_client else "No client socket provided"
                 )
             return False
+
+        if data.request_id is None and self._id_allocator is not None:
+            data.request_id = self._id_allocator.allocate()
 
         try:
             target.send(data.compile())
