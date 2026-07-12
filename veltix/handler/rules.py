@@ -4,17 +4,25 @@ from ..network.system_types import PING, PONG
 from .rules_manager import MessageContext, Rule
 
 
+def _resolve_global_id(context: MessageContext) -> int:
+    """Compute the globally unique ID from wire ID and client offset."""
+    wire_id = context.response._request_id
+    if context.is_server and context.client is not None:
+        return wire_id + context.client.id_offset
+    return wire_id
+
+
 class PingRule(Rule):
     def handle(self, context: MessageContext) -> None:
         context.handler.bus.emit(
             ProtocolEvent.PING,
             {
-                "request_id": context.response._request_id.hex(),
+                "request_id": context.response._request_id,
                 "from": "client" if context.is_server else "server",
             },
         )
         context.handler.bus.debug(
-            f"Responding to PING with PONG (request_id={context.response._request_id.hex()})"
+            f"Responding to PING with PONG (request_id={context.response._request_id})"
         )
         pong = Request(PONG, b"", request_id=context.response._request_id)
         sender = context.handler.sender
@@ -28,7 +36,7 @@ class PingRule(Rule):
         context.handler.bus.emit(
             ProtocolEvent.PONG,
             {
-                "request_id": context.response._request_id.hex(),
+                "request_id": context.response._request_id,
             },
         )
 
@@ -38,26 +46,28 @@ class PingRule(Rule):
 
 class PendingRequestRule(Rule):
     def can_handle(self, context: MessageContext) -> bool:
+        global_id = _resolve_global_id(context)
         with context.handler.pending_requests_lock:
-            return context.response._request_id in context.handler.pending_requests
+            return global_id in context.handler.pending_requests
 
     def handle(self, context: MessageContext) -> None:
         pass
 
     def try_handle(self, context: MessageContext) -> bool:
+        global_id = _resolve_global_id(context)
         with context.handler.pending_requests_lock:
-            queue = context.handler.pending_requests.get(context.response._request_id)
+            queue = context.handler.pending_requests.get(global_id)
         if queue is None:
             return False
         queue.put(context.response)
         context.handler.bus.emit(
             MessageEvent.PENDING_SATISFIED,
             {
-                "request_id": context.response._request_id.hex(),
+                "request_id": global_id,
             },
         )
         context.handler.bus.debug(
-            f"Routing response to pending request (request_id={context.response._request_id.hex()})"
+            f"Routing response to pending request (global_id={global_id})"
         )
         return True
 
