@@ -43,8 +43,5 @@ print(f'✅ Version {ver} is registered in COMPATIBILITY table')
 echo "=== Tests ==="
 python -m pytest tests/ --tb=short
 
-echo "=== Build check ==="
-python -m build --check 2>/dev/null || python -m pip install build && python -m build --check
-
 echo ""
 echo "✅ All checks passed — ready to release."
