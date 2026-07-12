@@ -3,26 +3,21 @@
 from __future__ import annotations
 
 import dataclasses
-import random
 import struct
-import threading
 import zlib
 from typing import Optional, Union
 
 from ..exceptions import RequestError
+from .flags import MessageFlag
 from .types import MessageType, MessageTypeRegistry
 
 MAGIC = b"VX"
 MAGIC_SIZE = len(MAGIC)
-HEADER_SIZE = 16
-_HEADER_STRUCT = struct.Struct(">2sHI4s4s")
 
-_id_lock = threading.Lock()
+REQUEST_ID_SIZE = 2
 
-
-def generate_random_id() -> int:
-    with _id_lock:
-        return random.randint(0, 2**32 - 1)
+_HEADER_STRUCT = struct.Struct(f">2sBHI4s{REQUEST_ID_SIZE}s")
+HEADER_SIZE = _HEADER_STRUCT.size
 
 
 @dataclasses.dataclass
@@ -32,18 +27,24 @@ class Response:
     type: MessageType
     content: bytes
     _hash: bytes = dataclasses.field(repr=False)
-    _request_id: bytes = dataclasses.field(repr=False)
+    _request_id: int = dataclasses.field(repr=False)
+    _flags: int = dataclasses.field(default=0, repr=False)
 
 
 class Request:
     """Represents a message to be sent over the network."""
 
     def __init__(
-        self, _type: MessageType, content: bytes, request_id: Optional[bytes] = None
+        self,
+        _type: MessageType,
+        content: bytes,
+        request_id: Optional[int] = None,
+        flags: MessageFlag = MessageFlag.NONE,
     ) -> None:
         self.type = _type
         self.content = content
-        self.request_id: bytes = request_id or generate_random_id().to_bytes(4, "big")
+        self.request_id: Optional[int] = request_id
+        self.flags = flags
 
     def respond(self, response: Response) -> None:
         """Align this request's ID with a received response for correlation."""
@@ -61,7 +62,8 @@ class Request:
         header = data[:HEADER_SIZE]
         content = data[HEADER_SIZE:]
 
-        magic, code, size, hash_received, request_id = _HEADER_STRUCT.unpack(header)
+        magic, flags, code, size, hash_received, request_id_raw = _HEADER_STRUCT.unpack(header)
+        request_id = int.from_bytes(request_id_raw, "big")
 
         if magic != MAGIC:
             raise RequestError(f"Invalid magic bytes: {magic!r}")
@@ -82,6 +84,7 @@ class Request:
             content=bytes(content),
             _hash=hash_received,
             _request_id=request_id,
+            _flags=flags,
         )
 
     def compile(self) -> bytes:
@@ -93,13 +96,15 @@ class Request:
             raise RequestError(f"Content too large: {size} bytes (max: {max_size})")
 
         hash_value = zlib.crc32(self.content).to_bytes(4, "big")
+        request_id_bytes = self.request_id.to_bytes(REQUEST_ID_SIZE, "big") if self.request_id is not None else b"\x00" * REQUEST_ID_SIZE
 
         header = _HEADER_STRUCT.pack(
             MAGIC,
+            int(self.flags),
             self.type.code,
             size,
             hash_value,
-            self.request_id,
+            request_id_bytes,
         )
 
         return header + self.content
