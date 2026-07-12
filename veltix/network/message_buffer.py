@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
 
 _MAGIC_SIZE = len(MAGIC)
-_MAGIC_AND_SIZE = struct.Struct(">2s2xI")
+_MAGIC_AND_SIZE = struct.Struct(">2s3xI")
 
 MAX_BUFFER_SIZE = 20 * 1024 * 1024
 
