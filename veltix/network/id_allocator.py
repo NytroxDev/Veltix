@@ -33,7 +33,7 @@ class IDAllocator:
         return self._max
 
 
-class ClientCounter:
+class ClientAllocator:
     """
     Server-side counter that assigns unique offsets to connected clients.
 
