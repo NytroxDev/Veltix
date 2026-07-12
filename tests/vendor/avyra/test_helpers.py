@@ -44,7 +44,7 @@ class TestOriginalSub:
         def wrapper():
             pass
 
-        wrapper._original = f  # type: ignore[attr-defined]
+        wrapper.__wrapped__ = f
         assert _original_sub(wrapper) is f
 
     def test_lambda(self):

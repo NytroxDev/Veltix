@@ -111,6 +111,88 @@ class TestAsyncOnce:
         await async_bus.emit(Event.FOO, 2)
         assert results == [(Event.FOO, 2)]
 
+    async def test_once_unsubscribes_on_async_crash(self, async_bus, results, collector):
+        async def crash(e, p):
+            raise RuntimeError("async boom")
+
+        async_bus.once(Event.FOO, crash)
+        await async_bus.emit(Event.FOO, 1)
+        async_bus.subscribe(Event.FOO, collector)
+        await async_bus.emit(Event.FOO, 2)
+        assert results == [(Event.FOO, 2)]
+
+    async def test_once_on_class(self, async_bus, results, collector):
+        async_bus.once(Event, collector)
+        await async_bus.emit(Event.FOO, 1)
+        assert results == [(Event.FOO, 1)]
+        await async_bus.emit(Event.FOO, 2)
+        assert results == [(Event.FOO, 1)]
+
+    async def test_once_on_class_other_members_still_fire(self, async_bus, results, collector):
+        async_bus.once(Event, collector)
+        await async_bus.emit(Event.FOO, 1)
+        await async_bus.emit(Event.BAR, 2)
+        assert results == [(Event.FOO, 1), (Event.BAR, 2)]
+
+
+@pytest.mark.asyncio
+class TestAsyncSubscribe:
+    async def test_subscribe_to_unknown_raises(self, async_bus, collector):
+        from .conftest import OtherEvent
+
+        with pytest.raises(ValueError, match="Unknown event type"):
+            async_bus.subscribe(OtherEvent.X, collector)
+
+    async def test_subscribe_twice_raises(self, async_bus, collector):
+        async_bus.subscribe(Event.FOO, collector)
+        with pytest.raises(ValueError, match="already subscribed"):
+            async_bus.subscribe(Event.FOO, collector)
+
+    async def test_subscribe_to_class_subscribes_all(self, async_bus, collector):
+        async_bus.subscribe(Event, collector)
+        assert async_bus.has_subscriber(Event.FOO, collector)
+        assert async_bus.has_subscriber(Event.BAR, collector)
+        assert async_bus.has_subscriber(Event.BAZ, collector)
+
+
+@pytest.mark.asyncio
+class TestAsyncUnsubscribe:
+    async def test_unsubscribe_single(self, async_bus, collector):
+        async_bus.subscribe(Event.FOO, collector)
+        async_bus.unsubscribe(Event.FOO, collector)
+        assert not async_bus.has_subscriber(Event.FOO, collector)
+
+    async def test_unsubscribe_not_subscribed_raises(self, async_bus, collector):
+        with pytest.raises(ValueError, match="not subscribed"):
+            async_bus.unsubscribe(Event.FOO, collector)
+
+    async def test_unsubscribe_unknown_raises(self, async_bus, collector):
+        from .conftest import OtherEvent
+
+        with pytest.raises(ValueError, match="Unknown event type"):
+            async_bus.unsubscribe(OtherEvent.X, collector)
+
+
+@pytest.mark.asyncio
+class TestAsyncClear:
+    async def test_clear_single(self, async_bus, collector):
+        async_bus.subscribe(Event.FOO, collector)
+        async_bus.clear(Event.FOO)
+        assert async_bus.has_subscriber(Event.FOO, collector) is False
+
+    async def test_clear_class(self, async_bus, collector):
+        async_bus.subscribe(Event, collector)
+        async_bus.clear(Event)
+        assert async_bus.has_subscriber(Event.FOO, collector) is False
+        assert async_bus.has_subscriber(Event.BAR, collector) is False
+        assert async_bus.has_subscriber(Event.BAZ, collector) is False
+
+    async def test_clear_unknown_raises(self, async_bus):
+        from .conftest import OtherEvent
+
+        with pytest.raises(ValueError, match="Unknown event type"):
+            async_bus.clear(OtherEvent.X)
+
 
 @pytest.mark.asyncio
 class TestAsyncHasSubscriber:

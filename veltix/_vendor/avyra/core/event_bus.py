@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+import functools
+from enum import Enum
 
 from ._base import Subscriber, _BaseEventBus
-
-if TYPE_CHECKING:
-    from enum import Enum
 
 
 class EventBus(_BaseEventBus):
@@ -20,9 +18,9 @@ class EventBus(_BaseEventBus):
     """
 
     def emit(
-        self,
-        event: Enum,
-        payload: object = None,
+            self,
+            event: Enum,
+            payload: object | None = None,
     ) -> list[tuple[Subscriber, Exception]]:
         """Dispatch *event* with *payload* to all its subscribers.
 
@@ -57,9 +55,9 @@ class EventBus(_BaseEventBus):
         return failed
 
     def once(
-        self,
-        event_type: Union[Enum, type, list],
-        function: Subscriber,
+            self,
+            event_type: Enum | type[Enum],
+            function: Subscriber,
     ) -> None:
         """Register *function* to fire at most once for *event_type*.
 
@@ -77,12 +75,11 @@ class EventBus(_BaseEventBus):
                 nor an ``Enum`` class.
             ValueError: If a member is unknown.
         """
-
-        def wrapper(event: Enum, payload: object) -> None:
+        @functools.wraps(function)
+        def wrapper(event: Enum, payload: object | None) -> None:
             try:
                 function(event, payload)
             finally:
                 self.unsubscribe(event, function)
 
-        wrapper._original = function  # type: ignore[attr-defined]
         self.subscribe(event_type, wrapper)
