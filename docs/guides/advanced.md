@@ -5,10 +5,10 @@
 ```python
 # Broadcast to all connected clients
 message = Request(CHAT, b"Server announcement")
-sender.broadcast(message, server.get_all_clients_sockets())
+server.broadcast(message)
 
 # Broadcast with exclusion
-sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[client.conn])
+server.broadcast(message, except_clients=[client.conn])
 ```
 
 ## Client Tags
@@ -16,7 +16,7 @@ sender.broadcast(message, server.get_all_clients_sockets(), except_clients=[clie
 Attach arbitrary metadata to connected clients for tracking, filtering, or access control.
 
 ```python
-from veltix import Server, ServerConfig, ClientInfo, Events
+from veltix import Server, ServerConfig, ClientInfo
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
@@ -34,8 +34,8 @@ def on_message(client: ClientInfo, response):
         print(f"Admin message from {client.addr[0]}")
 
 
-server.set_callback(Events.ON_CONNECT, on_connect)
-server.set_callback(Events.ON_RECV, on_message)
+server.on_connect(on_connect)
+server.on_recv(on_message)
 server.start()
 ```
 
@@ -91,14 +91,14 @@ Message type codes are divided into ranges by convention:
 from veltix import MessageType
 
 # System messages (0–199) — reserved, internal use only
-PING = MessageType(0, "ping", "System ping")  # _system=True internally
+# PING, PONG, ERROR, INVALID_REQUEST are pre-registered
 
 # Application messages (200–9999) — explicit codes
 CHAT = MessageType(200, "chat", "Chat message")
 FILE_TRANSFER = MessageType(201, "file", "File transfer")
 
 # Or auto-allocate the next available code
-PLUGIN = MessageType("plugin", "Custom plugin message")
+PLUGIN = MessageType("plugin", description="Custom plugin message")
 ```
 
 ## Configuring the Thread Pool

@@ -14,7 +14,7 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
     reply = Request(ECHO, response.content, request_id=response.request_id)
-    server.sender.send(reply, client=client.conn)
+    server.send(reply, client)
 
 server.start()
 

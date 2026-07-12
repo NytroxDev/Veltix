@@ -62,7 +62,7 @@ def on_chat(client, response):
     ...  # called for CHAT messages
 
 
-server.set_callback(Events.ON_RECV, fallback)  # called for everything else
+server.on_recv(fallback)  # called for everything else
 ```
 
 ## Programmatic registration

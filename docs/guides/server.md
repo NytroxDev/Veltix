@@ -56,11 +56,9 @@ server.request_handler.unregister_route(CHAT)
 ## Callbacks
 
 ```python
-from veltix import Events
-
-server.set_callback(Events.ON_CONNECT, lambda client: print(f"Connected: {client.addr}"))
-server.set_callback(Events.ON_RECV, lambda client, msg: print(msg.content.decode()))
-server.set_callback(Events.ON_DISCONNECT, lambda client: print(f"Disconnected: {client.addr}"))
+server.on_connect(lambda client: print(f"Connected: {client.addr}"))
+server.on_recv(lambda client, msg: print(msg.content.decode()))
+server.on_disconnect(lambda client: print(f"Disconnected: {client.addr}"))
 ```
 
 !!! note
@@ -73,13 +71,13 @@ Use `@server.route()` for per-type handlers. `on_recv` is the fallback for unrou
 
 ```python
 # Send to a specific client
-server.sender.send(request, client=client.conn)
+server.send(request, client)
 
 # Broadcast to all clients
-server.sender.broadcast(request, server.get_all_clients_sockets())
+server.broadcast(request)
 
 # Broadcast with exclusion
-server.sender.broadcast(request, server.get_all_clients_sockets(), except_clients=[client.conn])
+server.broadcast(request, except_clients=[client.conn])
 ```
 
 ## Ping

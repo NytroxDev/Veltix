@@ -424,10 +424,10 @@ from veltix import Server, ServerConfig
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 server.start()  # Non-blocking, starts accept loop in thread
 
-# Legacy callback style (still works)
-server.set_callback(Events.ON_RECV, callback)  # func(client: ClientInfo, response: Response)
-server.set_callback(Events.ON_CONNECT, callback)  # func(client: ClientInfo)
-server.set_callback(Events.ON_DISCONNECT, callback)  # func(client: ClientInfo)
+# Callback style
+server.on_recv(callback)       # func(client: ClientInfo, response: Response)
+server.on_connect(callback)    # func(client: ClientInfo)
+server.on_disconnect(callback) # func(client: ClientInfo)
 
 # Structured event bus (v1.9.0+)
 from veltix.internal.events import ServerEvent
@@ -446,8 +446,7 @@ server.ping_client_async(client, callback, timeout)  # non-blocking ping
 server.close_client(client)  # -> bool
 server.close_all()  # stop server + disconnect all
 server.clients  # -> list[ClientInfo]
-server.get_all_clients_sockets()  # -> list[BaseSocket]
-server.get_clients_sockets_by_tag(tag, value=None)  # -> list[BaseSocket]
+server.get_clients_by_tag(tag, value=None)  # -> list[ClientInfo]
 server.bus  # -> VeltixBus (subscribe to ServerEvent, ClientEvent, MessageEvent, …)
 ```
 
@@ -458,10 +457,10 @@ from veltix import Client, ClientConfig
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, retry=3, retry_delay=1.0))
 client.connect()  # Blocks until handshake done -> bool
-# Legacy callback style (still works)
-client.set_callback(Events.ON_RECV, callback)  # func(response: Response)
-client.set_callback(Events.ON_CONNECT, callback)  # func()
-client.set_callback(Events.ON_DISCONNECT, callback)  # func(state: DisconnectState)
+# Callback style
+client.on_recv(callback)       # func(response: Response)
+client.on_connect(callback)    # func()
+client.on_disconnect(callback) # func(state: DisconnectState)
 
 # Structured event bus (v1.9.0+)
 from veltix.internal.events import ClientEvent
@@ -605,11 +604,17 @@ client.clear_tags()
 ### Events
 
 ```python
-from veltix import Events
+from veltix.internal.events import ServerEvent, ClientEvent
 
-Events.ON_RECV  # "on_recv"
-Events.ON_CONNECT  # "on_connect"
-Events.ON_DISCONNECT  # "on_disconnect"
+# Server events
+ServerEvent.ON_CONNECT    # client connected
+ServerEvent.ON_DISCONNECT # client disconnected
+ServerEvent.STARTED       # server started
+ServerEvent.STOPPED       # server stopped
+
+# Client events
+ClientEvent.ON_CONNECT    # connected to server
+ClientEvent.ON_DISCONNECT # disconnected from server
 ```
 
 #### Structured Event Bus (v1.9.0+, events accessible via `veltix.internal.events`)
@@ -821,7 +826,7 @@ class TimeoutError(VeltixError): ...  # operation timeout
 **`chat_server.py`**
 
 ```python
-from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request, Events
+from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request
 
 CHAT = MessageType("chat")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
@@ -831,11 +836,11 @@ sender = server.sender
 @server.route(CHAT)
 def on_chat(client: ClientInfo, response: Response) -> None:
     print(f"[{client.ip}] {response.content.decode()}")
-    sender.broadcast(Request(CHAT, response.content), server.get_all_clients_sockets(), [client.conn])
+    sender.broadcast(Request(CHAT, response.content), except_clients=[client.conn])
 
 
-server.set_callback(Events.ON_CONNECT, lambda c: print(f"+ {c.addr}"))
-server.set_callback(Events.ON_DISCONNECT, lambda c: print(f"- {c.addr}"))
+server.on_connect(lambda c: print(f"+ {c.addr}"))
+server.on_disconnect(lambda c: print(f"- {c.addr}"))
 server.start()
 input("Press Enter to stop...\n")
 server.close_all()
@@ -886,12 +891,11 @@ from veltix import Server, ServerConfig, Client, ClientConfig, MessageType, Requ
 
 ECHO = MessageType("echo")
 server = Server(ServerConfig(port=8080))
-sender = server.sender
 
 
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
-    sender.send(Request(ECHO, response.content), client=client.conn)
+    server.send(Request(ECHO, response.content), client)
 
 
 server.start()
@@ -930,7 +934,7 @@ def on_join(client: ClientInfo, response: Response) -> None:
 def on_msg(client: ClientInfo, response: Response) -> None:
     channel = client.get_tag("channel")
     if channel:
-        targets = server.get_clients_sockets_by_tag("channel", channel)
+        targets = server.get_clients_by_tag("channel", channel)
         sender.broadcast(
             Request(CHANNEL_MSG, response.content), targets,
             except_clients=[client.conn]

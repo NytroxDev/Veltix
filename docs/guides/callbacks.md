@@ -14,26 +14,26 @@ Client `ON_DISCONNECT` now receives a [`DisconnectState`](reconnect.md) argument
 ## Server callbacks
 
 ```python
-from veltix import Server, ServerConfig, Events
+from veltix import Server, ServerConfig
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
-server.set_callback(Events.ON_CONNECT, lambda client: print(f"Connected: {client.addr}"))
-server.set_callback(Events.ON_RECV, lambda client, msg: print(msg.content.decode()))
-server.set_callback(Events.ON_DISCONNECT, lambda client: print(f"Disconnected: {client.addr}"))
+server.on_connect(lambda client: print(f"Connected: {client.addr}"))
+server.on_recv(lambda client, msg: print(msg.content.decode()))
+server.on_disconnect(lambda client: print(f"Disconnected: {client.addr}"))
 ```
 
 ## Client callbacks
 
 ```python
-from veltix import Client, ClientConfig, Events
+from veltix import Client, ClientConfig
 from veltix import DisconnectState
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 
-client.set_callback(Events.ON_CONNECT, lambda: print("Handshake complete!"))
-client.set_callback(Events.ON_RECV, lambda response: print(response.content.decode()))
-client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected — permanent={state.permanent}"))
+client.on_connect(lambda: print("Handshake complete!"))
+client.on_recv(lambda response: print(response.content.decode()))
+client.on_disconnect(lambda state: print(f"Disconnected — permanent={state.permanent}"))
 ```
 
 ## Routing vs on_recv
@@ -50,7 +50,7 @@ def on_chat(client, response):
     ...  # only called for CHAT messages
 
 
-server.set_callback(Events.ON_RECV, fallback)  # called for everything else
+server.on_recv(fallback)  # called for everything else
 ```
 
 See the [Routing guide](routing.md) for full details.

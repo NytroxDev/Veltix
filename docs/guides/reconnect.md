@@ -62,7 +62,7 @@ If all attempts are exhausted:
 ## Full example
 
 ```python
-from veltix import Client, ClientConfig, Events, DisconnectState
+from veltix import Client, ClientConfig, DisconnectState
 
 client = Client(ClientConfig(
     server_addr="127.0.0.1",
@@ -79,8 +79,8 @@ def on_disconnect(state: DisconnectState):
         print(f"Retrying... attempt {state.attempt}/{state.retry_max}")
 
 
-client.set_callback(Events.ON_CONNECT, lambda: print("Connected!"))
-client.set_callback(Events.ON_DISCONNECT, on_disconnect)
+client.on_connect(lambda: print("Connected!"))
+client.on_disconnect(on_disconnect)
 client.connect()
 ```
 

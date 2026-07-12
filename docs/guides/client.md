@@ -55,11 +55,11 @@ client.request_handler.unregister_route(CHAT)
 ## Callbacks
 
 ```python
-from veltix import Events, DisconnectState
+from veltix import DisconnectState
 
-client.set_callback(Events.ON_CONNECT, lambda: print("Connected!"))
-client.set_callback(Events.ON_RECV, lambda response: print(response.content.decode()))
-client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected — permanent={state.permanent}"))
+client.on_connect(lambda: print("Connected!"))
+client.on_recv(lambda response: print(response.content.decode()))
+client.on_disconnect(lambda state: print(f"Disconnected — permanent={state.permanent}"))
 ```
 
 !!! tip

@@ -69,12 +69,11 @@ from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Requ
 
 ECHO = MessageType("echo")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
-sender = server.sender
 
 
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response):
-    sender.send(Request(ECHO, response.content), client=client.conn)
+    server.send(Request(ECHO, response.content), client)
 
 
 server.start()

@@ -14,7 +14,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection  
 so you can focus on your application logic.
 
-**Mature & tested** - 497+ tests · CI on Python 3.8-3.14 · 12+ releases
+**Mature & tested** - 520+ tests · CI on Python 3.8-3.14 · 12+ releases
 
 ## Why Veltix?
 
@@ -35,7 +35,7 @@ dependencies.
 
 ## Raw Socket vs Veltix
 
-**Echo server with raw sockets (41 lines):**
+**Echo server with raw sockets (15 lines):**
 
 ```python
 import socket
@@ -60,19 +60,18 @@ while True:
     threading.Thread(target=handle_client, args=(conn, addr)).start()
 ```
 
-**Same thing with Veltix (11 lines):**
+**Same thing with Veltix (7 lines):**
 
 ```python
 from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request
 
 ECHO = MessageType("echo")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
-sender = server.sender
 
 
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response):
-    sender.send(Request(ECHO, response.content), client=client.conn)
+    server.send(Request(ECHO, response.content), client)
 
 
 server.start()
@@ -92,7 +91,8 @@ No manual framing. No thread management. No boilerplate.
 - **Thread-safe callbacks**: slow handlers never block reception
 - **Client tagging**: attach metadata, broadcast to groups
 - **Integrated logger**: colorized, rotating, thread-safe
-- **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra) — subscribe to lifecycle, message, protocol, and error events
+- **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra) — subscribe to lifecycle, message,
+  protocol, and error events
 
 **Designed for:** LAN tools, multiplayer games, real-time dashboards, custom protocols, IPC, remote tooling, file
 transfer.
@@ -136,13 +136,12 @@ from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Requ
 CHAT = MessageType("chat")
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
-sender = server.sender
 
 
 @server.route(CHAT)
 def on_message(client: ClientInfo, response: Response):
     print(f"[{client.addr[0]}] {response.content.decode()}")
-    sender.broadcast(Request(CHAT, response.content), server.get_all_clients_sockets())
+    server.broadcast(Request(CHAT, response.content))
 
 
 server.start()
