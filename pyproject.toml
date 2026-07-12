@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "veltix"
 version = "1.9.0"
-description = "The high-level TCP library Python never had — sync, thread-friendly, zero dependencies"
+description = "Python TCP, without the boilerplate — sync, thread-friendly, zero dependencies"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.8"
