@@ -51,7 +51,7 @@ class RequestHandler:
         self.handshake_handler = HandshakeHandler(mode=mode, bus=self.bus)
         self._executor = CallbackExecutor(max_workers=max_workers, bus=self.bus)
 
-        self.pending_requests: dict[bytes, Queue] = {}
+        self.pending_requests: dict[int, Queue] = {}
         self.pending_requests_lock = Lock()
 
         self._routes: dict[MessageType, Callable] = {}
@@ -84,7 +84,7 @@ class RequestHandler:
 
         return True
 
-    def register(self, request_id: bytes) -> Queue:
+    def register(self, request_id: int) -> Queue:
         """
         Register a pending request BEFORE sending it.
 
@@ -96,16 +96,16 @@ class RequestHandler:
         self.bus.emit(
             MessageEvent.PENDING_REGISTERED,
             {
-                "request_id": request_id.hex(),
+                "request_id": request_id,
             },
         )
         return queue
 
-    def unregister(self, request_id: bytes) -> None:
+    def unregister(self, request_id: int) -> None:
         with self.pending_requests_lock:
             self.pending_requests.pop(request_id, None)
 
-    def wait(self, request_id: bytes, timeout: float = 5.0) -> Optional[Response]:
+    def wait(self, request_id: int, timeout: float = 5.0) -> Optional[Response]:
         """
         Wait for a response matching request_id. Must be called after register().
 
@@ -116,7 +116,7 @@ class RequestHandler:
 
         if queue is None:
             self.bus.error(
-                f"No registered request for id={request_id.hex()}. Call register() first."
+                f"No registered request for id={request_id}. Call register() first."
             )
             return None
 
@@ -126,12 +126,12 @@ class RequestHandler:
             self.bus.emit(
                 MessageEvent.PENDING_TIMEOUT,
                 {
-                    "request_id": request_id.hex(),
+                    "request_id": request_id,
                     "timeout": timeout,
                 },
             )
             self.bus.warning(
-                f"Timeout waiting for response (id={request_id.hex()}) after {timeout}s"
+                f"Timeout waiting for response (id={request_id}) after {timeout}s"
             )
             return None
         finally:
