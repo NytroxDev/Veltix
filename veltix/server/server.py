@@ -99,6 +99,7 @@ class Server:
             bus=self.bus,
         )
         self.socket.handshake_timeout = self.config.handshake_timeout
+        self.socket.client_allocator = self.client_allocator
 
     # -------------------------------------------------------------------------
     # Public API

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
+    from ..network.id_allocator import ClientAllocator
     from .managers.clients_manager import ClientEntry, ClientsManager
 
 
@@ -21,6 +22,7 @@ class BaseSocket(ABC):
     client_manager: ClientsManager
     handshake_timeout: float
     bus: VeltixBus
+    client_allocator: Optional[ClientAllocator]
 
     @abstractmethod
     def send(self, data: bytes) -> bool: ...
