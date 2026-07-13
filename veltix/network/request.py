@@ -96,7 +96,11 @@ class Request:
             raise RequestError(f"Content too large: {size} bytes (max: {max_size})")
 
         hash_value = zlib.crc32(self.content).to_bytes(4, "big")
-        request_id_bytes = self.request_id.to_bytes(REQUEST_ID_SIZE, "big") if self.request_id is not None else b"\x00" * REQUEST_ID_SIZE
+        request_id_bytes = (
+            self.request_id.to_bytes(REQUEST_ID_SIZE, "big")
+            if self.request_id is not None
+            else b"\x00" * REQUEST_ID_SIZE
+        )
 
         header = _HEADER_STRUCT.pack(
             MAGIC,

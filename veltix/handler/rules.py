@@ -66,9 +66,7 @@ class PendingRequestRule(Rule):
                 "request_id": global_id,
             },
         )
-        context.handler.bus.debug(
-            f"Routing response to pending request (global_id={global_id})"
-        )
+        context.handler.bus.debug(f"Routing response to pending request (global_id={global_id})")
         return True
 
 

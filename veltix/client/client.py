@@ -82,7 +82,10 @@ class Client:
         self.socket.settimeout(0.5)
         self._id_allocator = IDAllocator(max_ids=30000)
         self._sender: Sender = Sender(
-            mode=Mode.CLIENT, conn=self.socket, bus=self.bus, id_allocator=self._id_allocator,
+            mode=Mode.CLIENT,
+            conn=self.socket,
+            bus=self.bus,
+            id_allocator=self._id_allocator,
         )
         self.request_handler: RequestHandler = RequestHandler(
             sender=self.sender,

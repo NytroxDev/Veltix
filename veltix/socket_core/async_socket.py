@@ -202,7 +202,14 @@ class AsyncSocket(BaseSocket):
             nonblocking=False,
         )
         id_offset = self.client_allocator.register() if self.client_allocator else 0
-        client = ClientInfo(client_sock, addr, self.id_count, handshake_done=False, bus=self.bus, id_offset=id_offset)
+        client = ClientInfo(
+            client_sock,
+            addr,
+            self.id_count,
+            handshake_done=False,
+            bus=self.bus,
+            id_offset=id_offset,
+        )
         client_id = self.client_manager.add_client(client)
 
         client.handshake_done = True

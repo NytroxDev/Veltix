@@ -160,7 +160,11 @@ class ThreadingSocket(BaseSocket):
                     thread_id = self.n_th
 
                 client = ClientInfo(
-                    conn=conn, addr=addr, thread_id=thread_id, handshake_done=False, bus=self.bus,
+                    conn=conn,
+                    addr=addr,
+                    thread_id=thread_id,
+                    handshake_done=False,
+                    bus=self.bus,
                     id_offset=self.client_allocator.register() if self.client_allocator else 0,
                 )
 

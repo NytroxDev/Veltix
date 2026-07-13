@@ -116,7 +116,9 @@ class HandshakeHandler:
         """Server-side handshake: send server info, validate client response."""
         self.bus.emit(ProtocolEvent.HANDSHAKE_START, {"role": "server"})
 
-        if not self._send_handshake(sock, {"v": __version__, "meta": {"id_window": self.id_window}}):
+        if not self._send_handshake(
+            sock, {"v": __version__, "meta": {"id_window": self.id_window}}
+        ):
             self.bus.emit(ProtocolEvent.HANDSHAKE_FAIL, {"role": "server", "reason": "send_failed"})
             self.bus.error("Failed to send server handshake")
             return False

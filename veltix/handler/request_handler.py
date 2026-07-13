@@ -115,9 +115,7 @@ class RequestHandler:
             queue = self.pending_requests.get(request_id)
 
         if queue is None:
-            self.bus.error(
-                f"No registered request for id={request_id}. Call register() first."
-            )
+            self.bus.error(f"No registered request for id={request_id}. Call register() first.")
             return None
 
         try:
@@ -130,9 +128,7 @@ class RequestHandler:
                     "timeout": timeout,
                 },
             )
-            self.bus.warning(
-                f"Timeout waiting for response (id={request_id}) after {timeout}s"
-            )
+            self.bus.warning(f"Timeout waiting for response (id={request_id}) after {timeout}s")
             return None
         finally:
             with self.pending_requests_lock:
