@@ -20,7 +20,7 @@ class TestSendAndWait:
         server = Server(ServerConfig(host="127.0.0.1", port=port))
 
         def on_message(client_info, response2):
-            echo = Request(response2.type, response2.content, request_id=response2._request_id)
+            echo = Request(response2.type, response2.content, request_id=response2.request_id)
             server.sender.send(echo, client=client_info.conn)
 
         server.on_recv(on_message)
@@ -35,7 +35,7 @@ class TestSendAndWait:
 
         assert response is not None
         assert response.content == b"Echo this message!"
-        assert response._request_id == request.request_id
+        assert response.request_id == request.request_id
 
         client.disconnect()
         server.close_all()
@@ -48,7 +48,7 @@ class TestSendAndWait:
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
 
         def on_message(response2):
-            echo = Request(response2.type, response2.content, request_id=response2._request_id)
+            echo = Request(response2.type, response2.content, request_id=response2.request_id)
             client.sender.send(echo)
 
         client.on_recv(on_message)

@@ -168,10 +168,10 @@ class TestRequestRespond:
         req = Request(msg_type, b"hello")
         original_id = req.request_id
 
-        resp_id = b"\xaa\xbb\xcc\xdd"
+        resp_id = 42
         from veltix.network.request import Response
 
-        response = Response(type=msg_type, content=b"world", _hash=b"\x00" * 4, _request_id=resp_id)
+        response = Response(type=msg_type, content=b"world", _hash=b"\x00" * 4, request_id=resp_id)
 
         req.respond(response)
         assert req.request_id == resp_id

@@ -101,6 +101,9 @@ FILE_TRANSFER = MessageType(201, "file", "File transfer")
 PLUGIN = MessageType("plugin", description="Custom plugin message")
 ```
 
+!!! tip
+    Auto-allocation is ideal for quick prototyping. Use explicit codes when you need stable, predictable wire values across multiple services.
+
 ## Configuring the Thread Pool
 
 ```python

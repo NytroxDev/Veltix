@@ -13,6 +13,7 @@ config = ServerConfig(
     max_message_size=10 * 1024 * 1024,  # 10MB max message size
     handshake_timeout=5.0,  # Handshake timeout in seconds
     max_workers=4,  # Thread pool size for callbacks
+    id_window=30000,  # Unique IDs per direction (default: 30000)
 )
 
 server = Server(config)

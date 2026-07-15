@@ -25,6 +25,7 @@ Return values of Version.is_compatible():
 from __future__ import annotations
 
 import dataclasses
+import re
 from typing import Optional
 
 from ..logger.core import Logger
@@ -57,7 +58,8 @@ class Version:
         Parse a version string into a Version object.
 
         Accepts optional leading 'v' prefix (e.g. 'v1.6.6' or '1.6.6').
-        Only the first three components are used.
+        PEP 440 pre-release suffixes are stripped (e.g. '2.0.0b1' -> 2.0.0).
+        Only the first three numeric components are used.
 
         Args:
             version_str: Version string to parse.
@@ -69,7 +71,7 @@ class Version:
             ValueError: If the string is not a valid version.
         """
         version_str = version_str[1:] if version_str.startswith("v") else version_str
-        return Version(*[int(part) for part in version_str.split(".")[:3]])
+        return Version(*[int(re.sub(r"[^0-9].*", "", p)) for p in version_str.split(".")[:3]])
 
     def is_compatible(self, other: Version) -> Optional[bool]:
         """

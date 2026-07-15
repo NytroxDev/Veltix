@@ -45,11 +45,11 @@ STATUS = MessageType(name="status")            # keyword style, same result
 ```python
 from veltix import Request
 
-# Basic request
+# Basic request (auto-allocated request_id)
 request = Request(CHAT, b"Hello!")
 
-# With custom request_id (for correlation)
-request = Request(CHAT, b"Hello!", request_id=b"\x01\x02\x03\x04")
+# With custom request_id (uint16, 0–65535)
+request = Request(CHAT, b"Hello!", request_id=42)
 ```
 
 ## Response
@@ -58,7 +58,7 @@ Responses are received in callbacks. They have the same fields as requests.
 
 ```python
 def on_message(client, response):
-    print(response.type.name)     # message type name
-    print(response.content)       # raw bytes payload
-    print(response.request_id)    # 4-byte request id
+    print(response.type.name)       # message type name
+    print(response.content)         # raw bytes payload
+    print(response.request_id)     # int (0–65535)
 ```

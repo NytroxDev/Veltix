@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-13
+
+> **Migration guide:** [docs/guides/migration.md](docs/guides/migration.md#v190--v200)
+
+### Added
+
+- **Flags field in protocol header** (1 byte) — new `MessageFlag(IntFlag)` in `network/flags.py` for future
+  compression/encryption support. Currently only `NONE = 0x00` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`IDAllocator`** — thread-safe monotonic counter for per-connection request IDs, replaces `generate_random_id()`.
+  Allocates sequential IDs within a fixed range `[0, max_ids)`, wraps around after reaching the limit
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`ClientAllocator`** — server-side counter that assigns unique offsets to connected clients so that
+  `wire_id + client_offset` produces globally unique IDs across all clients
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`ServerConfig.id_window`** — configurable unique ID window per direction (default: 30000). Sent to clients
+  during the handshake via `meta.id_window` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **Handshake meta** — server now sends `{"v": "2.0.0", "meta": {"id_window": 30000}}` to clients
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+
+### Changed
+
+#### Wire protocol (Breaking)
+
+- **Header size reduced from 16 to 15 bytes** — new layout: `[2B MAGIC][1B flags][2B code][4B size][4B CRC][2B request_id][content]`
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`request_id` type changed from `bytes` (4 bytes) to `int` (2 bytes)** — uint16, max 65535. The `generate_random_id()`
+  function has been removed; IDs are now auto-allocated by `IDAllocator` via the `Sender`
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`Response.request_id`** is now a public `int` property (was `bytes`). Internal storage is `_request_id`.
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`Response._hash`** field is now private (prefixed with `_`). No longer accessible as `response.hash`.
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`REQUEST_ID_SIZE`** changed from `4` to `2` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`HEADER_SIZE`** changed from `16` to `15` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **Split ID ranges** — Server→Client uses `[0, id_window)`, Client→Server uses `[id_window, id_window*2)`.
+  Each client receives a unique offset via `ClientAllocator` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`Sender` auto-allocates request IDs** — `send()` now allocates via `IDAllocator` if `request_id is None`
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`MessageBuffer` struct updated** — new struct `">2sBHI4s2s"` for the 15-byte header format
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+
+### Removed
+
+- **`generate_random_id()`** — replaced by `IDAllocator` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+
+### Tests
+
+- **522 tests** — all existing tests updated for the new wire format; new tests added for `IDAllocator`,
+  `ClientAllocator`, `MessageFlag`, split ranges, and handshake `id_window` exchange
+  ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+
+---
+
 ## [1.9.0] - 2026-07-10
 
 ### Added

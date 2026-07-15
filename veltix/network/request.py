@@ -30,6 +30,26 @@ class Response:
     _request_id: int = dataclasses.field(repr=False)
     _flags: int = dataclasses.field(default=0, repr=False)
 
+    def __init__(
+        self,
+        type: MessageType,
+        content: bytes,
+        _hash: bytes = b"",
+        _request_id: int = 0,
+        _flags: int = 0,
+        request_id: Optional[int] = None,
+    ) -> None:
+        self.type = type
+        self.content = content
+        self._hash = _hash
+        self._request_id = request_id if request_id is not None else _request_id
+        self._flags = _flags
+
+    @property
+    def request_id(self) -> int:
+        """Request ID for correlation (uint16, 0–65535)."""
+        return self._request_id
+
 
 class Request:
     """Represents a message to be sent over the network."""
@@ -48,7 +68,7 @@ class Request:
 
     def respond(self, response: Response) -> None:
         """Align this request's ID with a received response for correlation."""
-        self.request_id = response._request_id
+        self.request_id = response.request_id
 
     @staticmethod
     def parse(data: Union[bytes, bytearray], max_message_size: int = 10 * 1024 * 1024) -> Response:

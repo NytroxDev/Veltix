@@ -6,7 +6,7 @@ from .rules_manager import MessageContext, Rule
 
 def _resolve_global_id(context: MessageContext) -> int:
     """Compute the globally unique ID from wire ID and client offset."""
-    wire_id = context.response._request_id
+    wire_id = context.response.request_id
     if context.is_server and context.client is not None:
         return wire_id + context.client.id_offset
     return wire_id
@@ -17,14 +17,14 @@ class PingRule(Rule):
         context.handler.bus.emit(
             ProtocolEvent.PING,
             {
-                "request_id": context.response._request_id,
+                "request_id": context.response.request_id,
                 "from": "client" if context.is_server else "server",
             },
         )
         context.handler.bus.debug(
-            f"Responding to PING with PONG (request_id={context.response._request_id})"
+            f"Responding to PING with PONG (request_id={context.response.request_id})"
         )
-        pong = Request(PONG, b"", request_id=context.response._request_id)
+        pong = Request(PONG, b"", request_id=context.response.request_id)
         sender = context.handler.sender
         assert sender is not None
         if context.is_server:
@@ -36,7 +36,7 @@ class PingRule(Rule):
         context.handler.bus.emit(
             ProtocolEvent.PONG,
             {
-                "request_id": context.response._request_id,
+                "request_id": context.response.request_id,
             },
         )
 

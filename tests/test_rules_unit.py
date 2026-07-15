@@ -24,12 +24,12 @@ def make_context(
     has_route=False,
     has_on_recv=False,
     handler=None,
-    request_id=b"\x00" * 4,
+    request_id=0,
 ):
     """Helper to create a MessageContext for testing."""
     if msg_type is None:
         msg_type = MessageType(code=9900, name="test_rule_type")
-    response = Response(type=msg_type, content=content, _hash=b"\x00" * 4, _request_id=request_id)
+    response = Response(type=msg_type, content=content, _hash=b"\x00" * 4, request_id=request_id)
 
     if handler is None:
         handler = MagicMock()
@@ -67,7 +67,7 @@ class TestPingRule:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client = ClientInfo(conn=sock, addr=("127.0.0.1", 9999), thread_id=1)
         ctx = make_context(
-            msg_type=PING, is_server=True, handler=handler, request_id=b"\x01\x02\x03\x04"
+            msg_type=PING, is_server=True, handler=handler, request_id=1
         )
         ctx.client = client
         rule.handle(ctx)
@@ -104,7 +104,7 @@ class TestPendingRequestRule:
         handler = MagicMock()
         handler.pending_requests = {}
         handler.pending_requests_lock = MagicMock()
-        request_id = b"\xaa\xbb\xcc\xdd"
+        request_id = 42
         from queue import Queue
 
         q = Queue()
@@ -121,7 +121,7 @@ class TestPendingRequestRule:
         handler = MagicMock()
         handler.pending_requests = {}
         handler.pending_requests_lock = MagicMock()
-        ctx = make_context(handler=handler, request_id=b"\xde\xad\xbe\xef")
+        ctx = make_context(handler=handler, request_id=99)
         result = rule.try_handle(ctx)
         assert result is False
 

@@ -23,14 +23,14 @@ class TestProtocol:
         response = Request.parse(compiled)
         assert response.type.code == test_message_type.code
         assert response.content == content
-        assert response._request_id == request_id
+        assert response.request_id == request_id
 
     def test_request_id_none_defaults_to_zero(self, test_message_type):
         request = Request(test_message_type, b"test")
         assert request.request_id is None
         compiled = request.compile()
         response = Request.parse(compiled)
-        assert response._request_id == 0
+        assert response.request_id == 0
 
     def test_request_id_custom_int(self, test_message_type):
         request = Request(test_message_type, b"test", request_id=12345)
@@ -40,7 +40,7 @@ class TestProtocol:
         request = Request(test_message_type, b"test", request_id=9999)
         compiled = request.compile()
         response = Request.parse(compiled)
-        assert response._request_id == 9999
+        assert response.request_id == 9999
 
     def test_request_id_compact_size(self, test_message_type):
         assert REQUEST_ID_SIZE == 2
@@ -49,7 +49,7 @@ class TestProtocol:
         request = Request(test_message_type, b"test", request_id=0)
         compiled = request.compile()
         response = Request.parse(compiled)
-        assert response._request_id == 0
+        assert response.request_id == 0
 
     def test_hash_integrity_valid(self, test_message_type):
         request = Request(test_message_type, b"Valid content", request_id=1)

@@ -12,7 +12,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.
 
-**Mature & tested** : 497+ tests · CI on Python 3.8-3.14 · 12+ releases
+**Mature & tested** : 522+ tests · CI on Python 3.8-3.14 · 12+ releases
 
 ---
 
@@ -109,7 +109,7 @@ No manual framing. No thread management. No boilerplate.
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 432 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
+- 522 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
 
 ---
 

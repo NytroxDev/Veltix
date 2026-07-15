@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 1.9.0
+- **Version:** 2.0.0
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -84,6 +84,8 @@ veltix/
 │   ├── sender.py        # Sender, Mode
 │   ├── types.py         # MessageType, MessageTypeRegistry
 │   ├── system_types.py  # PING, PONG, ERROR, INVALID_REQUEST
+│   ├── flags.py         # MessageFlag (IntFlag, internal)
+│   ├── id_allocator.py  # IDAllocator, ClientAllocator (internal)
 │   └── message_buffer.py
 ├── handler/             # Request routing & callbacks
 │   ├── request_handler.py   # RequestHandler
@@ -118,7 +120,7 @@ veltix/
 │   └── avyra/           # EventBus library (Avyra v1.0.0, Python 3.8 compat)
 ├── benchmark/           # CLI benchmarking suite (optional: pip install veltix[benchmark])
 ├── exceptions.py        # VeltixError hierarchy
-├── version.py           # __version__ = "1.9.0"
+├── version.py           # __version__ = "2.0.0"
 └── __init__.py          # Public API exports
 tests/
 ├── conftest.py          # Shared fixtures
@@ -360,7 +362,7 @@ in `handler/rules.py`.
 
 Add a member to the appropriate event enum in `internal/events.py` (`ServerEvent`, `ClientEvent`,
 `MessageEvent`, `ProtocolEvent`, `ErrorEvent`, `LogEvent`, or `ReconnectEvent`). Do NOT add to
-the old `Events` enum (kept for backward compat only, to remove in v2.0).
+the old `Events` enum (kept for backward compat only, to remove in v3.0).
 
 ### Adding a new exception
 
@@ -496,6 +498,7 @@ class ServerConfig:
     handshake_timeout: float = 5.0
     max_workers: int = 4
     socket_core: SocketCore = SocketCore.ASYNC
+    id_window: int = 30000  # unique IDs per direction per server
 ```
 
 #### `ClientConfig`
@@ -521,8 +524,8 @@ class ClientConfig:
 ```python
 from veltix import Request
 
-req = Request(MY_TYPE, b"hello")  # auto-generates request_id
-req = Request(MY_TYPE, b"hello", request_id=b"\x00" * 4)
+req = Request(MY_TYPE, b"hello")  # auto-allocates request_id via IDAllocator
+req = Request(MY_TYPE, b"hello", request_id=42)  # int (0-65535)
 req.compile()  # -> bytes (wire format)
 Request.parse(data, max_message_size=10
 MB)  # -> Response (static)
@@ -535,8 +538,9 @@ MB)  # -> Response (static)
 class Response:
     type: MessageType
     content: bytes
-    hash: bytes
-    request_id: bytes
+    _hash: bytes
+    request_id: int
+    _flags: int
 ```
 
 #### `Sender`
@@ -617,7 +621,7 @@ ClientEvent.ON_CONNECT    # connected to server
 ClientEvent.ON_DISCONNECT # disconnected from server
 ```
 
-#### Structured Event Bus (v1.9.0+, events accessible via `veltix.internal.events`)
+#### Structured Event Bus (events accessible via `veltix.internal.events`)
 
 ```python
 from veltix.internal.events import ServerEvent, ClientEvent, MessageEvent, ProtocolEvent, ErrorEvent, LogEvent, ReconnectEvent
@@ -688,7 +692,7 @@ ReconnectEvent.CANCELLED
 from veltix import SocketCore
 
 SocketCore.THREADING  # thread-per-client
-SocketCore.ASYNC  # selectors-based (v1.7.0+, default)
+SocketCore.ASYNC  # selectors-based (default)
 # SocketCore.RUST    # planned v3.0.0
 ```
 
@@ -726,8 +730,8 @@ BufferSize.HUGE  # 1 MB
 ```python
 from veltix import Version, COMPATIBILITY
 
-v = Version(1, 9, 0)
-v2 = Version.from_str("v1.9.0")
+v = Version(2, 0, 0)
+v2 = Version.from_str("v2.0.0")
 v.is_compatible(v2)  # -> Optional[bool] (True/False/None)
 ```
 
