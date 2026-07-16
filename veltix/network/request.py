@@ -3,21 +3,15 @@
 from __future__ import annotations
 
 import dataclasses
-import struct
 import zlib
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from ..exceptions import RequestError
+from .constants import HEADER_STRUCT, MAGIC, REQUEST_ID_SIZE
 from .flags import MessageFlag
-from .types import MessageType, MessageTypeRegistry
 
-MAGIC = b"VX"
-MAGIC_SIZE = len(MAGIC)
-
-REQUEST_ID_SIZE = 2
-
-_HEADER_STRUCT = struct.Struct(f">2sBHI4s{REQUEST_ID_SIZE}s")
-HEADER_SIZE = _HEADER_STRUCT.size
+if TYPE_CHECKING:
+    from .types import MessageType
 
 
 @dataclasses.dataclass
@@ -28,22 +22,19 @@ class Response:
     content: bytes
     _hash: bytes = dataclasses.field(repr=False)
     _request_id: int = dataclasses.field(repr=False)
-    _flags: int = dataclasses.field(default=0, repr=False)
 
     def __init__(
         self,
-        type: MessageType,
+        _type: MessageType,
         content: bytes,
         _hash: bytes = b"",
         _request_id: int = 0,
-        _flags: int = 0,
         request_id: Optional[int] = None,
     ) -> None:
-        self.type = type
+        self.type = _type
         self.content = content
         self._hash = _hash
         self._request_id = request_id if request_id is not None else _request_id
-        self._flags = _flags
 
     @property
     def request_id(self) -> int:
@@ -59,53 +50,15 @@ class Request:
         _type: MessageType,
         content: bytes,
         request_id: Optional[int] = None,
-        flags: MessageFlag = MessageFlag.NONE,
     ) -> None:
         self.type = _type
         self.content = content
         self.request_id: Optional[int] = request_id
-        self.flags = flags
+        self.flags = MessageFlag.NONE
 
     def respond(self, response: Response) -> None:
         """Align this request's ID with a received response for correlation."""
         self.request_id = response.request_id
-
-    @staticmethod
-    def parse(data: Union[bytes, bytearray], max_message_size: int = 10 * 1024 * 1024) -> Response:
-        """Parse raw bytes into a Response. Raises RequestError on invalid data."""
-        if len(data) < HEADER_SIZE:
-            raise RequestError(f"Data too short: {len(data)} bytes (minimum {HEADER_SIZE})")
-
-        if len(data) > max_message_size:
-            raise RequestError(f"Message too large: {len(data)} bytes (maximum {max_message_size})")
-
-        header = data[:HEADER_SIZE]
-        content = data[HEADER_SIZE:]
-
-        magic, flags, code, size, hash_received, request_id_raw = _HEADER_STRUCT.unpack(header)
-        request_id = int.from_bytes(request_id_raw, "big")
-
-        if magic != MAGIC:
-            raise RequestError(f"Invalid magic bytes: {magic!r}")
-
-        if len(content) != size:
-            raise RequestError(f"Size mismatch: expected {size} bytes, got {len(content)}")
-
-        msg_type = MessageTypeRegistry.get(code)
-        if not msg_type:
-            raise RequestError(f"Unknown message type code: {code}")
-
-        hash_content = zlib.crc32(content).to_bytes(4, "big")
-        if hash_received != hash_content:
-            raise RequestError("Hash mismatch — corrupted data")
-
-        return Response(
-            type=msg_type,
-            content=bytes(content),
-            _hash=hash_received,
-            _request_id=request_id,
-            _flags=flags,
-        )
 
     def compile(self) -> bytes:
         """Compile request into wire format. Raises RequestError if content exceeds 4GB."""
@@ -122,7 +75,7 @@ class Request:
             else b"\x00" * REQUEST_ID_SIZE
         )
 
-        header = _HEADER_STRUCT.pack(
+        header = HEADER_STRUCT.pack(
             MAGIC,
             int(self.flags),
             self.type.code,

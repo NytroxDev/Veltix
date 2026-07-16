@@ -5,10 +5,12 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING, Optional
 
-from .request import HEADER_SIZE, MAGIC, Request, Response
+from .constants import HEADER_SIZE, MAGIC
+from .parser import MessageParser
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
+    from .request import Response
 
 _MAGIC_SIZE = len(MAGIC)
 _MAGIC_AND_SIZE = struct.Struct(">2s3xI")
@@ -80,7 +82,7 @@ class MessageBuffer:
             message_data = self._buffer[:total_size]
 
             try:
-                response = Request.parse(message_data)
+                response = MessageParser.parse(message_data)
                 self._buffer = self._buffer[total_size:]
                 messages.append(response)
             except Exception as e:

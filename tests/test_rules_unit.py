@@ -29,7 +29,7 @@ def make_context(
     """Helper to create a MessageContext for testing."""
     if msg_type is None:
         msg_type = MessageType(code=9900, name="test_rule_type")
-    response = Response(type=msg_type, content=content, _hash=b"\x00" * 4, request_id=request_id)
+    response = Response(_type=msg_type, content=content, _hash=b"\x00" * 4, request_id=request_id)
 
     if handler is None:
         handler = MagicMock()
@@ -66,9 +66,7 @@ class TestPingRule:
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client = ClientInfo(conn=sock, addr=("127.0.0.1", 9999), thread_id=1)
-        ctx = make_context(
-            msg_type=PING, is_server=True, handler=handler, request_id=1
-        )
+        ctx = make_context(msg_type=PING, is_server=True, handler=handler, request_id=1)
         ctx.client = client
         rule.handle(ctx)
         handler.sender.send.assert_called_once()

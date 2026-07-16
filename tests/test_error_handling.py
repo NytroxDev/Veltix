@@ -12,8 +12,8 @@ from veltix import (
     SenderError,
     VeltixError,
 )
-from veltix.network.request import HEADER_SIZE
-from veltix.network.request import Request as Req
+from veltix.network.constants import HEADER_SIZE
+from veltix.network.parser import MessageParser
 
 # ── Exception hierarchy ───────────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ class TestMessageTypeError:
 class TestRequestError:
     def test_parse_too_short(self):
         with pytest.raises(RequestError) as exc:
-            Req.parse(b"short")
+            MessageParser.parse(b"short")
         assert "too short" in str(exc.value)
 
     def test_parse_hash_mismatch(self):
@@ -81,7 +81,7 @@ class TestRequestError:
         compiled = bytearray(request.compile())
         compiled[HEADER_SIZE] = (compiled[HEADER_SIZE] + 1) % 256  # corrupt content
         with pytest.raises(RequestError) as exc:
-            Req.parse(bytes(compiled))
+            MessageParser.parse(bytes(compiled))
         assert "Hash mismatch" in str(exc.value)
 
     def test_parse_unknown_message_type(self):
@@ -91,7 +91,7 @@ class TestRequestError:
         compiled[2] = 0xFF  # type code high byte (offset 2 after 2 magic bytes)
         compiled[3] = 0xFE  # type code low byte
         with pytest.raises(RequestError) as exc:
-            Req.parse(bytes(compiled))
+            MessageParser.parse(bytes(compiled))
         assert "Unknown message type" in str(exc.value)
 
     def test_parse_size_mismatch(self):
@@ -99,7 +99,7 @@ class TestRequestError:
         request = Request(msg_type, b"hello")
         compiled = request.compile()
         with pytest.raises(RequestError) as exc:
-            Req.parse(compiled + b"EXTRA")
+            MessageParser.parse(compiled + b"EXTRA")
         assert "mismatch" in str(exc.value)
 
 

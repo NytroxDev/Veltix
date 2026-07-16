@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from veltix import MessageType, Mode, Request, Sender, SenderError
-from veltix.network.request import HEADER_SIZE
+from veltix.network.constants import HEADER_SIZE
 
 # ── Fixture ───────────────────────────────────────────────────────────────────
 
