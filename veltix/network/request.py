@@ -7,15 +7,19 @@ them into the Veltix wire format.
 from __future__ import annotations
 
 import zlib
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from ..exceptions import RequestError
+from ..utils.encoding import encode_json, encode_utf8
 from .constants import HEADER_STRUCT, MAGIC, REQUEST_ID_SIZE
 from .flags import MessageFlag
 
 if TYPE_CHECKING:
     from .response import Response
     from .types import MessageType
+
+
+_UNSET = object()
 
 
 class Request:
@@ -28,21 +32,45 @@ class Request:
     def __init__(
         self,
         _type: MessageType,
-        content: bytes,
+        content: bytes | object = _UNSET,
+        *,
+        text: str | object = _UNSET,
+        json: Any | object = _UNSET,
         request_id: Optional[int] = None,
     ) -> None:
         """Initialize a new request.
 
         Args:
             _type: Message type associated with this request.
-            content: Raw payload content as bytes.
-            request_id: Optional identifier used to correlate the request
-                with a response.
+            content: Raw payload bytes.
+            text: UTF-8 text to encode as the payload.
+            json: Python object to serialize as JSON.
+            request_id: Optional identifier used to correlate the request with a response.
+
+        Raises:
+            RequestError:
+                If no payload, multiple payloads, or an invalid payload type is provided.
         """
-        self.type = _type
-        self.content = content
+
+        provided = sum(x is not _UNSET for x in (content, text, json))
+
+        if provided != 1:
+            raise RequestError("Provide exactly one of 'content', 'text', or 'json'.")
+
+        self.content: bytes
+
+        if content is not _UNSET:
+            if not isinstance(content, bytes):
+                raise RequestError("'content' must be bytes")
+            self.content = content
+        elif text is not _UNSET:
+            self.content = encode_utf8(text)
+        else:
+            self.content = encode_json(json)
+
         self.request_id: Optional[int] = request_id
         self.flags = MessageFlag.NONE
+        self.type = _type
 
     def respond(self, response: Response) -> None:
         """Associate this request with a received response.
