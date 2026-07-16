@@ -37,8 +37,9 @@ class Response:
         self.content = content
         self._hash = _hash
         self._request_id = request_id if request_id is not None else _request_id
-        self._text_cached = _UNSET
-        self._json_cached = _UNSET
+
+        self._text_cached: str | object = _UNSET
+        self._json_cached: Any | object = _UNSET
 
     @property
     def request_id(self) -> int:

@@ -25,7 +25,7 @@ class TestResponseText:
         assert response.is_text is False
 
         with pytest.raises(InvalidContentError):
-            response.text
+            _ = response.text
 
     def test_text_cache(self, test_message_type, monkeypatch):
         calls = 0
@@ -69,7 +69,7 @@ class TestResponseJson:
         assert response.is_json is False
 
         with pytest.raises(InvalidContentError):
-            response.json
+            _ = response.json
 
     def test_json_cache(self, test_message_type, monkeypatch):
         calls = 0
