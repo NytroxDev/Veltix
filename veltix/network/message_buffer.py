@@ -10,7 +10,7 @@ from .parser import MessageParser
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
-    from .request import Response
+    from .response import Response
 
 _MAGIC_SIZE = len(MAGIC)
 _MAGIC_AND_SIZE = struct.Struct(">2s3xI")
