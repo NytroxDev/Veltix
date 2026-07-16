@@ -39,3 +39,9 @@ class TimeoutError(VeltixError):
     """Raised when an operation times out."""
 
     pass
+
+
+class InvalidContentError(VeltixError):
+    """Raised when message content cannot be decoded or converted to the requested format."""
+
+    pass
