@@ -406,7 +406,10 @@ class Client:
 
     def wait_until_closed(self) -> None:
         """Block until the client is disconnected (via disconnect() or server close)."""
-        self._shutdown_event.wait()
+        try:
+            self._shutdown_event.wait()
+        except KeyboardInterrupt:
+            self.disconnect()
 
     def retry(self, max_: Optional[int] = None) -> None:
         """
