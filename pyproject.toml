@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "veltix"
-version = "2.0.0b1"
+version = "2.0.0b2"
 description = "Python TCP, without the boilerplate — sync, thread-friendly, zero dependencies"
 readme = "README.md"
 license = { text = "MIT" }
