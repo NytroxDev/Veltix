@@ -5,11 +5,13 @@ from .rules_manager import MessageContext, Rule
 
 
 def _resolve_global_id(context: MessageContext) -> int:
-    """Compute the globally unique ID from wire ID and client offset."""
-    wire_id = context.response.request_id
-    if context.is_server and context.client is not None:
-        return wire_id + context.client.id_offset
-    return wire_id
+    """Resolve the wire request ID for pending request matching.
+
+    Pending requests are always server-initiated: the server allocates
+    wire IDs from its own ``IDAllocator`` which already produces unique
+    IDs across all clients, so no client offset is needed.
+    """
+    return context.response.request_id
 
 
 class PingRule(Rule):
