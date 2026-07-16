@@ -6,7 +6,7 @@ import time
 import pytest
 
 from veltix import Client, ClientConfig, MessageType, Request, Server, ServerConfig
-from veltix.network.request import Response
+from veltix.network.response import Response
 from veltix.server.client_info import ClientInfo
 
 

@@ -13,7 +13,7 @@ from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ClientEvent, ErrorEvent
 from ..network.id_allocator import IDAllocator
-from ..network.request import Request, Response
+from ..network.request import Request
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 from .config import ClientConfig  # noqa: TC001 — re-exported by __init__.py
@@ -21,6 +21,7 @@ from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
 
 if TYPE_CHECKING:
+    from ..network.response import Response
     from ..network.types import MessageType
     from ..socket_core.base_socket import BaseSocket
 

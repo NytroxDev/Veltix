@@ -169,7 +169,7 @@ class TestRequestRespond:
         original_id = req.request_id
 
         resp_id = 42
-        from veltix.network.request import Response
+        from veltix.network.response import Response
 
         response = Response(_type=msg_type, content=b"world", _hash=b"\x00" * 4, request_id=resp_id)
 

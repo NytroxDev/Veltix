@@ -3,7 +3,7 @@ from typing import Union
 
 from ..exceptions import RequestError
 from .constants import HEADER_SIZE, HEADER_STRUCT, MAGIC
-from .request import Response
+from .response import Response
 from .types import MessageTypeRegistry
 
 

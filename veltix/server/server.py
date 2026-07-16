@@ -11,11 +11,12 @@ from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ServerEvent
 from ..network.id_allocator import ClientAllocator, IDAllocator
-from ..network.request import Request, Response
+from ..network.request import Request
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 
 if TYPE_CHECKING:
+    from ..network.response import Response
     from ..network.types import MessageType
     from ..socket_core.base_socket import BaseSocket
     from .client_info import ClientInfo

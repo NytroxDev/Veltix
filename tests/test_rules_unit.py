@@ -12,7 +12,7 @@ from veltix.handler.rules import (
     UnhandledRule,
 )
 from veltix.handler.rules_manager import MessageContext, RulesManager
-from veltix.network.request import Response
+from veltix.network.response import Response
 from veltix.network.system_types import PING
 from veltix.network.types import MessageType
 
