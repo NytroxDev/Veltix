@@ -1,4 +1,8 @@
-"""Request and Response for the Veltix protocol."""
+"""Request object for the Veltix protocol.
+
+Provides the request container used to build outgoing messages and serialize
+them into the Veltix wire format.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +19,11 @@ if TYPE_CHECKING:
 
 
 class Request:
-    """Represents a message to be sent over the network."""
+    """Represents a message request to be sent over the network.
+
+    A request contains a message type, payload content, optional request ID,
+    and protocol flags used during serialization.
+    """
 
     def __init__(
         self,
@@ -23,17 +31,42 @@ class Request:
         content: bytes,
         request_id: Optional[int] = None,
     ) -> None:
+        """Initialize a new request.
+
+        Args:
+            _type: Message type associated with this request.
+            content: Raw payload content as bytes.
+            request_id: Optional identifier used to correlate the request
+                with a response.
+        """
         self.type = _type
         self.content = content
         self.request_id: Optional[int] = request_id
         self.flags = MessageFlag.NONE
 
     def respond(self, response: Response) -> None:
-        """Align this request's ID with a received response for correlation."""
+        """Associate this request with a received response.
+
+        Updates the request ID using the ID from the provided response,
+        allowing request/response correlation.
+
+        Args:
+            response: Response object associated with this request.
+        """
         self.request_id = response.request_id
 
     def compile(self) -> bytes:
-        """Compile request into wire format. Raises RequestError if content exceeds 4GB."""
+        """Serialize the request into the Veltix wire format.
+
+        Builds the protocol header, calculates the content integrity hash,
+        and appends the raw payload.
+
+        Raises:
+            RequestError: If the payload exceeds the maximum supported size.
+
+        Returns:
+            The serialized request as bytes.
+        """
         max_size = 2**32 - 1
         size = len(self.content)
 
@@ -59,5 +92,6 @@ class Request:
         return header + self.content
 
     def __repr__(self) -> str:
+        """Return a debug representation of the request."""
         preview = self.content[:20] + b"..." if len(self.content) > 20 else self.content
         return f"Request(type={self.type.name}, content={preview!r}, id={self.request_id!r})"
