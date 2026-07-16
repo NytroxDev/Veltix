@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from ..network.request import Response
+    from ..network.response import Response
     from ..server.client_info import ClientInfo
     from .request_handler import RequestHandler
 
