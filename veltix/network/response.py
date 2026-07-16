@@ -6,8 +6,7 @@ import dataclasses
 import json
 from typing import TYPE_CHECKING, Any, Optional
 
-from exceptions import InvalidContentError
-
+from ..exceptions import InvalidContentError
 from ..utils.encoding import decode_json, decode_utf8
 
 if TYPE_CHECKING:
