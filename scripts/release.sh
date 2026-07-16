@@ -28,7 +28,7 @@ python -c "
 import re
 content = open('veltix/version.py').read()
 ver = re.search(r'__version__\s*=\s*[\"\'](.*?)[\"\']', content).group(1)
-parts = [int(x) for x in ver.split('.')[:3]]
+parts = [int(re.sub(r'[^0-9].*', '', p)) for p in ver.split('.')[:3]]
 
 compat = open('veltix/internal/compatibility.py').read()
 entry = f'Version({parts[0]}, {parts[1]}, {parts[2]})'
