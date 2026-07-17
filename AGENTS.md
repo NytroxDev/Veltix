@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 2.0.0
+- **Version:** 2.0.0b2
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -23,7 +23,7 @@ boilerplate of raw sockets.
 - **Multiplayer game servers:** real-time state sync, 64+ players at 64Hz tick rate
 - **Real-time dashboards:** live data streaming between microservices
 - **Custom protocols:** you control the message types, framing, and routing
-- **IPC / inter-process communication:** lightweight进程间通信 on localhost
+- **IPC / inter-process communication:** lightweight process间通信 on localhost
 - **Remote tooling:** SSH-like command execution, remote file management
 - **IoT / embedded:** minimal memory footprint (21 KB idle), no heavy dependencies
 
@@ -80,10 +80,13 @@ veltix/
 │   ├── config.py        # ServerConfig dataclass
 │   └── client_info.py   # ClientInfo dataclass
 ├── network/             # Protocol layer
-│   ├── request.py       # Request, Response, MAGIC, HEADER_SIZE
+│   ├── request.py       # Request class
+│   ├── response.py      # Response class (content decoding: .text, .json, .is_json, .is_text)
+│   ├── parser.py        # MessageParser — parse raw bytes into Response objects
 │   ├── sender.py        # Sender, Mode
 │   ├── types.py         # MessageType, MessageTypeRegistry
 │   ├── system_types.py  # PING, PONG, ERROR, INVALID_REQUEST
+│   ├── constants.py     # MAGIC, HEADER_SIZE, REQUEST_ID_SIZE, HEADER_STRUCT
 │   ├── flags.py         # MessageFlag (IntFlag, internal)
 │   ├── id_allocator.py  # IDAllocator, ClientAllocator (internal)
 │   └── message_buffer.py
@@ -120,19 +123,37 @@ veltix/
 │   └── avyra/           # EventBus library (Avyra v1.0.0, Python 3.8 compat)
 ├── benchmark/           # CLI benchmarking suite (optional: pip install veltix[benchmark])
 ├── exceptions.py        # VeltixError hierarchy
-├── version.py           # __version__ = "2.0.0"
+├── version.py           # __version__ = "2.0.0b2"
 └── __init__.py          # Public API exports
 tests/
-├── conftest.py          # Shared fixtures
+├── conftest.py              # Shared fixtures
+├── test_callback_executor.py
 ├── test_client_server.py
-├── test_routing.py
-├── test_reconnect.py
-├── test_ping_pong.py
-├── test_send_and_wait.py
-├── test_protocol.py
-├── test_message_buffer.py
+├── test_client_tags.py
+├── test_clients_manager.py
+├── test_compatibility.py
+├── test_error_handling.py
+├── test_handshake.py
+├── test_id_system.py
 ├── test_logger.py
-└── ...
+├── test_logger_detail.py
+├── test_message_buffer.py
+├── test_message_type.py
+├── test_network_internal.py
+├── test_ping_pong.py
+├── test_protocol.py
+├── test_reconnect.py
+├── test_request.py
+├── test_response.py
+├── test_routing.py
+├── test_rules_unit.py
+├── test_send_and_wait.py
+├── test_sender.py
+├── test_server_advanced.py
+├── test_socket_core.py
+├── test_socket_core_unit.py
+├── test_utils.py
+└── test_writer.py
 docs/
 ├── index.md
 ├── getting-started/
@@ -203,7 +224,7 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING, Callable, Optional
 
-from ..internal.events import Events
+from ..internal.events import ServerEvent
 from ..network.request import Request
 
 if TYPE_CHECKING:
@@ -441,15 +462,18 @@ server.bus.subscribe(ServerEvent.ON_DISCONNECT, callback)
 def on_msg(client: ClientInfo, response: Response) -> None: ...
 
 
-server.sender  # -> Sender
-server.send_and_wait(request, client, timeout=5.0)  # -> Optional[Response]
-server.ping_client(client, timeout=5.0)  # -> Optional[float] (latency ms)
-server.ping_client_async(client, callback, timeout)  # non-blocking ping
-server.close_client(client)  # -> bool
-server.close_all()  # stop server + disconnect all
-server.clients  # -> list[ClientInfo]
-server.get_clients_by_tag(tag, value=None)  # -> list[ClientInfo]
-server.bus  # -> VeltixBus (subscribe to ServerEvent, ClientEvent, MessageEvent, …)
+server.send(request, client)                          # -> bool (convenience)
+server.broadcast(request)                             # -> bool (all clients)
+server.broadcast(request, except_clients=[client])    # -> bool (exclude)
+server.send_and_wait(request, client, timeout=5.0)    # -> Optional[Response]
+server.ping_client(client, timeout=5.0)               # -> Optional[float] (latency ms)
+server.close_client(client)                           # -> bool
+server.close_all()                                    # stop server + disconnect all
+server.wait_until_closed()                            # block until close_all()
+server.restart()                                      # stop + start
+server.clients                                        # -> list[ClientInfo]
+server.get_clients_by_tag(tag, value=None)            # -> list[ClientInfo]
+server.bus                                            # -> VeltixBus
 ```
 
 #### `Client(config: ClientConfig)`
@@ -459,6 +483,7 @@ from veltix import Client, ClientConfig
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, retry=3, retry_delay=1.0))
 client.connect()  # Blocks until handshake done -> bool
+
 # Callback style
 client.on_recv(callback)       # func(response: Response)
 client.on_connect(callback)    # func()
@@ -470,17 +495,18 @@ client.bus.subscribe(ClientEvent.ON_CONNECT, callback)
 client.bus.subscribe(ClientEvent.ON_DISCONNECT, callback)
 
 
-@client.route(MY_TYPE)  # Decorator: func(response, client=None)
+@client.route(MY_TYPE)  # Decorator: func(response)
 def on_msg(response: Response) -> None: ...
 
 
-client.sender  # -> Sender
-client.send_and_wait(request, timeout=5.0)  # -> Optional[Response]
-client.ping_server(timeout=5.0)  # -> Optional[float] (latency ms)
-client.disconnect()  # -> bool
-client.stop_retry()  # cancel pending reconnection
-client.retry(max_=None)  # force reconnection attempts
-client.bus  # -> VeltixBus (subscribe to ClientEvent, MessageEvent, …)
+client.send(request)                          # -> bool (convenience)
+client.send_and_wait(request, timeout=5.0)    # -> Optional[Response]
+client.ping_server(timeout=5.0)               # -> Optional[float] (latency ms)
+client.disconnect()                           # -> bool
+client.stop_retry()                           # cancel pending reconnection
+client.retry(max_=None)                       # force reconnection attempts
+client.wait_until_closed()                    # block until disconnect
+client.bus                                    # -> VeltixBus
 ```
 
 ### Configuration
@@ -519,17 +545,22 @@ class ClientConfig:
 
 ### Network Protocol
 
-#### `Request(_type, content, request_id=None)`
+#### `Request(_type, content=None, *, text=None, json=None, request_id=None)`
+
+Exactly one payload argument (`content`, `text`, or `json`) is required.
 
 ```python
 from veltix import Request
 
-req = Request(MY_TYPE, b"hello")  # auto-allocates request_id via IDAllocator
-req = Request(MY_TYPE, b"hello", request_id=42)  # int (0-65535)
-req.compile()  # -> bytes (wire format)
-Request.parse(data, max_message_size=10
-MB)  # -> Response (static)
+req = Request(MY_TYPE, b"hello")              # raw bytes
+req = Request(MY_TYPE, text="hello")          # UTF-8 encoded automatically
+req = Request(MY_TYPE, json={"key": "val"})   # JSON serialized automatically
+req.request_id  # Optional[int] — auto-allocated by Sender if None
+req.compile()   # -> bytes (wire format)
+req.respond(response)  # copy request_id from response for correlation
 ```
+
+`request_id` is keyword-only: `Request(MY_TYPE, b"data", request_id=42)`.
 
 #### `Response` (dataclass)
 
@@ -538,9 +569,13 @@ MB)  # -> Response (static)
 class Response:
     type: MessageType
     content: bytes
-    _hash: bytes
-    request_id: int
-    _flags: int
+    request_id: int  # public int property (uint16)
+
+    # Lazy cached decoding properties:
+    response.text     # -> str (UTF-8, cached, raises InvalidContentError)
+    response.json     # -> Any (parsed JSON, cached, raises InvalidContentError)
+    response.is_text  # -> bool (safe check, no exception)
+    response.is_json  # -> bool (safe check, no exception)
 ```
 
 #### `Sender`
@@ -821,6 +856,9 @@ class NetworkError(VeltixError): ...  # network operation failure
 
 
 class TimeoutError(VeltixError): ...  # operation timeout
+
+
+class InvalidContentError(VeltixError): ...  # content decode failure (response.text / response.json)
 ```
 
 ### Complete Examples
@@ -834,13 +872,12 @@ from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Requ
 
 CHAT = MessageType("chat")
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
-sender = server.sender
 
 
 @server.route(CHAT)
 def on_chat(client: ClientInfo, response: Response) -> None:
-    print(f"[{client.ip}] {response.content.decode()}")
-    sender.broadcast(Request(CHAT, response.content), except_clients=[client.conn])
+    print(f"[{client.ip}] {response.text}")
+    server.broadcast(Request(CHAT, response.text), except_clients=[client])
 
 
 server.on_connect(lambda c: print(f"+ {c.addr}"))
@@ -859,12 +896,11 @@ import time
 
 CHAT = MessageType("chat")
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
-sender = client.sender
 
 
 @client.route(CHAT)
 def on_chat(response: Response) -> None:
-    print(f"\n[{client.config.server_addr}]: {response.content.decode()}")
+    print(f"\n[{client.config.server_addr}]: {response.text}")
 
 
 client.connect()
@@ -876,7 +912,7 @@ def _input_loop() -> None:
         if msg.lower() == "/quit":
             client.disconnect()
             break
-        sender.send(Request(CHAT, msg.encode()))
+        client.send(Request(CHAT, text=msg))
 
 
 threading.Thread(target=_input_loop, daemon=True).start()
@@ -907,10 +943,9 @@ server.start()
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 client.connect()
 
-req = Request(ECHO, b"Hello RPC!")
-resp = client.send_and_wait(req, timeout=3.0)
+resp = client.send_and_wait(Request(ECHO, text="Hello RPC!"), timeout=3.0)
 if resp:
-    print(f"Got: {resp.content.decode()}")  # "Got: Hello RPC!"
+    print(f"Got: {resp.text}")  # "Got: Hello RPC!"
 
 client.disconnect()
 server.close_all()
@@ -924,12 +959,11 @@ from veltix import MessageType, Request, Server, ServerConfig, ClientInfo, Respo
 CHANNEL_JOIN = MessageType("channel_join")
 CHANNEL_MSG = MessageType("channel_msg")
 server = Server(ServerConfig(port=8080))
-sender = server.sender
 
 
 @server.route(CHANNEL_JOIN)
 def on_join(client: ClientInfo, response: Response) -> None:
-    channel = response.content.decode()
+    channel = response.text
     client.add_tag("channel", channel)
     print(f"{client.ip} joined channel '{channel}'")
 
@@ -939,8 +973,7 @@ def on_msg(client: ClientInfo, response: Response) -> None:
     channel = client.get_tag("channel")
     if channel:
         targets = server.get_clients_by_tag("channel", channel)
-        sender.broadcast(
-            Request(CHANNEL_MSG, response.content), targets,
-            except_clients=[client.conn]
+        server.broadcast(
+            Request(CHANNEL_MSG, response.text), except_clients=[client]
         )
 ```

@@ -5,14 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2026-07-13
+## [2.0.0b2] - 2026-07-16
+
+### Added
+
+- **`Response.text`** : lazy, cached UTF-8 decoding property. Replaces manual `response.content.decode()`
+  ([8fc9085](https://github.com/NytroxDev/Veltix/commit/8fc9085)).
+- **`Response.json`** : lazy, cached JSON decoding property. Raises `InvalidContentError` on invalid JSON
+  ([8fc9085](https://github.com/NytroxDev/Veltix/commit/8fc9085)).
+- **`Response.is_text` / `Response.is_json`** : safe boolean checks without raising exceptions
+  ([8fc9085](https://github.com/NytroxDev/Veltix/commit/8fc9085)).
+- **`Request` text/json payloads** : `Request(MY_TYPE, text="hello")` and `Request(MY_TYPE, json={"k": "v"})`
+  auto-encode, exactly one payload arg required ([7cfe9d3](https://github.com/NytroxDev/Veltix/commit/7cfe9d3)).
+- **`Request.respond(response)`** : copies `request_id` from a received response for request/response correlation
+  ([7cfe9d3](https://github.com/NytroxDev/Veltix/commit/7cfe9d3)).
+- **`Server.send()` / `Server.broadcast()`** : convenience methods that accept `ClientInfo` or `BaseSocket` directly,
+  no need to access `server.sender` ([5b0b10e](https://github.com/NytroxDev/Veltix/commit/5b0b10e)).
+- **`Client.send()`** : convenience method, same pattern as `Server.send()`
+  ([5b0b10e](https://github.com/NytroxDev/Veltix/commit/5b0b10e)).
+- **`server.wait_until_closed()` / `client.wait_until_closed()`** : block until shutdown
+  ([20331c4](https://github.com/NytroxDev/Veltix/commit/20331c4)).
+- **`server.restart()`** : stop + start, preserves routes and callbacks
+  ([5b0b10e](https://github.com/NytroxDev/Veltix/commit/5b0b10e)).
+- **`MessageParser`** : extracted from `RequestHandler`, standalone message parsing module
+  ([908106a](https://github.com/NytroxDev/Veltix/commit/908106a)).
+
+### Changed
+
+- **`Response` extracted to own module** : `Response` class moved from `network/request.py` to `network/response.py`
+  ([5b0b10e](https://github.com/NytroxDev/Veltix/commit/5b0b10e)).
+
+### Fixed
+
+- **`send_and_wait()` always timed out for non-first clients** : `_resolve_global_id()` was adding `id_offset` to
+  `wire_id`, but `pending_requests` is keyed by raw `wire_id` from `IDAllocator`, so the lookup always missed
+  ([2438be4](https://github.com/NytroxDev/Veltix/commit/2438be4)).
+- **Keyboard interrupt handling during client shutdown** : `wait_until_closed()` now catches `KeyboardInterrupt`
+  gracefully ([20331c4](https://github.com/NytroxDev/Veltix/commit/20331c4)).
+- **Incorrect import paths** after `Response` extraction : `rules.py` and `message_buffer.py` referenced old location
+  ([efc3c5c](https://github.com/NytroxDev/Veltix/commit/efc3c5c),
+  [e54f98c](https://github.com/NytroxDev/Veltix/commit/e54f98c)).
+- **`InvalidContentError` import path** : fixed incorrect import after module reorganization
+  ([499aa4a](https://github.com/NytroxDev/Veltix/commit/499aa4a)).
+- **Version string** : `Version.from_str()` now handles pre-release suffixes like `b1`, `b2` correctly
+  ([4502806](https://github.com/NytroxDev/Veltix/commit/4502806)).
+
+### Tests
+
+- **571 tests** : new tests for `Response` content decoding, `Request` payload initialization and validation,
+  `IDAllocator`, `ClientAllocator`, and `_resolve_global_id` fix verification
+  ([250bcb8](https://github.com/NytroxDev/Veltix/commit/250bcb8),
+  [961c4df](https://github.com/NytroxDev/Veltix/commit/961c4df)).
+
+---
+
+## [2.0.0b1] - 2026-07-13
 
 > **Migration guide:** [docs/guides/migration.md](docs/guides/migration.md#v190--v200)
 
 ### Added
 
 - **Flags field in protocol header** (1 byte) — new `MessageFlag(IntFlag)` in `network/flags.py` for future
-  compression/encryption support. Currently only `NONE = 0x00` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+  compression/encryption support. Currently only
+  `NONE = 0x00` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 - **`IDAllocator`** — thread-safe monotonic counter for per-connection request IDs, replaces `generate_random_id()`.
   Allocates sequential IDs within a fixed range `[0, max_ids)`, wraps around after reaching the limit
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
@@ -28,9 +83,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Wire protocol (Breaking)
 
-- **Header size reduced from 16 to 15 bytes** — new layout: `[2B MAGIC][1B flags][2B code][4B size][4B CRC][2B request_id][content]`
+- **Header size reduced from 16 to 15 bytes** — new layout:
+  `[2B MAGIC][1B flags][2B code][4B size][4B CRC][2B request_id][content]`
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **`request_id` type changed from `bytes` (4 bytes) to `int` (2 bytes)** — uint16, max 65535. The `generate_random_id()`
+- **`request_id` type changed from `bytes` (4 bytes) to `int` (2 bytes)** — uint16, max 65535. The
+  `generate_random_id()`
   function has been removed; IDs are now auto-allocated by `IDAllocator` via the `Sender`
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 - **`Response.request_id`** is now a public `int` property (was `bytes`). Internal storage is `_request_id`.
@@ -40,7 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`REQUEST_ID_SIZE`** changed from `4` to `2` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 - **`HEADER_SIZE`** changed from `16` to `15` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 - **Split ID ranges** — Server→Client uses `[0, id_window)`, Client→Server uses `[id_window, id_window*2)`.
-  Each client receives a unique offset via `ClientAllocator` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+  Each client receives a unique offset via
+  `ClientAllocator` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 - **`Sender` auto-allocates request IDs** — `send()` now allocates via `IDAllocator` if `request_id is None`
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 - **`MessageBuffer` struct updated** — new struct `">2sBHI4s2s"` for the 15-byte header format
@@ -48,7 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- **`generate_random_id()`** — replaced by `IDAllocator` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
+- **`generate_random_id()`** — replaced by
+  `IDAllocator` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 
 ### Tests
 
