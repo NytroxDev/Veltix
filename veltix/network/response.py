@@ -59,8 +59,8 @@ class Response:
         self._hash = _hash
         self._request_id = request_id if request_id is not None else _request_id
 
-        self._text_cached: str | object = _UNSET
-        self._json_cached: Any | object = _UNSET
+        self._text_cached: Any = _UNSET
+        self._json_cached: Any = _UNSET
 
     @property
     def request_id(self) -> int:
@@ -136,7 +136,7 @@ class Response:
         if self._text_cached is _INVALID:
             raise InvalidContentError("Content is not valid UTF-8")
 
-        return self._text_cached
+        return self._text_cached  # type: ignore[no-any-return]
 
     @property
     def is_text(self) -> bool:

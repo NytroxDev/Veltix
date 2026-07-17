@@ -32,10 +32,10 @@ class Request:
     def __init__(
         self,
         _type: MessageType,
-        content: bytes | object = _UNSET,
+        content: Any = _UNSET,
         *,
-        text: str | object = _UNSET,
-        json: Any | object = _UNSET,
+        text: Any = _UNSET,
+        json: Any = _UNSET,
         request_id: Optional[int] = None,
     ) -> None:
         """Initialize a new request.
