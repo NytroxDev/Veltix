@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from enum import Enum
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..exceptions import SenderError
@@ -10,6 +9,8 @@ from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
 
 if TYPE_CHECKING:
+    from enum import Enum
+
     from ..internal.bus import VeltixBus
     from ..socket_core.base_socket import BaseSocket
     from .id_allocator import IDAllocator
