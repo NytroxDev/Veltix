@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..exceptions import SenderError
@@ -54,6 +55,29 @@ class Sender:
         self.conn: Optional[BaseSocket] = conn
         self._get_all_clients = get_all_clients
 
+    def _emit(self, event: Enum, data: dict) -> None:
+        """Emit an event on the bus if available."""
+        if self.bus:
+            self.bus.emit(event, data)
+
+    def _log_error(self, message: str) -> None:
+        """Log an error on the bus if available."""
+        if self.bus:
+            self.bus.error(message)
+
+    def _resolve_target(self, client: Optional[BaseSocket]) -> Optional[BaseSocket]:
+        """Return the target socket: internal conn for CLIENT, provided client for SERVER."""
+        return self.conn if self.is_client else client
+
+    def _log_send_error(self, error: Exception, context: str = "send") -> None:
+        """Emit error event and log warning for send failures."""
+        self._emit(
+            ErrorEvent.SEND,
+            {"error": str(error), "mode": self.mode.value if self.mode else "unknown"},
+        )
+        if self.bus:
+            self.bus.warning(f"Connection error during {context}: {type(error).__name__}")
+
     def send(self, data: Request, client: Optional[BaseSocket] = None) -> bool:
         """Send a request over the network.
 
@@ -67,13 +91,12 @@ class Sender:
         Returns:
             True if the send succeeded, False otherwise.
         """
-        target = self.conn if self.is_client else client
+        target = self._resolve_target(client)
 
         if target is None:
-            if self.bus:
-                self.bus.error(
-                    "No connection available" if self.is_client else "No client socket provided"
-                )
+            self._log_error(
+                "No connection available" if self.is_client else "No client socket provided"
+            )
             return False
 
         if data.request_id is None and self._id_allocator is not None:
@@ -81,33 +104,22 @@ class Sender:
 
         try:
             target.send(data.compile())
-            if self.bus:
-                self.bus.emit(
-                    MessageEvent.SENT,
-                    {
-                        "type": data.type,
-                        "length": len(data.content),
-                        "mode": "client" if self.is_client else "server",
-                    },
-                )
+            self._emit(
+                MessageEvent.SENT,
+                {
+                    "type": data.type,
+                    "length": len(data.content),
+                    "mode": "client" if self.is_client else "server",
+                },
+            )
             return True
         except (ConnectionResetError, BrokenPipeError) as e:
-            if self.bus:
-                self.bus.emit(
-                    ErrorEvent.SEND,
-                    {"error": str(e), "mode": self.mode.value if self.mode else "unknown"},
-                )
-                self.bus.warning(f"Connection error during send: {type(e).__name__}")
+            self._log_send_error(e)
             if self.is_client:
                 self.conn = None
             return False
         except Exception as e:
-            if self.bus:
-                self.bus.emit(
-                    ErrorEvent.SEND,
-                    {"error": str(e), "mode": self.mode.value if self.mode else "unknown"},
-                )
-                self.bus.error(f"Unexpected send error: {type(e).__name__}: {e}")
+            self._log_error(f"Unexpected send error: {type(e).__name__}: {e}")
             return False
 
     @staticmethod
@@ -116,6 +128,12 @@ class Sender:
         from ..server.client_info import ClientInfo
 
         return client.conn if isinstance(client, ClientInfo) else client
+
+    def _build_exclude_set(self, except_clients: Optional[list]) -> set:
+        """Build a set of sockets to exclude from broadcast."""
+        if not except_clients:
+            return set()
+        return {self._resolve_socket(c) for c in except_clients}
 
     def broadcast(
         self,
@@ -134,42 +152,38 @@ class Sender:
             True if all sends succeeded, False otherwise.
         """
         if self.is_client:
-            if self.bus:
-                self.bus.error("Broadcast not available in CLIENT mode")
+            self._log_error("Broadcast not available in CLIENT mode")
+            return False
+
+        if list_of_client is None and self._get_all_clients is None:
+            self._log_error("No client list provided and no get_all_clients callback")
             return False
 
         if list_of_client is None:
-            if self._get_all_clients is None:
-                if self.bus:
-                    self.bus.error("No client list provided and no get_all_clients callback")
-                return False
-            list_of_client = self._get_all_clients()
+            list_of_client = self._get_all_clients()  # type: ignore[misc]
 
         if not list_of_client:
             return True
 
-        except_set = {self._resolve_socket(c) for c in except_clients} if except_clients else set()
+        exclude = self._build_exclude_set(except_clients)
         compiled = data.compile()
         all_ok = True
 
         for client in list_of_client:
             socket = self._resolve_socket(client)
-            if socket in except_set:
+            if socket in exclude:
                 continue
             try:
                 socket.send(compiled)
-                if self.bus:
-                    self.bus.emit(
-                        MessageEvent.SENT,
-                        {
-                            "type": data.type,
-                            "length": len(data.content),
-                            "mode": "broadcast",
-                        },
-                    )
-            except (ConnectionResetError, BrokenPipeError):
-                all_ok = False
-            except Exception:
+                self._emit(
+                    MessageEvent.SENT,
+                    {
+                        "type": data.type,
+                        "length": len(data.content),
+                        "mode": "broadcast",
+                    },
+                )
+            except (ConnectionResetError, BrokenPipeError, Exception):
                 all_ok = False
 
         return all_ok
