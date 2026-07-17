@@ -4,7 +4,7 @@
 
 ```python
 # Broadcast to all connected clients
-message = Request(CHAT, b"Server announcement")
+message = Request(CHAT, text="Server announcement")
 server.broadcast(message)
 
 # Broadcast with exclusion

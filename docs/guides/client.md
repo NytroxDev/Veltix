@@ -3,7 +3,7 @@
 ## Configuration
 
 ```python
-from veltix import Client, ClientConfig, BufferSize
+from veltix import Client, ClientConfig, BufferSize, SocketCore
 
 config = ClientConfig(
     server_addr="127.0.0.1",  # Server address
@@ -14,6 +14,7 @@ config = ClientConfig(
     max_workers=4,  # Thread pool size for callbacks
     retry=0,  # Reconnection attempts (0 = disabled)
     retry_delay=1.0,  # Seconds between attempts
+    socket_core=SocketCore.ASYNC,  # Socket backend (default: ASYNC)
 )
 
 client = Client(config)
@@ -41,8 +42,8 @@ CHAT = MessageType("chat")
 
 
 @client.route(CHAT)
-def on_chat(response, client=None):
-    print(f"Server: {response.content.decode()}")
+def on_chat(response):
+    print(f"Server: {response.text}")
 ```
 
 Routes can also be registered and removed programmatically:
@@ -58,7 +59,7 @@ client.request_handler.unregister_route(CHAT)
 from veltix import DisconnectState
 
 client.on_connect(lambda: print("Connected!"))
-client.on_recv(lambda response: print(response.content.decode()))
+client.on_recv(lambda response: print(response.text))
 client.on_disconnect(lambda state: print(f"Disconnected — permanent={state.permanent}"))
 ```
 
@@ -68,7 +69,7 @@ Use `@client.route()` for per-type handlers. `on_recv` is the fallback for unrou
 ## Sending messages
 
 ```python
-client.sender.send(request)
+client.send(request)
 ```
 
 ## Send and wait
@@ -77,7 +78,7 @@ client.sender.send(request)
 response = client.send_and_wait(request, timeout=5.0)
 
 if response:
-    print(f"Got: {response.content.decode()}")
+    print(f"Got: {response.text}")
 else:
     print("Timeout")
 ```
@@ -111,4 +112,5 @@ See the [Auto-Reconnect guide](reconnect.md) for full details.
 
 ```python
 client.disconnect()
+client.wait_until_closed()  # block until disconnect
 ```

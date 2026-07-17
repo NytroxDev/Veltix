@@ -19,7 +19,7 @@ from veltix import Server, ServerConfig
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
 server.on_connect(lambda client: print(f"Connected: {client.addr}"))
-server.on_recv(lambda client, msg: print(msg.content.decode()))
+server.on_recv(lambda client, msg: print(msg.text))
 server.on_disconnect(lambda client: print(f"Disconnected: {client.addr}"))
 ```
 
@@ -32,7 +32,7 @@ from veltix import DisconnectState
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 
 client.on_connect(lambda: print("Handshake complete!"))
-client.on_recv(lambda response: print(response.content.decode()))
+client.on_recv(lambda response: print(response.text))
 client.on_disconnect(lambda state: print(f"Disconnected — permanent={state.permanent}"))
 ```
 

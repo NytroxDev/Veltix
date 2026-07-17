@@ -1,5 +1,95 @@
 # Migration Guide
 
+## v2.0.0 → v2.0.0b2
+
+**No breaking changes — wire-compatible with v2.0.0.**
+
+v2.0.0b2 adds content decoding, text/JSON payloads, convenience send methods, and a new `Response` module.
+
+### Response is now a dataclass with lazy decoding
+
+`Response` moved from `veltix.network.request` to `veltix.network.response` and is now a proper dataclass with cached
+decoding helpers:
+
+```python
+# ── Before (v2.0.0) ──────────────────────────────────────────
+from veltix.network.request import Response
+
+data = response.content.decode("utf-8")
+
+# ── After (v2.0.0b2) ────────────────────────────────────────
+from veltix.network.response.Response  # or just use it — already re-exported
+
+text = response.text      # cached str
+data = response.json      # cached Any
+ok   = response.is_json   # safe bool
+ok   = response.is_text   # safe bool
+```
+
+### Request text/JSON payloads
+
+You no longer need to manually encode strings or serialize JSON:
+
+```python
+# ── Before (v2.0.0) ──────────────────────────────────────────
+from veltix import Request
+import json
+
+req = Request(MY_TYPE, "hello".encode())
+req = Request(MY_TYPE, json.dumps({"key": "value"}).encode())
+
+# ── After (v2.0.0b2) ────────────────────────────────────────
+req = Request(MY_TYPE, text="hello")
+req = Request(MY_TYPE, json={"key": "value"})
+```
+
+### Request.respond()
+
+Copy the `request_id` from a received response for echo/correlation patterns:
+
+```python
+# ── Before (v2.0.0) ──────────────────────────────────────────
+@server.route(ECHO)
+def on_echo(client, response):
+    reply = Request(ECHO, response.content, request_id=response.request_id)
+    server.send(reply, client)
+
+# ── After (v2.0.0b2) ────────────────────────────────────────
+@server.route(ECHO)
+def on_echo(client, response):
+    reply = Request(ECHO, response.text)
+    reply.respond(response)
+    server.send(reply, client)
+```
+
+### Convenience send methods
+
+No need to touch `Sender` directly for basic sends:
+
+```python
+# ── Before (v2.0.0) ──────────────────────────────────────────
+server.sender.send(request, client)
+client.sender.send(request)
+
+# ── After (v2.0.0b2) ────────────────────────────────────────
+server.send(request, client)
+client.send(request)
+```
+
+### Quick checklist
+
+| What you used | What to do |
+|---|---|
+| `response.content.decode()` | Use `response.text` |
+| `json.loads(response.content)` | Use `response.json` |
+| `Request(T, "x".encode())` | Use `Request(T, text="x")` |
+| `json.dumps(data).encode()` payload | Use `Request(T, json=data)` |
+| `server.sender.send(...)` | Use `server.send(...)` |
+| `client.sender.send(...)` | Use `client.send(...)` |
+| `from veltix.network.request import Response` | Use `from veltix.network.response import Response` |
+
+---
+
 ## v1.9.0 → v2.0.0
 
 **Breaking changes in wire protocol and public API — NOT backward compatible.**

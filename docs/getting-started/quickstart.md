@@ -11,10 +11,11 @@ ECHO = MessageType("echo")
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
+
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
-    reply = Request(ECHO, response.content, request_id=response.request_id)
-    server.send(reply, client)
+    server.send(Request(ECHO, response.content), client)
+
 
 server.start()
 
@@ -31,13 +32,15 @@ ECHO = MessageType("echo")
 
 client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 
+
 @client.route(ECHO)
 def on_echo(response: Response) -> None:
-    print(response.content.decode())
+    print(response.text)
+
 
 client.connect()  # blocks until handshake is complete
 
-client.sender.send(Request(ECHO, b"Hello!"))
+client.send(Request(ECHO, text="Hello!"))
 
 input("Press Enter to disconnect...")
 client.disconnect()
@@ -46,11 +49,11 @@ client.disconnect()
 ## Send and wait
 
 ```python
-request = Request(ECHO, b"Hello!")
+request = Request(ECHO, text="Hello!")
 response = client.send_and_wait(request, timeout=5.0)
 
 if response:
-    print(f"Got: {response.content.decode()}")
+    print(f"Got: {response.text}")
 else:
     print("Timeout")
 ```

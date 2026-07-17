@@ -42,19 +42,49 @@ STATUS = MessageType(name="status")            # keyword style, same result
 
 ## Request
 
+### Raw bytes
+
 ```python
 from veltix import Request
 
-# Basic request (auto-allocated request_id)
 request = Request(CHAT, b"Hello!")
+```
 
-# With custom request_id (uint16, 0–65535)
-request = Request(CHAT, b"Hello!", request_id=42)
+### Text payload
+
+```python
+request = Request(CHAT, text="Hello!")  # UTF-8 encoded automatically
+```
+
+### JSON payload
+
+```python
+request = Request(CHAT, json={"key": "value"})  # serialized to JSON automatically
+```
+
+### With custom request_id
+
+```python
+request = Request(CHAT, b"Hello!", request_id=42)  # uint16, 0–65535
+```
+
+Exactly one payload argument (`content`, `text`, or `json`) is required. Passing zero or more than one raises `RequestError`.
+
+### Responding to a request
+
+Use `Request.respond()` to copy the `request_id` from a received response for correlation:
+
+```python
+@server.route(ECHO)
+def on_echo(client, response):
+    reply = Request(ECHO, response.text)
+    reply.respond(response)  # copies request_id from response
+    server.send(reply, client)
 ```
 
 ## Response
 
-Responses are received in callbacks. They have the same fields as requests.
+Responses are received in callbacks. They have the following fields and properties:
 
 ```python
 def on_message(client, response):
@@ -62,3 +92,17 @@ def on_message(client, response):
     print(response.content)         # raw bytes payload
     print(response.request_id)     # int (0–65535)
 ```
+
+### Content decoding
+
+`Response` provides lazy, cached decoding helpers:
+
+```python
+def on_message(client, response):
+    text = response.text          # str — UTF-8 decoded, cached
+    data = response.json          # Any — parsed JSON, cached
+    is_json = response.is_json    # bool — safe check, no exception
+    is_text = response.is_text    # bool — safe check, no exception
+```
+
+`response.text` and `response.json` raise `InvalidContentError` if the content cannot be decoded. Use `response.is_text` and `response.is_json` for safe checks without exceptions.

@@ -12,7 +12,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.
 
-**Mature & tested** : 522+ tests · CI on Python 3.8-3.14 · 12+ releases
+**Mature & tested** : 571+ tests · CI on Python 3.8-3.14 · 12+ releases
 
 ---
 
@@ -62,7 +62,7 @@ while True:
     threading.Thread(target=handle_client, args=(conn, addr)).start()
 ```
 
-**Same thing with Veltix (11 lines):**
+**Same thing with Veltix (7 lines):**
 
 ```python
 from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request
@@ -72,7 +72,7 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
 
 @server.route(ECHO)
-def on_echo(client: ClientInfo, response: Response):
+def on_echo(client: ClientInfo, response: Response) -> None:
     server.send(Request(ECHO, response.content), client)
 
 
@@ -96,9 +96,11 @@ No manual framing. No thread management. No boilerplate.
 
 - FastAPI-style routing : `@server.route(MY_TYPE)` / `@client.route(MY_TYPE)`
 - `send_and_wait()` : built-in request/response correlation with timeout
+- Text & JSON payloads : `Request(MY_TYPE, text="hello")` / `Request(MY_TYPE, json={"k": "v"})`
+- Content decoding : `response.text`, `response.json`, `response.is_json`, `response.is_text`
+- Convenience send : `server.send()` / `client.send()` — no need to touch `Sender` directly
 - Built-in ping/pong : bidirectional latency measurement
 - Client tags : attach arbitrary metadata to connected clients
-- `Sender` exposed as `server.sender` / `client.sender`
 
 **Reliability**
 
@@ -109,7 +111,7 @@ No manual framing. No thread management. No boilerplate.
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 522 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
+- 571 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
 
 ---
 
@@ -146,6 +148,7 @@ Full details : [Performance](../PERFORMANCE.md)
 | Client tags            |   ✓    |    ✗     |     ✗     |    ✗    |
 | Swappable backends     |   ✓    |    ✗     |     ✗     |    ✗    |
 | Integrated logger      |   ✓    |    ✗     |     ~     |    ✓    |
+| Content decoding       |   ✓    |    ✗     |     ✗     |    ✗    |
 
 > ✓ Built-in &nbsp;&nbsp; ~ Possible but requires manual setup &nbsp;&nbsp; ✗ Not provided (you implement it yourself)
 

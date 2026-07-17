@@ -3,16 +3,17 @@
 ## Configuration
 
 ```python
-from veltix import Server, ServerConfig, BufferSize
+from veltix import Server, ServerConfig, BufferSize, SocketCore
 
 config = ServerConfig(
     host="0.0.0.0",  # Listening address
     port=8080,  # Listening port
     buffer_size=BufferSize.SMALL,  # Receive buffer size (default: 1KB)
-    max_connection=10,  # Max simultaneous clients
+    max_connection=-1,  # Max simultaneous clients (-1 = unlimited)
     max_message_size=10 * 1024 * 1024,  # 10MB max message size
     handshake_timeout=5.0,  # Handshake timeout in seconds
     max_workers=4,  # Thread pool size for callbacks
+    socket_core=SocketCore.ASYNC,  # Socket backend (default: ASYNC)
     id_window=30000,  # Unique IDs per direction (default: 30000)
 )
 
@@ -39,12 +40,12 @@ STATUS = MessageType("status")
 
 @server.route(CHAT)
 def on_chat(client, response):
-    print(f"[{client.addr[0]}] {response.content.decode()}")
+    print(f"[{client.addr[0]}] {response.text}")
 
 
 @server.route(STATUS)
 def on_status(client, response):
-    print(f"Status from {client.addr[0]}: {response.content.decode()}")
+    print(f"Status from {client.addr[0]}: {response.text}")
 ```
 
 Routes can also be registered and removed programmatically:
@@ -58,7 +59,7 @@ server.request_handler.unregister_route(CHAT)
 
 ```python
 server.on_connect(lambda client: print(f"Connected: {client.addr}"))
-server.on_recv(lambda client, msg: print(msg.content.decode()))
+server.on_recv(lambda client, msg: print(msg.text))
 server.on_disconnect(lambda client: print(f"Disconnected: {client.addr}"))
 ```
 
@@ -78,21 +79,24 @@ server.send(request, client)
 server.broadcast(request)
 
 # Broadcast with exclusion
-server.broadcast(request, except_clients=[client.conn])
+server.broadcast(request, except_clients=[client])
 ```
 
 ## Ping
 
 ```python
-# Synchronous
 latency = server.ping_client(client, timeout=2.0)
-
-# Asynchronous (safe from within on_connect)
-server.ping_client_async(client, callback=lambda ms: print(f"{ms}ms"), timeout=2.0)
 ```
 
 ## Shutdown
 
 ```python
 server.close_all()
+server.wait_until_closed()  # block until shutdown
+```
+
+## Restart
+
+```python
+server.restart()  # stop + start, preserves routes and callbacks
 ```
