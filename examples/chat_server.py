@@ -10,17 +10,17 @@ server = Server(ServerConfig(port=9000))
 @server.route(CHAT)
 def on_chat(client: ClientInfo, response: Response) -> None:
     name = client.get_tag("name") or client.ip
-    msg = f"[{name}] {response.content.decode()}"
+    msg = f"[{name}] {response.text}"
     print(msg)
     server.broadcast(Request(CHAT, msg.encode()), except_clients=[client])
 
 
 @server.route(JOIN)
 def on_join(client: ClientInfo, response: Response) -> None:
-    name = response.content.decode()
+    name = response.text
     client.add_tag("name", name)
     print(f"+ {name} joined")
-    server.broadcast(Request(JOIN, f"{name} joined".encode()), except_clients=[client])
+    server.broadcast(Request(JOIN, text=f"{name} joined"), except_clients=[client])
 
 
 @server.route(LEAVE)

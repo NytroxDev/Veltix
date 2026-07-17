@@ -7,7 +7,7 @@ server = Server(ServerConfig(port=8080))
 
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
-    print(f"[{client.ip}] {response.content.decode()}")
+    print(f"[{client.ip}] {response.text}")
     server.send(Request(ECHO, response.content), client)
 
 
