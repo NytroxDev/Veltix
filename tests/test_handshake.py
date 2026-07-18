@@ -11,10 +11,10 @@ from typing import Optional
 
 import pytest
 
+from veltix import __version__
 from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.internal.bus import VeltixBus
 from veltix.internal.mode import Mode
-from veltix import __version__
 
 # ── Encode / decode ────────────────────────────────────────────────────────────
 
