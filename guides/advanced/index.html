@@ -1496,15 +1496,15 @@
 <h1 id="advanced-features">Advanced Features<a class="headerlink" href="#advanced-features" title="Permanent link">&para;</a></h1>
 <h2 id="broadcasting">Broadcasting<a class="headerlink" href="#broadcasting" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Broadcast to all connected clients</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">message</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Server announcement&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">sender</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">server</span><span class="o">.</span><span class="n">get_all_clients_sockets</span><span class="p">())</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">message</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Server announcement&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">server</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Broadcast with exclusion</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">sender</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">server</span><span class="o">.</span><span class="n">get_all_clients_sockets</span><span class="p">(),</span> <span class="n">except_clients</span><span class="o">=</span><span class="p">[</span><span class="n">client</span><span class="o">.</span><span class="n">conn</span><span class="p">])</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">server</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">except_clients</span><span class="o">=</span><span class="p">[</span><span class="n">client</span><span class="o">.</span><span class="n">conn</span><span class="p">])</span>
 </code></pre></div>
 <h2 id="client-tags">Client Tags<a class="headerlink" href="#client-tags" title="Permanent link">&para;</a></h2>
 <p>Attach arbitrary metadata to connected clients for tracking, filtering, or access control.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Server</span><span class="p">,</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientInfo</span><span class="p">,</span> <span class="n">Events</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Server</span><span class="p">,</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientInfo</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">))</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
@@ -1522,8 +1522,8 @@
 <a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Admin message from </span><span class="si">{</span><span class="n">client</span><span class="o">.</span><span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
 <a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">server</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_CONNECT</span><span class="p">,</span> <span class="n">on_connect</span><span class="p">)</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="n">server</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_RECV</span><span class="p">,</span> <span class="n">on_message</span><span class="p">)</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">server</span><span class="o">.</span><span class="n">on_connect</span><span class="p">(</span><span class="n">on_connect</span><span class="p">)</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="n">server</span><span class="o">.</span><span class="n">on_recv</span><span class="p">(</span><span class="n">on_message</span><span class="p">)</span>
 <a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </code></pre></div>
 <p>Available tag methods on <code>ClientInfo</code>:</p>
@@ -1563,16 +1563,20 @@
 <p>Message type codes are divided into ranges by convention:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessageType</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># System messages (0–199)</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">PING</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;ping&quot;</span><span class="p">,</span> <span class="s2">&quot;System ping&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># System messages (0–199) — reserved, internal use only</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># PING, PONG, ERROR, INVALID_REQUEST are pre-registered</span>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># Application messages (200–499)</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># Application messages (200–9999) — explicit codes</span>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;chat&quot;</span><span class="p">,</span> <span class="s2">&quot;Chat message&quot;</span><span class="p">)</span>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">FILE_TRANSFER</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">201</span><span class="p">,</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="s2">&quot;File transfer&quot;</span><span class="p">)</span>
 <a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="c1"># Plugin messages (500+)</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="n">CUSTOM</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s2">&quot;plugin&quot;</span><span class="p">,</span> <span class="s2">&quot;Custom plugin message&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="c1"># Or auto-allocate the next available code</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="n">PLUGIN</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="s2">&quot;plugin&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Custom plugin message&quot;</span><span class="p">)</span>
 </code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Auto-allocation is ideal for quick prototyping. Use explicit codes when you need stable, predictable wire values across multiple services.</p>
+</div>
 <h2 id="configuring-the-thread-pool">Configuring the Thread Pool<a class="headerlink" href="#configuring-the-thread-pool" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientConfig</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>

@@ -1403,10 +1403,18 @@
 
         <p>Defines a message type in the Veltix protocol.</p>
 <p>Code ranges:
-- 0-199:   System messages (reserved)
-- 200-499: User application messages
-- 500+:    Plugin/extension messages</p>
+- 0-199:    System messages (reserved)
+- 200-9999: User application messages (auto-allocatable)
+- 10000+:   Plugin/extension messages
+- Max:      65535 (uint16 protocol limit)</p>
 
+
+<details class="usage" open>
+  <summary>Usage</summary>
+  <p>MessageType(200, "chat")        # explicit code
+MessageType("chat")             # auto-allocate code
+MessageType(name="chat")        # auto-allocate code</p>
+</details>
 
 
 

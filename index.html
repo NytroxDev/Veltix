@@ -1476,7 +1476,7 @@
 <p>Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.</p>
-<p><strong>Mature &amp; tested</strong> : 497+ tests · CI on Python 3.8-3.14 · 12+ releases</p>
+<p><strong>Mature &amp; tested</strong> : 571+ tests · CI on Python 3.8-3.14 · 12+ releases</p>
 <hr />
 <h2 id="why-veltix">Why Veltix?<a class="headerlink" href="#why-veltix" title="Permanent link">&para;</a></h2>
 <p>I wrote Veltix because I got tired of rewriting the same networking boilerplate every time I needed two programs to talk
@@ -1514,20 +1514,19 @@ dependencies.</p>
 <a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="n">conn</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">handle_client</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">addr</span><span class="p">))</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </code></pre></div>
-<p><strong>Same thing with Veltix (11 lines):</strong></p>
+<p><strong>Same thing with Veltix (7 lines):</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Server</span><span class="p">,</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientInfo</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">MessageType</span><span class="p">,</span> <span class="n">Request</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">ECHO</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;echo&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">ECHO</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="s2">&quot;echo&quot;</span><span class="p">)</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">))</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">sender</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">sender</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">ECHO</span><span class="p">)</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_echo</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">ClientInfo</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">):</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">sender</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">Request</span><span class="p">(</span><span class="n">ECHO</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">),</span> <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="o">.</span><span class="n">conn</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">ECHO</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_echo</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">ClientInfo</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">server</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">Request</span><span class="p">(</span><span class="n">ECHO</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">),</span> <span class="n">client</span><span class="p">)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </code></pre></div>
 <p>No manual framing. No thread management. No boilerplate.</p>
 <hr />
@@ -1543,9 +1542,11 @@ dependencies.</p>
 <ul>
 <li>FastAPI-style routing : <code>@server.route(MY_TYPE)</code> / <code>@client.route(MY_TYPE)</code></li>
 <li><code>send_and_wait()</code> : built-in request/response correlation with timeout</li>
+<li>Text &amp; JSON payloads : <code>Request(MY_TYPE, text="hello")</code> / <code>Request(MY_TYPE, json={"k": "v"})</code></li>
+<li>Content decoding : <code>response.text</code>, <code>response.json</code>, <code>response.is_json</code>, <code>response.is_text</code></li>
+<li>Convenience send : <code>server.send()</code> / <code>client.send()</code> — no need to touch <code>Sender</code> directly</li>
 <li>Built-in ping/pong : bidirectional latency measurement</li>
 <li>Client tags : attach arbitrary metadata to connected clients</li>
-<li><code>Sender</code> exposed as <code>server.sender</code> / <code>client.sender</code></li>
 </ul>
 <p><strong>Reliability</strong></p>
 <ul>
@@ -1556,7 +1557,7 @@ dependencies.</p>
 <p><strong>Developer Experience</strong></p>
 <ul>
 <li>Integrated logger : colorized, file-rotating, thread-safe</li>
-<li>432 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14</li>
+<li>571 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14</li>
 </ul>
 <hr />
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
@@ -1705,6 +1706,13 @@ dependencies.</p>
 <td style="text-align: center;">✗</td>
 <td style="text-align: center;">~</td>
 <td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>Content decoding</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
 </tr>
 </tbody>
 </table>

@@ -700,6 +700,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#explicit-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explicit code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-allocated-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-allocated code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#code-ranges" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -724,6 +746,67 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Request">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raw-bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raw bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#text-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Text payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-custom-request_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With custom request_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responding-to-a-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responding to a request
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -734,6 +817,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Response">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#content-decoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content decoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1382,6 +1482,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#explicit-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explicit code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auto-allocated-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto-allocated code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#code-ranges" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1406,6 +1528,67 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Request">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raw-bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raw bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#text-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Text payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-custom-request_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With custom request_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responding-to-a-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responding to a request
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1416,6 +1599,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Response">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#content-decoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Content decoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1442,11 +1642,24 @@
 <h1 id="messages">Messages<a class="headerlink" href="#messages" title="Permanent link">&para;</a></h1>
 <h2 id="messagetype">MessageType<a class="headerlink" href="#messagetype" title="Permanent link">&para;</a></h2>
 <p>Every message in Veltix has a type. Types are identified by a unique integer code and a name.</p>
+<h3 id="explicit-code">Explicit code<a class="headerlink" href="#explicit-code" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessageType</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chat&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Chat message&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">FILE</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="mi">201</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;File transfer&quot;</span><span class="p">)</span>
 </code></pre></div>
+<h3 id="auto-allocated-code">Auto-allocated code<a class="headerlink" href="#auto-allocated-code" title="Permanent link">&para;</a></h3>
+<p>Omit the code (or pass a name string as the first argument) and Veltix will automatically assign the next available code in the 200–9999 range:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessageType</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="s2">&quot;chat&quot;</span><span class="p">)</span>                    <span class="c1"># auto-allocates code 200</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">FILE</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>  <span class="c1"># auto-allocates code 201</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">STATUS</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;status&quot;</span><span class="p">)</span>            <span class="c1"># keyword style, same result</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Auto-allocation is ideal for quick prototyping. Use explicit codes when you need stable, predictable wire values across multiple services.</p>
+</div>
 <h3 id="code-ranges">Code ranges<a class="headerlink" href="#code-ranges" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1457,43 +1670,64 @@
 </thead>
 <tbody>
 <tr>
-<td>0–9</td>
-<td>Reserved (system)</td>
+<td>0–199</td>
+<td>System (reserved)</td>
 </tr>
 <tr>
-<td>10–199</td>
-<td>System messages</td>
+<td>200–9999</td>
+<td>User application</td>
 </tr>
 <tr>
-<td>200–499</td>
-<td>Application</td>
-</tr>
-<tr>
-<td>500+</td>
+<td>10000–65535</td>
 <td>Plugins</td>
 </tr>
 </tbody>
 </table>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Codes 0–199 are reserved by Veltix. Use 200+ for your own message types.</p>
+<p>Codes 0–199 are reserved by Veltix. Use 200+ for your own message types.
+The protocol supports codes up to 65535 (uint16).</p>
 </div>
 <h2 id="request">Request<a class="headerlink" href="#request" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Request</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Basic request</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Hello!&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># With custom request_id (for correlation)</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Hello!&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x02\x03\x04</span><span class="s2">&quot;</span><span class="p">)</span>
+<h3 id="raw-bytes">Raw bytes<a class="headerlink" href="#raw-bytes" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Request</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Hello!&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="text-payload">Text payload<a class="headerlink" href="#text-payload" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Hello!&quot;</span><span class="p">)</span>  <span class="c1"># UTF-8 encoded automatically</span>
+</code></pre></div>
+<h3 id="json-payload">JSON payload<a class="headerlink" href="#json-payload" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>  <span class="c1"># serialized to JSON automatically</span>
+</code></pre></div>
+<h3 id="with-custom-request_id">With custom request_id<a class="headerlink" href="#with-custom-request_id" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">CHAT</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;Hello!&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># uint16, 0–65535</span>
+</code></pre></div>
+<p>Exactly one payload argument (<code>content</code>, <code>text</code>, or <code>json</code>) is required. Passing zero or more than one raises <code>RequestError</code>.</p>
+<h3 id="responding-to-a-request">Responding to a request<a class="headerlink" href="#responding-to-a-request" title="Permanent link">&para;</a></h3>
+<p>Use <code>Request.respond()</code> to copy the <code>request_id</code> from a received response for correlation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">ECHO</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_echo</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">reply</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">ECHO</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">reply</span><span class="o">.</span><span class="n">respond</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>  <span class="c1"># copies request_id from response</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">server</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="n">client</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="response">Response<a class="headerlink" href="#response" title="Permanent link">&para;</a></h2>
-<p>Responses are received in callbacks. They have the same fields as requests.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>     <span class="c1"># message type name</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>       <span class="c1"># raw bytes payload</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="p">)</span>    <span class="c1"># 4-byte request id</span>
+<p>Responses are received in callbacks. They have the following fields and properties:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>       <span class="c1"># message type name</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>         <span class="c1"># raw bytes payload</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="p">)</span>     <span class="c1"># int (0–65535)</span>
 </code></pre></div>
+<h3 id="content-decoding">Content decoding<a class="headerlink" href="#content-decoding" title="Permanent link">&para;</a></h3>
+<p><code>Response</code> provides lazy, cached decoding helpers:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span>          <span class="c1"># str — UTF-8 decoded, cached</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span>          <span class="c1"># Any — parsed JSON, cached</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">is_json</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">is_json</span>    <span class="c1"># bool — safe check, no exception</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">is_text</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">is_text</span>    <span class="c1"># bool — safe check, no exception</span>
+</code></pre></div>
+<p><code>response.text</code> and <code>response.json</code> raise <code>InvalidContentError</code> if the content cannot be decoded. Use <code>response.is_text</code> and <code>response.is_json</code> for safe checks without exceptions.</p>
 
 
 
