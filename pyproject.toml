@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "veltix"
@@ -75,17 +75,9 @@ Issues = "https://github.com/NytroxDev/Veltix/issues"
 Changelog = "https://github.com/NytroxDev/Veltix/blob/main/CHANGELOG.md"
 Discord = "https://discord.gg/76AeXdST9m"
 
-# Setuptools configuration
-[tool.setuptools]
-zip-safe = false
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["veltix*"]
-exclude = ["tests*", "examples*", "*.tests*", "*.examples*"]
-
-[tool.setuptools.package-data]
-veltix = ["py.typed"]
+# Hatchling configuration (src layout)
+[tool.hatch.build.targets.wheel]
+packages = ["src/veltix"]
 
 # Pytest configuration
 [tool.pytest.ini_options]
@@ -129,7 +121,7 @@ exclude_lines = [
 [tool.ruff]
 line-length = 100
 target-version = "py38"
-src = ["veltix", "tests"]
+src = ["src", "tests"]
 exclude = [
     ".git",
     ".venv",

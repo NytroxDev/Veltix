@@ -8,33 +8,29 @@ echo "=== ruff format ==="
 ruff format .
 
 echo "=== mypy ==="
-mypy veltix/
+mypy src/veltix/
 
-echo "=== Version consistency ==="
-VERSION_PY=$(python -c "import re; content = open('veltix/version.py').read(); print(re.search(r'__version__\s*=\s*[\"\'](.*?)[\"\']', content).group(1))")
-VERSION_TOML=$(python -c "import re; content = open('pyproject.toml').read(); print(re.search(r'^version\s*=\s*[\"\'](.*?)[\"\']', content, re.MULTILINE).group(1))")
-
-if [ "$VERSION_PY" != "$VERSION_TOML" ]; then
-    echo ""
-    echo "❌ Version mismatch!"
-    echo "   version.py    → $VERSION_PY"
-    echo "   pyproject.toml → $VERSION_TOML"
+echo "=== Version check ==="
+VERSION=$(python -c "import re; content = open('pyproject.toml').read(); print(re.search(r'^version\s*=\s*[\"\'](.*?)[\"\']', content, re.MULTILINE).group(1))")
+echo "Version: $VERSION"
+if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+    echo "❌ Invalid version: $VERSION"
     exit 1
 fi
-echo "✅ Versions match: $VERSION_PY"
+echo "✅ Version valid: $VERSION"
 
 echo "=== Compatibility table ==="
 python -c "
 import re
-content = open('veltix/version.py').read()
-ver = re.search(r'__version__\s*=\s*[\"\'](.*?)[\"\']', content).group(1)
+content = open('pyproject.toml').read()
+ver = re.search(r'^version\s*=\s*[\"\'](.*?)[\"\']', content, re.MULTILINE).group(1)
 parts = [int(x) for x in ver.split('.')[:3]]
 
-compat = open('veltix/internal/compatibility.py').read()
+compat = open('src/veltix/internal/compatibility.py').read()
 entry = f'Version({parts[0]}, {parts[1]}, {parts[2]})'
 if entry not in compat:
     print(f'❌ Version {ver} not found in COMPATIBILITY table!')
-    print(f'   Add this to veltix/internal/compatibility.py:')
+    print(f'   Add this to src/veltix/internal/compatibility.py:')
     print(f'   {entry}: [{entry}],')
     exit(1)
 print(f'✅ Version {ver} is registered in COMPATIBILITY table')

@@ -12,10 +12,10 @@ jobs:
     name: Lint & format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -33,10 +33,10 @@ jobs:
     name: Type check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -44,34 +44,57 @@ jobs:
         run: pip install mypy
 
       - name: mypy
-        run: mypy veltix/
+        run: mypy src/veltix/
 
-  # ── Version consistency check ──────────────────────────────────────────────
+  # ── Version check ──────────────────────────────────────────────────────────
   version-check:
-    name: Version consistency
+    name: Version check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - name: Check version.py vs pyproject.toml
+      - name: Validate version in pyproject.toml
         run: |
-          VERSION_PY=$(python -c "import re; content = open('veltix/version.py').read(); print(re.search(r'__version__\s*=\s*[\"\'](.*?)[\"\']', content).group(1))")
-          VERSION_TOML=$(python -c "import re; content = open('pyproject.toml').read(); print(re.search(r'^version\s*=\s*[\"\'](.*?)[\"\']', content, re.MULTILINE).group(1))")
+          VERSION=$(python -c "import re; content = open('pyproject.toml').read(); print(re.search(r'^version\s*=\s*[\"\'](.*?)[\"\']', content, re.MULTILINE).group(1))")
 
-          echo "version.py   : $VERSION_PY"
-          echo "pyproject.toml: $VERSION_TOML"
+          echo "version: $VERSION"
 
-          if [ "$VERSION_PY" != "$VERSION_TOML" ]; then
-            echo ""
-            echo "❌ Version mismatch detected!"
-            echo "   version.py    → $VERSION_PY"
-            echo "   pyproject.toml → $VERSION_TOML"
-            echo ""
-            echo "Fix: make sure both files declare the same version before releasing."
+          if [ -z "$VERSION" ]; then
+            echo "❌ Version is empty in pyproject.toml!"
             exit 1
           fi
 
-          echo "✅ Versions match: $VERSION_PY"
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "❌ Version '$VERSION' does not look like semver!"
+            exit 1
+          fi
+
+          echo "✅ Version valid: $VERSION"
+
+  # ── Build check ────────────────────────────────────────────────────────────
+  build:
+    name: Build check
+    runs-on: ubuntu-latest
+    needs: version-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build
+        run: pip install build
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: Verify wheel contents
+        run: |
+          pip install dist/*.whl
+          python -c "import veltix; print(f'veltix {veltix.__version__} imported successfully')"
+          pip uninstall veltix -y
 
   # ── Tests ──────────────────────────────────────────────────────────────────
   tests:
@@ -84,10 +107,10 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 

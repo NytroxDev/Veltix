@@ -95,14 +95,14 @@ class TestVersionIsCompatible:
 class TestCompatibilityTable:
     def test_current_version_in_table(self):
         """Current version should always be in the compatibility table."""
-        from veltix.version import __version__
+        from veltix import __version__
 
         current = Version.from_str(__version__)
         assert current in COMPATIBILITY
 
     def test_current_version_compatible_with_itself(self):
         """Current version should be compatible with itself."""
-        from veltix.version import __version__
+        from veltix import __version__
 
         current = Version.from_str(__version__)
         assert current.is_compatible(current) is True

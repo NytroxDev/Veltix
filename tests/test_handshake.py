@@ -14,7 +14,7 @@ import pytest
 from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.internal.bus import VeltixBus
 from veltix.internal.mode import Mode
-from veltix.version import __version__
+from veltix import __version__
 
 # ── Encode / decode ────────────────────────────────────────────────────────────
 

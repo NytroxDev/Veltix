@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol, cast
 from ..internal.compatibility import Version
 from ..internal.events import ProtocolEvent
 from ..internal.mode import Mode
-from ..version import __version__
+from ..internal.version import __version__
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
