@@ -1,5 +1,7 @@
 """Utilities for parsing Veltix protocol messages."""
 
+from __future__ import annotations
+
 import zlib
 from typing import Union
 

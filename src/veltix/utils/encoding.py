@@ -1,5 +1,7 @@
 """Encoding utilities for message serialization."""
 
+from __future__ import annotations
+
 import json
 from typing import Any, Union
 

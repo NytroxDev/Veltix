@@ -1,5 +1,7 @@
 """System-level message types for Veltix protocol."""
 
+from __future__ import annotations
+
 from .types import MessageType
 
 # Core system messages (0-9)

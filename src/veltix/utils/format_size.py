@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def format_bytes(size: float) -> str:
     """
     Format a byte count into a human-readable string.
