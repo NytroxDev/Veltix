@@ -64,7 +64,7 @@ class MessageParser:
 
         hash_content = zlib.crc32(content).to_bytes(4, "big")
         if hash_received != hash_content:
-            raise RequestError("Hash mismatch — corrupted data")
+            raise RequestError("Hash mismatch : corrupted data")
 
         return Response(
             _type=msg_type,
