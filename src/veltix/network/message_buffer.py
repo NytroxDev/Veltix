@@ -37,12 +37,27 @@ class MessageBuffer:
         max_buffer_size: int = MAX_BUFFER_SIZE,
         bus: Optional[VeltixBus] = None,
     ) -> None:
+        """Initialise the message buffer.
+
+        Args:
+            max_message_size: Maximum allowed size of a single message in bytes.
+            max_buffer_size: Hard limit on total buffer growth in bytes.
+            bus: Optional event bus for error and debug logging.
+        """
         self._buffer = bytearray()
         self._max_message_size = max_message_size
         self._max_buffer_size = max_buffer_size
         self._bus = bus
 
     def add_data(self, data: bytes) -> None:
+        """Append raw bytes to the internal buffer.
+
+        If adding *data* would exceed ``max_buffer_size``, the entire
+        buffer is cleared and the data is discarded.
+
+        Args:
+            data: Raw bytes received from the TCP stream.
+        """
         if len(self._buffer) + len(data) > self._max_buffer_size:
             if self._bus:
                 self._bus.error(
@@ -54,6 +69,16 @@ class MessageBuffer:
         self._buffer.extend(data)
 
     def extract_messages(self) -> list[Response]:
+        """Parse and return all complete framed messages currently in the buffer.
+
+        The method consumes as many complete messages as possible. Partial
+        messages remain in the buffer for the next call. If the MAGIC header
+        is not found where expected, the buffer is resynchronized by scanning
+        forward for the next MAGIC occurrence.
+
+        Returns:
+            A list of :class:`Response` objects parsed from the buffer.
+        """
         messages = []
 
         while True:
@@ -108,12 +133,23 @@ class MessageBuffer:
                 )
 
     def clear(self) -> None:
+        """Discard all data currently held in the buffer."""
         self._buffer.clear()
 
     def __len__(self) -> int:
+        """Return the number of bytes currently in the buffer.
+
+        Returns:
+            The buffer length in bytes.
+        """
         return len(self._buffer)
 
     def __repr__(self) -> str:
+        """Return a concise string representation of the buffer state.
+
+        Returns:
+            A string showing current size and configured limits.
+        """
         return (
             f"MessageBuffer(size={len(self._buffer)}, "
             f"max_msg={self._max_message_size}, max_buf={self._max_buffer_size})"
