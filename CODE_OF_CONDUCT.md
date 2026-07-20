@@ -2,7 +2,8 @@
 
 ## Our Commitment
 
-We are committed to making participation in the Veltix project a welcoming and respectful experience for everyone, regardless of age, experience level, nationality, or background.
+We are committed to making participation in the Veltix project a welcoming and respectful experience for everyone,
+regardless of age, experience level, nationality, or background.
 
 ## Expected Behavior
 
@@ -24,7 +25,8 @@ This Code of Conduct applies in all project spaces — GitHub issues, pull reque
 
 ## Reporting
 
-If you witness or experience unacceptable behavior, please report it by opening a private issue or reaching out on Discord at [discord.gg/NrEjSHtfMp](https://discord.gg/NrEjSHtfMp).
+If you witness or experience unacceptable behavior, please report it by opening a private issue or reaching out on
+Discord at [discord.gg/gz8K369a6p](https://discord.gg/gz8K369a6p).
 
 All reports will be reviewed and handled with discretion.
 

@@ -1,6 +1,7 @@
 # Contributing to Veltix
 
-Contributions of any kind are welcome — bug reports, feature requests, documentation improvements, or code changes. This guide explains how to get involved effectively.
+Contributions of any kind are welcome — bug reports, feature requests, documentation improvements, or code changes. This
+guide explains how to get involved effectively.
 
 ---
 
@@ -12,7 +13,8 @@ All contributors are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md
 
 ## Reporting Bugs
 
-Before opening a bug report, check if the issue already exists in the [issue tracker](https://github.com/NytroxDev/Veltix/issues).
+Before opening a bug report, check if the issue already exists in
+the [issue tracker](https://github.com/NytroxDev/Veltix/issues).
 
 A good bug report includes:
 
@@ -117,5 +119,5 @@ You do not need to write code to contribute meaningfully:
 ## Questions
 
 - Open an issue with a `[Question]` tag
-- Join the Discord: [discord.gg/NrEjSHtfMp](https://discord.gg/NrEjSHtfMp)
+- Join the Discord: [discord.gg/gz8K369a6p](https://discord.gg/gz8K369a6p)
 - Email: nytrox.dev@gmail.com
