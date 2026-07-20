@@ -15,7 +15,7 @@ from .rules_manager import MessageContext, RulesManager
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
-    from ..network.request import Response
+    from ..network.response import Response
     from ..network.sender import Sender
     from ..network.types import MessageType
     from ..server.client_info import ClientInfo
