@@ -178,7 +178,11 @@ class Sender:
                         "mode": "broadcast",
                     },
                 )
-            except (ConnectionResetError, BrokenPipeError, Exception):
+            except (ConnectionResetError, BrokenPipeError) as e:
+                self._log_send_error(e, context="broadcast")
+                all_ok = False
+            except Exception as e:
+                self._log_error(f"Unexpected broadcast error: {type(e).__name__}: {e}")
                 all_ok = False
 
         return all_ok
