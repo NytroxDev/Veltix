@@ -69,8 +69,8 @@ class Request:
             self.content = encode_json(json)
 
         self.request_id: Optional[int] = request_id
-        self.flags = MessageFlag.NONE
-        self.type = _type
+        self.flags: MessageFlag = MessageFlag.NONE
+        self.type: MessageType = _type
 
     def respond(self, response: Response) -> None:
         """Associate this request with a received response.
