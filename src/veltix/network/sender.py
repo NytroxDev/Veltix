@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, List, Optional, Set, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from ..exceptions import SenderError
 from ..internal.events import ErrorEvent, MessageEvent
