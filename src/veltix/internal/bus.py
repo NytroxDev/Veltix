@@ -30,12 +30,19 @@ _ALL_EVENTS = [
 class VeltixBus(EventBus):
     """Veltix event bus — wraps Avyra EventBus with sugar + auto-log subscriber.
 
-    Each Server and Client owns its own ``VeltixBus`` instance.
+    Each Server and Client owns its own ``VeltixBus`` instance. The bus
+    automatically registers all Veltix event enums and subscribes the
+    singleton Logger to ``LogEvent.*`` so that ``bus.info(...)`` produces
+    structured log output.
+
+    Attributes:
+        _SKIP: Substrings of filenames to skip when resolving the caller.
     """
 
     _SKIP = ("logger", "bus", "avyra")
 
     def __init__(self) -> None:
+        """Initialise the bus and register all Veltix event enums."""
         super().__init__()
         for event_class in _ALL_EVENTS:
             self.register(event_class)
@@ -71,22 +78,57 @@ class VeltixBus(EventBus):
     # ── Sugar emit ─────────────────────────────────────────────────────────────
 
     def trace(self, msg: str) -> None:
+        """Emit a TRACE-level log event.
+
+        Args:
+            msg: The log message.
+        """
         self.emit(LogEvent.TRACE, (msg, self._get_caller_info()))
 
     def debug(self, msg: str) -> None:
+        """Emit a DEBUG-level log event.
+
+        Args:
+            msg: The log message.
+        """
         self.emit(LogEvent.DEBUG, (msg, self._get_caller_info()))
 
     def info(self, msg: str) -> None:
+        """Emit an INFO-level log event.
+
+        Args:
+            msg: The log message.
+        """
         self.emit(LogEvent.INFO, (msg, self._get_caller_info()))
 
     def success(self, msg: str) -> None:
+        """Emit a SUCCESS-level log event.
+
+        Args:
+            msg: The log message.
+        """
         self.emit(LogEvent.SUCCESS, (msg, self._get_caller_info()))
 
     def warning(self, msg: str) -> None:
+        """Emit a WARNING-level log event.
+
+        Args:
+            msg: The log message.
+        """
         self.emit(LogEvent.WARNING, (msg, self._get_caller_info()))
 
     def error(self, msg: str) -> None:
+        """Emit an ERROR-level log event.
+
+        Args:
+            msg: The log message.
+        """
         self.emit(LogEvent.ERROR, (msg, self._get_caller_info()))
 
     def critical(self, msg: str) -> None:
+        """Emit a CRITICAL-level log event.
+
+        Args:
+            msg: The log message.
+        """
         self.emit(LogEvent.CRITICAL, (msg, self._get_caller_info()))
