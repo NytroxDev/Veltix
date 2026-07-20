@@ -57,21 +57,17 @@ class Sender:
         self._get_all_clients = get_all_clients
 
     def _emit(self, event: Enum, data: dict) -> None:
-        """Emit an event on the bus if available."""
         if self.bus:
             self.bus.emit(event, data)
 
     def _log_error(self, message: str) -> None:
-        """Log an error on the bus if available."""
         if self.bus:
             self.bus.error(message)
 
     def _resolve_target(self, client: Optional[BaseSocket]) -> Optional[BaseSocket]:
-        """Return the target socket: internal conn for CLIENT, provided client for SERVER."""
         return self.conn if self.is_client else client
 
     def _log_send_error(self, error: Exception, context: str = "send") -> None:
-        """Emit error event and log warning for send failures."""
         self._emit(
             ErrorEvent.SEND,
             {"error": str(error), "mode": self.mode.value if self.mode else "unknown"},
@@ -125,13 +121,11 @@ class Sender:
 
     @staticmethod
     def _resolve_socket(client: BaseSocket) -> BaseSocket:
-        """Extract the socket from a BaseSocket or ClientInfo."""
         from ..server.client_info import ClientInfo
 
         return client.conn if isinstance(client, ClientInfo) else client
 
     def _build_exclude_set(self, except_clients: Optional[list]) -> set:
-        """Build a set of sockets to exclude from broadcast."""
         if not except_clients:
             return set()
         return {self._resolve_socket(c) for c in except_clients}
