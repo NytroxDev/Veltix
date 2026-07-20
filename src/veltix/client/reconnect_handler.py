@@ -43,7 +43,7 @@ class ReconnectHandler:
         bus: Event bus for logging and reconnection events.
     """
 
-    def __init__(self, context: ClientContext, bus: VeltixBus = None) -> None:  # type: ignore[assignment]
+    def __init__(self, context: ClientContext, bus: Optional[VeltixBus] = None) -> None:  # type: ignore[assignment]
         """Initialise the reconnect handler.
 
         Args:
