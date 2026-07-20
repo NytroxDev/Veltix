@@ -1,3 +1,4 @@
+from ..exceptions import SenderError
 from ..internal.events import MessageEvent, ProtocolEvent
 from ..network.request import Request
 from ..network.system_types import PING, PONG
@@ -30,10 +31,12 @@ class PingRule(Rule):
         )
         pong = Request(PONG, b"", request_id=context.response.request_id)
         sender = context.handler.sender
-        assert sender is not None
+        if sender is None:
+            raise SenderError("Cannot respond to PING: sender is not initialised")
         if context.is_server:
             client = context.client
-            assert client is not None
+            if client is None:
+                raise SenderError("Cannot respond to PING: client info is missing")
             sender.send(pong, client=client.conn)
         else:
             sender.send(pong)
