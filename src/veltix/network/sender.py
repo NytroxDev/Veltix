@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Set, Union
 
 from ..exceptions import SenderError
 from ..internal.events import ErrorEvent, MessageEvent
@@ -12,9 +12,12 @@ if TYPE_CHECKING:
     from enum import Enum
 
     from ..internal.bus import VeltixBus
+    from ..server.client_info import ClientInfo
     from ..socket_core.base_socket import BaseSocket
     from .id_allocator import IDAllocator
     from .request import Request
+
+_ClientLike = Union["BaseSocket", "ClientInfo"]
 
 
 class Sender:
@@ -30,7 +33,7 @@ class Sender:
         mode: Union[Mode, str],
         conn: Optional[BaseSocket] = None,
         bus: Optional[VeltixBus] = None,
-        get_all_clients: Optional[Callable[[], list]] = None,
+        get_all_clients: Optional[Callable[[], list[_ClientLike]]] = None,
         id_allocator: Optional[IDAllocator] = None,
     ) -> None:
         """Initialize the sender with a mode and an optional connection.
@@ -120,12 +123,12 @@ class Sender:
             return False
 
     @staticmethod
-    def _resolve_socket(client: BaseSocket) -> BaseSocket:
+    def _resolve_socket(client: _ClientLike) -> BaseSocket:
         from ..server.client_info import ClientInfo
 
         return client.conn if isinstance(client, ClientInfo) else client
 
-    def _build_exclude_set(self, except_clients: Optional[list]) -> set:
+    def _build_exclude_set(self, except_clients: Optional[list[_ClientLike]]) -> set[BaseSocket]:
         if not except_clients:
             return set()
         return {self._resolve_socket(c) for c in except_clients}
@@ -133,8 +136,8 @@ class Sender:
     def broadcast(
         self,
         data: Request,
-        list_of_client: Optional[list] = None,
-        except_clients: Optional[list] = None,
+        list_of_client: Optional[list[_ClientLike]] = None,
+        except_clients: Optional[list[_ClientLike]] = None,
     ) -> bool:
         """Send a request to multiple clients (SERVER mode only).
 
