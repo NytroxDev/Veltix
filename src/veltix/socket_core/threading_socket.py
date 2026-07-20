@@ -258,12 +258,8 @@ class ThreadingSocket(BaseSocket):
                 )
 
                 handler_result = self.request_handler.handle(response, entry.info)
-                if isinstance(handler_result, Exception):
-                    self.bus.emit(
-                        ErrorEvent.HANDLER,
-                        {"error": str(handler_result), "client": entry.info.addr},
-                    )
-                    self.bus.error(f"Handler error for {entry.info.addr}: {handler_result}")
+                if not handler_result:
+                    self.bus.error(f"Handler error for {entry.info.addr}")
 
         except Exception as e:
             self.bus.emit(ErrorEvent.HANDLER, {"error": str(e), "client": entry.info.addr})
@@ -383,9 +379,8 @@ class ThreadingSocket(BaseSocket):
                     )
 
                     handler_result = self.request_handler.handle(response)
-                    if isinstance(handler_result, Exception):
-                        self.bus.emit(ErrorEvent.HANDLER, {"error": str(handler_result)})
-                        self.bus.error(f"Handler error: {handler_result}")
+                    if not handler_result:
+                        self.bus.error("Handler error")
 
             except Exception as e:
                 self.bus.emit(ErrorEvent.HANDLER, {"error": str(e)})

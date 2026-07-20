@@ -67,11 +67,15 @@ class RequestHandler:
 
     def handle(
         self, response: Response, client: Optional[ClientInfo] = None
-    ) -> Union[Exception, bool]:
-        """
-        Handle an incoming message with full routing logic.
+    ) -> bool:
+        """Handle an incoming message with full routing logic.
 
-        Returns True if handled successfully, Exception on unexpected error.
+        Args:
+            response: The received message.
+            client: The sending client (server-side only).
+
+        Returns:
+            True if the message was handled successfully, False on error.
         """
         try:
             ctx = MessageContext(response, self, client, self.is_server)
@@ -80,7 +84,7 @@ class RequestHandler:
             source = f"client {client.addr}" if (self.is_server and client) else "server"
             self.bus.emit(ErrorEvent.HANDLER, {"error": str(e), "source": source})
             self.bus.critical(f"Unexpected error handling message from {source}: {e}")
-            return e
+            return False
 
         return True
 
