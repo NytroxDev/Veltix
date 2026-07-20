@@ -18,10 +18,19 @@ _VELTIX_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.
 
 
 class Logger:
-    """
-    Thread-safe singleton logger with console and file output.
+    """Thread-safe singleton logger with console and file output.
 
-    Can be passed to Client/Server or used standalone.
+    The logger is implemented as a singleton: calling ``Logger()`` or
+    ``Logger.get_instance()`` always returns the same object. It supports
+    configurable log levels, optional file rotation, caller detection, and
+    per-level usage statistics.
+
+    Typical usage::
+
+        from veltix import Logger
+
+        logger = Logger.get_instance()
+        logger.info("Server started")
     """
 
     _instance: Optional[Logger] = None
@@ -29,6 +38,15 @@ class Logger:
     _lock = threading.RLock()
 
     def __new__(cls, config: Optional[LoggerConfig] = None) -> Logger:
+        """Create or retrieve the singleton Logger instance.
+
+        Args:
+            config: Optional configuration. On the first call it sets up the
+                logger; on subsequent calls it can be used to reconfigure it.
+
+        Returns:
+            The singleton :class:`Logger` instance.
+        """
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
@@ -37,6 +55,12 @@ class Logger:
         return cls._instance
 
     def __init__(self, config: Optional[LoggerConfig] = None) -> None:
+        """Initialise the singleton on first call; reconfigure on later calls with a config.
+
+        Args:
+            config: Optional configuration to apply. Ignored on the first call
+                when *config* was already provided to ``__new__``.
+        """
         if not self._initialized:
             self._initialized = True
         elif config is not None:
@@ -112,38 +136,95 @@ class Logger:
         return None
 
     def trace(self, message: str, caller: Optional[str] = None) -> None:
+        """Log a TRACE-level message (severity 5).
+
+        Args:
+            message: The log message.
+            caller: Optional explicit caller override (``"file.py:42"``).
+        """
         self._log(LogLevel.TRACE, message, caller=caller)
 
     def debug(self, message: str, caller: Optional[str] = None) -> None:
+        """Log a DEBUG-level message (severity 10).
+
+        Args:
+            message: The log message.
+            caller: Optional explicit caller override.
+        """
         self._log(LogLevel.DEBUG, message, caller=caller)
 
     def info(self, message: str, caller: Optional[str] = None) -> None:
+        """Log an INFO-level message (severity 20).
+
+        Args:
+            message: The log message.
+            caller: Optional explicit caller override.
+        """
         self._log(LogLevel.INFO, message, caller=caller)
 
     def success(self, message: str, caller: Optional[str] = None) -> None:
+        """Log a SUCCESS-level message (severity 25).
+
+        Args:
+            message: The log message.
+            caller: Optional explicit caller override.
+        """
         self._log(LogLevel.SUCCESS, message, caller=caller)
 
     def warning(self, message: str, caller: Optional[str] = None) -> None:
+        """Log a WARNING-level message (severity 30).
+
+        Args:
+            message: The log message.
+            caller: Optional explicit caller override.
+        """
         self._log(LogLevel.WARNING, message, caller=caller)
 
     def error(self, message: str, caller: Optional[str] = None) -> None:
+        """Log an ERROR-level message (severity 40).
+
+        Args:
+            message: The log message.
+            caller: Optional explicit caller override.
+        """
         self._log(LogLevel.ERROR, message, caller=caller)
 
     def critical(self, message: str, caller: Optional[str] = None) -> None:
+        """Log a CRITICAL-level message (severity 50).
+
+        Args:
+            message: The log message.
+            caller: Optional explicit caller override.
+        """
         self._log(LogLevel.CRITICAL, message, caller=caller)
 
     def set_level(self, level: LogLevel) -> None:
+        """Change the minimum log level at runtime.
+
+        Messages below this level are silently discarded.
+
+        Args:
+            level: The new minimum :class:`LogLevel`.
+        """
         with self._lock:
             self.config.level = level
 
     def enable(self) -> None:
+        """Enable log output."""
         with self._lock:
             self.config.enabled = True
 
     def disable(self) -> None:
+        """Disable all log output."""
         with self._lock:
             self.config.enabled = False
 
     def get_stats(self) -> dict[LogLevel, int]:
+        """Return per-level message counts since the last reset.
+
+        Returns:
+            A dictionary mapping each :class:`LogLevel` to the number of
+            messages logged at that level.
+        """
         with self._lock:
             return self._stats.copy()
