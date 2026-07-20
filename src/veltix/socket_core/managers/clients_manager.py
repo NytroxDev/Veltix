@@ -26,7 +26,7 @@ class ClientEntry:
 
     __slots__ = ("id", "info", "buffer")
 
-    def __init__(self, id: int, info: ClientInfo, buffer: MessageBuffer):
+    def __init__(self, id: int, info: ClientInfo, buffer: MessageBuffer) -> None:
         """Initialise a ClientEntry.
 
         Args:
