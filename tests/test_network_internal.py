@@ -7,7 +7,6 @@ import pytest
 from veltix.exceptions import NetworkError, TimeoutError
 from veltix.internal.buffer_size import BufferSize
 from veltix.internal.network import RecvResult, RecvStatus, recv
-from veltix.network.system_types import ERROR, INVALID_REQUEST
 from veltix.network.types import MessageTypeRegistry
 
 # ── Exceptions ────────────────────────────────────────────────────────────────
@@ -132,29 +131,6 @@ class TestBufferSize:
     def test_is_int_enum(self):
         assert isinstance(BufferSize.SMALL, int)
         assert int(BufferSize.MEDIUM) == 8192
-
-
-# ── System types ──────────────────────────────────────────────────────────────
-
-
-class TestSystemTypes:
-    def test_error_type_code(self):
-        assert ERROR.code == 20
-        assert ERROR.name == "error"
-
-    def test_invalid_request_type_code(self):
-        assert INVALID_REQUEST.code == 21
-        assert INVALID_REQUEST.name == "invalid_request"
-
-    def test_error_type_registered(self):
-        retrieved = MessageTypeRegistry.get(20)
-        assert retrieved is not None
-        assert retrieved.code == 20
-
-    def test_invalid_request_registered(self):
-        retrieved = MessageTypeRegistry.get(21)
-        assert retrieved is not None
-        assert retrieved.code == 21
 
 
 # ── Request.respond ────────────────────────────────────────────────────────────

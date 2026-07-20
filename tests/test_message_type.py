@@ -2,7 +2,7 @@
 
 import pytest
 
-from veltix import ERROR, INVALID_REQUEST, PING, PONG, MessageType, MessageTypeError
+from veltix import PING, PONG, MessageType, MessageTypeError
 from veltix.network.types import (
     _USER_CODE_MAX,
     _USER_CODE_MIN,
@@ -47,13 +47,6 @@ class TestMessageType:
         assert PONG.code == 1
         assert PING.name == "ping"
         assert PONG.name == "pong"
-
-    def test_error_types_exist(self):
-        """Test that error system types are registered."""
-        assert ERROR.code == 20
-        assert INVALID_REQUEST.code == 21
-        assert ERROR.name == "error"
-        assert INVALID_REQUEST.name == "invalid_request"
 
 
 class TestAutoAllocate:

@@ -25,7 +25,7 @@ from .logger.levels import LogLevel
 from .network.request import Request
 from .network.response import Response
 from .network.sender import Mode, Sender
-from .network.system_types import ERROR, INVALID_REQUEST, PING, PONG
+from .network.system_types import PING, PONG
 from .network.types import MessageType
 from .server.client_info import ClientInfo
 from .server.config import ServerConfig
@@ -58,8 +58,6 @@ __all__ = [
     # Socket
     "SocketCore",
     # System types
-    "ERROR",
-    "INVALID_REQUEST",
     "PING",
     "PONG",
     # Utils
