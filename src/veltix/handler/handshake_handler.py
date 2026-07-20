@@ -40,6 +40,13 @@ class HandshakeHandler:
     """
 
     def __init__(self, mode: Mode, bus: VeltixBus, id_window: int = 30000) -> None:
+        """Initialise the handshake handler for a given role.
+
+        Args:
+            mode: Whether this handler operates as ``SERVER`` or ``CLIENT``.
+            bus: Event bus for emitting handshake events and logging.
+            id_window: The ID window size announced to the peer (server only).
+        """
         self.mode = mode
         self.is_server = mode == Mode.SERVER
         self.bus = bus
@@ -113,7 +120,21 @@ class HandshakeHandler:
             return False
 
     def do_server_handshake(self, sock: RawSocket, timeout: float = 5.0) -> bool:
-        """Server-side handshake: send server info, validate client response."""
+        """Perform the server-side 3-way handshake.
+
+        Steps:
+            1. Send ``{"v": ..., "meta": {"id_window": ...}}`` to the client.
+            2. Receive the client's ``{"v": ..., "meta": ...}`` response.
+            3. Validate the client's version against the compatibility table.
+            4. Send ``{"result": "ok"}`` to acknowledge.
+
+        Args:
+            sock: A raw TCP socket conforming to :class:`RawSocket`.
+            timeout: Maximum seconds to wait for each recv.
+
+        Returns:
+            True if the handshake succeeded, False on any failure.
+        """
         self.bus.emit(ProtocolEvent.HANDSHAKE_START, {"role": "server"})
 
         if not self._send_handshake(
@@ -149,7 +170,21 @@ class HandshakeHandler:
         return True
 
     def do_client_handshake(self, sock: RawSocket) -> tuple[bool, Optional[dict[str, Any]]]:
-        """Client-side handshake: read server info, send client response."""
+        """Perform the client-side 3-way handshake.
+
+        Steps:
+            1. Receive the server's ``{"v": ..., "meta": ...}`` payload.
+            2. Validate the server's version against the compatibility table.
+            3. Send ``{"v": ..., "meta": {}}`` to the server.
+            4. Wait for the server's ``{"result": "ok"}`` acknowledgment.
+
+        Args:
+            sock: A raw TCP socket conforming to :class:`RawSocket`.
+
+        Returns:
+            A tuple of ``(success, meta)`` where *meta* is the server's
+            metadata dict on success, or ``None`` on failure.
+        """
         self.bus.emit(ProtocolEvent.HANDSHAKE_START, {"role": "client"})
 
         server_payload = self._recv_handshake(sock)

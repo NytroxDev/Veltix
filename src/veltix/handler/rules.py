@@ -15,6 +15,8 @@ def _resolve_global_id(context: MessageContext) -> int:
 
 
 class PingRule(Rule):
+    """Responds to PING messages with a PONG carrying the same request ID."""
+
     def handle(self, context: MessageContext) -> None:
         context.handler.bus.emit(
             ProtocolEvent.PING,
@@ -43,19 +45,31 @@ class PingRule(Rule):
         )
 
     def can_handle(self, context: MessageContext) -> bool:
+        """Return True if the message is a PING."""
         return context.response.type == PING
 
 
 class PendingRequestRule(Rule):
+    """Routes responses to a pending ``send_and_wait`` request queue."""
+
     def can_handle(self, context: MessageContext) -> bool:
         global_id = _resolve_global_id(context)
         with context.handler.pending_requests_lock:
             return global_id in context.handler.pending_requests
 
     def handle(self, context: MessageContext) -> None:
+        """No-op; the real work happens in :meth:`try_handle`."""
         pass
 
     def try_handle(self, context: MessageContext) -> bool:
+        """Check for a matching pending request and deliver the response.
+
+        Args:
+            context: The message context to process.
+
+        Returns:
+            True if a pending request was satisfied.
+        """
         global_id = _resolve_global_id(context)
         with context.handler.pending_requests_lock:
             queue = context.handler.pending_requests.get(global_id)
@@ -73,6 +87,8 @@ class PendingRequestRule(Rule):
 
 
 class RouteRule(Rule):
+    """Dispatches a message to its registered route handler."""
+
     def handle(self, context: MessageContext) -> None:
         context.handler.bus.debug(
             f"Dispatching to registered route for type {context.response.type}"
@@ -97,10 +113,13 @@ class RouteRule(Rule):
             context.handler._executor.submit(route, context.response)
 
     def can_handle(self, context: MessageContext) -> bool:
+        """Return True if a route is registered for this message type."""
         return context.handler.has_route(context.response.type)
 
 
 class OnRecvRule(Rule):
+    """Falls back to the generic ``on_recv`` callback when no specific route exists."""
+
     def handle(self, context: MessageContext) -> None:
         on_recv = context.handler.on_recv
         assert on_recv is not None
@@ -118,10 +137,13 @@ class OnRecvRule(Rule):
             context.handler._executor.submit(on_recv, context.response)
 
     def can_handle(self, context: MessageContext) -> bool:
+        """Return True if an ``on_recv`` callback is registered."""
         return context.handler.on_recv is not None
 
 
 class UnhandledRule(Rule):
+    """Logs a warning when no handler can process the message."""
+
     def handle(self, context: MessageContext) -> None:
         if context.is_server:
             addr = getattr(context.client, "addr", "unknown")
@@ -139,6 +161,7 @@ class UnhandledRule(Rule):
         context.handler.bus.warning(f"No handler registered for message from {src}")
 
     def can_handle(self, context: MessageContext) -> bool:
+        """Always returns True — this is the catch-all rule."""
         return True
 
 
@@ -149,3 +172,4 @@ ALL_RULES = [
     OnRecvRule(),
     UnhandledRule(),
 ]
+"""Default rule chain evaluated in order during message processing."""
