@@ -3,19 +3,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
     from ..network.id_allocator import ClientAllocator
     from .managers.clients_manager import ClientEntry, ClientsManager
-
-
-class SocketEvents(Enum):
-    CONNECT = "connect"
-    DISCONNECT = "disconnect"
-    RECV = "recv"
 
 
 class BaseSocket(ABC):
