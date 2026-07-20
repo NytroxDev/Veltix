@@ -7,10 +7,9 @@ from ..internal.events import ReconnectEvent
 from .disconnect import DisconnectReason, DisconnectState
 
 if TYPE_CHECKING:
-    from veltix.handler.request_handler import RequestHandler
-    from veltix.internal.bus import VeltixBus
-    from veltix.socket_core.base_socket import BaseSocket
-
+    from ..handler.request_handler import RequestHandler
+    from ..internal.bus import VeltixBus
+    from ..socket_core.base_socket import BaseSocket
     from .config import ClientConfig
 
 
