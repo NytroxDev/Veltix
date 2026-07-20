@@ -1,21 +1,10 @@
-"""Tests for socket_core module: SocketEvents, BaseSocket ABC."""
+"""Tests for socket_core module: SocketCore, BaseSocket ABC."""
 
 import socket
 
 from veltix.internal.bus import VeltixBus
-from veltix.socket_core.base_socket import BaseSocket, SocketEvents
+from veltix.socket_core.base_socket import BaseSocket
 from veltix.socket_core.core import SocketCore
-
-
-class TestSocketEvents:
-    def test_enum_members(self):
-        assert SocketEvents.CONNECT.value == "connect"
-        assert SocketEvents.DISCONNECT.value == "disconnect"
-        assert SocketEvents.RECV.value == "recv"
-
-    def test_enum_distinct(self):
-        members = set(SocketEvents)
-        assert len(members) == 3
 
 
 class TestSocketCore:
