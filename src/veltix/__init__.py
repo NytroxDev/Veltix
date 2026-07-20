@@ -8,6 +8,7 @@ and request/response patterns.
 from .client.client import Client, ClientConfig, DisconnectReason
 from .client.disconnect import DisconnectState
 from .exceptions import (
+    InvalidContentError,
     MessageTypeError,
     NetworkError,
     RequestError,
@@ -79,4 +80,5 @@ __all__ = [
     "RequestError",
     "SenderError",
     "TimeoutError",
+    "InvalidContentError",
 ]
