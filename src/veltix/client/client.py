@@ -99,7 +99,8 @@ class Client:
         if self._reconnect_handler is None:
             self._reconnect_handler = ReconnectHandler(context=self, bus=self.bus)
 
-        self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
+        if not self.bus.has_subscriber(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect):
+            self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
 
     # -------------------------------------------------------------------------
     # Internal context (used by ReconnectHandler)
