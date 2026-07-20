@@ -33,7 +33,7 @@ from ..logger.core import Logger
 _logger = Logger.get_instance()
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass
 class Version:
     """
     Represents a semantic version (major.minor.patch).
