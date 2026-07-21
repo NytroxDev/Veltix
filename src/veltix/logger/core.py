@@ -64,14 +64,11 @@ class Logger:
         if not self._initialized:
             self._initialized = True
         elif config is not None:
-            self._lock.acquire()
-            try:
+            with self._lock:
                 self.config = config
                 self._formatter = Formatter(use_colors=self.config.use_colors)
                 self._writer = Writer(self.config)
                 self._stats = dict.fromkeys(LogLevel, 0)
-            finally:
-                self._lock.release()
             return
         else:
             return
