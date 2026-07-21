@@ -204,17 +204,15 @@ class ThreadingSocket(BaseSocket):
 
         entry.info.conn.settimeout(timeout)
 
-        entry.info.handshake_done = True
-
         ok = self.request_handler.handshake_handler.do_server_handshake(
             cast("ThreadingSocket", entry.info.conn)._sock,
             timeout=entry.info.conn.handshake_timeout,
         )
         if not ok:
-            entry.info.handshake_done = False
             self.bus.warning(f"Handshake failed for {entry.info.addr}")
             self._close_server_client(entry)
             return
+        entry.info.handshake_done = True
         self.bus.debug(f"Handshake complete for {entry.info.addr}")
 
         try:
