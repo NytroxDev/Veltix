@@ -32,7 +32,7 @@ class AsyncSocket(BaseSocket):
 
         self.id_count = 0
 
-        self.running = False
+        self._running_event = threading.Event()
 
         self._selector_thread: Optional[threading.Thread] = None
 
@@ -67,7 +67,7 @@ class AsyncSocket(BaseSocket):
 
         conn.id_count = 0
 
-        conn.running = False
+        conn._running_event = threading.Event()
 
         conn._selector_thread = None
 
@@ -136,16 +136,16 @@ class AsyncSocket(BaseSocket):
         self._sock.bind((host, port))
         self._sock.listen()
         self._selector.register(self._sock, selectors.EVENT_READ, data="listen")
-        self.running = True
+        self._running_event.set()
         self._selector_thread = threading.Thread(
             target=self._selector_loop, args=(max_client, buffer_size), daemon=True
         )
         self._selector_thread.start()
-        self.bus.debug(f"bound to {host}:{port}, max_client={max_client}, running={self.running}")
-        return self.running
+        self.bus.debug(f"bound to {host}:{port}, max_client={max_client}, running={self._running_event.is_set()}")
+        return self._running_event.is_set()
 
     def _selector_loop(self, max_client: int, buffer_size: int) -> None:
-        while self.running:
+        while self._running_event.is_set():
             events = self._selector.select(0.5)
 
             for key, _ in events:
@@ -153,7 +153,7 @@ class AsyncSocket(BaseSocket):
                     self._accept_client(max_client)
                 elif key.data == "client":
                     self._handle_self_read(buffer_size)
-                    if not self.running:
+                    if not self._running_event.is_set():
                         break
                 else:
                     self._handle_server_client(key.data, buffer_size)
@@ -179,7 +179,7 @@ class AsyncSocket(BaseSocket):
                 },
             )
             return
-        if not self.running:
+        if not self._running_event.is_set():
             return
         try:
             conn, addr = self._sock.accept()
@@ -336,7 +336,7 @@ class AsyncSocket(BaseSocket):
     def close(self) -> bool:
         try:
             self.bus.debug("closing server socket")
-            self.running = False
+            self._running_event.clear()
             self._selector.unregister(self._sock)
             self._shutdown_socket()
             with contextlib.suppress(OSError):
@@ -364,7 +364,7 @@ class AsyncSocket(BaseSocket):
             self._handshake_meta = meta
 
             self._sock.setblocking(False)
-            self.running = True
+            self._running_event.set()
             self._selector.register(self._sock, selectors.EVENT_READ, data="client")
             self._selector_thread = threading.Thread(
                 target=self._selector_loop, args=(0, buffer_size), daemon=True
@@ -384,7 +384,7 @@ class AsyncSocket(BaseSocket):
     def disconnect(self, timeout: float = 5.0) -> bool:
         try:
             self.bus.debug("disconnecting client socket")
-            self.running = False
+            self._running_event.clear()
             self._selector.unregister(self._sock)
             self._shutdown_socket()
             self._sock.close()

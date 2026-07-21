@@ -40,7 +40,7 @@ class TestThreadingSocketUnit:
             assert sock.settimeout(1.0) is False
 
     def test_bind_already_running(self, sock):
-        sock.running = True
+        sock._running_event.set()
         assert sock.bind("0.0.0.0", 0, -1, 1024, 0.5) is False
 
     def test_close_client_invalid_id(self, sock):
@@ -84,10 +84,10 @@ class TestThreadingSocketUnit:
             assert sock.send(b"data") is False
 
     def test_accept_loop_generic_exception(self, sock):
-        sock.running = True
+        sock._running_event.set()
         with patch.object(socket.socket, "accept", side_effect=Exception("mock")):
             sock._accept_loop("0.0.0.0", 8080, -1, 1024, 0.5)
-        assert sock.running is False
+        assert not sock._running_event.is_set()
 
     def test_connect_handshake_failure(self, sock):
         with patch.object(socket.socket, "connect"), patch.object(
@@ -142,12 +142,12 @@ class TestAsyncSocketUnit:
         sock._accept_client(max_client=1)
 
     def test_accept_client_blockingioerror(self, sock):
-        sock.running = True
+        sock._running_event.set()
         with patch.object(socket.socket, "accept", side_effect=BlockingIOError("mock")):
             sock._accept_client(max_client=-1)
 
     def test_accept_client_oserror(self, sock):
-        sock.running = True
+        sock._running_event.set()
         with patch.object(socket.socket, "accept", side_effect=OSError("mock")):
             sock._accept_client(max_client=-1)
 

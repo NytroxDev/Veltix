@@ -36,7 +36,7 @@ class ThreadingSocket(BaseSocket):
         self.threads: dict[int, threading.Thread] = {}
         self._threads_lock = threading.Lock()
 
-        self.running = False
+        self._running_event = threading.Event()
         self.start_th: Optional[threading.Thread] = None
         self.thread_handler: Optional[threading.Thread] = None
 
@@ -65,7 +65,7 @@ class ThreadingSocket(BaseSocket):
         conn.request_handler = request_handler
         conn.max_message_size = max_message_size
         conn.handshake_timeout = handshake_timeout
-        conn.running = False
+        conn._running_event = threading.Event()
         conn.client_manager = ClientsManager(max_message_size, bus=bus)
         conn.start_th = None
         conn.thread_handler = None
@@ -103,14 +103,14 @@ class ThreadingSocket(BaseSocket):
     # ── Server ────────────────────────────────────────────────────────────────
 
     def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:
-        if self.running:
+        if self._running_event.is_set():
             return False
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         with contextlib.suppress(AttributeError, OSError):
             self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._sock.bind((host, port))
         self._sock.listen()
-        self.running = True
+        self._running_event.set()
         self.start_th = threading.Thread(
             target=self._accept_loop,
             args=(host, port, max_client, buffer_size, timeout),
@@ -125,7 +125,7 @@ class ThreadingSocket(BaseSocket):
         self._sock.settimeout(timeout)
         self.bus.info(f"Server listening on {host}:{port}")
 
-        while self.running:
+        while self._running_event.is_set():
             try:
                 if 0 < max_client <= self.client_manager.count():
                     self.bus.emit(
@@ -188,13 +188,13 @@ class ThreadingSocket(BaseSocket):
                 continue
             except OSError:
                 self.bus.emit(ErrorEvent.ACCEPT, {"error": "OSError"})
-                self.running = False
+                self._running_event.clear()
                 return
             except Exception as e:
-                if self.running:
+                if self._running_event.is_set():
                     self.bus.emit(ErrorEvent.ACCEPT, {"error": f"{type(e).__name__}: {e}"})
                     self.bus.error(f"Accept error: {type(e).__name__}: {e}")
-                self.running = False
+                self._running_event.clear()
                 return
 
     def _handle_server_client(self, client_id: int, buffer_size: int, timeout: float) -> None:
@@ -222,7 +222,7 @@ class ThreadingSocket(BaseSocket):
         except Exception as e:
             self.bus.error(f"ServerEvent.ON_CONNECT error: {type(e).__name__}: {e}")
 
-        while self.running:
+        while self._running_event.is_set():
             result = recv(entry.info.conn, buffer_size)
 
             if result.timed_out:
@@ -297,7 +297,7 @@ class ThreadingSocket(BaseSocket):
 
     def close_all(self) -> bool:
         try:
-            self.running = False
+            self._running_event.clear()
             self._shutdown_socket()
             with contextlib.suppress(OSError):
                 self._sock.close()
@@ -328,7 +328,7 @@ class ThreadingSocket(BaseSocket):
 
             self._handshake_meta = meta
 
-            self.running = True
+            self._running_event.set()
 
             self.thread_handler = threading.Thread(
                 target=self._handle_client,
@@ -351,7 +351,7 @@ class ThreadingSocket(BaseSocket):
     def _handle_client(self, buffer_size: int, timeout: float) -> None:
         message_buffer = MessageBuffer(max_message_size=self.max_message_size)
 
-        while self.running:
+        while self._running_event.is_set():
             result = recv(self, buffer_size)
 
             if result.timed_out:
@@ -388,7 +388,7 @@ class ThreadingSocket(BaseSocket):
 
     def disconnect(self, timeout: float = 5.0) -> bool:
         try:
-            self.running = False
+            self._running_event.clear()
             self._shutdown_socket()
             self._sock.close()
 
