@@ -52,6 +52,7 @@ class Client:
 
         self._reconnect_handler: Optional[ReconnectHandler] = None
 
+        self._state_lock = threading.Lock()
         self.is_connected: bool = False
         self._connecting: bool = False
         self.running: bool = True
@@ -120,8 +121,9 @@ class Client:
 
     def _context_set_running(self, value: bool) -> None:
         """Set whether the client is considered running."""
-        old = self.running
-        self.running = value
+        with self._state_lock:
+            old = self.running
+            self.running = value
         if old != value:
             self.bus.info(f"Client running state: {value}")
             if not value:
@@ -129,8 +131,9 @@ class Client:
 
     def _context_set_connected(self, value: bool) -> None:
         """Set the connection flag without triggering side effects."""
-        old = self.is_connected
-        self.is_connected = value
+        with self._state_lock:
+            old = self.is_connected
+            self.is_connected = value
         if old != value:
             self.bus.info(f"Client connected state: {value}")
 
@@ -148,9 +151,10 @@ class Client:
 
     def _on_socket_disconnect(self, event: object = None, payload: object = None) -> None:
         """Handle socket-level disconnect from the server (triggers reconnect)."""
-        if not self.running or self._connecting:
-            return
-        self.is_connected = False
+        with self._state_lock:
+            if not self.running or self._connecting:
+                return
+            self.is_connected = False
         self._try_reconnect(DisconnectReason.SERVER_CLOSED)
 
     # -------------------------------------------------------------------------
@@ -243,7 +247,8 @@ class Client:
                 self.bus.error(f"Connection failed to {self.config.server_addr}:{self.config.port}")
                 return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
-            self.is_connected = True
+            with self._state_lock:
+                self.is_connected = True
             self._connecting = False
             self._shutdown_event.clear()
 
@@ -381,8 +386,9 @@ class Client:
         try:
             self.bus.emit(ClientEvent.DISCONNECTING)
             self.bus.info("Disconnecting from server")
-            self.running = False
-            self.is_connected = False
+            with self._state_lock:
+                self.running = False
+                self.is_connected = False
             assert self._reconnect_handler is not None
             self._reconnect_handler.stop_retry()
             self.request_handler.shutdown(wait=False)
