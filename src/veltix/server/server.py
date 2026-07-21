@@ -53,6 +53,7 @@ class Server:
         "request_handler",
         "socket",
         "_shutdown_event",
+        "_state_lock",
         "_started",
         "_closed",
         "client_allocator",
@@ -70,6 +71,7 @@ class Server:
 
         self.config: ServerConfig = config
         self._shutdown_event = threading.Event()
+        self._state_lock = threading.Lock()
         self._started = False
         self._closed = False
 
@@ -320,14 +322,17 @@ class Server:
 
         Non-blocking — starts a background thread and returns immediately.
         """
-        if self._started:
-            self.bus.warning("Server is already started")
-            return
+        with self._state_lock:
+            if self._started:
+                self.bus.warning("Server is already started")
+                return
 
-        self._started = True
-        self._shutdown_event.clear()
-        if self._closed:
+            self._started = True
+            should_reinit = self._closed
             self._closed = False
+
+        self._shutdown_event.clear()
+        if should_reinit:
             old_routes = self.request_handler.copy_routes()
             old_on_recv = self.request_handler.on_recv
             self._init_components()
@@ -353,9 +358,12 @@ class Server:
 
     def close_all(self) -> None:
         """Stop the server and close all client connections."""
-        if self._closed:
-            self.bus.warning("Server is already closed")
-            return
+        with self._state_lock:
+            if self._closed:
+                self.bus.warning("Server is already closed")
+                return
+            self._closed = True
+            self._started = False
 
         self.bus.info("Shutting down server")
 
@@ -366,8 +374,6 @@ class Server:
         except Exception as e:
             self.bus.error(f"Error closing server socket: {e}")
 
-        self._started = False
-        self._closed = True
         self._shutdown_event.set()
 
         self.bus.emit(
