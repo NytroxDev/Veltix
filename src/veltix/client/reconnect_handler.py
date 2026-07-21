@@ -52,6 +52,7 @@ class ReconnectHandler:
         """
         self.bus = bus
         self._context = context
+        self._state_lock = threading.Lock()
         self._fail_count = 0
         self._stop_retry_flag = False
         self._stop_event = threading.Event()
@@ -59,8 +60,9 @@ class ReconnectHandler:
 
     def init_connect(self) -> None:
         """Reset the internal state before a fresh connection attempt."""
-        self._fail_count = 0
-        self._stop_retry_flag = False
+        with self._state_lock:
+            self._fail_count = 0
+            self._stop_retry_flag = False
         self._stop_event.clear()
 
     def fire_on_disconnect(self, permanent: bool, reason: DisconnectReason) -> None:
@@ -70,9 +72,11 @@ class ReconnectHandler:
             permanent: True if this disconnect is final (no more retries).
             reason: The reason for the disconnection.
         """
+        with self._state_lock:
+            fail_count = self._fail_count
         state = DisconnectState(
             permanent=permanent,
-            attempt=self._fail_count,
+            attempt=fail_count,
             retry_max=self._context.config.retry,
             reason=reason,
         )
@@ -98,39 +102,45 @@ class ReconnectHandler:
             True if reconnection succeeded, False otherwise.
         """
         max_retry = retry_max if retry_max is not None else self._context.config.retry
-        while not self._stop_retry_flag and self._fail_count < max_retry:
-            self._fail_count += 1
+        while True:
+            with self._state_lock:
+                if self._stop_retry_flag or self._fail_count >= max_retry:
+                    break
+                self._fail_count += 1
+                attempt = self._fail_count
+
             if self.bus:
-                self.bus.info(f"Reconnection attempt {self._fail_count}/{max_retry}...")
+                self.bus.info(f"Reconnection attempt {attempt}/{max_retry}...")
                 self.bus.emit(
                     ReconnectEvent.ATTEMPT,
                     {
-                        "attempt": self._fail_count,
+                        "attempt": attempt,
                         "max_retry": max_retry,
                     },
                 )
 
             self.reset()
             if self._context._context_connect():
-                if self._stop_retry_flag:
-                    if self.bus:
-                        self.bus.info("Reconnection cancelled during connect")
-                        self.bus.emit(
-                            ReconnectEvent.CANCELLED,
-                            {
-                                "attempt": self._fail_count,
-                            },
-                        )
-                    sock = self._context._context_get_socket()
-                    if sock:
-                        sock.close()
-                    self._context._context_set_connected(False)
-                    return False
+                with self._state_lock:
+                    if self._stop_retry_flag:
+                        if self.bus:
+                            self.bus.info("Reconnection cancelled during connect")
+                            self.bus.emit(
+                                ReconnectEvent.CANCELLED,
+                                {
+                                    "attempt": attempt,
+                                },
+                            )
+                        sock = self._context._context_get_socket()
+                        if sock:
+                            sock.close()
+                        self._context._context_set_connected(False)
+                        return False
                 if self.bus:
                     self.bus.emit(
                         ReconnectEvent.SUCCESS,
                         {
-                            "attempt": self._fail_count,
+                            "attempt": attempt,
                         },
                     )
                 return True
@@ -139,12 +149,12 @@ class ReconnectHandler:
                 self.bus.emit(
                     ReconnectEvent.FAIL,
                     {
-                        "attempt": self._fail_count,
+                        "attempt": attempt,
                     },
                 )
             self.fire_on_disconnect(permanent=False, reason=reason)
 
-            if self._fail_count >= max_retry:
+            if attempt >= max_retry:
                 break
 
             if self.bus:
@@ -185,7 +195,8 @@ class ReconnectHandler:
         """Cancel any active reconnection loop and prevent further attempts."""
         if self.bus:
             self.bus.info("stop_retry() called — cancelling reconnection attempts")
-        self._stop_retry_flag = True
+        with self._state_lock:
+            self._stop_retry_flag = True
         self._stop_event.set()
 
     def retry(self, max_: Optional[int] = None) -> None:
@@ -206,9 +217,10 @@ class ReconnectHandler:
             return
 
         try:
-            self._stop_retry_flag = False
+            with self._state_lock:
+                self._stop_retry_flag = False
+                self._fail_count = 0
             self._stop_event.clear()
-            self._fail_count = 0
             self.reset()
             self.reconnect_loop(retry_max=max_)
         finally:
@@ -243,4 +255,5 @@ class ReconnectHandler:
         Returns:
             True if reconnection has been cancelled.
         """
-        return self._stop_retry_flag
+        with self._state_lock:
+            return self._stop_retry_flag
