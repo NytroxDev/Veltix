@@ -2,6 +2,7 @@
 
 > Python TCP, without the boilerplate.
 
+[![CI](https://github.com/NytroxDev/Veltix/actions/workflows/ci.yml/badge.svg)](https://github.com/NytroxDev/Veltix/actions/workflows/ci.yml)
 [![Lines of code](https://img.shields.io/endpoint?url=https://ghloc.vercel.app/api/NytroxDev/Veltix/badge)](https://ghloc.vercel.app/NytroxDev/Veltix)
 [![PyPI](https://img.shields.io/pypi/v/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
 [![Python](https://img.shields.io/pypi/pyversions/veltix?cacheSeconds=300)](https://pypi.org/project/veltix/)
