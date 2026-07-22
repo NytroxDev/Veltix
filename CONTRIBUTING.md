@@ -50,7 +50,7 @@ cd Veltix
 Optional development tools:
 
 ```bash
-pip install pytest ruff
+pip install -e ".[dev]"
 ```
 
 ### Workflow
@@ -67,7 +67,7 @@ pip install pytest ruff
    ```
 5. Commit with a clear message:
    ```bash
-   git commit -m "Fix: description of what was fixed and why"
+    git commit -m "fix: description of what was fixed and why"
    ```
 6. Push and open a Pull Request
 

@@ -1,354 +1,5 @@
 # Migration Guide
 
-## v2.0.0 → v2.0.0b2
-
-**No breaking changes — wire-compatible with v2.0.0.**
-
-v2.0.0b2 adds content decoding, text/JSON payloads, convenience send methods, and a new `Response` module.
-
-### Response is now a dataclass with lazy decoding
-
-`Response` moved from `veltix.network.request` to `veltix.network.response` and is now a proper dataclass with cached
-decoding helpers:
-
-```python
-# ── Before (v2.0.0) ──────────────────────────────────────────
-from veltix.network.request import Response
-
-data = response.content.decode("utf-8")
-
-# ── After (v2.0.0b2) ────────────────────────────────────────
-from veltix.network.response.Response  # or just use it — already re-exported
-
-text = response.text      # cached str
-data = response.json      # cached Any
-ok   = response.is_json   # safe bool
-ok   = response.is_text   # safe bool
-```
-
-### Request text/JSON payloads
-
-You no longer need to manually encode strings or serialize JSON:
-
-```python
-# ── Before (v2.0.0) ──────────────────────────────────────────
-from veltix import Request
-import json
-
-req = Request(MY_TYPE, "hello".encode())
-req = Request(MY_TYPE, json.dumps({"key": "value"}).encode())
-
-# ── After (v2.0.0b2) ────────────────────────────────────────
-req = Request(MY_TYPE, text="hello")
-req = Request(MY_TYPE, json={"key": "value"})
-```
-
-### Request.respond()
-
-Copy the `request_id` from a received response for echo/correlation patterns:
-
-```python
-# ── Before (v2.0.0) ──────────────────────────────────────────
-@server.route(ECHO)
-def on_echo(client, response):
-    reply = Request(ECHO, response.content, request_id=response.request_id)
-    server.send(reply, client)
-
-# ── After (v2.0.0b2) ────────────────────────────────────────
-@server.route(ECHO)
-def on_echo(client, response):
-    reply = Request(ECHO, response.text)
-    reply.respond(response)
-    server.send(reply, client)
-```
-
-### Convenience send methods
-
-No need to touch `Sender` directly for basic sends:
-
-```python
-# ── Before (v2.0.0) ──────────────────────────────────────────
-server.sender.send(request, client)
-client.sender.send(request)
-
-# ── After (v2.0.0b2) ────────────────────────────────────────
-server.send(request, client)
-client.send(request)
-```
-
-### Quick checklist
-
-| What you used | What to do |
-|---|---|
-| `response.content.decode()` | Use `response.text` |
-| `json.loads(response.content)` | Use `response.json` |
-| `Request(T, "x".encode())` | Use `Request(T, text="x")` |
-| `json.dumps(data).encode()` payload | Use `Request(T, json=data)` |
-| `server.sender.send(...)` | Use `server.send(...)` |
-| `client.sender.send(...)` | Use `client.send(...)` |
-| `from veltix.network.request import Response` | Use `from veltix.network.response import Response` |
-
----
-
-## v1.9.0 → v2.0.0
-
-**Breaking changes in wire protocol and public API — NOT backward compatible.**
-
-!!! danger
-    v2.0.0 **cannot communicate** with v1.9.x. Upgrade both client and server together.
-
-### Wire protocol (15-byte header)
-
-The header size has been reduced from 16 to 15 bytes. The new layout:
-
-```
-Before (v1.9.0) : [2B MAGIC][2B size][2B code][4B CRC][4B request_id][content]
-After  (v2.0.0) : [2B MAGIC][1B flags][2B code][4B size][4B CRC][2B request_id][content]
-                   ^^^^^^^^ ^^^^^^^^                                     ^^^^^^^^^^
-                   VX       NEW — reserved                               2 bytes (was 4)
-```
-
-### `request_id` is now `int` (not `bytes`)
-
-The biggest API change: `request_id` went from 4-byte `bytes` to 2-byte `int` (uint16).
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-from veltix import Request
-
-request = Request(MY_TYPE, b"hello", request_id=b"\x01\x02\x03\x04")
-print(response.request_id.hex())     # "01020304"
-print(response.request_id[:2])       # b'\x01\x02'
-
-# ── After (v2.0) ───────────────────────────────────────────
-request = Request(MY_TYPE, b"hello", request_id=42)
-print(response.request_id)          # 42
-print(hex(response.request_id))     # '0x2a'
-```
-
-#### Correlation pattern (send_and_wait)
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-from veltix import generate_random_id
-
-req = Request(ECHO, b"ping", request_id=generate_random_id())
-server.send_and_wait(req, client, timeout=5.0)
-
-# ── After (v2.0) ───────────────────────────────────────────
-# generate_random_id() is gone — IDAllocator handles it automatically
-req = Request(ECHO, b"ping")  # request_id auto-allocated
-server.send_and_wait(req, client, timeout=5.0)
-```
-
-#### Responding to a request (echo pattern)
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-@server.route(ECHO)
-def on_echo(client, response):
-    reply = Request(ECHO, response.content, request_id=response.request_id)
-    server.send(reply, client)
-
-# ── After (v2.0) ───────────────────────────────────────────
-@server.route(ECHO)
-def on_echo(client, response):
-    reply = Request(ECHO, response.content, request_id=response.request_id)
-    server.send(reply, client)
-```
-
-#### Logging request IDs
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-logger.info(f"Ping from {client.addr}: id={response.request_id.hex()}")
-
-# ── After (v2.0) ───────────────────────────────────────────
-logger.info(f"Ping from {client.addr}: id={response.request_id}")
-```
-
-#### Removing `generate_random_id` imports
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-from veltix.network.request import generate_random_id
-
-request_id = generate_random_id()
-
-# ── After (v2.0) ───────────────────────────────────────────
-# Delete the import entirely — not needed anymore.
-# If you want a specific ID, just pass an int:
-request_id = 42
-```
-
-#### `REQUEST_ID_SIZE` constant
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-from veltix.network.request import REQUEST_ID_SIZE  # was 4
-
-# ── After (v2.0) ───────────────────────────────────────────
-from veltix.network.request import REQUEST_ID_SIZE  # now 2
-```
-
-### `ServerConfig.id_window` added
-
-The server now sends an `id_window` parameter in the handshake meta, telling each client
-how many unique IDs are available in each direction.
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-server = Server(ServerConfig(port=8080))
-
-# ── After (v2.0) ───────────────────────────────────────────
-# Same — id_window defaults to 30000
-server = Server(ServerConfig(port=8080))
-
-# Or customize — smaller window for constrained environments
-server = Server(ServerConfig(port=8080, id_window=10000))
-
-# The client receives this automatically during handshake:
-# Server sends: {"v": "2.0.0", "meta": {"id_window": 30000}}
-```
-
-!!! tip
-    30 000 IDs is enough for ~30 000 in-flight requests per connection. If you're doing
-    high-throughput RPC with many concurrent requests, increase it. For simple use cases,
-    the default is fine.
-
-### `HEADER_SIZE` changed
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-from veltix.network.request import HEADER_SIZE  # was 16
-
-# ── After (v2.0) ───────────────────────────────────────────
-from veltix.network.request import HEADER_SIZE  # now 15
-```
-
-If you use `HEADER_SIZE` for buffer calculations or manual framing, update accordingly.
-
-### `Response._hash` is now private
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-print(response.hash)      # b'\x3a\xfb...'
-
-# ── After (v2.0) ───────────────────────────────────────────
-print(response._hash)     # b'\x3a\xfb...'
-```
-
-!!! note
-    This is a minor change — `_hash` is private but still accessible. If you were using
-    `response.hash` for debugging, switch to `response._hash`.
-
-### `MessageFlag` introduced (internal)
-
-A new `MessageFlag(IntFlag)` enum is available for future compression/encryption support:
-
-```python
-from veltix.network.flags import MessageFlag
-
-# Currently only one value:
-MessageFlag.NONE  # 0x00
-```
-
-!!! warning
-    `MessageFlag` is **not part of the public API**. It's reserved for internal protocol
-    use. Don't rely on it in application code.
-
-### `Sender` auto-allocates request IDs
-
-The `Sender.send()` method now automatically allocates a `request_id` via `IDAllocator`
-if none is provided:
-
-```python
-# ── Before (v1.x) ──────────────────────────────────────────
-from veltix import Request, generate_random_id
-
-req = Request(MY_TYPE, b"hello", request_id=generate_random_id())
-server.sender.send(req, client)
-
-# ── After (v2.0) ───────────────────────────────────────────
-req = Request(MY_TYPE, b"hello")  # no request_id needed
-server.sender.send(req, client)   # auto-allocated by IDAllocator
-```
-
-### Quick checklist
-
-| What you used | What to do |
-|---|---|
-| `request_id=b"\x01\x02\x03\x04"` | Replace with `request_id=<int>` |
-| `response.request_id` | Use `response.request_id` (int) |
-| `response.request_id.hex()` | Use `str(response.request_id)` |
-| `generate_random_id()` | Delete — auto-allocated now |
-| `REQUEST_ID_SIZE = 4` | Now `2` — update if referenced |
-| `HEADER_SIZE = 16` | Now `15` — update if referenced |
-| `response.hash` | Use `response._hash` |
-| `ServerConfig(...)` | Add `id_window=N` if needed (default: 30000) |
-
-### Full before/after example
-
-```python
-# ══════════════════════════════════════════════════════════════
-# BEFORE (v1.9.0)
-# ══════════════════════════════════════════════════════════════
-from veltix import Server, ServerConfig, Client, ClientConfig, MessageType, Request
-from veltix.network.request import generate_random_id
-
-ECHO = MessageType(200, "echo")
-server = Server(ServerConfig(host="0.0.0.0", port=8080))
-
-@server.route(ECHO)
-def on_echo(client, response):
-    # Echo back with same request_id
-    reply = Request(ECHO, response.content, request_id=response.request_id)
-    server.send(reply, client)
-    print(f"Handled: id={response.request_id.hex()}")
-
-server.start()
-
-client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
-client.connect()
-
-req = Request(ECHO, b"ping", request_id=generate_random_id())
-resp = client.send_and_wait(req, timeout=3.0)
-if resp:
-    print(f"Got: {resp.content.decode()}, id={resp.request_id.hex()}")
-
-client.disconnect()
-server.close_all()
-
-
-# ══════════════════════════════════════════════════════════════
-# AFTER (v2.0.0)
-# ══════════════════════════════════════════════════════════════
-from veltix import Server, ServerConfig, Client, ClientConfig, MessageType, Request
-
-ECHO = MessageType("echo")  # auto-allocates code 200
-server = Server(ServerConfig(host="0.0.0.0", port=8080))
-
-@server.route(ECHO)
-def on_echo(client, response):
-    # Echo back with same request_id (now an int)
-    reply = Request(ECHO, response.content, request_id=response.request_id)
-    server.send(reply, client)
-    print(f"Handled: id={response.request_id}")
-
-server.start()
-
-client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
-client.connect()
-
-req = Request(ECHO, b"ping")  # auto-allocated request_id
-resp = client.send_and_wait(req, timeout=3.0)
-if resp:
-    print(f"Got: {resp.content.decode()}, id={resp.request_id}")
-
-client.disconnect()
-server.close_all()
-```
-
 ---
 
 ## v1.8.0 → v1.8.1
@@ -419,7 +70,8 @@ over the TCP stream before any Veltix framing.
   or the socket timeout fires. The internal `_handshake_done` Event has been removed.
 - `HelloRule` removed — the handshake no longer routes through the message dispatch
   pipeline. This is an internal change only.
-- `ERROR` / `INVALID_REQUEST` system types (codes 20, 21) are kept and re-exported.
+- `ERROR` / `INVALID_REQUEST` system types (codes 20, 21) were kept and re-exported in v1.8.0 (since removed in
+  v2.0.0b3).
 - Compatibility table now includes `Version(1, 8, 0)` and `Version(1, 8, 1)`.
 
 ```python
@@ -537,6 +189,7 @@ Server route callbacks now receive `(client, response)` instead of `(response, c
 def on_chat(response, client):
     ...
 
+
 # After (v1.6.10)
 @server.route(CHAT)
 def on_chat(client, response):
@@ -566,14 +219,14 @@ Access patterns are simplified :
 ```python
 # Before (v1.6.9)
 entry = server.clients[0]
-entry.info.conn         # client connection
-entry.info.addr         # client address
+entry.info.conn  # client connection
+entry.info.addr  # client address
 
 # After (v1.6.10)
 client = server.clients[0]
-client.conn             # client connection (same)
-client.addr             # client address (same)
-client.handshake_done   # handshake status (same)
+client.conn  # client connection (same)
+client.addr  # client address (same)
+client.handshake_done  # handshake status (same)
 ```
 
 ## v1.6.6 → v1.6.8
@@ -612,14 +265,15 @@ entry.id  # client ID
 ```
 
 !!! note
-    `ClientEntry` was replaced by `ClientInfo` in v1.6.10. See the **v1.6.9→v1.6.10** section above for the current access
-    pattern.
+`ClientEntry` was replaced by `ClientInfo` in v1.6.10. See the **v1.6.9→v1.6.10** section above for the current access
+pattern.
 
 ## v1.6.0 → v1.6.2
 
 Breaking changes in protocol/API:
 
-- `request_id` changed from UUID string to `bytes` (4 bytes) — **NOTE: this was later changed to `int` (2 bytes) in v2.0.0**
+- `request_id` changed from UUID string to `bytes` (4 bytes) — **NOTE: this was later changed to `int` (2 bytes) in
+  v2.0.0**
 - Wire format changed (header/hash/request_id), upgrade both client/server together
 - Handshake version check now requires exact `major.minor.patch` match
 - Minimum supported Python version is now **3.8+**

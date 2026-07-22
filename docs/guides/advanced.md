@@ -91,7 +91,7 @@ Message type codes are divided into ranges by convention:
 from veltix import MessageType
 
 # System messages (0–199) — reserved, internal use only
-# PING, PONG, ERROR, INVALID_REQUEST are pre-registered
+# PING, PONG are pre-registered system types
 
 # Application messages (200–9999) — explicit codes
 CHAT = MessageType(200, "chat", "Chat message")
