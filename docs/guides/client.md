@@ -53,6 +53,8 @@ client.request_handler.register_route(CHAT, on_chat)
 client.request_handler.unregister_route(CHAT)
 ```
 
+See the [Routing guide](routing.md) for full details.
+
 ## Callbacks
 
 ```python
