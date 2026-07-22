@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 2.0.0b2
+- **Version:** 2.0.0b3
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -57,7 +57,7 @@ Async stress throughput is **2.6x higher** than Threading under high concurrency
 
 | Tool           | Purpose                 | Config                                        |
 |----------------|-------------------------|-----------------------------------------------|
-| setuptools     | Build/packaging         | `pyproject.toml`                              |
+| hatchling      | Build/packaging         | `pyproject.toml`                              |
 | pytest         | Testing                 | `[tool.pytest.ini_options]` in pyproject.toml |
 | pytest-cov     | Code coverage           | `[tool.coverage.*]` in pyproject.toml         |
 | pytest-asyncio | Async test support      |                                               |
@@ -69,7 +69,7 @@ Async stress throughput is **2.6x higher** than Threading under high concurrency
 ## Project Structure
 
 ```
-veltix/
+src/veltix/
 ├── client/              # TCP client & reconnect
 │   ├── client.py        # Client class
 │   ├── config.py        # ClientConfig dataclass
@@ -85,7 +85,7 @@ veltix/
 │   ├── parser.py        # MessageParser — parse raw bytes into Response objects
 │   ├── sender.py        # Sender, Mode
 │   ├── types.py         # MessageType, MessageTypeRegistry
-│   ├── system_types.py  # PING, PONG, ERROR, INVALID_REQUEST
+│   ├── system_types.py  # PING, PONG
 │   ├── constants.py     # MAGIC, HEADER_SIZE, REQUEST_ID_SIZE, HEADER_STRUCT
 │   ├── flags.py         # MessageFlag (IntFlag, internal)
 │   ├── id_allocator.py  # IDAllocator, ClientAllocator (internal)
@@ -98,9 +98,10 @@ veltix/
 │   └── rules_manager.py     # RulesManager, MessageContext, Rule
 ├── socket_core/         # Swappable socket backends
 │   ├── core.py          # SocketCore enum (THREADING, ASYNC)
-│   ├── base_socket.py   # BaseSocket, SocketEvents
+│   ├── base_socket.py   # BaseSocket
 │   ├── threading_socket.py
 │   ├── async_socket.py
+│   ├── version.py       # __version__ = "2.0.0b3"
 │   └── managers/
 │       └── clients_manager.py
 ├── internal/            # Internal helpers
@@ -123,7 +124,6 @@ veltix/
 │   └── avyra/           # EventBus library (Avyra v1.0.0, Python 3.8 compat)
 ├── benchmark/           # CLI benchmarking suite (optional: pip install veltix[benchmark])
 ├── exceptions.py        # VeltixError hierarchy
-├── version.py           # __version__ = "2.0.0b2"
 └── __init__.py          # Public API exports
 tests/
 ├── conftest.py              # Shared fixtures
@@ -349,7 +349,7 @@ ruff check .
 ruff format . --check
 
 # Type check
-mypy veltix/
+mypy src/veltix/
 ```
 
 Both `ruff` and `mypy` must pass cleanly in CI.
@@ -403,7 +403,8 @@ class MyNewError(VeltixError):
 - **Type hints** required on all public symbols.
 - **Google-style docstrings** required on all public symbols.
 - **Wire protocol changes** must be registered in the COMPATIBILITY table (`internal/compatibility.py`).
-- **Backward compatibility** within a minor series is preferred but not guaranteed; breaking changes must bump minor and update COMPATIBILITY.
+- **Backward compatibility** within a minor series is preferred but not guaranteed; breaking changes must bump minor and
+  update COMPATIBILITY.
 
 ## Git & Commit
 
@@ -428,7 +429,7 @@ test: parametrize integration tests over socket backends
 
 Defined in `.github/workflows/ci.yml`:
 
-1. **Version consistency check:** `veltix/version.py` must match `pyproject.toml`.
+1. **Version consistency check:** `src/veltix/internal/version.py` must match `pyproject.toml`.
 2. **Tests:** run on Python 3.8, 3.10, 3.12, 3.14 with `pytest`.
 
 All pushed branches and PRs run through CI.
@@ -448,12 +449,13 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 server.start()  # Non-blocking, starts accept loop in thread
 
 # Callback style
-server.on_recv(callback)       # func(client: ClientInfo, response: Response)
-server.on_connect(callback)    # func(client: ClientInfo)
-server.on_disconnect(callback) # func(client: ClientInfo)
+server.on_recv(callback)  # func(client: ClientInfo, response: Response)
+server.on_connect(callback)  # func(client: ClientInfo)
+server.on_disconnect(callback)  # func(client: ClientInfo)
 
 # Structured event bus (v1.9.0+)
 from veltix.internal.events import ServerEvent
+
 server.bus.subscribe(ServerEvent.ON_CONNECT, callback)
 server.bus.subscribe(ServerEvent.ON_DISCONNECT, callback)
 
@@ -462,18 +464,18 @@ server.bus.subscribe(ServerEvent.ON_DISCONNECT, callback)
 def on_msg(client: ClientInfo, response: Response) -> None: ...
 
 
-server.send(request, client)                          # -> bool (convenience)
-server.broadcast(request)                             # -> bool (all clients)
-server.broadcast(request, except_clients=[client])    # -> bool (exclude)
-server.send_and_wait(request, client, timeout=5.0)    # -> Optional[Response]
-server.ping_client(client, timeout=5.0)               # -> Optional[float] (latency ms)
-server.close_client(client)                           # -> bool
-server.close_all()                                    # stop server + disconnect all
-server.wait_until_closed()                            # block until close_all()
-server.restart()                                      # stop + start
-server.clients                                        # -> list[ClientInfo]
-server.get_clients_by_tag(tag, value=None)            # -> list[ClientInfo]
-server.bus                                            # -> VeltixBus
+server.send(request, client)  # -> bool (convenience)
+server.broadcast(request)  # -> bool (all clients)
+server.broadcast(request, except_clients=[client])  # -> bool (exclude)
+server.send_and_wait(request, client, timeout=5.0)  # -> Optional[Response]
+server.ping_client(client, timeout=5.0)  # -> Optional[float] (latency ms)
+server.close_client(client)  # -> bool
+server.close_all()  # stop server + disconnect all
+server.wait_until_closed()  # block until close_all()
+server.restart()  # stop + start
+server.clients  # -> list[ClientInfo]
+server.get_clients_by_tag(tag, value=None)  # -> list[ClientInfo]
+server.bus  # -> VeltixBus
 ```
 
 #### `Client(config: ClientConfig)`
@@ -485,12 +487,13 @@ client = Client(ClientConfig(server_addr="127.0.0.1", port=8080, retry=3, retry_
 client.connect()  # Blocks until handshake done -> bool
 
 # Callback style
-client.on_recv(callback)       # func(response: Response)
-client.on_connect(callback)    # func()
-client.on_disconnect(callback) # func(state: DisconnectState)
+client.on_recv(callback)  # func(response: Response)
+client.on_connect(callback)  # func()
+client.on_disconnect(callback)  # func(state: DisconnectState)
 
 # Structured event bus (v1.9.0+)
 from veltix.internal.events import ClientEvent
+
 client.bus.subscribe(ClientEvent.ON_CONNECT, callback)
 client.bus.subscribe(ClientEvent.ON_DISCONNECT, callback)
 
@@ -499,14 +502,14 @@ client.bus.subscribe(ClientEvent.ON_DISCONNECT, callback)
 def on_msg(response: Response) -> None: ...
 
 
-client.send(request)                          # -> bool (convenience)
-client.send_and_wait(request, timeout=5.0)    # -> Optional[Response]
-client.ping_server(timeout=5.0)               # -> Optional[float] (latency ms)
-client.disconnect()                           # -> bool
-client.stop_retry()                           # cancel pending reconnection
-client.retry(max_=None)                       # force reconnection attempts
-client.wait_until_closed()                    # block until disconnect
-client.bus                                    # -> VeltixBus
+client.send(request)  # -> bool (convenience)
+client.send_and_wait(request, timeout=5.0)  # -> Optional[Response]
+client.ping_server(timeout=5.0)  # -> Optional[float] (latency ms)
+client.disconnect()  # -> bool
+client.stop_retry()  # cancel pending reconnection
+client.retry(max_=None)  # force reconnection attempts
+client.wait_until_closed()  # block until disconnect
+client.bus  # -> VeltixBus
 ```
 
 ### Configuration
@@ -552,11 +555,11 @@ Exactly one payload argument (`content`, `text`, or `json`) is required.
 ```python
 from veltix import Request
 
-req = Request(MY_TYPE, b"hello")              # raw bytes
-req = Request(MY_TYPE, text="hello")          # UTF-8 encoded automatically
-req = Request(MY_TYPE, json={"key": "val"})   # JSON serialized automatically
+req = Request(MY_TYPE, b"hello")  # raw bytes
+req = Request(MY_TYPE, text="hello")  # UTF-8 encoded automatically
+req = Request(MY_TYPE, json={"key": "val"})  # JSON serialized automatically
 req.request_id  # Optional[int] — auto-allocated by Sender if None
-req.compile()   # -> bytes (wire format)
+req.compile()  # -> bytes (wire format)
 req.respond(response)  # copy request_id from response for correlation
 ```
 
@@ -572,8 +575,8 @@ class Response:
     request_id: int  # public int property (uint16)
 
     # Lazy cached decoding properties:
-    response.text     # -> str (UTF-8, cached, raises InvalidContentError)
-    response.json     # -> Any (parsed JSON, cached, raises InvalidContentError)
+    response.text  # -> str (UTF-8, cached, raises InvalidContentError)
+    response.json  # -> Any (parsed JSON, cached, raises InvalidContentError)
     response.is_text  # -> bool (safe check, no exception)
     response.is_json  # -> bool (safe check, no exception)
 ```
@@ -602,11 +605,9 @@ Code ranges: **0-199** system, **200-9999** user, **10000-65535** plugins.
 #### System Types (pre-registered)
 
 ```python
-from veltix import ERROR, INVALID_REQUEST, PING, PONG
-# PING             = MessageType(0, "ping")
-# PONG             = MessageType(1, "pong")
-# ERROR            = MessageType(20, "error")
-# INVALID_REQUEST  = MessageType(21, "invalid_request")
+from veltix import PING, PONG
+# PING = MessageType(0, "ping")
+# PONG = MessageType(1, "pong")
 ```
 
 #### `MessageBuffer`
@@ -646,20 +647,22 @@ client.clear_tags()
 from veltix.internal.events import ServerEvent, ClientEvent
 
 # Server events
-ServerEvent.ON_CONNECT    # client connected
-ServerEvent.ON_DISCONNECT # client disconnected
-ServerEvent.STARTED       # server started
-ServerEvent.STOPPED       # server stopped
+ServerEvent.ON_CONNECT  # client connected
+ServerEvent.ON_DISCONNECT  # client disconnected
+ServerEvent.STARTED  # server started
+ServerEvent.STOPPED  # server stopped
 
 # Client events
-ClientEvent.ON_CONNECT    # connected to server
-ClientEvent.ON_DISCONNECT # disconnected from server
+ClientEvent.ON_CONNECT  # connected to server
+ClientEvent.ON_DISCONNECT  # disconnected from server
 ```
 
 #### Structured Event Bus (events accessible via `veltix.internal.events`)
 
 ```python
-from veltix.internal.events import ServerEvent, ClientEvent, MessageEvent, ProtocolEvent, ErrorEvent, LogEvent, ReconnectEvent
+from veltix.internal.events import ServerEvent, ClientEvent, MessageEvent, ProtocolEvent, ErrorEvent, LogEvent,
+
+ReconnectEvent
 
 # Subscribe via server.bus / client.bus
 server.bus.subscribe(ServerEvent.ON_CONNECT, callback)
