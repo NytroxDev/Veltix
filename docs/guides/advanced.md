@@ -8,7 +8,7 @@ message = Request(CHAT, text="Server announcement")
 server.broadcast(message)
 
 # Broadcast with exclusion
-server.broadcast(message, except_clients=[client.conn])
+server.broadcast(message, except_clients=[client])
 ```
 
 ## Client Tags
@@ -31,7 +31,7 @@ def on_message(client: ClientInfo, response):
         client.add_tag("authenticated", value="admin")
 
     if client.has_all_tags(["authenticated", "admin"]):
-        print(f"Admin message from {client.addr[0]}")
+        print(f"Admin message from {client.ip}")
 
 
 server.on_connect(on_connect)
@@ -42,25 +42,24 @@ server.start()
 Available tag methods on `ClientInfo`:
 
 ```python
-client.add_tag("authenticated")               # Add a tag (returns False if already exists)
-client.add_tag("role", value="admin")          # Add a tag with a value
-client.has_tag("authenticated")                # Check for a single tag
-client.has_all_tags(["auth", "admin"])         # Check all tags are present (AND)
-client.has_any_tags(["admin", "mod"])          # Check at least one tag is present (OR)
-client.get_tag("role")                         # Retrieve a tag value
-client.remove_tag("guest")                     # Remove a tag
-client.clear_tags()                            # Remove all tags
+client.add_tag("authenticated")  # Add a tag (returns False if already exists)
+client.add_tag("role", value="admin")  # Add a tag with a value
+client.has_tag("authenticated")  # Check for a single tag
+client.has_all_tags(["auth", "admin"])  # Check all tags are present (AND)
+client.has_any_tags(["admin", "mod"])  # Check at least one tag is present (OR)
+client.get_tag("role")  # Retrieve a tag value
+client.remove_tag("guest")  # Remove a tag
+client.clear_tags()  # Remove all tags
 ```
 
 ## Socket Backend
 
-Veltix abstracts the socket layer behind a `SocketCore` enum. `ASYNC` (selectors-based single-thread event loop) is the default since v1.7.0,
+Veltix abstracts the socket layer behind a `SocketCore` enum. `ASYNC` (selectors-based single-thread event loop) is the
+default since v1.7.0,
 `THREADING` (one thread per client) is also available. Future versions will add `RUST`
 (Tokio via PyO3, v3.0.0).
 
 ```python
-from veltix import ServerConfig, ClientConfig, SocketCore
-
 # Default — selectors-based, up to 2x stress throughput
 server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.ASYNC))
 
@@ -102,7 +101,8 @@ PLUGIN = MessageType("plugin", description="Custom plugin message")
 ```
 
 !!! tip
-    Auto-allocation is ideal for quick prototyping. Use explicit codes when you need stable, predictable wire values across multiple services.
+Auto-allocation is ideal for quick prototyping. Use explicit codes when you need stable, predictable wire values across
+multiple services.
 
 ## Configuring the Thread Pool
 
@@ -120,14 +120,14 @@ client_config = ClientConfig(server_addr="127.0.0.1", port=8080, max_workers=8)
 from veltix import format_bytes, encode_json, decode_json, encode_utf8, decode_utf8
 
 # Human-readable byte formatting
-format_bytes(148_000)    # "144.5 KB"
+format_bytes(148_000)  # "144.5 KB"
 format_bytes(3_000_000)  # "2.86 MB"
 
 # JSON helpers
 data = encode_json({"key": "value"})  # bytes
-obj = decode_json(data)               # dict
+obj = decode_json(data)  # dict
 
 # UTF-8 helpers
 raw = encode_utf8("hello")  # bytes
-text = decode_utf8(raw)     # str
+text = decode_utf8(raw)  # str
 ```
