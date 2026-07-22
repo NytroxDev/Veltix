@@ -27,7 +27,6 @@ ENV/
 .coverage.*
 htmlcov/
 .pytest_cache/
-.coverage
 
 # Type checking
 .mypy_cache/

@@ -5,6 +5,109 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0b3] - 2026-07-22
+
+### Breaking Changes
+
+- **`ERROR` and `INVALID_REQUEST` system types removed**: `MessageType(20, "error")` and
+  `MessageType(21, "invalid_request")` are no longer exported from the public API or defined
+  in `system_types.py`. Only `PING` and `PONG` remain as system types
+  ([d861a8d](https://github.com/NytroxDev/Veltix/commit/d861a8d)).
+- **`SocketEvents` enum removed**: unused `SocketEvents` enum deleted from `base_socket.py`
+  ([5d115d4](https://github.com/NytroxDev/Veltix/commit/5d115d4)).
+
+### Added
+
+- **`InvalidContentError` exported**: now available via `from veltix import InvalidContentError`
+  ([32257f4](https://github.com/NytroxDev/Veltix/commit/32257f4)).
+- **Google-style docstrings**: comprehensive docstrings added across all major modules:
+  `ClientInfo` ([b160e13](https://github.com/NytroxDev/Veltix/commit/b160e13)),
+  `BaseSocket` / `ClientsManager` ([154c9ea](https://github.com/NytroxDev/Veltix/commit/154c9ea)),
+  `MessageBuffer` ([628970e](https://github.com/NytroxDev/Veltix/commit/628970e)),
+  `Logger` ([3df32f5](https://github.com/NytroxDev/Veltix/commit/3df32f5)),
+  `VeltixBus` / event enums ([c8bce9f](https://github.com/NytroxDev/Veltix/commit/c8bce9f)),
+  `HandshakeHandler` / `RulesManager` / rules ([94b57b2](https://github.com/NytroxDev/Veltix/commit/94b57b2)),
+  `ReconnectHandler` ([b07c584](https://github.com/NytroxDev/Veltix/commit/b07c584)).
+
+### Changed
+
+- **Project migrated to `src` layout + Hatch build system**: package source moved from
+  `veltix/` to `src/veltix/`, build backend replaced from `setuptools` with `hatchling`,
+  `version.py` moved to `internal/version.py`. Added `publish.yml` workflow for automated
+  PyPI releases ([28120ef](https://github.com/NytroxDev/Veltix/commit/28120ef)).
+- **License migrated to SPDX**: deprecated classifier removed, SPDX string used in
+  `pyproject.toml` ([440f9b6](https://github.com/NytroxDev/Veltix/commit/440f9b6)).
+- **`from __future__ import annotations`** added across modules for forward reference
+  compatibility ([ab2b68d](https://github.com/NytroxDev/Veltix/commit/ab2b68d)).
+- **`Sender` type annotations**: bare `list`/`set` annotations replaced with typed
+  `_ClientLike` alias ([c960b6e](https://github.com/NytroxDev/Veltix/commit/c960b6e)).
+- **`ReconnectHandler` constructor**: `bus` parameter typed as `Optional`
+  ([f2c30f3](https://github.com/NytroxDev/Veltix/commit/f2c30f3)).
+- **`Request` annotations**: explicit type annotations added for `flags` and `type`
+  ([a031371](https://github.com/NytroxDev/Veltix/commit/a031371)).
+- **`pyproject.toml`**: pytest version constraint lowered to `>=8.0`
+  ([d4cdb33](https://github.com/NytroxDev/Veltix/commit/d4cdb33)).
+
+### Fixed
+
+- **Thread safety: `Server._started` / `_closed`** protected with lock to prevent
+  TOCTOU race conditions ([3d0b49a](https://github.com/NytroxDev/Veltix/commit/3d0b49a)).
+- **Thread safety: `Server.running`** replaced bare `bool` with `threading.Event` for
+  cross-thread safety ([b4889bd](https://github.com/NytroxDev/Veltix/commit/b4889bd)).
+- **Thread safety: `Client.is_connected` / `running`** protected with lock to prevent
+  cross-thread races ([d3351e8](https://github.com/NytroxDev/Veltix/commit/d3351e8)).
+- **Thread safety: `Client._fail_count` / `_stop_retry_flag`** protected with lock to
+  prevent cross-thread races ([248c5be](https://github.com/NytroxDev/Veltix/commit/248c5be)).
+- **Thread safety: `handshake_done` race** now set only after handshake succeeds to prevent
+  race with readers ([cf99ff5](https://github.com/NytroxDev/Veltix/commit/cf99ff5)).
+- **Thread safety: Logger lock** use context manager for lock in `__init__` to prevent
+  deadlock on exception ([76fc827](https://github.com/NytroxDev/Veltix/commit/76fc827)).
+- **`PingRule` crash**: replaced `assert` with explicit `SenderError` checks
+  ([863f3b3](https://github.com/NytroxDev/Veltix/commit/863f3b3)).
+- **`handle()` return type**: handler returns `bool` instead of `Exception`, simplifying
+  callers ([653c44e](https://github.com/NytroxDev/Veltix/commit/653c44e)).
+- **Duplicate `SOCKET_DISCONNECTED` subscription**: client no longer subscribes twice to the
+  disconnect event ([05d6fa0](https://github.com/NytroxDev/Veltix/commit/05d6fa0)).
+- **Import paths after `src` layout migration**: corrected in `reconnect_handler.py`
+  ([e02ef59](https://github.com/NytroxDev/Veltix/commit/e02ef59)), `request_handler.py`
+  ([74d06cf](https://github.com/NytroxDev/Veltix/commit/74d06cf)).
+- **`Response._text_cached` type ignore**: removed unnecessary `type: ignore` comment
+  ([3df28b2](https://github.com/NytroxDev/Veltix/commit/3df28b2)).
+- **Sender broadcast error logging**: improved error logging in broadcast exception handling
+  ([40197ab](https://github.com/NytroxDev/Veltix/commit/40197ab)).
+- **Parser error messages**: standardized punctuation across error messages
+  ([e39d97f](https://github.com/NytroxDev/Veltix/commit/e39d97f)).
+
+### Refactored
+
+- **`Sender` docstrings**: redundant docstrings removed
+  ([cafbe61](https://github.com/NytroxDev/Veltix/commit/cafbe61)).
+- **`ClientsManager.__init__`**: explicit return type added
+  ([f995606](https://github.com/NytroxDev/Veltix/commit/f995606)).
+- **`@dataclass` decorator**: unnecessary parentheses removed in `compatibility.py`
+  ([d6248be](https://github.com/NytroxDev/Veltix/commit/d6248be)).
+
+### Chore / CI
+
+- **GitHub Actions upgraded to v6** (Node 24)
+  ([959edce](https://github.com/NytroxDev/Veltix/commit/959edce)).
+- **CI install step**: package now installed before running tests
+  ([aafbb35](https://github.com/NytroxDev/Veltix/commit/aafbb35)).
+- **`mypy` comment**: added explanation for `python_version = 3.10` in `pyproject.toml`
+  ([7120d88](https://github.com/NytroxDev/Veltix/commit/7120d88)).
+- **Discord invite links** updated across documentation
+  ([8645438](https://github.com/NytroxDev/Veltix/commit/8645438)).
+- **Unused imports** cleaned up in `sender.py`
+  ([c54c0e6](https://github.com/NytroxDev/Veltix/commit/c54c0e6)).
+
+### Tests
+
+- **564 tests**: `SocketEvents` tests removed, import paths updated for `src` layout
+  ([6998c6e](https://github.com/NytroxDev/Veltix/commit/6998c6e)),
+  handshake test import reordered ([f096f39](https://github.com/NytroxDev/Veltix/commit/f096f39)).
+
+---
+
 ## [2.0.0b2] - 2026-07-16
 
 ### Added
