@@ -241,3 +241,210 @@ class TestHandshakeIntegration:
 
         assert len(server_results) == n_clients
         assert all(server_results)
+
+
+# ── Mock socket for failure-path tests ─────────────────────────────────────────
+
+
+class MockSocket:
+    """Minimal mock implementing the RawSocket protocol for unit testing."""
+
+    def __init__(
+        self,
+        recv_data: Optional[bytes] = None,
+        send_error: Optional[Exception] = None,
+        send_error_on_call: Optional[int] = None,
+    ) -> None:
+        self._recv_data = recv_data or b""
+        self._recv_pos = 0
+        self._send_error = send_error
+        self._send_error_on_call = send_error_on_call
+        self.sent: list[bytes] = []
+        self._send_call = 0
+
+    def settimeout(self, timeout: Optional[float]) -> None:
+        pass
+
+    def sendall(self, data: bytes) -> None:
+        if self._send_error is not None:
+            self._send_call += 1
+            if self._send_error_on_call is None or self._send_call == self._send_error_on_call:
+                raise self._send_error
+        self.sent.append(data)
+
+    def recv(self, bufsize: int) -> bytes:
+        chunk = self._recv_data[self._recv_pos : self._recv_pos + bufsize]
+        self._recv_pos += bufsize
+        return chunk
+
+
+def _mock_send_fail() -> MockSocket:
+    """Socket that fails on the very first sendall."""
+    return MockSocket(send_error=ConnectionResetError("send failed"))
+
+
+def _mock_recv_empty() -> MockSocket:
+    """Socket that returns empty bytes immediately (connection closed)."""
+    return MockSocket(recv_data=b"")
+
+
+def _mock_recv_partial_header() -> MockSocket:
+    """Socket that returns only1 byte for the header."""
+    return MockSocket(recv_data=b"\x00")
+
+
+def _mock_recv_bad_version() -> MockSocket:
+    """Socket that serves a valid server payload but with an incompatible version."""
+    handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+    server_payload = handler._encode({"v": "0.0.1", "meta": {"id_window": 30000}})
+    ack = handler._encode({"result": "ok"})
+    return MockSocket(recv_data=server_payload + ack)
+
+
+def _mock_ack_fail() -> MockSocket:
+    """Socket that sends a valid first payload but fails on the ack send."""
+    handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+    server_payload = handler._encode({"v": __version__, "meta": {"id_window": 30000}})
+    return MockSocket(
+        recv_data=server_payload,
+        send_error=ConnectionResetError("ack failed"),
+        send_error_on_call=2,
+    )
+
+
+def _mock_bad_ack() -> MockSocket:
+    """Socket that sends a valid first payload but a wrong ack result."""
+    handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+    server_payload = handler._encode({"v": __version__, "meta": {"id_window": 30000}})
+    bad_ack = handler._encode({"result": "nok"})
+    return MockSocket(recv_data=server_payload + bad_ack)
+
+
+# ── Server failure paths ───────────────────────────────────────────────────────
+
+
+class TestServerHandshakeFailurePaths:
+    """Unit tests for server handshake failure branches using MockSocket."""
+
+    def test_server_send_failed(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = _mock_send_fail()
+        assert handler.do_server_handshake(sock) is False
+
+    def test_server_recv_failed(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = _mock_recv_empty()
+        assert handler.do_server_handshake(sock) is False
+
+    def test_server_version_mismatch(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = _mock_recv_bad_version()
+        assert handler.do_server_handshake(sock) is False
+
+    def test_server_ack_send_failed(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = _mock_ack_fail()
+        assert handler.do_server_handshake(sock) is False
+
+
+# ── Client failure paths ───────────────────────────────────────────────────────
+
+
+class TestClientHandshakeFailurePaths:
+    """Unit tests for client handshake failure branches using MockSocket."""
+
+    def test_client_recv_failed(self):
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
+        sock = _mock_recv_empty()
+        success, meta = handler.do_client_handshake(sock)
+        assert success is False
+        assert meta is None
+
+    def test_client_version_mismatch(self):
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
+        sock = _mock_recv_bad_version()
+        success, meta = handler.do_client_handshake(sock)
+        assert success is False
+        assert meta is None
+
+    def test_client_send_failed(self):
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
+        sock = MockSocket(
+            recv_data=HandshakeHandler._encode({"v": __version__, "meta": {"id_window": 30000}}),
+            send_error=ConnectionResetError("send failed"),
+            send_error_on_call=1,
+        )
+        success, meta = handler.do_client_handshake(sock)
+        assert success is False
+        assert meta is None
+
+    def test_client_ack_failed(self):
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
+        sock = _mock_bad_ack()
+        success, meta = handler.do_client_handshake(sock)
+        assert success is False
+        assert meta is None
+
+    def test_client_meta_returned_on_success(self):
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
+        server_payload = {"v": __version__, "meta": {"id_window": 50000}}
+        encoded = HandshakeHandler._encode(server_payload)
+        ack = HandshakeHandler._encode({"result": "ok"})
+        sock = MockSocket(recv_data=encoded + ack)
+        success, meta = handler.do_client_handshake(sock)
+        assert success is True
+        assert meta == {"id_window": 50000}
+
+
+# ── Recv edge cases ────────────────────────────────────────────────────────────
+
+
+class TestRecvHandshakeEdgeCases:
+    def test_recv_partial_header(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = _mock_recv_partial_header()
+        result = handler._recv_handshake(sock)
+        assert result is None
+
+    def test_recv_partial_payload(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        full = handler._encode({"v": __version__, "meta": {}})
+        sock = MockSocket(recv_data=full[:5])
+        result = handler._recv_handshake(sock)
+        assert result is None
+
+    def test_send_handshake_returns_true_on_success(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = MockSocket()
+        assert handler._send_handshake(sock, {"v": __version__}) is True
+
+    def test_send_handshake_returns_false_on_error(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = _mock_send_fail()
+        assert handler._send_handshake(sock, {"v": __version__}) is False
+
+    def test_recv_exception_in_recv_all(self):
+        """Cover lines 108-110: generic exception handler in _recv_handshake."""
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+
+        call_count = 0
+
+        def exploding_recv(bufsize: int) -> bytes:
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return b"\x00\x05"
+            raise RuntimeError("socket exploded")
+
+        class ExcSocket:
+            def settimeout(self, timeout: object) -> None:
+                pass
+
+            def sendall(self, data: bytes) -> None:
+                pass
+
+            def recv(self, bufsize: int) -> bytes:
+                return exploding_recv(bufsize)
+
+        result = handler._recv_handshake(ExcSocket())
+        assert result is None

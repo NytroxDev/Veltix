@@ -103,6 +103,7 @@ source = ["veltix"]
 omit = [
     "*/tests/*",
     "*/examples/*",
+    "*/benchmark/*",
     "*/__pycache__/*",
 ]
 
