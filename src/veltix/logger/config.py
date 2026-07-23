@@ -29,8 +29,6 @@ class LoggerConfig:
 
         # Advanced
         stream: Output stream for console logs
-        async_write: Use async file writing for performance
-        buffer_size: Buffer size for async writes
     """
 
     # Basic settings
@@ -47,8 +45,6 @@ class LoggerConfig:
 
     # Advanced
     stream: TextIO = dataclasses.field(default=sys.stdout)
-    async_write: bool = False
-    buffer_size: int = 100
 
     def __post_init__(self) -> None:
         """Validate and normalize configuration."""
