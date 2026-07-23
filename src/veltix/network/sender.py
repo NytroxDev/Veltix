@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 from ..exceptions import SenderError
 from ..internal.events import ErrorEvent, MessageEvent
@@ -33,7 +33,7 @@ class Sender:
         mode: Union[Mode, str],
         conn: Optional[BaseSocket] = None,
         bus: Optional[VeltixBus] = None,
-        get_all_clients: Optional[Callable[[], list[_ClientLike]]] = None,
+        get_all_clients: Optional[Callable[[], Sequence[_ClientLike]]] = None,
         id_allocator: Optional[IDAllocator] = None,
     ) -> None:
         """Initialize the sender with a mode and an optional connection.
@@ -128,7 +128,9 @@ class Sender:
 
         return client.conn if isinstance(client, ClientInfo) else client
 
-    def _build_exclude_set(self, except_clients: Optional[list[_ClientLike]]) -> set[BaseSocket]:
+    def _build_exclude_set(
+        self, except_clients: Optional[Sequence[_ClientLike]]
+    ) -> set[BaseSocket]:
         if not except_clients:
             return set()
         return {self._resolve_socket(c) for c in except_clients}
@@ -136,8 +138,8 @@ class Sender:
     def broadcast(
         self,
         data: Request,
-        list_of_client: Optional[list[_ClientLike]] = None,
-        except_clients: Optional[list[_ClientLike]] = None,
+        list_of_client: Optional[Sequence[_ClientLike]] = None,
+        except_clients: Optional[Sequence[_ClientLike]] = None,
     ) -> bool:
         """Send a request to multiple clients (SERVER mode only).
 
@@ -158,7 +160,7 @@ class Sender:
             return False
 
         if list_of_client is None:
-            list_of_client = self._get_all_clients()  # type: ignore[misc]
+            list_of_client = self._get_all_clients()
 
         if not list_of_client:
             return True
