@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from enum import IntEnum
 
 
@@ -30,3 +31,9 @@ class LogLevel(IntEnum):
     def __str__(self) -> str:
         """Return level name."""
         return self.name
+
+
+# Register custom level names so stdlib logging resolves them correctly
+# (e.g. logging.getLevelName(5) -> "TRACE" instead of "Level 5").
+for _level in LogLevel:
+    logging.addLevelName(int(_level), _level.name)

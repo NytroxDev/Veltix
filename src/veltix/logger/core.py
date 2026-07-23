@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import logging.handlers
 import threading
 from typing import Optional
 
@@ -43,7 +44,8 @@ class Logger:
             self._stats = dict.fromkeys(LogLevel, 0)
             self._internal = logging.getLogger("veltix")
             self._internal.propagate = False
-            self._handler: Optional[logging.StreamHandler] = None
+            self._console_handler: Optional[logging.StreamHandler] = None
+            self._file_handler: Optional[logging.handlers.RotatingFileHandler] = None
             self._setup(config or LoggerConfig())
         elif config is not None:
             self._setup(config)
@@ -53,19 +55,36 @@ class Logger:
         self.config = config
         self._stats = dict.fromkeys(LogLevel, 0)
 
-        # Remove old handler
-        if self._handler is not None:
-            self._internal.removeHandler(self._handler)
+        # Remove old handlers
+        if self._console_handler is not None:
+            self._internal.removeHandler(self._console_handler)
+            self._console_handler = None
+        if self._file_handler is not None:
+            self._internal.removeHandler(self._file_handler)
+            self._file_handler.close()
+            self._file_handler = None
 
         if not config.enabled:
             self._internal.setLevel(logging.CRITICAL + 10)
             return
 
-        self._internal.setLevel(self._to_logging_level(config.level))
+        self._internal.setLevel(int(config.level))
 
-        self._handler = logging.StreamHandler(config.stream)
-        self._handler.setFormatter(VeltixFormatter(use_colors=config.use_colors))
-        self._internal.addHandler(self._handler)
+        # Console handler
+        self._console_handler = logging.StreamHandler(config.stream)
+        self._console_handler.setFormatter(VeltixFormatter(use_colors=config.use_colors))
+        self._internal.addHandler(self._console_handler)
+
+        # File handler
+        if config.file_path is not None:
+            self._file_handler = logging.handlers.RotatingFileHandler(
+                config.file_path,
+                maxBytes=config.file_rotation_size,
+                backupCount=config.file_backup_count,
+                encoding="utf-8",
+            )
+            self._file_handler.setFormatter(VeltixFormatter(use_colors=False))
+            self._internal.addHandler(self._file_handler)
 
     @classmethod
     def get_instance(cls, config: Optional[LoggerConfig] = None) -> Logger:
@@ -81,8 +100,12 @@ class Logger:
     def reset_instance(cls) -> None:
         """Reset the singleton (mainly for testing)."""
         with cls._lock:
-            if cls._instance is not None and cls._instance._handler is not None:
-                cls._instance._internal.removeHandler(cls._instance._handler)
+            if cls._instance is not None:
+                if cls._instance._console_handler is not None:
+                    cls._instance._internal.removeHandler(cls._instance._console_handler)
+                if cls._instance._file_handler is not None:
+                    cls._instance._internal.removeHandler(cls._instance._file_handler)
+                    cls._instance._file_handler.close()
             cls._instance = None
 
     # ── Log methods ───────────────────────────────────────────────────────────
@@ -150,8 +173,7 @@ class Logger:
             return
 
         self._stats[level] += 1
-        logging_level = self._to_logging_level(level)
-        self._internal.log(logging_level, message)
+        self._internal.log(int(level), message)
 
     def set_level(self, level: LogLevel) -> None:
         """Change the minimum log level at runtime.
@@ -161,14 +183,13 @@ class Logger:
         """
         with self._lock:
             self.config.level = level
-            if self._handler is not None:
-                self._internal.setLevel(self._to_logging_level(level))
+            self._internal.setLevel(int(level))
 
     def enable(self) -> None:
         """Enable log output."""
         with self._lock:
             self.config.enabled = True
-            self._internal.setLevel(self._to_logging_level(self.config.level))
+            self._internal.setLevel(int(self.config.level))
 
     def disable(self) -> None:
         """Disable all log output."""
@@ -185,20 +206,3 @@ class Logger:
         """
         with self._lock:
             return self._stats.copy()
-
-    @staticmethod
-    def _to_logging_level(level: LogLevel) -> int:
-        """Map a LogLevel to a stdlib logging level.
-
-        Custom levels (TRACE=5, SUCCESS=25) are mapped to the nearest
-        standard level for the internal logger.
-        """
-        if level <= LogLevel.DEBUG:
-            return logging.DEBUG
-        if level <= LogLevel.INFO:
-            return logging.INFO
-        if level <= LogLevel.WARNING:
-            return logging.WARNING
-        if level <= LogLevel.ERROR:
-            return logging.ERROR
-        return logging.CRITICAL
