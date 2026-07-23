@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0rc1] - 2026-07-23
+
+### Breaking Changes
+
+- **`LoggerConfig.async_write` and `LoggerConfig.buffer_size` removed**: these fields
+  were dead code after the migration to stdlib `logging`. Removed from `LoggerConfig`
+  entirely
+  ([f52c5b3](https://github.com/NytroxDev/Veltix/commit/f52c5b3)).
+
+### Added
+
+- **`LoggerConfig.show_timestamp` and `LoggerConfig.show_level` now functional**: these
+  config flags were previously declared but unused. `show_timestamp=False` hides the
+  timestamp prefix, `show_level=False` hides the level name in log output
+  ([e198222](https://github.com/NytroxDev/Veltix/commit/e198222)).
+- **`ClientInfo.__repr__`**: adds a debug-friendly representation showing client ID and
+  address ([33a51b5](https://github.com/NytroxDev/Veltix/commit/33a51b5)).
+- **Logger backed by stdlib `logging`**: the internal logger now wraps Python's
+  `logging.Logger("veltix")` with `StreamHandler` and optional `RotatingFileHandler`
+  (when `file_path` is set). The public API (`Logger.info()`, `Logger.debug()`, etc.)
+  is unchanged
+  ([5d4f19f](https://github.com/NytroxDev/Veltix/commit/5d4f19f)).
+
+### Changed
+
+- **`LogLevel.TRACE` and `LogLevel.SUCCESS` registered with stdlib**: custom levels
+  are now registered via `logging.addLevelName()` so that `logging.getLevelName(5)`
+  returns `"TRACE"` instead of `"Level 5"`. Log levels are passed raw to the internal
+  logger instead of being mapped to the nearest standard level
+  ([4405881](https://github.com/NytroxDev/Veltix/commit/4405881)).
+- **`benchmark/` excluded from coverage**: optional benchmark CLI tool no longer
+  distorts coverage metrics
+  ([e53809c](https://github.com/NytroxDev/Veltix/commit/e53809c)).
+
+### Fixed
+
+- **Performance regression: `inspect.currentframe()` removed from hot path**: the
+  caller detection added in v2.0.0b3 called `inspect.currentframe()` on every
+  `bus.debug()`, `bus.info()`, etc., causing a ~2.1x latency regression. Removed
+  entirely, restoring v1.9.0-level performance
+  ([27e3d0f](https://github.com/NytroxDev/Veltix/commit/27e3d0f)).
+- **`TRACE` and `SUCCESS` log levels display correctly**: these levels were internally
+  mapped to `DEBUG` and `INFO` by `_to_logging_level()`, causing the formatter to
+  show wrong level names. Now passed as raw values
+  ([4405881](https://github.com/NytroxDev/Veltix/commit/4405881)).
+
+### Test
+
+- **Handshake handler coverage 78% to 100%**: added `MockSocket` with
+  `send_error_on_call` for sequential failure simulation. Covers all server and
+  client failure paths (send, recv, version mismatch, ack) plus edge cases
+  ([e53809c](https://github.com/NytroxDev/Veltix/commit/e53809c)).
+- **`test_writer.py` removed**: writer module deleted during logger migration,
+  test file removed accordingly
+  ([85f53f5](https://github.com/NytroxDev/Veltix/commit/85f53f5)).
+
 ## [2.0.0b3] - 2026-07-23
 
 ### Breaking Changes
