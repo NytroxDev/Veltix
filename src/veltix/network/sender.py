@@ -155,11 +155,11 @@ class Sender:
             self._log_error("Broadcast not available in CLIENT mode")
             return False
 
-        if list_of_client is None and self._get_all_clients is None:
-            self._log_error("No client list provided and no get_all_clients callback")
-            return False
-
-        if list_of_client is None:
+        if self._get_all_clients is None:
+            if list_of_client is None:
+                self._log_error("No client list provided and no get_all_clients callback")
+                return False
+        elif list_of_client is None:
             list_of_client = self._get_all_clients()
 
         if not list_of_client:
