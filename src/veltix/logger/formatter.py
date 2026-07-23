@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+import logging
 
 from .levels import LogLevel
 
-if TYPE_CHECKING:
-    from datetime import datetime
 
-
-class Formatter:
-    """Handles log message formatting."""
+class VeltixFormatter(logging.Formatter):
+    """Custom formatter: [HH:MM:SS.mmm] LEVEL  message + optional colors."""
 
     COLORS = {
         LogLevel.TRACE: "\033[90m",
@@ -23,46 +20,46 @@ class Formatter:
         LogLevel.CRITICAL: "\033[41m",
     }
 
+    LEVEL_NAMES = {
+        LogLevel.TRACE: "TRACE",
+        LogLevel.DEBUG: "DEBUG",
+        LogLevel.INFO: "INFO ",
+        LogLevel.SUCCESS: "OK   ",
+        LogLevel.WARNING: "WARN ",
+        LogLevel.ERROR: "ERROR",
+        LogLevel.CRITICAL: "CRIT ",
+    }
+
     RESET = "\033[0m"
 
     def __init__(self, use_colors: bool = True) -> None:
+        super().__init__()
         self.use_colors = use_colors
 
-    def format(
-        self,
-        level: LogLevel,
-        message: str,
-        timestamp: Optional[datetime] = None,
-        show_timestamp: bool = True,
-        show_level: bool = True,
-    ) -> str:
+    def format(self, record: logging.LogRecord) -> str:
         parts = []
 
-        if show_timestamp and timestamp:
-            parts.append(f"[{timestamp.strftime('%H:%M:%S.%f')[:-3]}]")
+        ts = self.formatTime(record, "%H:%M:%S") + f".{record.msecs:03.0f}"[-3:]
+        parts.append(f"[{ts}]")
 
-        if show_level:
-            parts.append(self._format_level(level))
+        level = self._get_level(record)
+        parts.append(self.LEVEL_NAMES.get(level, record.levelname))
 
-        parts.append(message)
+        parts.append(record.getMessage())
 
         result = " ".join(parts)
 
         if self.use_colors:
             color = self.COLORS.get(level, "")
-            result = f"{color}{result}{self.RESET}"
+            if color:
+                result = f"{color}{result}{self.RESET}"
 
         return result
 
     @staticmethod
-    def _format_level(level: LogLevel) -> str:
-        level_names = {
-            LogLevel.TRACE: "TRACE",
-            LogLevel.DEBUG: "DEBUG",
-            LogLevel.INFO: "INFO ",
-            LogLevel.SUCCESS: "OK   ",
-            LogLevel.WARNING: "WARN ",
-            LogLevel.ERROR: "ERROR",
-            LogLevel.CRITICAL: "CRIT ",
-        }
-        return level_names.get(level, str(level))
+    def _get_level(record: logging.LogRecord) -> LogLevel:
+        """Map a logging record to a LogLevel."""
+        for level in LogLevel:
+            if level.value == record.levelno:
+                return level
+        return LogLevel.INFO

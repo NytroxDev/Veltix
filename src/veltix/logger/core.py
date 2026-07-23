@@ -2,23 +2,20 @@
 
 from __future__ import annotations
 
+import logging
 import threading
-from datetime import datetime
 from typing import Optional
 
 from .config import LoggerConfig
-from .formatter import Formatter
+from .formatter import VeltixFormatter
 from .levels import LogLevel
-from .writer import Writer
 
 
 class Logger:
-    """Thread-safe singleton logger with console and file output.
+    """Thread-safe singleton logger backed by stdlib logging.
 
     The logger is implemented as a singleton: calling ``Logger()`` or
-    ``Logger.get_instance()`` always returns the same object. It supports
-    configurable log levels, optional file rotation, and
-    per-level usage statistics.
+    ``Logger.get_instance()`` always returns the same object.
 
     Typical usage::
 
@@ -33,15 +30,6 @@ class Logger:
     _lock = threading.RLock()
 
     def __new__(cls, config: Optional[LoggerConfig] = None) -> Logger:
-        """Create or retrieve the singleton Logger instance.
-
-        Args:
-            config: Optional configuration. On the first call it sets up the
-                logger; on subsequent calls it can be used to reconfigure it.
-
-        Returns:
-            The singleton :class:`Logger` instance.
-        """
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
@@ -50,28 +38,34 @@ class Logger:
         return cls._instance
 
     def __init__(self, config: Optional[LoggerConfig] = None) -> None:
-        """Initialise the singleton on first call; reconfigure on later calls with a config.
-
-        Args:
-            config: Optional configuration to apply. Ignored on the first call
-                when *config* was already provided to ``__new__``.
-        """
         if not self._initialized:
             self._initialized = True
+            self._stats = dict.fromkeys(LogLevel, 0)
+            self._internal = logging.getLogger("veltix")
+            self._internal.propagate = False
+            self._handler: Optional[logging.StreamHandler] = None
+            self._setup(config or LoggerConfig())
         elif config is not None:
-            with self._lock:
-                self.config = config
-                self._formatter = Formatter(use_colors=self.config.use_colors)
-                self._writer = Writer(self.config)
-                self._stats = dict.fromkeys(LogLevel, 0)
-            return
-        else:
+            self._setup(config)
+
+    def _setup(self, config: LoggerConfig) -> None:
+        """Configure the internal logging.Logger with handlers and formatters."""
+        self.config = config
+        self._stats = dict.fromkeys(LogLevel, 0)
+
+        # Remove old handler
+        if self._handler is not None:
+            self._internal.removeHandler(self._handler)
+
+        if not config.enabled:
+            self._internal.setLevel(logging.CRITICAL + 10)
             return
 
-        self.config = config or LoggerConfig()
-        self._formatter = Formatter(use_colors=self.config.use_colors)
-        self._writer = Writer(self.config)
-        self._stats = dict.fromkeys(LogLevel, 0)
+        self._internal.setLevel(self._to_logging_level(config.level))
+
+        self._handler = logging.StreamHandler(config.stream)
+        self._handler.setFormatter(VeltixFormatter(use_colors=config.use_colors))
+        self._internal.addHandler(self._handler)
 
     @classmethod
     def get_instance(cls, config: Optional[LoggerConfig] = None) -> Logger:
@@ -79,36 +73,19 @@ class Logger:
         return cls(config)
 
     def configure(self, config: LoggerConfig) -> None:
-        """Reconfigure the logger with a new config (writer, formatter, stats reset)."""
+        """Reconfigure the logger with a new config."""
         with self._lock:
-            self.config = config
-            self._formatter = Formatter(use_colors=self.config.use_colors)
-            self._writer = Writer(self.config)
-            self._stats = dict.fromkeys(LogLevel, 0)
+            self._setup(config)
 
     @classmethod
     def reset_instance(cls) -> None:
         """Reset the singleton (mainly for testing)."""
         with cls._lock:
+            if cls._instance is not None and cls._instance._handler is not None:
+                cls._instance._internal.removeHandler(cls._instance._handler)
             cls._instance = None
 
-    def _log(self, level: LogLevel, message: str) -> None:
-        with self._lock:
-            if not self.config.enabled or level < self.config.level:
-                return
-
-            timestamp = datetime.now() if self.config.show_timestamp else None
-
-            formatted = self._formatter.format(
-                level=level,
-                message=message,
-                timestamp=timestamp,
-                show_timestamp=self.config.show_timestamp,
-                show_level=self.config.show_level,
-            )
-
-            self._writer.write(formatted)
-            self._stats[level] += 1
+    # ── Log methods ───────────────────────────────────────────────────────────
 
     def trace(self, message: str) -> None:
         """Log a TRACE-level message (severity 5).
@@ -166,26 +143,38 @@ class Logger:
         """
         self._log(LogLevel.CRITICAL, message)
 
+    # ── Internal ──────────────────────────────────────────────────────────────
+
+    def _log(self, level: LogLevel, message: str) -> None:
+        if not self.config.enabled or level < self.config.level:
+            return
+
+        self._stats[level] += 1
+        logging_level = self._to_logging_level(level)
+        self._internal.log(logging_level, message)
+
     def set_level(self, level: LogLevel) -> None:
         """Change the minimum log level at runtime.
-
-        Messages below this level are silently discarded.
 
         Args:
             level: The new minimum :class:`LogLevel`.
         """
         with self._lock:
             self.config.level = level
+            if self._handler is not None:
+                self._internal.setLevel(self._to_logging_level(level))
 
     def enable(self) -> None:
         """Enable log output."""
         with self._lock:
             self.config.enabled = True
+            self._internal.setLevel(self._to_logging_level(self.config.level))
 
     def disable(self) -> None:
         """Disable all log output."""
         with self._lock:
             self.config.enabled = False
+            self._internal.setLevel(logging.CRITICAL + 10)
 
     def get_stats(self) -> dict[LogLevel, int]:
         """Return per-level message counts since the last reset.
@@ -196,3 +185,20 @@ class Logger:
         """
         with self._lock:
             return self._stats.copy()
+
+    @staticmethod
+    def _to_logging_level(level: LogLevel) -> int:
+        """Map a LogLevel to a stdlib logging level.
+
+        Custom levels (TRACE=5, SUCCESS=25) are mapped to the nearest
+        standard level for the internal logger.
+        """
+        if level <= LogLevel.DEBUG:
+            return logging.DEBUG
+        if level <= LogLevel.INFO:
+            return logging.INFO
+        if level <= LogLevel.WARNING:
+            return logging.WARNING
+        if level <= LogLevel.ERROR:
+            return logging.ERROR
+        return logging.CRITICAL

@@ -65,17 +65,17 @@ class TestLoggerConfigure:
         logger.configure(LoggerConfig())
         assert logger.get_stats()[LogLevel.INFO] == 0
 
-    def test_configure_creates_new_writer(self, reset_logger):
+    def test_configure_creates_new_handler(self, reset_logger):
         logger = Logger.get_instance()
-        old_writer = logger._writer
+        old_handler = logger._handler
         logger.configure(LoggerConfig(level=LogLevel.DEBUG))
-        assert logger._writer is not old_writer
+        assert logger._handler is not old_handler
 
     def test_configure_creates_new_formatter(self, reset_logger):
         logger = Logger.get_instance()
-        old_formatter = logger._formatter
+        old_handler = logger._handler
         logger.configure(LoggerConfig(use_colors=False))
-        assert logger._formatter is not old_formatter
+        assert logger._handler is not old_handler
 
     def test_configure_disables_logging(self, reset_logger):
         logger = Logger.get_instance()
