@@ -32,24 +32,30 @@ class VeltixFormatter(logging.Formatter):
 
     RESET = "\033[0m"
 
-    def __init__(self, use_colors: bool = True) -> None:
+    def __init__(
+        self, use_colors: bool = True, show_timestamp: bool = True, show_level: bool = True
+    ) -> None:
         super().__init__()
         self.use_colors = use_colors
+        self.show_timestamp = show_timestamp
+        self.show_level = show_level
 
     def format(self, record: logging.LogRecord) -> str:
         parts = []
 
-        ts = self.formatTime(record, "%H:%M:%S") + f".{record.msecs:03.0f}"[-3:]
-        parts.append(f"[{ts}]")
+        if self.show_timestamp:
+            ts = self.formatTime(record, "%H:%M:%S") + f".{record.msecs:03.0f}"[-3:]
+            parts.append(f"[{ts}]")
 
-        level = self._get_level(record)
-        parts.append(self.LEVEL_NAMES.get(level, record.levelname))
+        if self.show_level:
+            level = self._get_level(record)
+            parts.append(self.LEVEL_NAMES.get(level, record.levelname))
 
         parts.append(record.getMessage())
 
         result = " ".join(parts)
 
-        if self.use_colors:
+        if self.use_colors and self.show_level:
             color = self.COLORS.get(level, "")
             if color:
                 result = f"{color}{result}{self.RESET}"

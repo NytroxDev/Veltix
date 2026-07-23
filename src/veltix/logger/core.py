@@ -72,7 +72,13 @@ class Logger:
 
         # Console handler
         self._console_handler = logging.StreamHandler(config.stream)
-        self._console_handler.setFormatter(VeltixFormatter(use_colors=config.use_colors))
+        self._console_handler.setFormatter(
+            VeltixFormatter(
+                use_colors=config.use_colors,
+                show_timestamp=config.show_timestamp,
+                show_level=config.show_level,
+            )
+        )
         self._internal.addHandler(self._console_handler)
 
         # File handler

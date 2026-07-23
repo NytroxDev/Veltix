@@ -1,10 +1,11 @@
-"""Detailed tests for Logger submodules: configure, config validation, Formatter, Writer, LogLevel."""
+"""Detailed tests for Logger submodules: configure, config validation, Formatter, LogLevel."""
 
 from pathlib import Path
 
 import pytest
 
 from veltix import Logger, LoggerConfig, LogLevel
+from veltix.logger.formatter import VeltixFormatter
 
 
 class TestLogLevelStr:
@@ -152,3 +153,54 @@ class TestLoggerFiltering:
         assert LogLevel.SUCCESS < LogLevel.WARNING
         assert LogLevel.WARNING < LogLevel.ERROR
         assert LogLevel.ERROR < LogLevel.CRITICAL
+
+
+class TestVeltixFormatter:
+    """Tests for VeltixFormatter show_timestamp and show_level flags."""
+
+    def _make_record(self, level: int = 20, msg: str = "hello"):
+        import logging
+
+        return logging.LogRecord("test", level, "", 0, msg, (), None)
+
+    def test_default_shows_timestamp_and_level(self):
+        fmt = VeltixFormatter(use_colors=False)
+        record = self._make_record()
+        output = fmt.format(record)
+        assert "[" in output
+        assert "INFO " in output
+        assert "hello" in output
+
+    def test_hide_timestamp(self):
+        fmt = VeltixFormatter(use_colors=False, show_timestamp=False)
+        record = self._make_record()
+        output = fmt.format(record)
+        assert "[" not in output
+        assert "INFO " in output
+        assert "hello" in output
+
+    def test_hide_level(self):
+        fmt = VeltixFormatter(use_colors=False, show_level=False)
+        record = self._make_record()
+        output = fmt.format(record)
+        assert "[" in output
+        assert "INFO " not in output
+        assert "hello" in output
+
+    def test_hide_both(self):
+        fmt = VeltixFormatter(use_colors=False, show_timestamp=False, show_level=False)
+        record = self._make_record()
+        output = fmt.format(record)
+        assert output == "hello"
+
+    def test_success_level_name(self):
+        fmt = VeltixFormatter(use_colors=False)
+        record = self._make_record(level=25)
+        output = fmt.format(record)
+        assert "OK   " in output
+
+    def test_trace_level_name(self):
+        fmt = VeltixFormatter(use_colors=False)
+        record = self._make_record(level=5)
+        output = fmt.format(record)
+        assert "TRACE" in output
