@@ -136,7 +136,7 @@ class Response:
         if self._text_cached is _INVALID:
             raise InvalidContentError("Content is not valid UTF-8")
 
-        return self._text_cached
+        return str(self._text_cached)
 
     @property
     def is_text(self) -> bool:
