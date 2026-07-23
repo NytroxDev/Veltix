@@ -32,10 +32,8 @@ class Formatter:
         self,
         level: LogLevel,
         message: str,
-        caller: Optional[str] = None,
         timestamp: Optional[datetime] = None,
         show_timestamp: bool = True,
-        show_caller: bool = True,
         show_level: bool = True,
     ) -> str:
         parts = []
@@ -45,9 +43,6 @@ class Formatter:
 
         if show_level:
             parts.append(self._format_level(level))
-
-        if show_caller and caller:
-            parts.append(f"[{caller}]")
 
         parts.append(message)
 

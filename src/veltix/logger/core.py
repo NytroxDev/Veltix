@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import inspect
-import os
 import threading
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 from .config import LoggerConfig
@@ -14,15 +11,13 @@ from .formatter import Formatter
 from .levels import LogLevel
 from .writer import Writer
 
-_VELTIX_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.sep
-
 
 class Logger:
     """Thread-safe singleton logger with console and file output.
 
     The logger is implemented as a singleton: calling ``Logger()`` or
     ``Logger.get_instance()`` always returns the same object. It supports
-    configurable log levels, optional file rotation, caller detection, and
+    configurable log levels, optional file rotation, and
     per-level usage statistics.
 
     Typical usage::
@@ -97,103 +92,79 @@ class Logger:
         with cls._lock:
             cls._instance = None
 
-    def _log(self, level: LogLevel, message: str, caller: Optional[str] = None) -> None:
+    def _log(self, level: LogLevel, message: str) -> None:
         with self._lock:
             if not self.config.enabled or level < self.config.level:
                 return
 
-            if caller is None and self.config.show_caller:
-                caller = self._get_caller_info()
             timestamp = datetime.now() if self.config.show_timestamp else None
 
             formatted = self._formatter.format(
                 level=level,
                 message=message,
-                caller=caller,
                 timestamp=timestamp,
                 show_timestamp=self.config.show_timestamp,
-                show_caller=self.config.show_caller,
                 show_level=self.config.show_level,
             )
 
             self._writer.write(formatted)
             self._stats[level] += 1
 
-    @staticmethod
-    def _get_caller_info() -> Optional[str]:
-        try:
-            frame = inspect.currentframe()
-            while frame:
-                filename = os.path.abspath(frame.f_code.co_filename)
-                if not filename.startswith(_VELTIX_ROOT):
-                    return f"{Path(frame.f_code.co_filename).name}:{frame.f_lineno}"
-                frame = frame.f_back
-        except Exception:
-            pass
-        return None
-
-    def trace(self, message: str, caller: Optional[str] = None) -> None:
+    def trace(self, message: str) -> None:
         """Log a TRACE-level message (severity 5).
 
         Args:
             message: The log message.
-            caller: Optional explicit caller override (``"file.py:42"``).
         """
-        self._log(LogLevel.TRACE, message, caller=caller)
+        self._log(LogLevel.TRACE, message)
 
-    def debug(self, message: str, caller: Optional[str] = None) -> None:
+    def debug(self, message: str) -> None:
         """Log a DEBUG-level message (severity 10).
 
         Args:
             message: The log message.
-            caller: Optional explicit caller override.
         """
-        self._log(LogLevel.DEBUG, message, caller=caller)
+        self._log(LogLevel.DEBUG, message)
 
-    def info(self, message: str, caller: Optional[str] = None) -> None:
+    def info(self, message: str) -> None:
         """Log an INFO-level message (severity 20).
 
         Args:
             message: The log message.
-            caller: Optional explicit caller override.
         """
-        self._log(LogLevel.INFO, message, caller=caller)
+        self._log(LogLevel.INFO, message)
 
-    def success(self, message: str, caller: Optional[str] = None) -> None:
+    def success(self, message: str) -> None:
         """Log a SUCCESS-level message (severity 25).
 
         Args:
             message: The log message.
-            caller: Optional explicit caller override.
         """
-        self._log(LogLevel.SUCCESS, message, caller=caller)
+        self._log(LogLevel.SUCCESS, message)
 
-    def warning(self, message: str, caller: Optional[str] = None) -> None:
+    def warning(self, message: str) -> None:
         """Log a WARNING-level message (severity 30).
 
         Args:
             message: The log message.
-            caller: Optional explicit caller override.
         """
-        self._log(LogLevel.WARNING, message, caller=caller)
+        self._log(LogLevel.WARNING, message)
 
-    def error(self, message: str, caller: Optional[str] = None) -> None:
+    def error(self, message: str) -> None:
         """Log an ERROR-level message (severity 40).
 
         Args:
             message: The log message.
-            caller: Optional explicit caller override.
         """
-        self._log(LogLevel.ERROR, message, caller=caller)
+        self._log(LogLevel.ERROR, message)
 
-    def critical(self, message: str, caller: Optional[str] = None) -> None:
+    def critical(self, message: str) -> None:
         """Log a CRITICAL-level message (severity 50).
 
         Args:
             message: The log message.
-            caller: Optional explicit caller override.
         """
-        self._log(LogLevel.CRITICAL, message, caller=caller)
+        self._log(LogLevel.CRITICAL, message)
 
     def set_level(self, level: LogLevel) -> None:
         """Change the minimum log level at runtime.

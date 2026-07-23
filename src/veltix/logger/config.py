@@ -20,7 +20,6 @@ class LoggerConfig:
         enabled: Enable/disable all logging
         use_colors: Enable colored output for console
         show_timestamp: Show timestamp in logs
-        show_caller: Show file:line information
         show_level: Show log level name
 
         # File output
@@ -39,7 +38,6 @@ class LoggerConfig:
     enabled: bool = True
     use_colors: bool = True
     show_timestamp: bool = True
-    show_caller: bool = True
     show_level: bool = True
 
     # File logging
