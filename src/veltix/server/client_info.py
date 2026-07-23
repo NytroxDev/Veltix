@@ -107,6 +107,14 @@ class ClientInfo:
         """
         return hash(self._id)
 
+    def __repr__(self) -> str:
+        """Return a debug representation of the client.
+
+        Returns:
+            A string like ``ClientInfo(ip='127.0.0.1', port=54321, id=3)``.
+        """
+        return f"ClientInfo(ip='{self.ip}', port={self.port}, id={self._id})"
+
     @property
     def ip(self) -> str:
         """Return the client's IP address.
