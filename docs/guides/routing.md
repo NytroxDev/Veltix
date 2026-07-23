@@ -16,12 +16,12 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
 @server.route(CHAT)
 def on_chat(client: ClientInfo, response: Response):
-    print(f"[{client.addr[0]}] {response.text}")
+    print(f"[{client.ip}] {response.text}")
 
 
 @server.route(STATUS)
 def on_status(client: ClientInfo, response: Response):
-    print(f"Status from {client.addr[0]}: {response.text}")
+    print(f"Status from {client.ip}: {response.text}")
 
 
 server.start()

@@ -18,9 +18,9 @@ from veltix import Server, ServerConfig
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
-server.on_connect(lambda client: print(f"Connected: {client.addr}"))
+server.on_connect(lambda client: print(f"Connected: {client.ip}:{client.port}"))
 server.on_recv(lambda client, msg: print(msg.text))
-server.on_disconnect(lambda client: print(f"Disconnected: {client.addr}"))
+server.on_disconnect(lambda client: print(f"Disconnected: {client.ip}:{client.port}"))
 ```
 
 ## Client callbacks

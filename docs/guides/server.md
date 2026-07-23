@@ -40,12 +40,12 @@ STATUS = MessageType("status")
 
 @server.route(CHAT)
 def on_chat(client, response):
-    print(f"[{client.addr[0]}] {response.text}")
+    print(f"[{client.ip}] {response.text}")
 
 
 @server.route(STATUS)
 def on_status(client, response):
-    print(f"Status from {client.addr[0]}: {response.text}")
+    print(f"Status from {client.ip}: {response.text}")
 ```
 
 Routes can also be registered and removed programmatically:
@@ -60,9 +60,9 @@ See the [Routing guide](routing.md) for full details.
 ## Callbacks
 
 ```python
-server.on_connect(lambda client: print(f"Connected: {client.addr}"))
+server.on_connect(lambda client: print(f"Connected: {client.ip}:{client.port}"))
 server.on_recv(lambda client, msg: print(msg.text))
-server.on_disconnect(lambda client: print(f"Disconnected: {client.addr}"))
+server.on_disconnect(lambda client: print(f"Disconnected: {client.ip}:{client.port}"))
 ```
 
 !!! note

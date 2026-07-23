@@ -239,8 +239,8 @@ if TYPE_CHECKING:
 | Functions/methods | snake_case  | `send_and_wait()`    |
 | Private methods   | `_` prefix  | `_handle_message()`  |
 | Constants         | UPPER_SNAKE | `HEADER_SIZE`        |
-| Enums             | PascalCase  | `class Events(Enum)` |
-| Enum members      | UPPER_SNAKE | `Events.ON_RECV`     |
+| Enums             | PascalCase  | `class ServerEvent(Enum)` |
+| Enum members      | UPPER_SNAKE | `.on_recv` / `.on_connect` |
 | Type variables    | PascalCase  | `T`, `ResponseT`     |
 | Module variables  | snake_case  | `_id_lock`           |
 
