@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0b3] - 2026-07-22
+## [2.0.0b3] - 2026-07-23
 
 ### Breaking Changes
 
@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([a031371](https://github.com/NytroxDev/Veltix/commit/a031371)).
 - **`pyproject.toml`**: pytest version constraint lowered to `>=8.0`
   ([d4cdb33](https://github.com/NytroxDev/Veltix/commit/d4cdb33)).
+- **`Sender` uses `Sequence`** instead of `list` for `broadcast()` and `get_all_clients`,
+  accepting any iterable ([7198372](https://github.com/NytroxDev/Veltix/commit/7198372)).
 
 ### Fixed
 
@@ -75,6 +77,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([3df28b2](https://github.com/NytroxDev/Veltix/commit/3df28b2)).
 - **Sender broadcast error logging**: improved error logging in broadcast exception handling
   ([40197ab](https://github.com/NytroxDev/Veltix/commit/40197ab)).
+- **`Response.text`** now wraps cached value in `str()` to ensure consistent return type
+  ([12b0e35](https://github.com/NytroxDev/Veltix/commit/12b0e35)).
+- **`Sender.broadcast`** logic restructured to avoid unnecessary callback when client list is
+  provided directly ([daae348](https://github.com/NytroxDev/Veltix/commit/daae348)).
 - **Parser error messages**: standardized punctuation across error messages
   ([e39d97f](https://github.com/NytroxDev/Veltix/commit/e39d97f)).
 
@@ -99,6 +105,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([8645438](https://github.com/NytroxDev/Veltix/commit/8645438)).
 - **Unused imports** cleaned up in `sender.py`
   ([c54c0e6](https://github.com/NytroxDev/Veltix/commit/c54c0e6)).
+- **mypy tests override removed**: `disallow_untyped_defs` now enforced on test files
+  ([57fb4e7](https://github.com/NytroxDev/Veltix/commit/57fb4e7)).
+- **Type ignore comments removed**: unnecessary `# type: ignore[assignment]` in `ReconnectHandler`
+  ([0d95efc](https://github.com/NytroxDev/Veltix/commit/0d95efc)).
+- **Formatting fixes**: docstring typo in `Server.send()`, collapsed multi-line signatures in
+  `RequestHandler` and `BaseSocket`, line wrap in `AsyncSocket`
+  ([37bb385](https://github.com/NytroxDev/Veltix/commit/37bb385)).
 
 ### Tests
 
