@@ -65,9 +65,7 @@ class RequestHandler:
         for rule in ALL_RULES:
             self.rules_manager.add_rule(rule)
 
-    def handle(
-        self, response: Response, client: Optional[ClientInfo] = None
-    ) -> bool:
+    def handle(self, response: Response, client: Optional[ClientInfo] = None) -> bool:
         """Handle an incoming message with full routing logic.
 
         Args:

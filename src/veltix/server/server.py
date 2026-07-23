@@ -180,7 +180,7 @@ class Server:
 
         Args:
             request: Request to send.
-            target: ClientInfo or BaseSocket to send to.
+            client: ClientInfo or BaseSocket to send to.
 
         Returns:
             True if the send succeeded.

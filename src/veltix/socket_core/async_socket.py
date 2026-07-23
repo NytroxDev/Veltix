@@ -141,7 +141,9 @@ class AsyncSocket(BaseSocket):
             target=self._selector_loop, args=(max_client, buffer_size), daemon=True
         )
         self._selector_thread.start()
-        self.bus.debug(f"bound to {host}:{port}, max_client={max_client}, running={self._running_event.is_set()}")
+        self.bus.debug(
+            f"bound to {host}:{port}, max_client={max_client}, running={self._running_event.is_set()}"
+        )
         return self._running_event.is_set()
 
     def _selector_loop(self, max_client: int, buffer_size: int) -> None:

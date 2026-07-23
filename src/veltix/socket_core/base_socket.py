@@ -53,9 +53,7 @@ class BaseSocket(ABC):
         ...
 
     @abstractmethod
-    def bind(
-        self, host: str, port: int, max_client: int, buffer_size: int, timeout: float
-    ) -> bool:
+    def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:
         """Bind the socket to an address and start listening for connections.
 
         Args:
