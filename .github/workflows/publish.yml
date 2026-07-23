@@ -18,6 +18,9 @@ jobs:
         with:
           name: dist
           path: dist/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
 
   publish-testpypi:
     needs: build
