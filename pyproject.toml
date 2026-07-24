@@ -130,6 +130,7 @@ exclude = [
     "build",
     "dist",
     "*.egg-info",
+    "*.md",
 ]
 
 [tool.ruff.lint]
