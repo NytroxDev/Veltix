@@ -28,7 +28,7 @@ jobs:
 
   publish-testpypi:
     needs: build
-    if: contains(github.event.release.tag_name, '-rc')
+    if: contains(github.event.release.tag_name, 'rc')
     runs-on: ubuntu-latest
     environment: testpypi
     permissions:
@@ -44,7 +44,7 @@ jobs:
 
   publish-pypi:
     needs: build
-    if: "!contains(github.event.release.tag_name, '-rc')"
+    if: "!contains(github.event.release.tag_name, 'rc')"
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
