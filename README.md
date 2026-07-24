@@ -13,9 +13,8 @@
 
 [v2.0.0 release notes](v2.0.0.md)
 
-Sync, thread-friendly, zero dependencies : TCP done right.
-Veltix handles framing, threading, handshake, routing, and reconnection
-so you can focus on your application logic.
+Sync, thread-friendly, zero dependencies : TCP done right. Veltix handles framing, threading, handshake, routing, and
+reconnection so you can focus on your application logic.
 
 **Mature & tested** - 564 tests · CI on Python 3.8-3.14 · 30+ releases
 
@@ -30,7 +29,6 @@ so you can focus on your application logic.
 - [Key Features](#key-features)
 - [Backend Comparison: Threading vs Async](#backend-comparison-threading-vs-async)
 - [Performance](#performance)
-- [API Overview](#api-overview)
 - [When NOT to use Veltix](#when-not-to-use-veltix)
 - [Comparison](#comparison)
 - [Built with Veltix](#built-with-veltix)
@@ -193,79 +191,36 @@ python client.py  # In a separate terminal
 
 ## Key Features
 
-### Content Decoding
-
-`Response` provides lazy, cached decoding helpers — no more `.content.decode()` everywhere:
-
 ```python
-@server.route(MY_TYPE)
-def handler(client: ClientInfo, response: Response) -> None:
-    text = response.text          # str, cached after first call
-    data = response.json          # Any (parsed JSON), cached
-    is_json = response.is_json    # bool — safe check without raising
-    is_text = response.is_text    # bool — safe check without raising
-```
+# Content decoding (lazy, cached)
+response.text  # UTF-8 string
+response.json  # parsed JSON
+response.is_json  # bool, no exception
 
-### Text & JSON Payloads
+# Text & JSON payloads (no manual encoding)
+Request(MY_TYPE, text="hello")
+Request(MY_TYPE, json={"key": "value"})
 
-Build requests without manual encoding:
-
-```python
-Request(MY_TYPE, text="hello")           # encodes to UTF-8 automatically
-Request(MY_TYPE, json={"key": "value"})  # serializes to JSON automatically
-Request(MY_TYPE, content=b"\x00\x01")    # raw bytes when you need them
-```
-
-Exactly one payload argument is required. Passing zero or more than one raises `RequestError`.
-
-### Request / Response Correlation
-
-`send_and_wait()` sends a request and blocks until the matching response arrives:
-
-```python
-# Client side
+# Request/Response correlation
 response = client.send_and_wait(Request(MY_TYPE, b"data"), timeout=3.0)
-if response:
-    print(response.text)
-```
 
-```python
-# Server side
-response = server.send_and_wait(Request(MY_TYPE, b"data"), client, timeout=3.0)
-```
+# Server convenience
+server.send(request, client)
+server.broadcast(request)
+server.broadcast(request, except_clients=[client])
+server.wait_until_closed()
+server.restart()
 
-### Server Convenience Methods
+# Client convenience
+client.send(request)
+client.send_and_wait(request, timeout=5.0)
+client.ping_server()
+client.wait_until_closed()
+client.stop_retry()
 
-```python
-server.send(request, client)                          # send to one client
-server.broadcast(request)                             # send to everyone
-server.broadcast(request, except_clients=[client])    # send to everyone except one
-server.wait_until_closed()                            # block until close_all()
-server.restart()                                      # stop + start
-```
-
-### Client Convenience Methods
-
-```python
-client.send(request)             # send to server
-client.send_and_wait(request)    # send and wait for response
-client.ping_server()             # measure latency (ms)
-client.wait_until_closed()       # block until disconnect
-client.stop_retry()              # cancel pending reconnection
-```
-
-### Client Tags
-
-Attach metadata to clients, broadcast to filtered groups:
-
-```python
-@server.route(JOIN)
-def on_join(client: ClientInfo, response: Response) -> None:
-    client.add_tag("channel", response.text)
-
-# Later — broadcast only to clients in the same channel
+# Client tags
+client.add_tag("channel", "general")
 targets = server.get_clients_by_tag("channel", "general")
-server.broadcast(Request(MSG, data), except_clients=None)  # manual filter via targets
 ```
 
 ---
@@ -313,96 +268,6 @@ Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE
 
 ---
 
-## API Overview
-
-### Creating a Server
-
-```python
-from veltix import Server, ServerConfig, SocketCore, ClientInfo, Response
-
-server = Server(ServerConfig(
-    host="0.0.0.0",
-    port=8080,
-    buffer_size=1024,          # BufferSize.SMALL default
-    max_connection=-1,         # -1 = unlimited
-    max_workers=4,
-    socket_core=SocketCore.ASYNC,
-    id_window=30000,           # unique IDs per direction
-))
-
-server.start()
-server.wait_until_closed()
-server.close_all()
-```
-
-### Creating a Client
-
-```python
-from veltix import Client, ClientConfig, Response
-
-client = Client(ClientConfig(
-    server_addr="127.0.0.1",
-    port=8080,
-    retry=3,           # 0 = no reconnect
-    retry_delay=1.0,
-    socket_core=SocketCore.ASYNC,
-))
-
-client.connect()              # blocks until handshake done
-client.disconnect()
-client.wait_until_closed()
-```
-
-### Route Decorators
-
-```python
-@server.route(MY_TYPE)    # func(client: ClientInfo, response: Response) -> None
-def on_server_msg(client, response): ...
-
-@client.route(MY_TYPE)    # func(response: Response) -> None
-def on_client_msg(response): ...
-```
-
-### Callbacks
-
-```python
-server.on_recv(callback)       # func(client: ClientInfo, response: Response)
-server.on_connect(callback)    # func(client: ClientInfo)
-server.on_disconnect(callback) # func(client: ClientInfo)
-
-client.on_recv(callback)       # func(response: Response)
-client.on_connect(callback)    # func()
-client.on_disconnect(callback) # func(state: DisconnectState)
-```
-
-### Ping
-
-```python
-latency_ms = client.ping_server(timeout=3.0)          # Optional[float]
-latency_ms = server.ping_client(client, timeout=3.0)  # Optional[float]
-```
-
-### Event Bus (v1.9.0+)
-
-```python
-from veltix.internal.events import ServerEvent, ClientEvent
-
-server.bus.subscribe(ServerEvent.ON_CONNECT, callback)
-server.bus.subscribe(ClientEvent.ON_DISCONNECT, callback)
-```
-
-### Logger
-
-```python
-from veltix import Logger, LoggerConfig, LogLevel
-
-logger = Logger.get_instance(LoggerConfig(level=LogLevel.DEBUG))
-logger.info("Hello")
-logger.set_level(LogLevel.WARNING)
-```
-
----
-
 ## When NOT to use Veltix
 
 Veltix is great for TCP, but not every problem is a TCP problem.
@@ -421,21 +286,21 @@ Everything else? Veltix has you covered.
 
 | Feature                | Veltix | `socket` | `asyncio` | Twisted |
 |------------------------|:------:|:--------:|:---------:|:-------:|
-| High-level API         |   ✓    |    ✗     |     ~     |    ✗    |
-| Zero dependencies      |   ✓    |    ✓     |     ✓     |    ✗    |
-| No async required      |   ✓    |    ✓     |     ✗     |    ✗    |
-| Message framing        |   ✓    |    ✗     |     ✗     |    ~    |
-| Message integrity      |   ✓    |    ✗     |     ✗     |    ✗    |
-| Automatic handshake    |   ✓    |    ✗     |     ✗     |    ✗    |
-| Request/Response       |   ✓    |    ✗     |     ~     |    ✓    |
-| Message routing        |   ✓    |    ✗     |     ✗     |    ~    |
-| Auto-reconnect         |   ✓    |    ✗     |     ~     |    ✓    |
-| Non-blocking callbacks |   ✓    |    ✗     |     ✓     |    ✓    |
-| Built-in ping/pong     |   ✓    |    ✗     |     ✗     |    ✗    |
-| Client tags            |   ✓    |    ✗     |     ✗     |    ✗    |
-| Swappable backends     |   ✓    |    ✗     |     ✗     |    ✗    |
-| Integrated logger      |   ✓    |    ✗     |     ~     |    ✓    |
-| Content decoding       |   ✓    |    ✗     |     ✗     |    ✗    |
+| High-level API         |   ✓   |    ✗    |     ~     |   ✗    |
+| Zero dependencies      |   ✓   |    ✓    |    ✓     |   ✗    |
+| No async required      |   ✓   |    ✓    |    ✗     |   ✗    |
+| Message framing        |   ✓   |    ✗    |    ✗     |    ~    |
+| Message integrity      |   ✓   |    ✗    |    ✗     |   ✗    |
+| Automatic handshake    |   ✓   |    ✗    |    ✗     |   ✗    |
+| Request/Response       |   ✓   |    ✗    |     ~     |   ✓    |
+| Message routing        |   ✓   |    ✗    |    ✗     |    ~    |
+| Auto-reconnect         |   ✓   |    ✗    |     ~     |   ✓    |
+| Non-blocking callbacks |   ✓   |    ✗    |    ✓     |   ✓    |
+| Built-in ping/pong     |   ✓   |    ✗    |    ✗     |   ✗    |
+| Client tags            |   ✓   |    ✗    |    ✗     |   ✗    |
+| Swappable backends     |   ✓   |    ✗    |    ✗     |   ✗    |
+| Integrated logger      |   ✓   |    ✗    |     ~     |   ✓    |
+| Content decoding       |   ✓   |    ✗    |    ✗     |   ✗    |
 
 > ✓ Built-in &nbsp;&nbsp; ~ Possible but requires manual setup &nbsp;&nbsp; ✗ Not provided (you implement it yourself)
 
@@ -445,9 +310,9 @@ Everything else? Veltix has you covered.
 
 Projects using Veltix in production:
 
-- **[Nexo](https://github.com/NytroxDev/Nexo)** : Fast LAN file transfer tool CLI + GUI.
-  Uses Veltix's TCP server, client tags, route decorators, and `send_and_wait()` for
-  reliable chunked file transfers with concurrent connection handling.
+- **[Nexo](https://github.com/NytroxDev/Nexo)** : Fast LAN file transfer tool CLI + GUI. Uses Veltix's TCP server,
+  client tags, route decorators, and `send_and_wait()` for reliable chunked file transfers with concurrent connection
+  handling.
 
 > Built something with Veltix ? [Open a PR](https://github.com/NytroxDev/Veltix/pulls)
 > or [start a discussion](https://github.com/NytroxDev/Veltix/discussions) to add your project.
