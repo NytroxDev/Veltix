@@ -806,7 +806,6 @@ class LoggerConfig:
     enabled: bool = True
     use_colors: bool = True
     show_timestamp: bool = True
-    show_caller: bool = True
     show_level: bool = True
     file_path: Optional[Path] = None
     file_rotation_size: int = 10 * 1024 * 1024

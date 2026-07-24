@@ -233,7 +233,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.0b1] - 2026-07-13
 
-> **Migration guide:** [docs/guides/migration.md](docs/guides/migration.md#v190--v200)
+> **Migration guide:** [v2.0.0 release notes](v2.0.0.md)
 
 ### Added
 
