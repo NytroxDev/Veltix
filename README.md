@@ -11,6 +11,8 @@
 [![Security Policy](https://img.shields.io/badge/security-policy-blue)](SECURITY.md)
 [![AI Guide](https://img.shields.io/badge/for_AI-AGENTS.md-purple)](AGENTS.md)
 
+[v2.0.0 release notes](v2.0.0.md)
+
 Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.
