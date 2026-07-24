@@ -322,6 +322,7 @@ Projects using Veltix in production:
 ## Documentation
 
 - [Full documentation](docs/index.md)
+- [FAQ](FAQ.md)
 - [Advanced features](docs/guides/advanced.md)
 - [Migration guide](docs/guides/migration.md)
 - [Changelog](CHANGELOG.md)
