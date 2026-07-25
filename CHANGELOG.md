@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-25
+
+### Added
+
+- **`LoggerConfig.show_caller`**: new config option (default `True`) that displays the
+  caller file and line number in log output (e.g. `server.py:42`). Uses stdlib
+  `stacklevel` instead of `inspect.currentframe()`, so there is no performance
+  regression
+  ([d245595](https://github.com/NytroxDev/Veltix/commit/d245595)).
+
 ## [2.0.0rc1] - 2026-07-23
 
 ### Breaking Changes
