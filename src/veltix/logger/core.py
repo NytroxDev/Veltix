@@ -77,6 +77,7 @@ class Logger:
                 use_colors=config.use_colors,
                 show_timestamp=config.show_timestamp,
                 show_level=config.show_level,
+                show_caller=config.show_caller,
             )
         )
         self._internal.addHandler(self._console_handler)
@@ -89,7 +90,9 @@ class Logger:
                 backupCount=config.file_backup_count,
                 encoding="utf-8",
             )
-            self._file_handler.setFormatter(VeltixFormatter(use_colors=False))
+            self._file_handler.setFormatter(
+                VeltixFormatter(use_colors=False, show_caller=config.show_caller)
+            )
             self._internal.addHandler(self._file_handler)
 
     @classmethod
@@ -174,12 +177,12 @@ class Logger:
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
-    def _log(self, level: LogLevel, message: str) -> None:
+    def _log(self, level: LogLevel, message: str, stacklevel: int = 3) -> None:
         if not self.config.enabled or level < self.config.level:
             return
 
         self._stats[level] += 1
-        self._internal.log(int(level), message)
+        self._internal.log(int(level), message, stacklevel=stacklevel)
 
     def set_level(self, level: LogLevel) -> None:
         """Change the minimum log level at runtime.

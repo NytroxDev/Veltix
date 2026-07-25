@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .._vendor.avyra import EventBus
 from ..logger.core import Logger
+from ..logger.levels import LogLevel
 from .events import (
     ClientEvent,
     ErrorEvent,
@@ -43,13 +44,13 @@ class VeltixBus(EventBus):
 
     def _attach_logger(self) -> None:
         log = Logger.get_instance()
-        self.subscribe(LogEvent.TRACE, lambda e, m: log.trace(m))
-        self.subscribe(LogEvent.DEBUG, lambda e, m: log.debug(m))
-        self.subscribe(LogEvent.INFO, lambda e, m: log.info(m))
-        self.subscribe(LogEvent.SUCCESS, lambda e, m: log.success(m))
-        self.subscribe(LogEvent.WARNING, lambda e, m: log.warning(m))
-        self.subscribe(LogEvent.ERROR, lambda e, m: log.error(m))
-        self.subscribe(LogEvent.CRITICAL, lambda e, m: log.critical(m))
+        self.subscribe(LogEvent.TRACE, lambda e, m: log._log(LogLevel.TRACE, m, stacklevel=5))
+        self.subscribe(LogEvent.DEBUG, lambda e, m: log._log(LogLevel.DEBUG, m, stacklevel=5))
+        self.subscribe(LogEvent.INFO, lambda e, m: log._log(LogLevel.INFO, m, stacklevel=5))
+        self.subscribe(LogEvent.SUCCESS, lambda e, m: log._log(LogLevel.SUCCESS, m, stacklevel=5))
+        self.subscribe(LogEvent.WARNING, lambda e, m: log._log(LogLevel.WARNING, m, stacklevel=5))
+        self.subscribe(LogEvent.ERROR, lambda e, m: log._log(LogLevel.ERROR, m, stacklevel=5))
+        self.subscribe(LogEvent.CRITICAL, lambda e, m: log._log(LogLevel.CRITICAL, m, stacklevel=5))
 
     # ── Sugar emit ─────────────────────────────────────────────────────────────
 

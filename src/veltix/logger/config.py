@@ -21,6 +21,7 @@ class LoggerConfig:
         use_colors: Enable colored output for console
         show_timestamp: Show timestamp in logs
         show_level: Show log level name
+        show_caller: Show caller file and line number (e.g. server.py:42)
 
         # File output
         file_path: Path to log file
@@ -37,6 +38,7 @@ class LoggerConfig:
     use_colors: bool = True
     show_timestamp: bool = True
     show_level: bool = True
+    show_caller: bool = True
 
     # File logging
     file_path: Optional[Union[str, Path]] = None

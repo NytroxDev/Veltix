@@ -33,12 +33,17 @@ class VeltixFormatter(logging.Formatter):
     RESET = "\033[0m"
 
     def __init__(
-        self, use_colors: bool = True, show_timestamp: bool = True, show_level: bool = True
+        self,
+        use_colors: bool = True,
+        show_timestamp: bool = True,
+        show_level: bool = True,
+        show_caller: bool = False,
     ) -> None:
         super().__init__()
         self.use_colors = use_colors
         self.show_timestamp = show_timestamp
         self.show_level = show_level
+        self.show_caller = show_caller
 
     def format(self, record: logging.LogRecord) -> str:
         parts = []
@@ -50,6 +55,9 @@ class VeltixFormatter(logging.Formatter):
         if self.show_level:
             level = self._get_level(record)
             parts.append(self.LEVEL_NAMES.get(level, record.levelname))
+
+        if self.show_caller:
+            parts.append(f"{record.filename}:{record.lineno}")
 
         parts.append(record.getMessage())
 
