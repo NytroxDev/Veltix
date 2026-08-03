@@ -9,6 +9,7 @@ import pytest
 from veltix import Client, ClientConfig, MessageType, Request, Server, ServerConfig
 from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.internal.bus import VeltixBus
+from veltix.internal.events import ServerEvent
 from veltix.internal.mode import Mode
 
 
@@ -43,6 +44,21 @@ class TestClientServer:
         client.disconnect()
         server.close_all()
 
+    def test_close_all_emits_on_disconnect(self):
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
+        server.start()
+
+        disconnected = []
+        server.bus.subscribe(ServerEvent.ON_DISCONNECT, lambda e, info: disconnected.append(info))
+
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
+        assert client.connect()
+
+        server.close_all()
+
+        assert len(disconnected) == 1
+        assert len(server.clients) == 0
     def test_failed_handshake_does_not_leave_server_client(self):
         port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))

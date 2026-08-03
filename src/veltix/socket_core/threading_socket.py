@@ -301,7 +301,19 @@ class ThreadingSocket(BaseSocket):
             self._shutdown_socket()
             with contextlib.suppress(OSError):
                 self._sock.close()
-            self.client_manager.iter_on_clients(self._close_server_client)
+
+            with self._threads_lock:
+                threads = list(self.threads.values())
+
+            # Close every client socket first so the receive threads exit in
+            # parallel and clean up themselves.
+            for entry in self.client_manager.get_all_clients():
+                entry.info.conn.close()
+
+            for thread in threads:
+                if thread != threading.current_thread():
+                    thread.join(timeout=0.2)
+
             if self.start_th and self.start_th != threading.current_thread():
                 self.start_th.join(timeout=0.2)
             if self.thread_handler and self.thread_handler != threading.current_thread():
