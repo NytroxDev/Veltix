@@ -8,7 +8,8 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from ..internal.events import ClientEvent, ErrorEvent, MessageEvent, ServerEvent
+from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
+from ..internal.network import dispatch_messages
 from ..internal.network import recv as _network_recv
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -226,19 +227,12 @@ class AsyncSocket(BaseSocket):
         data = result.data or b""
         self.bus.debug(f"client {client_id} recv {len(data)} bytes")
         entry.buffer.add_data(data)
-        messages = entry.buffer.extract_messages()
-        if messages:
-            self.bus.debug(f"client {client_id} extracted {len(messages)} messages")
-            for message in messages:
-                self.bus.emit(
-                    MessageEvent.RECEIVED,
-                    {
-                        "type": message.type,
-                        "length": len(message.content),
-                        "client": entry.info.addr,
-                    },
-                )
-                self.request_handler.handle(message, entry.info)
+        dispatch_messages(
+            entry.buffer,
+            self.bus,
+            lambda message: self.request_handler.handle(message, entry.info),
+            client_addr=entry.info.addr,
+        )
 
     def _handle_self_read(self, buffer_size: int) -> None:
         result = _network_recv(self, buffer_size)
@@ -255,19 +249,11 @@ class AsyncSocket(BaseSocket):
         data = result.data or b""
         self.bus.debug(f"self_read: recv {len(data)} bytes")
         self._client_buffer.add_data(data)
-        messages = self._client_buffer.extract_messages()
-        if messages:
-            self.bus.debug(f"self_read: extracted {len(messages)} messages")
-            for message in messages:
-                self.bus.emit(
-                    MessageEvent.RECEIVED,
-                    {
-                        "type": message.type,
-                        "length": len(message.content),
-                        "from": "server",
-                    },
-                )
-                self.request_handler.handle(message)
+        dispatch_messages(
+            self._client_buffer,
+            self.bus,
+            lambda response: self.request_handler.handle(response),
+        )
 
     def close_client(self, client: Union[ClientEntry, int]) -> bool:
         if isinstance(client, ClientEntry):

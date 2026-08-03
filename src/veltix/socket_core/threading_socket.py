@@ -7,8 +7,8 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from ..internal.events import ClientEvent, ErrorEvent, MessageEvent, ServerEvent
-from ..internal.network import RecvResult, recv
+from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
+from ..internal.network import RecvResult, dispatch_messages, recv
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
 from .base_socket import BaseSocket
@@ -215,33 +215,13 @@ class ThreadingSocket(BaseSocket):
             self._close_server_client(entry)
             return False
 
-        try:
-            entry.buffer.add_data(result.data or b"")
-            messages = entry.buffer.extract_messages()
-
-            for response in messages:
-                self.bus.debug(
-                    f"Message from {entry.info.addr}: {response.type.name} (code={response.type.code})"
-                )
-                self.bus.emit(
-                    MessageEvent.RECEIVED,
-                    {
-                        "type": response.type,
-                        "length": len(response.content),
-                        "client": entry.info.addr,
-                    },
-                )
-
-                handler_result = self.request_handler.handle(response, entry.info)
-                if not handler_result:
-                    self.bus.error(f"Handler error for {entry.info.addr}")
-
-        except Exception as e:
-            self.bus.emit(ErrorEvent.HANDLER, {"error": str(e), "client": entry.info.addr})
-            self.bus.error(
-                f"Error processing message from {entry.info.addr}: {type(e).__name__}: {e}"
-            )
-
+        entry.buffer.add_data(result.data or b"")
+        dispatch_messages(
+            entry.buffer,
+            self.bus,
+            lambda response: self.request_handler.handle(response, entry.info),
+            client_addr=entry.info.addr,
+        )
         return True
 
     def _close_server_client(self, entry: ClientEntry) -> None:
@@ -349,29 +329,12 @@ class ThreadingSocket(BaseSocket):
                 self.bus.emit(ClientEvent.SOCKET_DISCONNECTED)
                 break
 
-            try:
-                message_buffer.add_data(result.data or b"")
-
-                for response in message_buffer.extract_messages():
-                    self.bus.debug(
-                        f"Message from server: {response.type.name} (code={response.type.code})"
-                    )
-                    self.bus.emit(
-                        MessageEvent.RECEIVED,
-                        {
-                            "type": response.type,
-                            "length": len(response.content),
-                            "from": "server",
-                        },
-                    )
-
-                    handler_result = self.request_handler.handle(response)
-                    if not handler_result:
-                        self.bus.error("Handler error")
-
-            except Exception as e:
-                self.bus.emit(ErrorEvent.HANDLER, {"error": str(e)})
-                self.bus.error(f"Error processing server message: {type(e).__name__}: {e}")
+            message_buffer.add_data(result.data or b"")
+            dispatch_messages(
+                message_buffer,
+                self.bus,
+                lambda response: self.request_handler.handle(response),
+            )
 
     def disconnect(self, timeout: float = 5.0) -> bool:
         try:
