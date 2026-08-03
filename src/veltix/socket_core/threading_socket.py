@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import socket
 import threading
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import RecvResult, dispatch_messages, recv
@@ -24,7 +24,12 @@ class ThreadingSocket(BaseSocket):
     """Threading-based socket implementation for Veltix (one thread per client)."""
 
     def __init__(
-        self, request_handler: RequestHandler, max_message_size: int, bus: VeltixBus
+        self,
+        request_handler: RequestHandler,
+        max_message_size: int,
+        bus: VeltixBus,
+        sock: Optional[socket.socket] = None,
+        handshake_timeout: float = 5.0,
     ) -> None:
         self.bus = bus
         self.n_th = 0
@@ -41,38 +46,13 @@ class ThreadingSocket(BaseSocket):
 
         self.max_message_size = max_message_size
         self.request_handler = request_handler
-        self.handshake_timeout: float = 5.0
+        self.handshake_timeout = handshake_timeout
         self.client_allocator: Optional[ClientAllocator] = None
 
-        self._sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock: socket.socket = (
+            sock if sock is not None else socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        )
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-
-    @classmethod
-    def _create_client_instance(
-        cls,
-        sock: socket.socket,
-        bus: VeltixBus,
-        request_handler: RequestHandler,
-        max_message_size: int,
-        handshake_timeout: float = 5.0,
-    ) -> ThreadingSocket:
-        """Create a properly initialized client socket instance."""
-        conn = cls.__new__(cls)
-        conn.bus = bus
-        conn._sock = sock
-        conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        conn.request_handler = request_handler
-        conn.max_message_size = max_message_size
-        conn.handshake_timeout = handshake_timeout
-        conn._running_event = threading.Event()
-        conn.client_manager = ClientsManager(max_message_size, bus=bus)
-        conn.start_th = None
-        conn.thread_handler = None
-        conn.threads = {}
-        conn._threads_lock = threading.Lock()
-        conn.n_th = 0
-        conn._n_th_lock = threading.Lock()
-        return conn
 
     # ── Server ────────────────────────────────────────────────────────────────
 
@@ -124,11 +104,11 @@ class ThreadingSocket(BaseSocket):
                     with contextlib.suppress(OSError):
                         conn_.close()
                     continue
-                conn = ThreadingSocket._create_client_instance(
-                    conn_,
-                    self.bus,
+                conn = ThreadingSocket(
                     self.request_handler,
                     self.max_message_size,
+                    self.bus,
+                    sock=conn_,
                     handshake_timeout=self.handshake_timeout,
                 )
 
@@ -182,7 +162,7 @@ class ThreadingSocket(BaseSocket):
         entry.info.conn.settimeout(timeout)
 
         ok = self.request_handler.handshake_handler.do_server_handshake(
-            cast("ThreadingSocket", entry.info.conn)._sock,
+            entry.info.conn._sock,
             timeout=entry.info.conn.handshake_timeout,
         )
         if not ok:

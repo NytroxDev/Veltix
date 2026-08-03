@@ -93,6 +93,14 @@ class BaseSocket(ABC):
         with contextlib.suppress(OSError):
             self._sock.shutdown(socket.SHUT_RDWR)
 
+    def fileno(self) -> int:
+        """Return the underlying socket file descriptor.
+
+        Returns:
+            The file descriptor of the underlying socket.
+        """
+        return self._sock.fileno()
+
     @abstractmethod
     def close(self) -> bool:
         """Close the socket and release associated resources.

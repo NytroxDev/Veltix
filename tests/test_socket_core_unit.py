@@ -124,6 +124,19 @@ class TestThreadingSocketUnit:
         ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
 
+    def test_init_with_sock_uses_provided_socket(self, sock):
+        from veltix.socket_core.threading_socket import ThreadingSocket
+
+        raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            client = ThreadingSocket(
+                sock.request_handler, 1024, sock.bus, sock=raw_sock, handshake_timeout=3.0
+            )
+            assert client._sock is raw_sock
+            assert client.handshake_timeout == 3.0
+        finally:
+            raw_sock.close()
+
 
 class TestAsyncSocketUnit:
     @pytest.fixture
@@ -215,18 +228,16 @@ class TestAsyncSocketUnit:
         ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
 
-    def test_create_client_instance_no_selector_or_buffer(self, sock):
+    def test_init_with_sock_no_selector_or_buffer(self, sock):
         from veltix.socket_core.async_socket import AsyncSocket
 
         raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            with patch(
-                "veltix.socket_core.async_socket.selectors.DefaultSelector",
-                side_effect=AssertionError("DefaultSelector created for server client"),
-            ):
-                client = AsyncSocket._create_client_instance(
-                    raw_sock, sock.bus, sock.request_handler, 1024
-                )
+            client = AsyncSocket(
+                sock.request_handler, 1024, sock.bus, sock=raw_sock, handshake_timeout=3.0
+            )
+            assert client._sock is raw_sock
+            assert client.handshake_timeout == 3.0
             assert not hasattr(client, "_selector")
             assert not hasattr(client, "_client_buffer")
         finally:

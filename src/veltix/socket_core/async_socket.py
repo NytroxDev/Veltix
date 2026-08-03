@@ -6,7 +6,7 @@ import contextlib
 import selectors
 import socket
 import threading
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import dispatch_messages
@@ -26,7 +26,13 @@ class AsyncSocket(BaseSocket):
     """Selector-based socket implementation for Veltix."""
 
     def __init__(
-        self, request_handler: RequestHandler, max_message_size: int, bus: VeltixBus
+        self,
+        request_handler: RequestHandler,
+        max_message_size: int,
+        bus: VeltixBus,
+        sock: Optional[socket.socket] = None,
+        handshake_timeout: float = 5.0,
+        nonblocking: bool = True,
     ) -> None:
         self.bus = bus
         self.client_manager = ClientsManager(max_message_size, bus=bus)
@@ -39,52 +45,27 @@ class AsyncSocket(BaseSocket):
 
         self.max_message_size = max_message_size
         self.request_handler = request_handler
-        self.handshake_timeout: float = 5.0
+        self.handshake_timeout = handshake_timeout
         self.client_allocator: Optional[ClientAllocator] = None
 
-        self._sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        if sock is None:
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-        self._selector = selectors.DefaultSelector()
+            self._selector = selectors.DefaultSelector()
 
-        self._client_buffer = MessageBuffer(max_message_size)
+            self._client_buffer = MessageBuffer(max_message_size)
 
-        self.bus.debug("AsyncSocket initialized")
+            self.bus.debug("AsyncSocket initialized")
+        else:
+            self._sock = sock
+            self._sock.setblocking(not nonblocking)
+            self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            with contextlib.suppress(AttributeError, OSError):
+                self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
-    @classmethod
-    def _create_client_instance(
-        cls,
-        sock: socket.socket,
-        bus: VeltixBus,
-        request_handler: RequestHandler,
-        max_message_size: int,
-        handshake_timeout: float = 5.0,
-        nonblocking: bool = True,
-    ) -> AsyncSocket:
-        """Create a properly initialized client socket instance."""
-        conn = cls.__new__(cls)
-        conn.bus = bus
-        conn.client_manager = ClientsManager(max_message_size, bus=bus)
-
-        conn.id_count = 0
-
-        conn._running_event = threading.Event()
-
-        conn._selector_thread = None
-
-        conn.max_message_size = max_message_size
-        conn.request_handler = request_handler
-        conn.handshake_timeout = handshake_timeout
-
-        conn._sock = sock
-        conn._sock.setblocking(not nonblocking)
-        conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        with contextlib.suppress(AttributeError, OSError):
-            conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-
-        conn.bus.debug(f"created client socket instance (fd={conn._sock.fileno()})")
-        return conn
+            self.bus.debug(f"created client socket instance (fd={self._sock.fileno()})")
 
     # ── Server ────────────────────────────────────────────────────────────────
 
@@ -119,9 +100,6 @@ class AsyncSocket(BaseSocket):
                         break
                 else:
                     self._handle_server_client(key.data, buffer_size)
-
-    def fileno(self) -> int:
-        return self._sock.fileno()
 
     def _accept_client(self, max_client: int) -> None:
         if not self._running_event.is_set():
@@ -161,11 +139,11 @@ class AsyncSocket(BaseSocket):
 
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-        client_sock = AsyncSocket._create_client_instance(
-            conn,
-            self.bus,
+        client_sock = AsyncSocket(
             self.request_handler,
             self.max_message_size,
+            self.bus,
+            sock=conn,
             handshake_timeout=self.handshake_timeout,
             nonblocking=False,
         )
@@ -268,7 +246,7 @@ class AsyncSocket(BaseSocket):
 
     def _close_server_client(self, entry: ClientEntry) -> None:
         self.bus.debug(f"closing server client {entry.id} ({entry.info.addr})")
-        client_sock = cast("AsyncSocket", entry.info.conn)
+        client_sock = entry.info.conn
 
         with contextlib.suppress(KeyError):
             self._selector.unregister(client_sock)
