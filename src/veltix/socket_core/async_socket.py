@@ -382,7 +382,8 @@ class AsyncSocket(BaseSocket):
         try:
             self.bus.debug("disconnecting client socket")
             self._running_event.clear()
-            self._selector.unregister(self._sock)
+            with contextlib.suppress(KeyError):
+                self._selector.unregister(self._sock)
             self._shutdown_socket()
             self._sock.close()
             if self._selector_thread and threading.current_thread() != self._selector_thread:

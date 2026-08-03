@@ -171,7 +171,7 @@ class TestAsyncSocketUnit:
 
     def test_disconnect_not_running(self, sock):
         result = sock.disconnect()
-        assert result is False
+        assert result is True
 
     def test_close_not_running(self, sock):
         result = sock.close()

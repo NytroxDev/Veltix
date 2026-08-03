@@ -115,7 +115,8 @@ class BaseSocket(ABC):
             timeout: Timeout in seconds for the disconnection.
 
         Returns:
-            True if disconnection succeeded, False otherwise.
+            True if disconnection succeeded, False otherwise. Returns True
+            when the socket was never connected (no-op).
         """
         ...
 
