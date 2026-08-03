@@ -47,3 +47,6 @@ bench.json
 
 # Docs build
 site/
+
+# Dev notes (local only)
+dev/
