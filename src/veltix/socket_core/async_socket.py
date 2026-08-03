@@ -82,9 +82,6 @@ class AsyncSocket(BaseSocket):
             conn._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         conn._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-        conn._selector = selectors.DefaultSelector()
-
-        conn._client_buffer = MessageBuffer(max_message_size)
         conn.bus.debug(f"created client socket instance (fd={conn._sock.fileno()})")
         return conn
 

@@ -184,3 +184,20 @@ class TestAsyncSocketUnit:
             return_value=(False, None),
         ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
+
+    def test_create_client_instance_no_selector_or_buffer(self, sock):
+        from veltix.socket_core.async_socket import AsyncSocket
+
+        raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            with patch(
+                "veltix.socket_core.async_socket.selectors.DefaultSelector",
+                side_effect=AssertionError("DefaultSelector created for server client"),
+            ):
+                client = AsyncSocket._create_client_instance(
+                    raw_sock, sock.bus, sock.request_handler, 1024
+                )
+            assert not hasattr(client, "_selector")
+            assert not hasattr(client, "_client_buffer")
+        finally:
+            raw_sock.close()
