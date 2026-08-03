@@ -5,7 +5,6 @@ from __future__ import annotations
 import contextlib
 import socket
 import threading
-import time
 from typing import TYPE_CHECKING, Optional, Union, cast
 
 from ..internal.events import ClientEvent, ErrorEvent, MessageEvent, ServerEvent
@@ -127,12 +126,15 @@ class ThreadingSocket(BaseSocket):
 
         while self._running_event.is_set():
             try:
-                if 0 < max_client <= self.client_manager.count():
+                conn_, addr = self._sock.accept()
+
+                if max_client >= 0 and self.client_manager.count() >= max_client:
                     self.bus.emit(
                         ErrorEvent.CONNECTION_REFUSED,
                         {
                             "max_client": max_client,
                             "current": self.client_manager.count(),
+                            "addr": addr,
                         },
                     )
                     self.bus.emit(
@@ -141,12 +143,12 @@ class ThreadingSocket(BaseSocket):
                             "max_client": max_client,
                             "current": self.client_manager.count(),
                             "reason": "max_connections",
+                            "addr": addr,
                         },
                     )
-                    time.sleep(0.1)
+                    with contextlib.suppress(OSError):
+                        conn_.close()
                     continue
-
-                conn_, addr = self._sock.accept()
                 conn = ThreadingSocket._create_client_instance(
                     conn_,
                     self.bus,

@@ -161,23 +161,6 @@ class AsyncSocket(BaseSocket):
         return self._sock.fileno()
 
     def _accept_client(self, max_client: int) -> None:
-        if max_client != -1 and self.client_manager.count() >= max_client:
-            self.bus.emit(
-                ErrorEvent.CONNECTION_REFUSED,
-                {
-                    "max_client": max_client,
-                    "current": self.client_manager.count(),
-                },
-            )
-            self.bus.emit(
-                ServerEvent.CLIENT_REJECTED,
-                {
-                    "max_client": max_client,
-                    "current": self.client_manager.count(),
-                    "reason": "max_connections",
-                },
-            )
-            return
         if not self._running_event.is_set():
             return
         try:
@@ -188,6 +171,29 @@ class AsyncSocket(BaseSocket):
             self.bus.emit(ErrorEvent.ACCEPT, {"error": str(e)})
             self.bus.error(f"accept failed: {e}")
             return
+
+        if max_client >= 0 and self.client_manager.count() >= max_client:
+            self.bus.emit(
+                ErrorEvent.CONNECTION_REFUSED,
+                {
+                    "max_client": max_client,
+                    "current": self.client_manager.count(),
+                    "addr": addr,
+                },
+            )
+            self.bus.emit(
+                ServerEvent.CLIENT_REJECTED,
+                {
+                    "max_client": max_client,
+                    "current": self.client_manager.count(),
+                    "reason": "max_connections",
+                    "addr": addr,
+                },
+            )
+            with contextlib.suppress(OSError):
+                conn.close()
+            return
+
         self.bus.debug(f"accepted client from {addr}")
 
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)

@@ -89,6 +89,25 @@ class TestThreadingSocketUnit:
             sock._accept_loop("0.0.0.0", 8080, -1, 1024, 0.5)
         assert not sock._running_event.is_set()
 
+    def test_accept_loop_rejects_and_closes_when_full(self, sock):
+        from veltix.internal.events import ServerEvent
+
+        conn_mock = MagicMock()
+        sock._running_event.set()
+        sock.client_manager.add_client(MagicMock())
+        with patch.object(
+            socket.socket,
+            "accept",
+            side_effect=[(conn_mock, ("1.2.3.4", 1234)), OSError("stop")],
+        ):
+            received = []
+            sock.bus.subscribe(ServerEvent.CLIENT_REJECTED, lambda e, p: received.append(p))
+            sock._accept_loop("0.0.0.0", 8080, 1, 1024, 0.5)
+
+        conn_mock.close.assert_called_once()
+        assert len(received) == 1
+        assert not sock._running_event.is_set()
+
     def test_connect_handshake_failure(self, sock):
         with patch.object(socket.socket, "connect"), patch.object(
             sock.request_handler.handshake_handler,
@@ -137,9 +156,22 @@ class TestAsyncSocketUnit:
         ), patch.object(socket.socket, "setblocking", return_value=None):
             assert sock.send(b"data") is True
 
-    def test_accept_client_max_clients_reached(self, sock):
-        sock.client_manager.add_client(sock)  # type: ignore
-        sock._accept_client(max_client=1)
+    def test_accept_client_rejects_and_closes_when_full(self, sock):
+        from veltix.internal.events import ServerEvent
+
+        conn_mock = MagicMock()
+        sock._running_event.set()
+        sock.client_manager.add_client(MagicMock())
+        with patch.object(
+            socket.socket, "accept", return_value=(conn_mock, ("1.2.3.4", 1234))
+        ):
+            received = []
+            sock.bus.subscribe(ServerEvent.CLIENT_REJECTED, lambda e, p: received.append(p))
+            sock._accept_client(max_client=1)
+
+        conn_mock.close.assert_called_once()
+        assert len(received) == 1
+        assert received[0]["addr"] == ("1.2.3.4", 1234)
 
     def test_accept_client_blockingioerror(self, sock):
         sock._running_event.set()
