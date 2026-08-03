@@ -81,3 +81,26 @@ class TestRequestPayloadEdgeCases:
         request = Request(test_message_type, json={})
 
         assert request.content == b"{}"
+
+    def test_request_id_valid_range(self, test_message_type):
+        request = Request(test_message_type, b"test", request_id=65535)
+
+        assert request.compile()
+
+    def test_request_id_too_large_raises(self, test_message_type):
+        request = Request(test_message_type, b"test", request_id=65536)
+
+        with pytest.raises(RequestError, match="request_id"):
+            request.compile()
+
+    def test_request_id_negative_raises(self, test_message_type):
+        request = Request(test_message_type, b"test", request_id=-1)
+
+        with pytest.raises(RequestError, match="request_id"):
+            request.compile()
+
+    def test_request_id_non_int_raises(self, test_message_type):
+        request = Request(test_message_type, b"test", request_id=70000.0)
+
+        with pytest.raises(RequestError, match="request_id"):
+            request.compile()

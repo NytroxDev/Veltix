@@ -102,11 +102,16 @@ class Request:
             raise RequestError(f"Content too large: {size} bytes (max: {max_size})")
 
         hash_value = zlib.crc32(self.content).to_bytes(4, "big")
-        request_id_bytes = (
-            self.request_id.to_bytes(REQUEST_ID_SIZE, "big")
-            if self.request_id is not None
-            else b"\x00" * REQUEST_ID_SIZE
-        )
+        max_request_id = (1 << (8 * REQUEST_ID_SIZE)) - 1
+        if self.request_id is not None:
+            if not isinstance(self.request_id, int) or not (0 <= self.request_id <= max_request_id):
+                raise RequestError(
+                    f"request_id must be an int between 0 and {max_request_id}, "
+                    f"got: {self.request_id!r}"
+                )
+            request_id_bytes = self.request_id.to_bytes(REQUEST_ID_SIZE, "big")
+        else:
+            request_id_bytes = b"\x00" * REQUEST_ID_SIZE
 
         header = HEADER_STRUCT.pack(
             MAGIC,
