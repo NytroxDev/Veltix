@@ -85,44 +85,6 @@ class AsyncSocket(BaseSocket):
         conn.bus.debug(f"created client socket instance (fd={conn._sock.fileno()})")
         return conn
 
-    # ── Shared helpers ────────────────────────────────────────────────────────
-
-    def recv(self, buf_size: int) -> bytes:
-        return self._sock.recv(buf_size)
-
-    def send(self, data: bytes) -> bool:
-        try:
-            self._sock.sendall(data)
-            self.bus.debug(f"send {len(data)} bytes")
-            return True
-        except BlockingIOError:
-            try:
-                self._sock.setblocking(True)
-                self._sock.sendall(data)
-                self._sock.setblocking(False)
-                return True
-            except Exception as e:
-                self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
-                self.bus.debug(f"send BlockingIOError fallback failed: {e}")
-                return False
-        except Exception as e:
-            self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
-            self.bus.debug(f"send failed: {e}")
-            return False
-
-    def _shutdown_socket(self) -> None:
-        with contextlib.suppress(OSError):
-            self._sock.shutdown(socket.SHUT_RDWR)
-
-    def settimeout(self, timeout: float) -> bool:
-        try:
-            self._sock.settimeout(timeout)
-            self.bus.debug(f"settimeout {timeout}s")
-            return True
-        except Exception as e:
-            self.bus.debug(f"settimeout {timeout}s failed: {e}")
-            return False
-
     # ── Server ────────────────────────────────────────────────────────────────
 
     def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:

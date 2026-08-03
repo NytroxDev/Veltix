@@ -74,31 +74,6 @@ class ThreadingSocket(BaseSocket):
         conn._n_th_lock = threading.Lock()
         return conn
 
-    # ── Shared helpers ────────────────────────────────────────────────────────
-
-    def recv(self, buf_size: int) -> bytes:
-        return self._sock.recv(buf_size)
-
-    def send(self, data: bytes) -> bool:
-        try:
-            self._sock.sendall(data)
-            return True
-        except Exception as e:
-            self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
-            self.bus.error(f"send failed: {e}")
-            return False
-
-    def _shutdown_socket(self) -> None:
-        with contextlib.suppress(OSError):
-            self._sock.shutdown(socket.SHUT_RDWR)
-
-    def settimeout(self, timeout: float) -> bool:
-        try:
-            self._sock.settimeout(timeout)
-            return True
-        except Exception:
-            return False
-
     # ── Server ────────────────────────────────────────────────────────────────
 
     def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:

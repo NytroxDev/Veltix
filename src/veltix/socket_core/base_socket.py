@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
+import socket
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional, Union
+
+from ..internal.events import ErrorEvent
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
@@ -30,8 +34,8 @@ class BaseSocket(ABC):
     handshake_timeout: float
     bus: VeltixBus
     client_allocator: Optional[ClientAllocator]
+    _sock: socket.socket
 
-    @abstractmethod
     def send(self, data: bytes) -> bool:
         """Send raw bytes over the connection.
 
@@ -41,7 +45,53 @@ class BaseSocket(ABC):
         Returns:
             True if the data was sent successfully, False otherwise.
         """
-        ...
+        try:
+            self._sock.sendall(data)
+            return True
+        except BlockingIOError:
+            try:
+                self._sock.setblocking(True)
+                self._sock.sendall(data)
+                self._sock.setblocking(False)
+                return True
+            except Exception as e:
+                self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
+                self.bus.debug(f"send BlockingIOError fallback failed: {e}")
+                return False
+        except Exception as e:
+            self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
+            self.bus.error(f"send failed: {e}")
+            return False
+
+    def recv(self, buf_size: int) -> bytes:
+        """Receive data from the connection.
+
+        Args:
+            buf_size: Maximum number of bytes to receive.
+
+        Returns:
+            The received bytes, or an empty byte-string on failure.
+        """
+        return self._sock.recv(buf_size)
+
+    def settimeout(self, timeout: float) -> bool:
+        """Set the socket timeout for blocking operations.
+
+        Args:
+            timeout: Timeout in seconds.
+
+        Returns:
+            True if the timeout was set successfully, False otherwise.
+        """
+        try:
+            self._sock.settimeout(timeout)
+            return True
+        except Exception:
+            return False
+
+    def _shutdown_socket(self) -> None:
+        with contextlib.suppress(OSError):
+            self._sock.shutdown(socket.SHUT_RDWR)
 
     @abstractmethod
     def close(self) -> bool:
@@ -84,18 +134,6 @@ class BaseSocket(ABC):
         ...
 
     @abstractmethod
-    def settimeout(self, timeout: float) -> bool:
-        """Set the socket timeout for blocking operations.
-
-        Args:
-            timeout: Timeout in seconds, or ``None`` for non-blocking mode.
-
-        Returns:
-            True if the timeout was set successfully, False otherwise.
-        """
-        ...
-
-    @abstractmethod
     def close_client(self, client: Union[ClientEntry, int]) -> bool:
         """Close a specific client connection on the server side.
 
@@ -117,17 +155,5 @@ class BaseSocket(ABC):
         Returns:
             True if disconnection succeeded, False otherwise. Returns True
             when the socket was never connected (no-op).
-        """
-        ...
-
-    @abstractmethod
-    def recv(self, buf_size: int) -> bytes:
-        """Receive data from the connection.
-
-        Args:
-            buf_size: Maximum number of bytes to receive.
-
-        Returns:
-            The received bytes, or an empty byte-string on failure.
         """
         ...

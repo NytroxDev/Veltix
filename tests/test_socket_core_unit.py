@@ -162,9 +162,7 @@ class TestAsyncSocketUnit:
         conn_mock = MagicMock()
         sock._running_event.set()
         sock.client_manager.add_client(MagicMock())
-        with patch.object(
-            socket.socket, "accept", return_value=(conn_mock, ("1.2.3.4", 1234))
-        ):
+        with patch.object(socket.socket, "accept", return_value=(conn_mock, ("1.2.3.4", 1234))):
             received = []
             sock.bus.subscribe(ServerEvent.CLIENT_REJECTED, lambda e, p: received.append(p))
             sock._accept_client(max_client=1)

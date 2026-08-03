@@ -59,6 +59,7 @@ class TestClientServer:
 
         assert len(disconnected) == 1
         assert len(server.clients) == 0
+
     def test_failed_handshake_does_not_leave_server_client(self):
         port = find_free_port()
         server = Server(ServerConfig(host="127.0.0.1", port=port))
