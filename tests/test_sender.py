@@ -1,10 +1,10 @@
 """Tests for Sender — send and broadcast."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from veltix import MessageType, Mode, Request, Sender, SenderError
+from veltix import MessageType, Mode, Request, RequestError, Sender, SenderError
 from veltix.network.constants import HEADER_SIZE
 
 # ── Fixture ───────────────────────────────────────────────────────────────────
@@ -133,3 +133,12 @@ class TestSenderBroadcast:
         # Other sockets should still have been called
         sockets[0].send.assert_called_once()
         sockets[2].send.assert_called_once()
+
+    def test_broadcast_compile_error_returns_false(self):
+        sockets = [make_mock_socket()]
+        sender = Sender(mode=Mode.SERVER)
+        request = Request(MSG_TYPE, b"test")
+        with patch.object(type(request), "compile", side_effect=RequestError("boom")):
+            result = sender.broadcast(request, sockets)
+        assert result is False
+        sockets[0].send.assert_not_called()

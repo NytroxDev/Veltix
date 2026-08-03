@@ -166,7 +166,11 @@ class Sender:
             return True
 
         exclude = self._build_exclude_set(except_clients)
-        compiled = data.compile()
+        try:
+            compiled = data.compile()
+        except Exception as e:
+            self._log_error(f"Unexpected broadcast error: {type(e).__name__}: {e}")
+            return False
         all_ok = True
 
         for client in list_of_client:
