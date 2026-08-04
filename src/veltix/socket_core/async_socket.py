@@ -297,6 +297,12 @@ class AsyncSocket(BaseSocket):
             self._sock.setblocking(False)
             self._running_event.set()
             self._selector.register(self._sock, selectors.EVENT_READ, data="client")
+
+            if hasattr(self, "client") and self.client:
+                with self.client._state_lock:
+                    self.client.is_connected = True
+                    self.client._connecting = False
+
             self._selector_thread = threading.Thread(
                 target=self._selector_loop, args=(0, buffer_size), daemon=True
             )

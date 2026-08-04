@@ -279,6 +279,11 @@ class ThreadingSocket(BaseSocket):
 
             self._running_event.set()
 
+            if hasattr(self, "client") and self.client:
+                with self.client._state_lock:
+                    self.client.is_connected = True
+                    self.client._connecting = False
+
             self.thread_handler = threading.Thread(
                 target=self._handle_client,
                 args=(buffer_size, timeout),

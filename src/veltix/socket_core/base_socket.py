@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import socket
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from ..internal.events import ErrorEvent
 
@@ -30,6 +30,7 @@ class BaseSocket(ABC):
         client_allocator: Optional ID allocator for client-bound request IDs.
     """
 
+    client: Optional[Any] = None
     client_manager: ClientsManager
     handshake_timeout: float
     bus: VeltixBus

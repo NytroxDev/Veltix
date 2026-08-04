@@ -81,6 +81,7 @@ class Client:
             max_message_size=self.config.max_message_size,
             bus=self.bus,
         )
+        self.socket.client = self
         self.socket.settimeout(self.config.handshake_timeout)
         self._id_allocator = IDAllocator(max_ids=30000)
         self._sender: Sender = Sender(
@@ -226,6 +227,11 @@ class Client:
         Returns:
             True if connection and handshake succeeded, False otherwise.
         """
+        with self._state_lock:
+            self.running = True
+            self._connecting = True
+        self._shutdown_event.clear()
+
         try:
             self.bus.emit(
                 ClientEvent.CONNECTING,
@@ -235,7 +241,6 @@ class Client:
                 },
             )
             self.bus.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
-            self._connecting = True
             connected = self.socket.connect(
                 self.config.server_addr,
                 self.config.port,
@@ -243,14 +248,11 @@ class Client:
                 self.config.handshake_timeout,
             )
             if not connected:
-                self._connecting = False
                 self.bus.error(f"Connection failed to {self.config.server_addr}:{self.config.port}")
                 return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
             with self._state_lock:
                 self.is_connected = True
-            self._connecting = False
-            self._shutdown_event.clear()
 
             handshake_meta = getattr(self.socket, "_handshake_meta", None) or {}
             id_window = handshake_meta.get("id_window", 30000)
@@ -292,6 +294,9 @@ class Client:
             )
             self.bus.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
             return False
+        finally:
+            with self._state_lock:
+                self._connecting = False
 
     @property
     def sender(self) -> Sender:
