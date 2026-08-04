@@ -81,7 +81,7 @@ class Client:
             max_message_size=self.config.max_message_size,
             bus=self.bus,
         )
-        self.socket.settimeout(0.5)
+        self.socket.settimeout(self.config.handshake_timeout)
         self._id_allocator = IDAllocator(max_ids=30000)
         self._sender: Sender = Sender(
             mode=Mode.CLIENT,
@@ -240,7 +240,7 @@ class Client:
                 self.config.server_addr,
                 self.config.port,
                 self.config.buffer_size,
-                0.5,
+                self.config.handshake_timeout,
             )
             if not connected:
                 self._connecting = False

@@ -284,7 +284,9 @@ class AsyncSocket(BaseSocket):
         try:
             self._sock.connect((host, port))
 
-            success, meta = self.request_handler.handshake_handler.do_client_handshake(self._sock)
+            success, meta = self.request_handler.handshake_handler.do_client_handshake(
+                self._sock, timeout=timeout
+            )
             if not success:
                 self.bus.error("Client handshake failed")
                 self._sock.close()
