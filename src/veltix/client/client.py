@@ -211,7 +211,8 @@ class Client:
     def _try_reconnect(self, reason: DisconnectReason) -> bool:
         """Internal reconnect entrypoint used by connect() and tests."""
         handler = self._reconnect_handler
-        assert handler is not None
+        if handler is None:
+            return False
         return handler.try_reconnect(reason)
 
     def connect(self, _from_retry: bool = False) -> bool:
@@ -258,8 +259,8 @@ class Client:
             id_window = handshake_meta.get("id_window", 30000)
             self._id_allocator._max = id_window
 
-            assert self._reconnect_handler is not None
-            self._reconnect_handler.init_connect()
+            if self._reconnect_handler is not None:
+                self._reconnect_handler.init_connect()
             self.bus.info(
                 f"Successfully connected to server {self.config.server_addr}:{self.config.port}"
             )
@@ -394,15 +395,16 @@ class Client:
             with self._state_lock:
                 self.running = False
                 self.is_connected = False
-            assert self._reconnect_handler is not None
-            self._reconnect_handler.stop_retry()
+            if self._reconnect_handler is not None:
+                self._reconnect_handler.stop_retry()
             self.request_handler.shutdown(wait=False)
             self.socket.close()
             self.bus.debug("Socket closed")
 
-            self._reconnect_handler.fire_on_disconnect(
-                permanent=True, reason=DisconnectReason.MANUAL
-            )
+            if self._reconnect_handler is not None:
+                self._reconnect_handler.fire_on_disconnect(
+                    permanent=True, reason=DisconnectReason.MANUAL
+                )
 
             self.bus.info("Successfully disconnected from server")
             self._shutdown_event.set()
