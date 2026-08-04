@@ -163,6 +163,7 @@ class ReconnectHandler:
                 break
 
         self.fire_on_disconnect(permanent=True, reason=reason)
+        self._context._context_set_running(False)
         return False
 
     def try_reconnect(self, reason: DisconnectReason) -> bool:
@@ -177,6 +178,7 @@ class ReconnectHandler:
         """
         if self._context.config.retry == 0:
             self.fire_on_disconnect(permanent=True, reason=reason)
+            self._context._context_set_running(False)
             return False
 
         self.fire_on_disconnect(permanent=False, reason=reason)
