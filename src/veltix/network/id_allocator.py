@@ -32,6 +32,16 @@ class IDAllocator:
         """Maximum number of unique IDs before wrap-around."""
         return self._max
 
+    @max_ids.setter
+    def max_ids(self, value: int) -> None:
+        """Set the maximum number of unique IDs.
+
+        Args:
+            value: The new maximum number of IDs.
+        """
+        with self._lock:
+            self._max = value
+
 
 class ClientAllocator:
     """

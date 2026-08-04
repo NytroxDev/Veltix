@@ -257,7 +257,7 @@ class Client:
 
             handshake_meta = getattr(self.socket, "_handshake_meta", None) or {}
             id_window = handshake_meta.get("id_window", 30000)
-            self._id_allocator._max = id_window
+            self._id_allocator.max_ids = id_window
 
             if self._reconnect_handler is not None:
                 self._reconnect_handler.init_connect()
