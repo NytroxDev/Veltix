@@ -136,7 +136,7 @@ class Client:
             old = self.is_connected
             self.is_connected = value
         if old != value:
-            self.bus.info(f"Client connected state: {value}")
+            self.bus.debug(f"Client connected state: {value}")
 
     def _context_get_request_handler(self) -> Optional[RequestHandler]:
         """Return the current request handler instance."""
@@ -173,6 +173,8 @@ class Client:
     def on_connect(self, func: Callable) -> None:
         """Register a callback for successful connection.
 
+        Multiple callbacks can be registered and will be called in order.
+
         Args:
             func: func()
         """
@@ -180,6 +182,8 @@ class Client:
 
     def on_disconnect(self, func: Callable) -> None:
         """Register a callback for disconnection.
+
+        Multiple callbacks can be registered and will be called in order.
 
         Args:
             func: func(state: DisconnectState)
@@ -192,7 +196,7 @@ class Client:
 
         Usage:
             @client.route(MY_TYPE)
-            def on_my_type(response: Response, client=None) -> None:
+            def on_my_type(response: Response) -> None:
                 ...
 
         Args:
