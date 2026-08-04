@@ -142,3 +142,26 @@ class TestSenderBroadcast:
             result = sender.broadcast(request, sockets)
         assert result is False
         sockets[0].send.assert_not_called()
+
+    def test_sent_event_payload_consistent(self):
+        from veltix.internal.bus import VeltixBus
+        from veltix.internal.events import MessageEvent
+
+        bus = VeltixBus()
+        received = []
+        bus.subscribe(MessageEvent.SENT, lambda e, p: received.append(p))
+        sock = make_mock_socket()
+
+        client_sender = Sender(mode=Mode.CLIENT, conn=sock, bus=bus)
+        client_sender.send(Request(MSG_TYPE, b"test"))
+        assert received[-1]["mode"] == "client"
+        assert "broadcast" not in received[-1]
+
+        server_sender = Sender(mode=Mode.SERVER, bus=bus)
+        server_sender.send(Request(MSG_TYPE, b"test"), client=sock)
+        assert received[-1]["mode"] == "server"
+        assert "broadcast" not in received[-1]
+
+        server_sender.broadcast(Request(MSG_TYPE, b"test"), [sock])
+        assert received[-1]["mode"] == "server"
+        assert received[-1]["broadcast"] is True

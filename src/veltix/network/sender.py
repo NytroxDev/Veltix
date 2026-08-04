@@ -184,7 +184,8 @@ class Sender:
                     {
                         "type": data.type,
                         "length": len(data.content),
-                        "mode": "broadcast",
+                        "mode": "server",
+                        "broadcast": True,
                     },
                 )
             except (ConnectionResetError, BrokenPipeError) as e:
