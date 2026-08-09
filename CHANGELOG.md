@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-08-09
+
+### Fixed
+
+- **`AsyncSocket` fd leak**: each client socket created its own selector, leaking file
+  descriptors. A single shared selector is now used for all clients
+  ([4d60330](https://github.com/NytroxDev/Veltix/commit/4d60330)).
+- **`AsyncSocket.disconnect()`** now returns `True` when the socket is not connected
+  instead of raising ([448148c](https://github.com/NytroxDev/Veltix/commit/448148c)).
+- **Server capacity**: connections are now rejected and closed when the server is full
+  ([02bd391](https://github.com/NytroxDev/Veltix/commit/02bd391)).
+- **`Client.connect()`** now respects `config.handshake_timeout` for both connect and
+  handshake ([a33c619](https://github.com/NytroxDev/Veltix/commit/a33c619)).
+- **Client connected-state race**: `is_connected` is now set from the socket layer,
+  closing the race window between connect and first receive
+  ([c5bb0fa](https://github.com/NytroxDev/Veltix/commit/c5bb0fa)).
+- **Reconnect handler**: `assert` statements replaced with explicit guards
+  ([985a45d](https://github.com/NytroxDev/Veltix/commit/985a45d)).
+- **`ReconnectHandler`**: the `running` flag is now cleared when reconnection is given up
+  ([bbfd2e4](https://github.com/NytroxDev/Veltix/commit/bbfd2e4)).
+- **`IDAllocator.max_ids` setter** is now thread-safe
+  ([93f4fba](https://github.com/NytroxDev/Veltix/commit/93f4fba)).
+- **`Sender.broadcast()`** now catches compile errors instead of letting them propagate
+  ([9a6e951](https://github.com/NytroxDev/Veltix/commit/9a6e951)).
+- **`Request.compile()`** now validates the `request_id` range (uint16)
+  ([b2200fb](https://github.com/NytroxDev/Veltix/commit/b2200fb)).
+- **`Sender` SENT event**: the broadcast flag is now reported in the event payload
+  ([bf22842](https://github.com/NytroxDev/Veltix/commit/bf22842)).
+
+### Refactored
+
+- Shared socket helpers moved into `BaseSocket`
+  ([5ab311c](https://github.com/NytroxDev/Veltix/commit/5ab311c)).
+- Message dispatch factorized into `internal.network`
+  ([2c3f01e](https://github.com/NytroxDev/Veltix/commit/2c3f01e)).
+- `_create_client_instance` dropped in favor of a socket constructor parameter
+  ([edacf62](https://github.com/NytroxDev/Veltix/commit/edacf62)).
+
+### Performance
+
+- **`ThreadingSocket` shutdown**: all client sockets are now closed before joining
+  threads, reducing shutdown time ([ede8747](https://github.com/NytroxDev/Veltix/commit/ede8747)).
+
+### Chore / Docs
+
+- Lowered the log level of the connected-state message and refreshed client docstrings
+  ([9f973b8](https://github.com/NytroxDev/Veltix/commit/9f973b8)).
+- Added the missing v2.0.0 changelog entry for `show_caller`
+  ([31becd7](https://github.com/NytroxDev/Veltix/commit/31becd7)).
+- Local dev notes folder ignored
+  ([f20fa14](https://github.com/NytroxDev/Veltix/commit/f20fa14)).
+
 ## [2.0.0] - 2026-07-25
 
 ### Added
