@@ -1151,6 +1151,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#veltix.handler.handshake_handler.HandshakeHandler.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__init__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#veltix.handler.handshake_handler.HandshakeHandler.do_server_handshake" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1371,6 +1382,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#veltix.handler.handshake_handler.HandshakeHandler.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__init__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#veltix.handler.handshake_handler.HandshakeHandler.do_server_handshake" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1470,6 +1492,91 @@ waits for the server ack before returning.</p>
 <div class="doc doc-object doc-function">
 
 
+<h3 id="veltix.handler.handshake_handler.HandshakeHandler.__init__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">__init__</span>
+
+
+<a href="#veltix.handler.handshake_handler.HandshakeHandler.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__init__</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">mode</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span> <span class="n">bus</span><span class="p">:</span> <span class="n">VeltixBus</span><span class="p">,</span> <span class="n">id_window</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30000</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Initialise the handshake handler for a given role.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>mode</code>
+            </td>
+            <td>
+                  <code><span title="veltix.internal.mode.Mode">Mode</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether this handler operates as <code>SERVER</code> or <code>CLIENT</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bus</code>
+            </td>
+            <td>
+                  <code><span title="veltix.internal.bus.VeltixBus">VeltixBus</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Event bus for emitting handshake events and logging.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>id_window</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The ID window size announced to the peer (server only).</p>
+              </div>
+            </td>
+            <td>
+                  <code>30000</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="veltix.handler.handshake_handler.HandshakeHandler.do_server_handshake" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">do_server_handshake</span>
 
@@ -1482,7 +1589,87 @@ waits for the server ack before returning.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Server-side handshake: send server info, validate client response.</p>
+        <p>Perform the server-side 3-way handshake.</p>
+
+
+<details class="steps" open>
+  <summary>Steps</summary>
+  <ol>
+<li>Send <code>{"v": ..., "meta": {"id_window": ...}}</code> to the client.</li>
+<li>Receive the client's <code>{"v": ..., "meta": ...}</code> response.</li>
+<li>Validate the client's version against the compatibility table.</li>
+<li>Send <code>{"result": "ok"}</code> to acknowledge.</li>
+</ol>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>sock</code>
+            </td>
+            <td>
+                  <code><span title="veltix.handler.handshake_handler.RawSocket">RawSocket</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A raw TCP socket conforming to :class:<code>RawSocket</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>timeout</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum seconds to wait for each recv.</p>
+              </div>
+            </td>
+            <td>
+                  <code>5.0</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>True if the handshake succeeded, False on any failure.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -1498,13 +1685,103 @@ waits for the server ack before returning.</p>
 
 <a href="#veltix.handler.handshake_handler.HandshakeHandler.do_client_handshake" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">do_client_handshake</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">sock</span><span class="p">:</span> <span class="n">RawSocket</span><span class="p">,</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">sock</span><span class="p">:</span> <span class="n">RawSocket</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Client-side handshake: read server info, send client response.</p>
+        <p>Perform the client-side 3-way handshake.</p>
+
+
+<details class="steps" open>
+  <summary>Steps</summary>
+  <ol>
+<li>Receive the server's <code>{"v": ..., "meta": ...}</code> payload.</li>
+<li>Validate the server's version against the compatibility table.</li>
+<li>Send <code>{"v": ..., "meta": {}}</code> to the server.</li>
+<li>Wait for the server's <code>{"result": "ok"}</code> acknowledgment.</li>
+</ol>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>sock</code>
+            </td>
+            <td>
+                  <code><span title="veltix.handler.handshake_handler.RawSocket">RawSocket</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A raw TCP socket conforming to :class:<code>RawSocket</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>timeout</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum seconds to wait for each recv.</p>
+              </div>
+            </td>
+            <td>
+                  <code>5.0</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A tuple of <code>(success, meta)</code> where <em>meta</em> is the server's</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="dict">dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>metadata dict on success, or <code>None</code> on failure.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
