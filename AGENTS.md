@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 2.0.0b3
+- **Version:** 2.0.1
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -23,7 +23,7 @@ boilerplate of raw sockets.
 - **Multiplayer game servers:** real-time state sync, 64+ players at 64Hz tick rate
 - **Real-time dashboards:** live data streaming between microservices
 - **Custom protocols:** you control the message types, framing, and routing
-- **IPC / inter-process communication:** lightweight process间通信 on localhost
+- **IPC / inter-process communication:** lightweight inter-process communication on localhost
 - **Remote tooling:** SSH-like command execution, remote file management
 - **IoT / embedded:** minimal memory footprint (21 KB idle), no heavy dependencies
 
@@ -61,6 +61,7 @@ Async stress throughput is **2.6x higher** than Threading under high concurrency
 | pytest         | Testing                 | `[tool.pytest.ini_options]` in pyproject.toml |
 | pytest-cov     | Code coverage           | `[tool.coverage.*]` in pyproject.toml         |
 | pytest-asyncio | Async test support      |                                               |
+| pytest-xdist   | Parallel test execution | `-n=auto` in `[tool.pytest.ini_options]`      |
 | ruff           | Linting & formatting    | `[tool.ruff.*]` in pyproject.toml             |
 | mypy           | Static type checking    | `[tool.mypy]` in pyproject.toml               |
 | mkdocs         | Documentation           | `mkdocs.yml`                                  |
@@ -101,7 +102,6 @@ src/veltix/
 │   ├── base_socket.py   # BaseSocket
 │   ├── threading_socket.py
 │   ├── async_socket.py
-│   ├── version.py       # __version__ = "2.0.0b3"
 │   └── managers/
 │       └── clients_manager.py
 ├── internal/            # Internal helpers
@@ -110,18 +110,18 @@ src/veltix/
 │   ├── buffer_size.py   # BufferSize enum
 │   ├── compatibility.py # Version, COMPATIBILITY
 │   ├── mode.py          # Mode enum
-│   └── network.py
+│   ├── network.py
+│   └── version.py       # __version__ (from package metadata)
 ├── logger/              # Singleton logger (thread-safe, colorized, rotation)
 │   ├── core.py          # Logger class
 │   ├── config.py        # LoggerConfig dataclass
 │   ├── levels.py        # LogLevel enum
-│   ├── formatter.py     # Log formatting
-│   └── writer.py        # File rotation writer
+│   └── formatter.py     # Log formatting
 ├── utils/               # Small utilities
 │   ├── encoding.py      # encode/decode utf8 & json
 │   └── format_size.py   # format_bytes
 ├── _vendor/             # Vendored third-party libs
-│   └── avyra/           # EventBus library (Avyra v1.0.0, Python 3.8 compat)
+│   └── avyra/           # EventBus library (Avyra v1.1.1, Python 3.8 compat)
 ├── benchmark/           # CLI benchmarking suite (optional: pip install veltix[benchmark])
 ├── exceptions.py        # VeltixError hierarchy
 └── __init__.py          # Public API exports
@@ -153,7 +153,8 @@ tests/
 ├── test_socket_core.py
 ├── test_socket_core_unit.py
 ├── test_utils.py
-└── test_writer.py
+└── vendor/
+    └── avyra/               # Vendored Avyra tests
 docs/
 ├── index.md
 ├── getting-started/
@@ -429,8 +430,11 @@ test: parametrize integration tests over socket backends
 
 Defined in `.github/workflows/ci.yml`:
 
-1. **Version consistency check:** `src/veltix/internal/version.py` must match `pyproject.toml`.
-2. **Tests:** run on Python 3.8, 3.10, 3.12, 3.14 with `pytest`.
+1. **Lint & format:** `ruff check .` and `ruff format . --check` on Python 3.12.
+2. **Type check:** `mypy src/veltix/` on Python 3.12.
+3. **Version check:** validates that `pyproject.toml` contains a valid semver `version`.
+4. **Build check:** builds sdist + wheel, installs the wheel and imports `veltix`.
+5. **Tests:** run on Python 3.8, 3.10, 3.12, 3.14 with `pytest`.
 
 All pushed branches and PRs run through CI.
 
@@ -676,6 +680,7 @@ ServerEvent.CLIENT_REJECTED
 # Client lifecycle
 ClientEvent.ON_CONNECT
 ClientEvent.ON_DISCONNECT
+ClientEvent.SOCKET_DISCONNECTED
 ClientEvent.CONNECTING
 ClientEvent.DISCONNECTING
 ClientEvent.TAG_ADDED
@@ -768,8 +773,8 @@ BufferSize.HUGE  # 1 MB
 ```python
 from veltix import Version, COMPATIBILITY
 
-v = Version(2, 0, 0)
-v2 = Version.from_str("v2.0.0")
+v = Version(2, 0, 1)
+v2 = Version.from_str("v2.0.1")
 v.is_compatible(v2)  # -> Optional[bool] (True/False/None)
 ```
 
@@ -807,9 +812,11 @@ class LoggerConfig:
     use_colors: bool = True
     show_timestamp: bool = True
     show_level: bool = True
+    show_caller: bool = True
     file_path: Optional[Path] = None
     file_rotation_size: int = 10 * 1024 * 1024
     file_backup_count: int = 5
+    stream: TextIO = sys.stdout
 ```
 
 #### Log Levels
