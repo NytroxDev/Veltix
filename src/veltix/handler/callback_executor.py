@@ -14,7 +14,13 @@ if TYPE_CHECKING:
 
 
 class CallbackExecutor:
-    """Executes user callbacks in a thread pool to avoid blocking the recv loop."""
+    """Executes user callbacks in a thread pool to avoid blocking the recv loop.
+
+    Worker threads are daemon threads, so they never block interpreter shutdown.
+    As a consequence, callbacks that are still queued or in progress when the
+    process exits are dropped unless :meth:`shutdown` with ``wait=True`` is
+    called beforehand.
+    """
 
     def __init__(self, max_workers: int = 4, bus: Optional[VeltixBus] = None) -> None:
         self.bus = bus
