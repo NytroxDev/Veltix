@@ -6,6 +6,7 @@ import json
 import struct
 from typing import TYPE_CHECKING, Any, Optional, Protocol, cast
 
+from ..exceptions import ServerFull
 from ..internal.compatibility import Version
 from ..internal.events import ProtocolEvent
 from ..internal.mode import Mode
@@ -109,6 +110,40 @@ class HandshakeHandler:
             self.bus.error(f"Handshake recv failed: {e}")
             return None
 
+    def send_rejection(self, sock: RawSocket, reason: str) -> bool:
+        """Send a rejection payload and close the connection.
+
+        Used by the server to explicitly reject a client before the
+        handshake (e.g. when the server is full).
+
+        Args:
+            sock: A raw TCP socket conforming to :class:`RawSocket`.
+            reason: Rejection reason string (e.g. ``"server_full"``).
+
+        Returns:
+            True if the rejection was sent, False on error.
+        """
+        return self._send_handshake(sock, {"error": reason})
+
+    def recv_rejection(self, sock: RawSocket, timeout: float = 5.0) -> Optional[str]:
+        """Try to read a rejection message from the server.
+
+        If the server is full, it sends ``{"error": "server_full"}``
+        before the handshake starts. This method reads that payload and
+        returns the error string, or ``None`` if no rejection was received.
+
+        Args:
+            sock: A raw TCP socket conforming to :class:`RawSocket`.
+            timeout: Maximum seconds to wait for the payload.
+
+        Returns:
+            The error string (e.g. ``"server_full"``) or ``None``.
+        """
+        payload = self._recv_handshake(sock, timeout=timeout)
+        if payload and "error" in payload:
+            return str(payload["error"])
+        return None
+
     def _check_version(self, peer_version: str) -> bool:
         """Check peer version against the compatibility table."""
         try:
@@ -209,6 +244,15 @@ class HandshakeHandler:
             )
             self.bus.error("Failed to receive server handshake")
             return False, None
+
+        if "error" in server_payload:
+            reason = str(server_payload["error"])
+            self.bus.emit(
+                ProtocolEvent.HANDSHAKE_FAIL,
+                {"role": "client", "reason": reason},
+            )
+            self.bus.error(f"Server rejected connection: {reason}")
+            raise ServerFull(reason)
 
         peer_version = server_payload.get("v", "")
         if not self._check_version(peer_version):

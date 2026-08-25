@@ -45,3 +45,9 @@ class InvalidContentError(VeltixError):
     """Raised when message content cannot be decoded or converted to the requested format."""
 
     pass
+
+
+class ServerFull(VeltixError):
+    """Raised when the server rejects a connection because it is at capacity."""
+
+    pass

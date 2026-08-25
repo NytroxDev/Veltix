@@ -8,6 +8,7 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union
 
+from ..exceptions import ServerFull
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import dispatch_messages
 from ..internal.network import recv as _network_recv
@@ -114,6 +115,10 @@ class AsyncSocket(BaseSocket):
             return
 
         if max_client >= 0 and self.client_manager.count() >= max_client:
+            self.bus.info(
+                f"Connection rejected: server full ({addr}, "
+                f"{self.client_manager.count()}/{max_client})"
+            )
             self.bus.emit(
                 ErrorEvent.CONNECTION_REFUSED,
                 {
@@ -127,10 +132,12 @@ class AsyncSocket(BaseSocket):
                 {
                     "max_client": max_client,
                     "current": self.client_manager.count(),
-                    "reason": "max_connections",
+                    "reason": "server_full",
                     "addr": addr,
                 },
             )
+            with contextlib.suppress(OSError):
+                self.request_handler.handshake_handler.send_rejection(conn, "server_full")
             with contextlib.suppress(OSError):
                 conn.close()
             return
@@ -313,6 +320,8 @@ class AsyncSocket(BaseSocket):
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.debug(f"connect to {host}:{port} failed: {e}")
             return False
+        except ServerFull:
+            raise
         except Exception as e:
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.debug(f"connect to {host}:{port} failed: {e}")

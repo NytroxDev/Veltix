@@ -109,6 +109,18 @@ class Server:
     # -------------------------------------------------------------------------
 
     @property
+    def is_full(self) -> bool:
+        """Check if the server has reached its maximum connection limit.
+
+        Returns:
+            True if max_connection is set and all slots are taken,
+            False otherwise.
+        """
+        if self.config.max_connection < 0:
+            return False
+        return self.socket.client_manager.count() >= self.config.max_connection
+
+    @property
     def clients(self) -> list[ClientInfo]:
         return [e.info for e in self.socket.client_manager.get_all_clients()]
 

@@ -7,6 +7,7 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union
 
+from ..exceptions import ServerFull
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import RecvResult, dispatch_messages, recv
 from ..network.message_buffer import MessageBuffer
@@ -84,6 +85,10 @@ class ThreadingSocket(BaseSocket):
                 conn_, addr = self._sock.accept()
 
                 if max_client >= 0 and self.client_manager.count() >= max_client:
+                    self.bus.info(
+                        f"Connection rejected: server full ({addr}, "
+                        f"{self.client_manager.count()}/{max_client})"
+                    )
                     self.bus.emit(
                         ErrorEvent.CONNECTION_REFUSED,
                         {
@@ -97,10 +102,14 @@ class ThreadingSocket(BaseSocket):
                         {
                             "max_client": max_client,
                             "current": self.client_manager.count(),
-                            "reason": "max_connections",
+                            "reason": "server_full",
                             "addr": addr,
                         },
                     )
+                    with contextlib.suppress(OSError):
+                        self.request_handler.handshake_handler.send_rejection(
+                            conn_, "server_full"
+                        )
                     with contextlib.suppress(OSError):
                         conn_.close()
                     continue
@@ -296,6 +305,9 @@ class ThreadingSocket(BaseSocket):
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
             return False
+
+        except ServerFull:
+            raise
 
         except Exception as e:
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
