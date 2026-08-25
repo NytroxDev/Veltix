@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2026-08-25
+
+### Refactored
+
+- **`CallbackExecutor`**: replaced `ThreadPoolExecutor` with a custom worker pool
+  using `SimpleQueue` and daemon threads. Drops per-task `Future` overhead.
+  `shutdown(wait=True)` now drains the queue and joins workers
+  ([655c248](https://github.com/NytroxDev/Veltix/commit/655c248)).
+
+### Fixed
+
+- **Compatibility table**: `Version(2, 0, 1)` now registered as compatible with
+  `v2.0.0` ([8270845](https://github.com/NytroxDev/Veltix/commit/8270845)).
+
+### Chore / Docs
+
+- Bumped development status to production/stable
+  ([fa49713](https://github.com/NytroxDev/Veltix/commit/fa49713)).
+- Documented daemon worker threads in `CallbackExecutor`
+  ([a985007](https://github.com/NytroxDev/Veltix/commit/a985007)).
+- Refreshed `AGENTS.md` to match v2.0.1 codebase
+  ([ec7363b](https://github.com/NytroxDev/Veltix/commit/ec7363b)).
+
+---
+
 ## [2.0.1] - 2026-08-09
 
 ### Fixed
