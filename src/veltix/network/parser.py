@@ -10,6 +10,8 @@ from .constants import HEADER_SIZE, HEADER_STRUCT, MAGIC
 from .response import Response
 from .types import MessageTypeRegistry
 
+_BufferLike = Union[bytes, bytearray, memoryview]
+
 
 class MessageParser:
     """Decode raw Veltix protocol messages into Response objects.
@@ -23,13 +25,15 @@ class MessageParser:
 
     @staticmethod
     def parse(
-        data: Union[bytes, bytearray],
+        data: _BufferLike,
         max_message_size: int = 10 * 1024 * 1024,
     ) -> Response:
         """Parse raw protocol data into a Response object.
 
         Args:
             data: Raw message bytes received from the network.
+                Accepts bytes, bytearray, or memoryview. Using memoryview
+                avoids intermediate copies during parsing.
             max_message_size: Maximum accepted message size in bytes.
 
         Returns:

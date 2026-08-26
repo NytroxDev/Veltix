@@ -104,11 +104,11 @@ class MessageBuffer:
             if len(self._buffer) < total_size:
                 break
 
-            message_data = self._buffer[:total_size]
+            message_data = bytes(self._buffer[:total_size])
 
             try:
                 response = MessageParser.parse(message_data)
-                self._buffer = self._buffer[total_size:]
+                del self._buffer[:total_size]
                 messages.append(response)
             except Exception as e:
                 if self._bus:
@@ -126,7 +126,7 @@ class MessageBuffer:
             self.clear()
         else:
             discarded = idx
-            self._buffer = self._buffer[idx:]
+            del self._buffer[:idx]
             if self._bus:
                 self._bus.debug(
                     f"Resynced: discarded {discarded} bytes, found MAGIC at offset {idx}"
