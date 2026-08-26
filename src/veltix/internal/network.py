@@ -125,7 +125,6 @@ def dispatch_messages(
                     "length": len(message.content),
                     "from": "server",
                 }
-            bus.debug(f"Message from {source}: {message.type.name} (code={message.type.code})")
             bus.emit(MessageEvent.RECEIVED, payload)
             handler(message)
     except Exception as e:

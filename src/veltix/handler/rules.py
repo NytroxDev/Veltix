@@ -93,9 +93,6 @@ class RouteRule(Rule):
     """Dispatches a message to its registered route handler."""
 
     def handle(self, context: MessageContext) -> None:
-        context.handler.bus.debug(
-            f"Dispatching to registered route for type {context.response.type}"
-        )
         route = context.handler.get_route(context.response.type)
         if route is None:
             context.handler.bus.warning(

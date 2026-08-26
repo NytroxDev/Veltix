@@ -47,14 +47,7 @@ class RulesManager:
         Returns:
             True if a rule handled the message, False if none matched.
         """
-        for rule in self._rules:
-            if rule.try_handle(context):
-                context.handler.bus.debug(
-                    f"{rule.__class__.__name__} handling message type {context.response.type}"
-                )
-                return True
-        context.handler.bus.debug(f"No rule matched for message type {context.response.type}")
-        return False
+        return any(rule.try_handle(context) for rule in self._rules)
 
     def add_rule(self, rule: Rule) -> None:
         """Append a rule to the end of the chain.
