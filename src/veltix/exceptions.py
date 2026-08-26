@@ -47,7 +47,7 @@ class InvalidContentError(VeltixError):
     pass
 
 
-class ServerFull(VeltixError):
+class ServerFullError(VeltixError):
     """Raised when the server rejects a connection because it is at capacity."""
 
     pass

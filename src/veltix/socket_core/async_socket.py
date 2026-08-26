@@ -8,7 +8,7 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union
 
-from ..exceptions import ServerFull
+from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import dispatch_messages
 from ..internal.network import recv as _network_recv
@@ -320,7 +320,7 @@ class AsyncSocket(BaseSocket):
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.debug(f"connect to {host}:{port} failed: {e}")
             return False
-        except ServerFull:
+        except ServerFullError:
             raise
         except Exception as e:
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})

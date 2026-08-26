@@ -7,7 +7,7 @@ import socket
 import threading
 from typing import TYPE_CHECKING, Optional, Union
 
-from ..exceptions import ServerFull
+from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import RecvResult, dispatch_messages, recv
 from ..network.message_buffer import MessageBuffer
@@ -107,9 +107,7 @@ class ThreadingSocket(BaseSocket):
                         },
                     )
                     with contextlib.suppress(OSError):
-                        self.request_handler.handshake_handler.send_rejection(
-                            conn_, "server_full"
-                        )
+                        self.request_handler.handshake_handler.send_rejection(conn_, "server_full")
                     with contextlib.suppress(OSError):
                         conn_.close()
                     continue
@@ -306,7 +304,7 @@ class ThreadingSocket(BaseSocket):
             self.bus.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
             return False
 
-        except ServerFull:
+        except ServerFullError:
             raise
 
         except Exception as e:

@@ -9,7 +9,7 @@ import time
 import warnings
 from typing import TYPE_CHECKING, Callable, Optional
 
-from ..exceptions import ServerFull
+from ..exceptions import ServerFullError
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ClientEvent, ErrorEvent
@@ -289,17 +289,20 @@ class Client:
             )
             return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
-        except ServerFull:
+        except ServerFullError:
             self.bus.error(
                 f"Server rejected connection: server full "
                 f"({self.config.server_addr}:{self.config.port})"
             )
-            self.bus.emit(ClientEvent.ON_DISCONNECT, DisconnectState(
-                permanent=False,
-                attempt=0,
-                retry_max=0,
-                reason=DisconnectReason.SERVER_CLOSED,
-            ))
+            self.bus.emit(
+                ClientEvent.ON_DISCONNECT,
+                DisconnectState(
+                    permanent=False,
+                    attempt=0,
+                    retry_max=0,
+                    reason=DisconnectReason.SERVER_CLOSED,
+                ),
+            )
             raise
 
         except Exception as e:

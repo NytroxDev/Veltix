@@ -13,7 +13,7 @@ from .exceptions import (
     NetworkError,
     RequestError,
     SenderError,
-    ServerFull,
+    ServerFullError,
     TimeoutError,
     VeltixError,
 )
@@ -80,5 +80,5 @@ __all__ = [
     "SenderError",
     "TimeoutError",
     "InvalidContentError",
-    "ServerFull",
+    "ServerFullError",
 ]

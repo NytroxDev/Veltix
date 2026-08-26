@@ -6,7 +6,7 @@ import json
 import struct
 from typing import TYPE_CHECKING, Any, Optional, Protocol, cast
 
-from ..exceptions import ServerFull
+from ..exceptions import ServerFullError
 from ..internal.compatibility import Version
 from ..internal.events import ProtocolEvent
 from ..internal.mode import Mode
@@ -252,7 +252,7 @@ class HandshakeHandler:
                 {"role": "client", "reason": reason},
             )
             self.bus.error(f"Server rejected connection: {reason}")
-            raise ServerFull(reason)
+            raise ServerFullError(reason)
 
         peer_version = server_payload.get("v", "")
         if not self._check_version(peer_version):
