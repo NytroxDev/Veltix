@@ -17,6 +17,8 @@ from ..server.client_info import ClientInfo
 from .base_socket import BaseSocket
 from .managers.clients_manager import ClientEntry, ClientsManager
 
+MAX_DRAIN_ITERATIONS = 100
+
 if TYPE_CHECKING:
     from ..handler.request_handler import RequestHandler
     from ..internal.bus import VeltixBus
@@ -199,46 +201,48 @@ class AsyncSocket(BaseSocket):
 
         sock = entry.info.conn
 
-        result = _network_recv(sock, buffer_size)
+        for _ in range(MAX_DRAIN_ITERATIONS):
+            result = _network_recv(sock, buffer_size)
 
-        if result.timed_out:
-            return
+            if result.timed_out:
+                return
 
-        if result.disconnected:
-            self.bus.debug(f"client {client_id} disconnected")
-            self.close_client(client_id)
-            return
+            if result.disconnected:
+                self.bus.debug(f"client {client_id} disconnected")
+                self.close_client(client_id)
+                return
 
-        data = result.data or b""
-        self.bus.debug(f"client {client_id} recv {len(data)} bytes")
-        entry.buffer.add_data(data)
-        dispatch_messages(
-            entry.buffer,
-            self.bus,
-            lambda message: self.request_handler.handle(message, entry.info),
-            client_addr=entry.info.addr,
-        )
+            data = result.data or b""
+            self.bus.debug(f"client {client_id} recv {len(data)} bytes")
+            entry.buffer.add_data(data)
+            dispatch_messages(
+                entry.buffer,
+                self.bus,
+                lambda message: self.request_handler.handle(message, entry.info),
+                client_addr=entry.info.addr,
+            )
 
     def _handle_self_read(self, buffer_size: int) -> None:
-        result = _network_recv(self, buffer_size)
+        for _ in range(MAX_DRAIN_ITERATIONS):
+            result = _network_recv(self, buffer_size)
 
-        if result.timed_out:
-            return
+            if result.timed_out:
+                return
 
-        if result.disconnected:
-            self.bus.debug("self_read: disconnected from server")
-            self.bus.emit(ClientEvent.SOCKET_DISCONNECTED)
-            self.disconnect(0.5)
-            return
+            if result.disconnected:
+                self.bus.debug("self_read: disconnected from server")
+                self.bus.emit(ClientEvent.SOCKET_DISCONNECTED)
+                self.disconnect(0.5)
+                return
 
-        data = result.data or b""
-        self.bus.debug(f"self_read: recv {len(data)} bytes")
-        self._client_buffer.add_data(data)
-        dispatch_messages(
-            self._client_buffer,
-            self.bus,
-            lambda response: self.request_handler.handle(response),
-        )
+            data = result.data or b""
+            self.bus.debug(f"self_read: recv {len(data)} bytes")
+            self._client_buffer.add_data(data)
+            dispatch_messages(
+                self._client_buffer,
+                self.bus,
+                lambda response: self.request_handler.handle(response),
+            )
 
     def close_client(self, client: Union[ClientEntry, int]) -> bool:
         if isinstance(client, ClientEntry):
