@@ -111,21 +111,19 @@ def dispatch_messages(
     """
     try:
         for message in buffer.extract_messages():
-            if client_addr is not None:
-                source = str(client_addr)
-                payload: dict[str, object] = {
-                    "type": message.type,
-                    "length": len(message.content),
-                    "client": client_addr,
-                }
-            else:
-                source = "server"
-                payload = {
-                    "type": message.type,
-                    "length": len(message.content),
-                    "from": "server",
-                }
-            bus.emit(MessageEvent.RECEIVED, payload)
+            if bus._has_subscribers(MessageEvent.RECEIVED):
+                bus.emit(
+                    MessageEvent.RECEIVED,
+                    {
+                        "type": message.type,
+                        "length": len(message.content),
+                        **(
+                            {"client": client_addr}
+                            if client_addr is not None
+                            else {"from": "server"}
+                        ),
+                    },
+                )
             handler(message)
     except Exception as e:
         source = str(client_addr) if client_addr is not None else "server"

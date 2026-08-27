@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .._vendor.avyra import EventBus
 from ..logger.core import Logger
 from ..logger.levels import LogLevel
@@ -12,6 +14,9 @@ from .events import (
     ReconnectEvent,
     ServerEvent,
 )
+
+if TYPE_CHECKING:
+    from enum import Enum
 
 _ALL_EVENTS = [
     ServerEvent,
@@ -109,3 +114,21 @@ class VeltixBus(EventBus):
             msg: The log message.
         """
         self.emit(LogEvent.CRITICAL, msg)
+
+    def _has_subscribers(
+        self,
+        event: Enum,
+    ) -> bool:
+        """Check whether any subscriber is registered for *event*.
+
+        This is a lock-free fast path for hot-path emit guards. Dict
+        reads are safe under the GIL.
+
+        Args:
+            event: The event to check.
+
+        Returns:
+            True if at least one subscriber is registered.
+        """
+        subs = self._subscribers.get(event)
+        return subs is not None and len(subs) > 0

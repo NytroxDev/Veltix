@@ -60,7 +60,7 @@ class Sender:
         self._get_all_clients = get_all_clients
 
     def _emit(self, event: Enum, data: dict) -> None:
-        if self.bus:
+        if self.bus and self.bus._has_subscribers(event):
             self.bus.emit(event, data)
 
     def _log_error(self, message: str) -> None:

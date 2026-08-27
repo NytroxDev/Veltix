@@ -19,16 +19,16 @@ class PingRule(Rule):
     """Responds to PING messages with a PONG carrying the same request ID."""
 
     def handle(self, context: MessageContext) -> None:
-        context.handler.bus.emit(
-            ProtocolEvent.PING,
-            {
-                "request_id": context.response.request_id,
-                "from": "client" if context.is_server else "server",
-            },
-        )
-        context.handler.bus.debug(
-            f"Responding to PING with PONG (request_id={context.response.request_id})"
-        )
+        bus = context.handler.bus
+        if bus._has_subscribers(ProtocolEvent.PING):
+            bus.emit(
+                ProtocolEvent.PING,
+                {
+                    "request_id": context.response.request_id,
+                    "from": "client" if context.is_server else "server",
+                },
+            )
+        bus.debug(f"Responding to PING with PONG (request_id={context.response.request_id})")
         pong = Request(PONG, b"", request_id=context.response.request_id)
         sender = context.handler.sender
         if sender is None:
@@ -40,12 +40,13 @@ class PingRule(Rule):
             sender.send(pong, client=client.conn)
         else:
             sender.send(pong)
-        context.handler.bus.emit(
-            ProtocolEvent.PONG,
-            {
-                "request_id": context.response.request_id,
-            },
-        )
+        if bus._has_subscribers(ProtocolEvent.PONG):
+            bus.emit(
+                ProtocolEvent.PONG,
+                {
+                    "request_id": context.response.request_id,
+                },
+            )
 
     def can_handle(self, context: MessageContext) -> bool:
         """Return True if the message is a PING."""
@@ -79,12 +80,13 @@ class PendingRequestRule(Rule):
         if queue is None:
             return False
         queue.put(context.response)
-        context.handler.bus.emit(
-            MessageEvent.PENDING_SATISFIED,
-            {
-                "request_id": global_id,
-            },
-        )
+        if context.handler.bus._has_subscribers(MessageEvent.PENDING_SATISFIED):
+            context.handler.bus.emit(
+                MessageEvent.PENDING_SATISFIED,
+                {
+                    "request_id": global_id,
+                },
+            )
         context.handler.bus.debug(f"Routing response to pending request (global_id={global_id})")
         return True
 
@@ -99,14 +101,15 @@ class RouteRule(Rule):
                 f"Route for type {context.response.type} disappeared before dispatch"
             )
             return
-        context.handler.bus.emit(
-            MessageEvent.ROUTED,
-            {
-                "type": context.response.type,
-                "route": "registered",
-                "source": "server" if context.is_server else "client",
-            },
-        )
+        if context.handler.bus._has_subscribers(MessageEvent.ROUTED):
+            context.handler.bus.emit(
+                MessageEvent.ROUTED,
+                {
+                    "type": context.response.type,
+                    "route": "registered",
+                    "source": "server" if context.is_server else "client",
+                },
+            )
         if context.is_server:
             context.handler._executor.submit(route, context.client, context.response)
         else:
@@ -123,14 +126,15 @@ class OnRecvRule(Rule):
     def handle(self, context: MessageContext) -> None:
         on_recv = context.handler.on_recv
         assert on_recv is not None
-        context.handler.bus.emit(
-            MessageEvent.ROUTED,
-            {
-                "type": context.response.type,
-                "route": "on_recv",
-                "source": "server" if context.is_server else "client",
-            },
-        )
+        if context.handler.bus._has_subscribers(MessageEvent.ROUTED):
+            context.handler.bus.emit(
+                MessageEvent.ROUTED,
+                {
+                    "type": context.response.type,
+                    "route": "on_recv",
+                    "source": "server" if context.is_server else "client",
+                },
+            )
         if context.is_server:
             context.handler._executor.submit(on_recv, context.client, context.response)
         else:
@@ -150,14 +154,15 @@ class UnhandledRule(Rule):
             src = f"client {addr}"
         else:
             src = "server"
-        context.handler.bus.emit(
-            MessageEvent.UNHANDLED,
-            {
-                "type": context.response.type,
-                "length": len(context.response.content),
-                "source": "server" if context.is_server else "client",
-            },
-        )
+        if context.handler.bus._has_subscribers(MessageEvent.UNHANDLED):
+            context.handler.bus.emit(
+                MessageEvent.UNHANDLED,
+                {
+                    "type": context.response.type,
+                    "length": len(context.response.content),
+                    "source": "server" if context.is_server else "client",
+                },
+            )
         context.handler.bus.warning(f"No handler registered for message from {src}")
 
     def can_handle(self, context: MessageContext) -> bool:
