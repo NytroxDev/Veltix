@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
-from ..internal.network import RecvResult, dispatch_messages, recv
+from ..internal.network import RecvResult, apply_tcp_tunings, dispatch_messages, recv
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
 from .base_socket import BaseSocket
@@ -53,7 +53,7 @@ class ThreadingSocket(BaseSocket):
         self._sock: socket.socket = (
             sock if sock is not None else socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         )
-        self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        apply_tcp_tunings(self._sock)
 
     # ── Server ────────────────────────────────────────────────────────────────
 

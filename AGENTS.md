@@ -525,7 +525,7 @@ client.bus  # -> VeltixBus
 class ServerConfig:
     host: str = "0.0.0.0"
     port: int = 8080
-    buffer_size: int = BufferSize.SMALL  # 1024 bytes
+    buffer_size: int = BufferSize.MEDIUM  # 8192 bytes
     max_connection: int = -1  # -1 = unlimited
     max_message_size: int = 10 * 1024 * 1024  # 10 MB
     handshake_timeout: float = 5.0
@@ -541,7 +541,7 @@ class ServerConfig:
 class ClientConfig:
     server_addr: str = "127.0.0.1"
     port: int = 8080
-    buffer_size: int = BufferSize.SMALL
+    buffer_size: int = BufferSize.MEDIUM
     max_message_size: int = 10 * 1024 * 1024
     handshake_timeout: float = 5.0
     max_workers: int = 4
@@ -762,7 +762,7 @@ class DisconnectState:
 ```python
 from veltix import BufferSize
 
-BufferSize.SMALL  # 1 KB
+BufferSize.SMALL  # 1 KB (use MEDIUM default - 8 KB)
 BufferSize.MEDIUM  # 8 KB
 BufferSize.LARGE  # 64 KB
 BufferSize.HUGE  # 1 MB

@@ -15,7 +15,7 @@ class ClientConfig:
         server_addr:       Server address to connect to.
         port:              Server port to connect to.
         buffer_size:       Buffer size for receiving data in bytes.
-                           Use BufferSize enum for common presets (default: BufferSize.SMALL).
+                           Use BufferSize enum for common presets (default: BufferSize.MEDIUM).
                            Can also be set to any custom integer value.
         max_message_size:  Maximum allowed message size in bytes (default: 10MB).
         handshake_timeout: Maximum time to wait for handshake completion (default: 5.0s).
@@ -31,7 +31,7 @@ class ClientConfig:
 
     server_addr: str = "127.0.0.1"
     port: int = 8080
-    buffer_size: int = BufferSize.SMALL
+    buffer_size: int = BufferSize.MEDIUM
     max_message_size: int = 10 * 1024 * 1024  # 10 MB
     handshake_timeout: float = 5.0
     max_workers: int = 4

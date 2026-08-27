@@ -74,8 +74,8 @@ Switching backends requires no changes to application code.
 ```python
 from veltix import ServerConfig, ClientConfig, BufferSize
 
-# SMALL  — 1KB  (default)
-# MEDIUM — 8KB
+# SMALL  — 1KB
+# MEDIUM — 8KB  (default)
 # LARGE  — 64KB
 # HUGE   — 1MB
 

@@ -15,7 +15,7 @@ class ServerConfig:
         host:              Server listening address (default: '0.0.0.0').
         port:              Server listening port (default: 8080).
         buffer_size:       Buffer size for receiving data in bytes.
-                           Use BufferSize enum for common presets (default: BufferSize.SMALL).
+                           Use BufferSize enum for common presets (default: BufferSize.MEDIUM).
                            Can also be set to any custom integer value.
         max_connection:    Maximum number of simultaneous connections (default: -1 = unlimited).
         max_message_size:  Maximum allowed message size in bytes (default: 10MB).
@@ -31,7 +31,7 @@ class ServerConfig:
 
     host: str = "0.0.0.0"
     port: int = 8080
-    buffer_size: int = BufferSize.SMALL
+    buffer_size: int = BufferSize.MEDIUM
     max_connection: int = -1
     max_message_size: int = 10 * 1024 * 1024  # 10 MB
     handshake_timeout: float = 5.0

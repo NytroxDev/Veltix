@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import socket
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Callable, Optional
@@ -14,6 +15,22 @@ if TYPE_CHECKING:
     from ..network.response import Response
     from ..socket_core.base_socket import BaseSocket
     from .bus import VeltixBus
+
+
+def apply_tcp_tunings(sock: socket.socket) -> None:
+    """Apply latency-focused TCP options.
+
+    Turns on ``TCP_NODELAY`` (already default elsewhere), ``TCP_QUICKACK``
+    and lowers ``TCP_NOTSENT_LOWAT`` to reduce ACK latency and outbound
+    buffering. Options are Linux-only and silently skipped when
+    unavailable.
+    """
+    with contextlib.suppress(AttributeError, OSError):
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+    with contextlib.suppress(AttributeError, OSError):
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_QUICKACK, 1)
+    with contextlib.suppress(AttributeError, OSError):
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NOTSENT_LOWAT, 16 * 1024)
 
 
 class RecvStatus(Enum):

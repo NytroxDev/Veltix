@@ -10,8 +10,13 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
-from ..internal.network import dispatch_messages
-from ..internal.network import recv as _network_recv
+from ..internal.network import (
+    apply_tcp_tunings,
+    dispatch_messages,
+)
+from ..internal.network import (
+    recv as _network_recv,
+)
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
 from .base_socket import BaseSocket
@@ -53,7 +58,7 @@ class AsyncSocket(BaseSocket):
 
         if sock is None:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            apply_tcp_tunings(self._sock)
 
             self._selector = selectors.DefaultSelector()
 
@@ -63,10 +68,10 @@ class AsyncSocket(BaseSocket):
         else:
             self._sock = sock
             self._sock.setblocking(not nonblocking)
-            self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             with contextlib.suppress(AttributeError, OSError):
                 self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            apply_tcp_tunings(self._sock)
 
             self.bus.debug(f"created client socket instance (fd={self._sock.fileno()})")
 
@@ -146,7 +151,7 @@ class AsyncSocket(BaseSocket):
 
         self.bus.debug(f"accepted client from {addr}")
 
-        conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        apply_tcp_tunings(conn)
 
         client_sock = AsyncSocket(
             self.request_handler,

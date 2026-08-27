@@ -8,7 +8,7 @@ from veltix import Server, ServerConfig, BufferSize, SocketCore
 config = ServerConfig(
     host="0.0.0.0",  # Listening address
     port=8080,  # Listening port
-    buffer_size=BufferSize.SMALL,  # Receive buffer size (default: 1KB)
+    buffer_size=BufferSize.MEDIUM,  # Receive buffer size (default: 8KB)
     max_connection=-1,  # Max simultaneous clients (-1 = unlimited)
     max_message_size=10 * 1024 * 1024,  # 10MB max message size
     handshake_timeout=5.0,  # Handshake timeout in seconds
