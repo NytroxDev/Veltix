@@ -150,6 +150,7 @@ tests/
 ├── test_send_and_wait.py
 ├── test_sender.py
 ├── test_server_advanced.py
+├── test_server_full.py
 ├── test_socket_core.py
 ├── test_socket_core_unit.py
 ├── test_utils.py
@@ -157,6 +158,7 @@ tests/
     └── avyra/               # Vendored Avyra tests
 docs/
 ├── index.md
+├── changelog.md
 ├── getting-started/
 ├── guides/
 └── api/
@@ -315,7 +317,7 @@ Levels (same for both): `trace`, `debug`, `info`, `success`, `warning`, `error`,
 
 Key fixtures (conftest.py):
 
-- `cleanup_after_test`: autouse, clears `MessageTypeRegistry`, waits 0.3s for thread cleanup.
+- `cleanup_after_test`: autouse, clears `MessageTypeRegistry`, waits 0.01s for thread cleanup.
 - `reset_logger`: resets logger singleton before/after test.
 - `test_message_type`: creates a unique `MessageType` per test.
 - `socket_core_backend`: parametrizes over `THREADING` and `ASYNC` backends.
@@ -383,8 +385,7 @@ in `handler/rules.py`.
 ### Adding a new event
 
 Add a member to the appropriate event enum in `internal/events.py` (`ServerEvent`, `ClientEvent`,
-`MessageEvent`, `ProtocolEvent`, `ErrorEvent`, `LogEvent`, or `ReconnectEvent`). Do NOT add to
-the old `Events` enum (kept for backward compat only, to remove in v3.0).
+`MessageEvent`, `ProtocolEvent`, `ErrorEvent`, `LogEvent`, or `ReconnectEvent`).
 
 ### Adding a new exception
 
@@ -813,7 +814,7 @@ class LoggerConfig:
     show_timestamp: bool = True
     show_level: bool = True
     show_caller: bool = True
-    file_path: Optional[Path] = None
+    file_path: Optional[Union[str, Path]] = None
     file_rotation_size: int = 10 * 1024 * 1024
     file_backup_count: int = 5
     stream: TextIO = sys.stdout
@@ -846,7 +847,7 @@ format_bytes(148_000)  # -> "144.5 KB"
 ### Exceptions
 
 ```python
-from veltix import VeltixError, MessageTypeError, RequestError, SenderError
+from veltix import VeltixError, MessageTypeError, RequestError, SenderError, ServerFullError
 
 
 class VeltixError(Exception): ...  # base
@@ -868,6 +869,9 @@ class TimeoutError(VeltixError): ...  # operation timeout
 
 
 class InvalidContentError(VeltixError): ...  # content decode failure (response.text / response.json)
+
+
+class ServerFullError(VeltixError): ...  # server rejected connection (at capacity)
 ```
 
 ### Complete Examples
