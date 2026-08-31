@@ -10,21 +10,16 @@ ruff format . --check
 echo "=== mypy ==="
 mypy src/veltix/
 
-echo "=== Compatibility table ==="
+echo "=== Protocol version ==="
 python -c "
 import re
-content = open('pyproject.toml').read()
-ver = re.search(r'^version\s*=\s*[\"\'](.*?)[\"\']', content, re.MULTILINE).group(1)
-parts = [int(x) for x in ver.split('.')[:3]]
-
-compat = open('src/veltix/internal/compatibility.py').read()
-entry = f'Version({parts[0]}, {parts[1]}, {parts[2]})'
-if entry not in compat:
-    print(f'❌ Version {ver} not found in COMPATIBILITY table!')
-    print(f'   Add this to src/veltix/internal/compatibility.py:')
-    print(f'   {entry}: [{entry}],')
+content = open('src/veltix/internal/compatibility.py').read()
+match = re.search(r'PROTOCOL_VERSION: tuple\[int, int\] = \((\d+), (\d+)\)', content)
+if not match:
+    print('❌ PROTOCOL_VERSION not found or malformed in src/veltix/internal/compatibility.py')
     exit(1)
-print(f'✅ Version {ver} is registered in COMPATIBILITY table')
+major, minor = int(match.group(1)), int(match.group(2))
+print(f'✅ PROTOCOL_VERSION = {major}.{minor}')
 "
 
 echo "=== Tests ==="

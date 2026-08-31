@@ -97,7 +97,7 @@ CHAT = MessageType(200, "chat", "Chat message")
 FILE_TRANSFER = MessageType(201, "file", "File transfer")
 
 # Or auto-allocate the next available code
-PLUGIN = MessageType("plugin", description="Custom plugin message")
+SCORE_UPDATE = MessageType("score_update", description="Custom game message")
 ```
 
 !!! tip

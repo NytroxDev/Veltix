@@ -7,7 +7,7 @@ Guidelines for AI coding agents working on the Veltix project.
 Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
 It handles framing, threading, handshake, routing, and reconnection.
 
-- **Version:** 2.0.2
+- **Version:** 2.0.3
 - **Python:** 3.8+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only.
@@ -108,7 +108,7 @@ src/veltix/
 │   ├── bus.py           # VeltixBus (wraps Avyra EventBus)
 │   ├── events.py        # Event enums (ServerEvent, ClientEvent, …)
 │   ├── buffer_size.py   # BufferSize enum
-│   ├── compatibility.py # Version, COMPATIBILITY
+│   ├── compatibility.py # PROTOCOL_VERSION, Version/COMPATIBILITY (deprecated)
 │   ├── mode.py          # Mode enum
 │   ├── network.py
 │   └── version.py       # __version__ (from package metadata)
@@ -404,9 +404,10 @@ class MyNewError(VeltixError):
 - **Thread safety:** all shared state must be protected.
 - **Type hints** required on all public symbols.
 - **Google-style docstrings** required on all public symbols.
-- **Wire protocol changes** must be registered in the COMPATIBILITY table (`internal/compatibility.py`).
-- **Backward compatibility** within a minor series is preferred but not guaranteed; breaking changes must bump minor and
-  update COMPATIBILITY.
+- **Wire protocol changes** must bump the `PROTOCOL_VERSION` MAJOR (`internal/compatibility.py`); the handshake validates
+  compatibility by protocol MAJOR.
+- **Backward compatibility** within a minor series is preferred but not guaranteed; a wire-breaking change must bump the
+  `PROTOCOL_VERSION` MAJOR. The `COMPATIBILITY` table is deprecated.
 
 ## Git & Commit
 
@@ -769,15 +770,28 @@ BufferSize.LARGE  # 64 KB
 BufferSize.HUGE  # 1 MB
 ```
 
-### Version Compatibility
+### Protocol Compatibility
 
 ```python
-from veltix import Version, COMPATIBILITY
+from veltix.internal.compatibility import (
+    PROTOCOL_VERSION,      # (1, 0) — (major, minor)
+    protocol_version_str,  # "1.0"
+    protocol_is_compatible,
+)
 
-v = Version(2, 0, 2)
-v2 = Version.from_str("v2.0.2")
-v.is_compatible(v2)  # -> Optional[bool] (True/False/None)
+protocol_version_str()                      # -> "1.0"
+protocol_is_compatible("1.1", (1, 0))       # -> True (same major)
+protocol_is_compatible("2.0", (1, 0))       # -> False (different major)
 ```
+
+Two peers are wire-compatible if and only if their protocol **MAJOR** matches:
+this is symmetric, so both a newer and an older peer accept each other.
+Peers that do not advertise a `pv` are rejected.
+
+> **Deprecated (kept for the public API):** `from veltix import Version, COMPATIBILITY`
+> and `Version.is_compatible()` use the old per-version table and are no longer
+> used by the handshake. New code should use `PROTOCOL_VERSION` /
+> `protocol_is_compatible()`.
 
 ### Logger
 

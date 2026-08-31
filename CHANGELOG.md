@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-08-31
+
+### Breaking
+
+- **Protocol compatibility moved to a dedicated protocol version (`pv`)**. The
+  handshake now sends `{"v": ..., "pv": "1.0", "meta": ...}` in both directions.
+  Two peers are wire-compatible if and only if they share the same protocol
+  **MAJOR** (`protocol_is_compatible()`). The old per-version `COMPATIBILITY`
+  table and `Version.is_compatible()` are deprecated and no longer used by the
+  handshake
+  ([75b203e](https://github.com/NytroxDev/Veltix/commit/75b203e),
+  [5fdf325](https://github.com/NytroxDev/Veltix/commit/5fdf325)).
+- **`PROTOCOL_VERSION = (1, 0)`** defines the current wire protocol. Bump its
+  MAJOR when the wire format breaks compatibility
+  ([75b203e](https://github.com/NytroxDev/Veltix/commit/75b203e)).
+- **Peers without a `pv` are rejected** (no legacy version fallback)
+  ([5fdf325](https://github.com/NytroxDev/Veltix/commit/5fdf325)).
+
+### Deprecated
+
+- **`COMPATIBILITY` and `Version.is_compatible()`**: kept for the public API but
+  no longer used by the handshake. New code should use `PROTOCOL_VERSION` and
+  `protocol_is_compatible()`.
+
+---
+
 ## [2.0.2] - 2026-08-25
 
 ### Refactored
