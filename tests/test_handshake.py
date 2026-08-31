@@ -14,9 +14,15 @@ import pytest
 from veltix import __version__
 from veltix.handler.handshake_handler import HandshakeHandler
 from veltix.internal.bus import VeltixBus
+from veltix.internal.compatibility import protocol_version_str
 from veltix.internal.mode import Mode
 
 # ── Encode / decode ────────────────────────────────────────────────────────────
+
+
+def _peer_payload(version: str = __version__) -> dict:
+    """Build a peer handshake payload with both package and protocol version."""
+    return {"v": version, "pv": protocol_version_str(), "meta": {}}
 
 
 class TestHandshakeEncodeDecode:
@@ -58,19 +64,37 @@ class TestHandshakeEncodeDecode:
 
 class TestHandshakeCheckVersion:
     def setup_method(self) -> None:
+        from veltix.internal.compatibility import protocol_version_str
+
+        self.pv = protocol_version_str()
         self.handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
 
-    def test_compatible_version(self):
-        assert self.handler._check_version(__version__) is True
+    def test_compatible_protocol_version(self):
+        assert self.handler._check_version(self.pv) is True
 
-    def test_incompatible_version(self):
-        assert self.handler._check_version("0.0.1") is False
+    def test_compatible_same_major_other_minor(self):
+        major = self.pv.split(".")[0]
+        assert self.handler._check_version(f"{major}.99") is True
 
-    def test_invalid_version_string(self):
+    def test_incompatible_protocol_version(self):
+        assert self.handler._check_version("0.1") is False
+
+    def test_invalid_protocol_version(self):
         assert self.handler._check_version("not_a_version") is False
 
-    def test_empty_version_string(self):
-        assert self.handler._check_version("") is False
+    def test_empty_protocol_version(self):
+        assert self.handler._check_version("", "") is False
+
+    def test_legacy_fallback_compatible(self):
+        """Peer without pv falls back to package version major."""
+        assert self.handler._check_version("", __version__) is True
+        assert self.handler._check_version("", "2.5.0") is True
+
+    def test_legacy_fallback_incompatible(self):
+        assert self.handler._check_version("", "0.0.1") is False
+
+    def test_legacy_fallback_invalid(self):
+        assert self.handler._check_version("", "not_a_version") is False
 
 
 # ── Integration with real sockets ──────────────────────────────────────────────
@@ -155,7 +179,7 @@ class TestHandshakeIntegration:
 
         server_payload = client_handler._recv_handshake(client_sock)
         assert server_payload is not None
-        client_handler._send_handshake(client_sock, {"v": "0.0.1", "meta": {}})
+        client_handler._send_handshake(client_sock, {"v": "2.0.99", "pv": "0.1", "meta": {}})
         client_sock.close()
         t.join()
 
@@ -294,9 +318,9 @@ def _mock_recv_partial_header() -> MockSocket:
 
 
 def _mock_recv_bad_version() -> MockSocket:
-    """Socket that serves a valid server payload but with an incompatible version."""
+    """Socket that serves a valid server payload but with an incompatible protocol version."""
     handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
-    server_payload = handler._encode({"v": "0.0.1", "meta": {"id_window": 30000}})
+    server_payload = handler._encode({"v": "0.0.1", "pv": "0.1", "meta": {"id_window": 30000}})
     ack = handler._encode({"result": "ok"})
     return MockSocket(recv_data=server_payload + ack)
 
@@ -304,7 +328,7 @@ def _mock_recv_bad_version() -> MockSocket:
 def _mock_ack_fail() -> MockSocket:
     """Socket that sends a valid first payload but fails on the ack send."""
     handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
-    server_payload = handler._encode({"v": __version__, "meta": {"id_window": 30000}})
+    server_payload = handler._encode(dict(_peer_payload(), meta={"id_window": 30000}))
     return MockSocket(
         recv_data=server_payload,
         send_error=ConnectionResetError("ack failed"),
@@ -315,7 +339,7 @@ def _mock_ack_fail() -> MockSocket:
 def _mock_bad_ack() -> MockSocket:
     """Socket that sends a valid first payload but a wrong ack result."""
     handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
-    server_payload = handler._encode({"v": __version__, "meta": {"id_window": 30000}})
+    server_payload = handler._encode(dict(_peer_payload(), meta={"id_window": 30000}))
     bad_ack = handler._encode({"result": "nok"})
     return MockSocket(recv_data=server_payload + bad_ack)
 
@@ -370,7 +394,9 @@ class TestClientHandshakeFailurePaths:
     def test_client_send_failed(self):
         handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
         sock = MockSocket(
-            recv_data=HandshakeHandler._encode({"v": __version__, "meta": {"id_window": 30000}}),
+            recv_data=HandshakeHandler._encode(
+                {"v": __version__, "pv": protocol_version_str(), "meta": {"id_window": 30000}}
+            ),
             send_error=ConnectionResetError("send failed"),
             send_error_on_call=1,
         )
@@ -387,7 +413,7 @@ class TestClientHandshakeFailurePaths:
 
     def test_client_meta_returned_on_success(self):
         handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
-        server_payload = {"v": __version__, "meta": {"id_window": 50000}}
+        server_payload = dict(_peer_payload(), meta={"id_window": 50000})
         encoded = HandshakeHandler._encode(server_payload)
         ack = HandshakeHandler._encode({"result": "ok"})
         sock = MockSocket(recv_data=encoded + ack)
@@ -408,7 +434,7 @@ class TestRecvHandshakeEdgeCases:
 
     def test_recv_partial_payload(self):
         handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
-        full = handler._encode({"v": __version__, "meta": {}})
+        full = handler._encode(dict(_peer_payload(), meta={}))
         sock = MockSocket(recv_data=full[:5])
         result = handler._recv_handshake(sock)
         assert result is None

@@ -7,7 +7,11 @@ import struct
 from typing import TYPE_CHECKING, Any, Optional, Protocol, cast
 
 from ..exceptions import ServerFullError
-from ..internal.compatibility import Version
+from ..internal.compatibility import (
+    Version,
+    protocol_is_compatible,
+    protocol_version_str,
+)
 from ..internal.events import ProtocolEvent
 from ..internal.mode import Mode
 from ..internal.version import __version__
@@ -31,12 +35,12 @@ class HandshakeHandler:
     Manage the version compatibility handshake for a single raw TCP connection.
     Uses a 3-way protocol to ensure both sides are synchronized:
 
-      1. Server → Client : {"v", "meta"}
-      2. Client → Server : {"v", "meta"}
+      1. Server → Client : {"v", "pv", "meta"}
+      2. Client → Server : {"v", "pv", "meta"}
       3. Server → Client : {"result": "ok"}
 
-    Server mode sends first, then validates client version before acking.
-    Client mode reads server version, validates, sends its version, then
+    Server mode sends first, then validates client protocol version before acking.
+    Client mode reads server protocol version, validates, sends its version, then
     waits for the server ack before returning.
     """
 
@@ -144,22 +148,38 @@ class HandshakeHandler:
             return str(payload["error"])
         return None
 
-    def _check_version(self, peer_version: str) -> bool:
-        """Check peer version against the compatibility table."""
-        try:
-            peer = Version.from_str(peer_version)
-            result = self.version.is_compatible(peer)
-            return bool(result)
-        except Exception:
-            self.bus.error(f"Invalid peer version string: {peer_version!r}")
-            return False
+    def _check_version(self, peer_pv: str, peer_version: str = "") -> bool:
+        """Check peer compatibility against the local protocol version.
+
+        The peer protocol version (``pv``) takes precedence: two peers with
+        the same protocol major are compatible. For peers that only send the
+        legacy package version (``v``, no ``pv``), the package major is used
+        as a fallback so older clients keep working.
+
+        Args:
+            peer_pv: The peer protocol version string (``MAJOR.MINOR``).
+            peer_version: Optional legacy package version string.
+
+        Returns:
+            True if the peer is compatible, False otherwise.
+        """
+        if peer_pv:
+            result = protocol_is_compatible(peer_pv)
+        else:
+            try:
+                peer = Version.from_str(peer_version)
+                result = peer.major == self.version.major
+            except Exception:
+                self.bus.error(f"Invalid peer version string: {peer_version!r}")
+                return False
+        return bool(result)
 
     def do_server_handshake(self, sock: RawSocket, timeout: float = 5.0) -> bool:
         """Perform the server-side 3-way handshake.
 
         Steps:
-            1. Send ``{"v": ..., "meta": {"id_window": ...}}`` to the client.
-            2. Receive the client's ``{"v": ..., "meta": ...}`` response.
+            1. Send ``{"v": ..., "pv": ..., "meta": {"id_window": ...}}`` to the client.
+            2. Receive the client's ``{"v": ..., "pv": ..., "meta": ...}`` response.
             3. Validate the client's version against the compatibility table.
             4. Send ``{"result": "ok"}`` to acknowledge.
 
@@ -173,7 +193,12 @@ class HandshakeHandler:
         self.bus.emit(ProtocolEvent.HANDSHAKE_START, {"role": "server"})
 
         if not self._send_handshake(
-            sock, {"v": __version__, "meta": {"id_window": self.id_window}}
+            sock,
+            {
+                "v": __version__,
+                "pv": protocol_version_str(),
+                "meta": {"id_window": self.id_window},
+            },
         ):
             self.bus.emit(
                 ProtocolEvent.HANDSHAKE_FAIL,
@@ -192,7 +217,8 @@ class HandshakeHandler:
             return False
 
         peer_version = client_payload.get("v", "")
-        if not self._check_version(peer_version):
+        peer_pv = client_payload.get("pv", "")
+        if not self._check_version(peer_pv, peer_version):
             self.bus.emit(
                 ProtocolEvent.HANDSHAKE_FAIL,
                 {
@@ -221,8 +247,8 @@ class HandshakeHandler:
         """Perform the client-side 3-way handshake.
 
         Steps:
-            1. Receive the server's ``{"v": ..., "meta": ...}`` payload.
-            2. Validate the server's version against the compatibility table.
+            1. Receive the server's ``{"v": ..., "pv": ..., "meta": ...}`` payload.
+            2. Validate the server's protocol version.
             3. Send ``{"v": ..., "meta": {}}`` to the server.
             4. Wait for the server's ``{"result": "ok"}`` acknowledgment.
 
@@ -255,7 +281,8 @@ class HandshakeHandler:
             raise ServerFullError(reason)
 
         peer_version = server_payload.get("v", "")
-        if not self._check_version(peer_version):
+        peer_pv = server_payload.get("pv", "")
+        if not self._check_version(peer_pv, peer_version):
             self.bus.emit(
                 ProtocolEvent.HANDSHAKE_FAIL,
                 {
@@ -267,7 +294,9 @@ class HandshakeHandler:
             self.bus.error(f"Server version {peer_version} is incompatible")
             return False, None
 
-        if not self._send_handshake(sock, {"v": __version__, "meta": {}}):
+        if not self._send_handshake(
+            sock, {"v": __version__, "pv": protocol_version_str(), "meta": {}}
+        ):
             self.bus.emit(
                 ProtocolEvent.HANDSHAKE_FAIL,
                 {"role": "client", "reason": "send_failed"},

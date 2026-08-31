@@ -1,25 +1,17 @@
 """
 compatibility.py
-----------------
-Version compatibility table for the Veltix protocol.
+-----------------
+Version and protocol compatibility for the Veltix wire format.
 
-Defines which versions are wire-compatible with each other.
-Used by HandshakeHandler to validate incoming connections.
+Starting with v2.0.3, the handshake uses a dedicated protocol version
+(:data:`PROTOCOL_VERSION`) that is decoupled from the package version.
+Two peers are wire-compatible if and only if they share the same protocol
+*MAJOR* component. This is symmetric: a newer peer and an older peer both
+accept each other as long as their protocol majors match.
 
-Adding a new version
---------------------
-When releasing a new version, add an entry to COMPATIBILITY:
-
-    Version(1, 6, 7): [Version(1, 6, 7)],
-
-To allow backward compatibility between two versions:
-
-    Version(1, 6, 7): [Version(1, 6, 7), Version(1, 6, 6)],
-
-Return values of Version.is_compatible():
-    True  — versions are compatible, connection allowed
-    False — versions are incompatible, connection should be rejected
-    None  — version is unknown (not in the table), treat as incompatible
+The old ``COMPATIBILITY`` table and :meth:`Version.is_compatible` are kept
+for backward compatibility with the public API but are deprecated. New code
+should use :data:`PROTOCOL_VERSION` and :func:`protocol_is_compatible`.
 """
 
 from __future__ import annotations
@@ -33,10 +25,75 @@ from ..logger.core import Logger
 _logger = Logger.get_instance()
 
 
+# ---------------------------------------------------------------------------
+# Protocol version
+# ---------------------------------------------------------------------------
+#   pv <MAJOR>.<MINOR>
+#   Two peers are compatible when their MAJOR components are equal.
+#   The MINOR is informational only (the peer is not rejected on a mismatch).
+#   Bump the MAJOR when the wire format breaks compatibility (e.g. header
+#   layout, framing, handshake contract).
+# ---------------------------------------------------------------------------
+
+PROTOCOL_VERSION: tuple[int, int] = (1, 0)
+
+
+def protocol_version_str() -> str:
+    """Return the current protocol version as a ``MAJOR.MINOR`` string.
+
+    Returns:
+        The protocol version string (e.g. ``"1.0"``).
+    """
+    major, minor = PROTOCOL_VERSION
+    return f"{major}.{minor}"
+
+
+def _parse_protocol_version(value: str) -> Optional[tuple[int, int]]:
+    """Parse a ``MAJOR.MINOR`` protocol version string.
+
+    Args:
+        value: The protocol version string to parse.
+
+    Returns:
+        A ``(major, minor)`` tuple, or ``None`` if the string is invalid.
+    """
+    try:
+        parts = value.split(".")
+        if len(parts) != 2:
+            return None
+        major, minor = int(parts[0]), int(parts[1])
+        return major, minor
+    except (ValueError, AttributeError):
+        return None
+
+
+def protocol_is_compatible(peer_pv: str, local_pv: Optional[tuple[int, int]] = None) -> bool:
+    """Check whether a peer protocol version is compatible with the local one.
+
+    Compatibility is determined by the MAJOR component: peers with the same
+    major are compatible regardless of their minor.
+
+    Args:
+        peer_pv: The peer's protocol version string (``MAJOR.MINOR``).
+        local_pv: The local protocol version as a ``(major, minor)`` tuple.
+            Defaults to :data:`PROTOCOL_VERSION`.
+
+    Returns:
+        True if the majors match, False if the peer version is invalid or
+        has a different major.
+    """
+    if local_pv is None:
+        local_pv = PROTOCOL_VERSION
+    peer = _parse_protocol_version(peer_pv)
+    if peer is None:
+        _logger.warning(f"[Compatibility] invalid protocol version: {peer_pv!r}")
+        return False
+    return peer[0] == local_pv[0]
+
+
 @dataclasses.dataclass
 class Version:
-    """
-    Represents a semantic version (major.minor.patch).
+    """Represents a semantic version (major.minor.patch).
 
     Can be used as a dict key via __hash__.
     Equality is based on all three components.
@@ -77,6 +134,11 @@ class Version:
         """
         Check whether this version is compatible with another.
 
+        Deprecated:
+            Kept for backward compatibility with the old table-based API.
+            New code should use :func:`protocol_is_compatible` with
+            :data:`PROTOCOL_VERSION` instead.
+
         Looks up self in the COMPATIBILITY table and checks if other
         is listed as a compatible peer.
 
@@ -87,14 +149,14 @@ class Version:
             True  if the versions are compatible.
             False if self is known but other is not in its compatible list.
             None  if self is not registered in the compatibility table
-                  (unknown version — treat as incompatible).
+                  (unknown version - treat as incompatible).
         """
         if self in COMPATIBILITY:
             result = other in COMPATIBILITY[self]
             if result:
-                _logger.debug(f"[Compatibility] {self} ↔ {other}: compatible ✓")
+                _logger.debug(f"[Compatibility] {self} compatible with {other}")
             else:
-                _logger.warning(f"[Compatibility] {self} ↔ {other}: incompatible ✗")
+                _logger.warning(f"[Compatibility] {self} incompatible with {other}")
             return result
 
         _logger.warning(f"[Compatibility] {self} is not registered in the compatibility table")
@@ -111,13 +173,10 @@ class Version:
 
 
 # ---------------------------------------------------------------------------
-# Compatibility table
+# Deprecated compatibility table
 # ---------------------------------------------------------------------------
-# Keys   : the local version (self)
-# Values : list of versions that are wire-compatible with the key
-#
-# By default each version is only compatible with itself (strict mode).
-# To allow cross-version communication, add the peer version to the list.
+# Kept for backward compatibility with the public API. The handshake no
+# longer uses this table. New code should rely on PROTOCOL_VERSION.
 # ---------------------------------------------------------------------------
 
 COMPATIBILITY: dict[Version, list[Version]] = {
