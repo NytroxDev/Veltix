@@ -83,18 +83,11 @@ class TestHandshakeCheckVersion:
         assert self.handler._check_version("not_a_version") is False
 
     def test_empty_protocol_version(self):
-        assert self.handler._check_version("", "") is False
+        assert self.handler._check_version("") is False
 
-    def test_legacy_fallback_compatible(self):
-        """Peer without pv falls back to package version major."""
-        assert self.handler._check_version("", __version__) is True
-        assert self.handler._check_version("", "2.5.0") is True
-
-    def test_legacy_fallback_incompatible(self):
-        assert self.handler._check_version("", "0.0.1") is False
-
-    def test_legacy_fallback_invalid(self):
-        assert self.handler._check_version("", "not_a_version") is False
+    def test_missing_protocol_version_rejected(self):
+        """Peer without pv is rejected (no legacy fallback)."""
+        assert self.handler._check_version("") is False
 
 
 # ── Integration with real sockets ──────────────────────────────────────────────

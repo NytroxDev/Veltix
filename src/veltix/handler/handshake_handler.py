@@ -7,11 +7,7 @@ import struct
 from typing import TYPE_CHECKING, Any, Optional, Protocol, cast
 
 from ..exceptions import ServerFullError
-from ..internal.compatibility import (
-    Version,
-    protocol_is_compatible,
-    protocol_version_str,
-)
+from ..internal.compatibility import protocol_is_compatible, protocol_version_str
 from ..internal.events import ProtocolEvent
 from ..internal.mode import Mode
 from ..internal.version import __version__
@@ -56,7 +52,6 @@ class HandshakeHandler:
         self.is_server = mode == Mode.SERVER
         self.bus = bus
         self.id_window = id_window
-        self.version = Version.from_str(__version__)
         self.bus.debug(
             f"[Handshake] {self.mode.name.lower()} handshake handler initialized (version={__version__})"
         )
@@ -148,31 +143,22 @@ class HandshakeHandler:
             return str(payload["error"])
         return None
 
-    def _check_version(self, peer_pv: str, peer_version: str = "") -> bool:
+    def _check_version(self, peer_pv: str) -> bool:
         """Check peer compatibility against the local protocol version.
 
-        The peer protocol version (``pv``) takes precedence: two peers with
-        the same protocol major are compatible. For peers that only send the
-        legacy package version (``v``, no ``pv``), the package major is used
-        as a fallback so older clients keep working.
+        Two peers are compatible when they share the same protocol major.
+        A peer without a protocol version (``pv``) is rejected.
 
         Args:
             peer_pv: The peer protocol version string (``MAJOR.MINOR``).
-            peer_version: Optional legacy package version string.
 
         Returns:
             True if the peer is compatible, False otherwise.
         """
-        if peer_pv:
-            result = protocol_is_compatible(peer_pv)
-        else:
-            try:
-                peer = Version.from_str(peer_version)
-                result = peer.major == self.version.major
-            except Exception:
-                self.bus.error(f"Invalid peer version string: {peer_version!r}")
-                return False
-        return bool(result)
+        if not peer_pv:
+            self.bus.error("Peer did not advertise a protocol version (pv)")
+            return False
+        return protocol_is_compatible(peer_pv)
 
     def do_server_handshake(self, sock: RawSocket, timeout: float = 5.0) -> bool:
         """Perform the server-side 3-way handshake.
@@ -180,7 +166,7 @@ class HandshakeHandler:
         Steps:
             1. Send ``{"v": ..., "pv": ..., "meta": {"id_window": ...}}`` to the client.
             2. Receive the client's ``{"v": ..., "pv": ..., "meta": ...}`` response.
-            3. Validate the client's version against the compatibility table.
+            3. Validate the client's protocol version.
             4. Send ``{"result": "ok"}`` to acknowledge.
 
         Args:
@@ -218,7 +204,7 @@ class HandshakeHandler:
 
         peer_version = client_payload.get("v", "")
         peer_pv = client_payload.get("pv", "")
-        if not self._check_version(peer_pv, peer_version):
+        if not self._check_version(peer_pv):
             self.bus.emit(
                 ProtocolEvent.HANDSHAKE_FAIL,
                 {
@@ -282,7 +268,7 @@ class HandshakeHandler:
 
         peer_version = server_payload.get("v", "")
         peer_pv = server_payload.get("pv", "")
-        if not self._check_version(peer_pv, peer_version):
+        if not self._check_version(peer_pv):
             self.bus.emit(
                 ProtocolEvent.HANDSHAKE_FAIL,
                 {
