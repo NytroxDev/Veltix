@@ -11,7 +11,6 @@ from ..internal.events import ErrorEvent
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
-    from ..network.id_allocator import ClientAllocator
     from .managers.clients_manager import ClientEntry, ClientsManager
 
 
@@ -27,14 +26,12 @@ class BaseSocket(ABC):
         client_manager: Manages connected client entries.
         handshake_timeout: Timeout in seconds for the handshake phase.
         bus: Event bus for structured observability.
-        client_allocator: Optional ID allocator for client-bound request IDs.
     """
 
     client: Optional[Any] = None
     client_manager: ClientsManager
     handshake_timeout: float
     bus: VeltixBus
-    client_allocator: Optional[ClientAllocator]
     _sock: socket.socket
 
     def send(self, data: bytes) -> bool:

@@ -18,7 +18,6 @@ from .managers.clients_manager import ClientEntry, ClientsManager
 if TYPE_CHECKING:
     from ..handler.request_handler import RequestHandler
     from ..internal.bus import VeltixBus
-    from ..network.id_allocator import ClientAllocator
 
 
 class ThreadingSocket(BaseSocket):
@@ -48,7 +47,6 @@ class ThreadingSocket(BaseSocket):
         self.max_message_size = max_message_size
         self.request_handler = request_handler
         self.handshake_timeout = handshake_timeout
-        self.client_allocator: Optional[ClientAllocator] = None
 
         self._sock: socket.socket = (
             sock if sock is not None else socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -129,7 +127,6 @@ class ThreadingSocket(BaseSocket):
                     thread_id=thread_id,
                     handshake_done=False,
                     bus=self.bus,
-                    id_offset=self.client_allocator.register() if self.client_allocator else 0,
                 )
 
                 client_id = self.client_manager.add_client(client)

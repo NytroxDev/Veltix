@@ -32,7 +32,6 @@ class ClientInfo:
         addr: A ``(host, port)`` tuple representing the client address.
         thread_id: The identifier of the thread managing this client.
         handshake_done: Whether the handshake has been completed.
-        id_offset: Offset applied to request IDs for this client.
     """
 
     __slots__ = (
@@ -41,7 +40,6 @@ class ClientInfo:
         "addr",
         "thread_id",
         "handshake_done",
-        "id_offset",
         "_tags",
         "_tags_lock",
         "_bus",
@@ -54,7 +52,6 @@ class ClientInfo:
         thread_id: int,
         handshake_done: bool = False,
         bus: Optional[VeltixBus] = None,
-        id_offset: int = 0,
     ) -> None:
         """Initialise a new ClientInfo.
 
@@ -64,14 +61,12 @@ class ClientInfo:
             thread_id: Identifier of the thread managing this client.
             handshake_done: Whether the handshake is already complete.
             bus: Optional event bus for emitting client events.
-            id_offset: Offset applied to request IDs for this client.
         """
         self._id = _generate_id()
         self.conn = conn
         self.addr = addr
         self.thread_id = thread_id
         self.handshake_done = handshake_done
-        self.id_offset = id_offset
         self._tags: dict[str, Any] = {}
         self._tags_lock = threading.Lock()
         self._bus = bus

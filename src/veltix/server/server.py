@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ServerEvent
-from ..network.id_allocator import ClientAllocator, IDAllocator
+from ..network.id_allocator import IDAllocator
 from ..network.request import Request
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
@@ -56,7 +56,6 @@ class Server:
         "_state_lock",
         "_started",
         "_closed",
-        "client_allocator",
         "_id_allocator",
     )
 
@@ -85,7 +84,6 @@ class Server:
 
     def _init_components(self) -> None:
         """(Re)create internal components (sender, handler, socket)."""
-        self.client_allocator = ClientAllocator(range_size=self.config.id_window)
         self._id_allocator = IDAllocator(max_ids=self.config.id_window)
         self._sender = Sender(
             mode=Mode.SERVER,
@@ -102,7 +100,6 @@ class Server:
             bus=self.bus,
         )
         self.socket.handshake_timeout = self.config.handshake_timeout
-        self.socket.client_allocator = self.client_allocator
 
     # -------------------------------------------------------------------------
     # Public API

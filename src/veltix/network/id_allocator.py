@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import threading
+from typing import Callable, Optional
+
+from ..exceptions import IDsExhaustedError
 
 
 class IDAllocator:
@@ -10,19 +13,38 @@ class IDAllocator:
     Thread-safe monotonic ID allocator for per-connection request IDs.
 
     Allocates sequential IDs within a fixed range [0, max_ids).
-    Wraps around to 0 after reaching max_ids.
+    Wraps around to 0 after reaching max_ids. IDs currently tracked as
+    pending (via the ``is_pending`` callback) are skipped so a request ID
+    is never reused while a ``send_and_wait`` is still awaiting its response.
     """
 
-    __slots__ = ("_max", "_counter", "_lock")
+    __slots__ = ("_max", "_counter", "_lock", "_is_pending")
 
-    def __init__(self, max_ids: int = 30000) -> None:
+    def __init__(
+        self,
+        max_ids: int = 65535,
+        is_pending: Optional[Callable[[int], bool]] = None,
+    ) -> None:
         self._max = max_ids
         self._counter = 0
         self._lock = threading.Lock()
+        self._is_pending = is_pending or (lambda _: False)
 
     def allocate(self) -> int:
-        """Allocate the next local ID."""
+        """Allocate the next available local ID, skipping pending IDs.
+
+        Returns:
+            The next available request ID.
+
+        Raises:
+            IDsExhaustedError: If every ID in the window is currently pending.
+        """
         with self._lock:
+            start = self._counter
+            while self._is_pending(self._counter):
+                self._counter = (self._counter + 1) % self._max
+                if self._counter == start:
+                    raise IDsExhaustedError("all IDs are currently pending")
             current = self._counter
             self._counter = (self._counter + 1) % self._max
             return current
@@ -41,31 +63,3 @@ class IDAllocator:
         """
         with self._lock:
             self._max = value
-
-
-class ClientAllocator:
-    """
-    Server-side counter that assigns unique offsets to connected clients.
-
-    Each client receives a unique offset so that
-    ``wire_id + client_offset`` produces a globally unique ID across
-    all connected clients.
-    """
-
-    __slots__ = ("_range_size", "_index", "_lock")
-
-    def __init__(self, range_size: int = 30000) -> None:
-        self._range_size = range_size
-        self._index = 0
-        self._lock = threading.Lock()
-
-    def register(self) -> int:
-        """Register a new client and return its unique index."""
-        with self._lock:
-            idx = self._index
-            self._index += 1
-            return idx
-
-    def global_id(self, client_index: int, wire_id: int) -> int:
-        """Compute globally unique ID from client index and wire ID."""
-        return client_index * self._range_size + wire_id

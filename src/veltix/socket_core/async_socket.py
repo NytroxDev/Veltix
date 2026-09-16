@@ -27,7 +27,6 @@ MAX_DRAIN_ITERATIONS = 100
 if TYPE_CHECKING:
     from ..handler.request_handler import RequestHandler
     from ..internal.bus import VeltixBus
-    from ..network.id_allocator import ClientAllocator
 
 
 class AsyncSocket(BaseSocket):
@@ -54,7 +53,6 @@ class AsyncSocket(BaseSocket):
         self.max_message_size = max_message_size
         self.request_handler = request_handler
         self.handshake_timeout = handshake_timeout
-        self.client_allocator: Optional[ClientAllocator] = None
 
         if sock is None:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -161,14 +159,12 @@ class AsyncSocket(BaseSocket):
             handshake_timeout=self.handshake_timeout,
             nonblocking=False,
         )
-        id_offset = self.client_allocator.register() if self.client_allocator else 0
         client = ClientInfo(
             client_sock,
             addr,
             self.id_count,
             handshake_done=False,
             bus=self.bus,
-            id_offset=id_offset,
         )
         client_id = self.client_manager.add_client(client)
 
