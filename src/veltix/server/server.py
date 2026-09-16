@@ -83,17 +83,27 @@ class Server:
         )
 
     def _init_components(self) -> None:
-        """(Re)create internal components (sender, handler, socket)."""
-        self._id_allocator = IDAllocator(max_ids=self.config.id_window)
+        """(Re)create internal components (handler, sender, socket)."""
+        self.request_handler = RequestHandler(
+            mode=Mode.SERVER,
+            bus=self.bus,
+            max_workers=self.config.max_workers,
+        )
+
+        self._id_allocator = IDAllocator(
+            max_ids=self.config.id_window,
+            is_pending=lambda rid: rid in self.request_handler.pending_requests,
+        )
+
         self._sender = Sender(
             mode=Mode.SERVER,
             bus=self.bus,
             get_all_clients=lambda: self.clients,
             id_allocator=self._id_allocator,
         )
-        self.request_handler = RequestHandler(
-            sender=self.sender, mode=Mode.SERVER, max_workers=self.config.max_workers, bus=self.bus
-        )
+
+        self.request_handler.sender = self._sender
+
         self.socket: BaseSocket = self.config.socket_core.value(
             request_handler=self.request_handler,
             max_message_size=self.config.max_message_size,
