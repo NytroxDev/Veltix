@@ -16,7 +16,7 @@
 Sync, thread-friendly, zero dependencies : TCP done right. Veltix handles framing, threading, handshake, routing, and
 reconnection so you can focus on your application logic.
 
-**Mature & tested** - 564 tests · CI on Python 3.8-3.14 · 30+ releases
+**Mature & tested** - 592 tests · CI on Python 3.8-3.14 · 25 releases
 
 ---
 
@@ -234,8 +234,8 @@ Veltix lets you switch between two socket backends via `SocketCore`. Pick the on
 | **Model**             | One thread per client                        | Single-threaded event loop (selectors)         |
 | **Best for**          | Simple apps, < 50 clients, predictable loads | High concurrency, 100+ clients, variable loads |
 | **Concurrent stress** | ~32k msg/s                                   | **~83k msg/s (2.6x)**                          |
-| **Idle memory**       | 21 KB server + 35 KB per client              | **4 KB server + 12 KB per client**             |
-| **Latency**           | **0.032 ms**                                 | 0.036 ms                                       |
+| **Idle memory**       | 20.8 KB server + 34.5 KB per client          | **4 KB server + 12.4 KB per client**           |
+| **Latency**           | **0.033 ms**                                 | 0.036 ms                                       |
 | **Debugging**         | Straightforward (stack traces = threads)     | Harder (event loop internals)                  |
 
 **Quick rule of thumb:**
@@ -259,9 +259,9 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 |------------------------------------|-----------------|------------------|
 | Concurrent stress (100 clients)    | 32,297 msg/s    | **82,937 msg/s** |
 | Burst throughput                   | 49,287 / 39,517 | 49,878 / 39,909  |
-| Average latency                    | 0.032 ms        | 0.036 ms         |
-| Idle server memory                 | 21 KB           | 4 KB             |
-| Per client memory (avg)            | 35 KB           | 12 KB            |
+| Idle server memory                 | 20.8 KB         | 4 KB             |
+| Per client memory (avg)            | 34.5 KB         | 12.4 KB          |
+| Average latency                    | 0.033 ms        | 0.036 ms         |
 | FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,491 msg/s      |
 
 Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
@@ -321,6 +321,7 @@ Projects using Veltix in production:
 ## Documentation
 
 - [Full documentation](docs/index.md)
+- [Request-ID Correlation design](docs/design/request-id-correlation.md)
 - [FAQ](FAQ.md)
 - [Advanced features](docs/guides/advanced.md)
 - [Migration guide](docs/guides/migration.md)
