@@ -31,6 +31,7 @@ reconnection so you can focus on your application logic.
 - [Performance](#performance)
 - [When NOT to use Veltix](#when-not-to-use-veltix)
 - [Comparison](#comparison)
+- [In Development](#in-development)
 - [Built with Veltix](#built-with-veltix)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -315,6 +316,21 @@ Projects using Veltix in production:
 
 > Built something with Veltix ? [Open a PR](https://github.com/NytroxDev/Veltix/pulls)
 > or [start a discussion](https://github.com/NytroxDev/Veltix/discussions) to add your project.
+
+---
+
+## In Development
+
+What is being worked on right now:
+
+- **First Rust integration**: the message framing/parsing hot path recompiled in Rust via PyO3, with automatic
+  fallback to the pure-Python implementation when the native extension is not installed.
+- **Handshake hardening**: more robust handshake handling, from per-step timeouts to cleaner version negotiation and
+  failure recovery.
+- **Performance optimization**: cutting hot-path overhead (wasted logging, structural events, redundant buffer copies)
+  to push burst throughput and latency further. See [PERFORMANCE.md](PERFORMANCE.md).
+
+> Experimental work lands on dedicated branches and only merges once fully validated.
 
 ---
 
