@@ -89,7 +89,7 @@ src/veltix/
 │   ├── system_types.py  # PING, PONG
 │   ├── constants.py     # MAGIC, HEADER_SIZE, REQUEST_ID_SIZE, HEADER_STRUCT
 │   ├── flags.py         # MessageFlag (IntFlag, internal)
-│   ├── id_allocator.py  # IDAllocator, ClientAllocator (internal)
+│   ├── id_allocator.py  # IDAllocator (internal, pending-safe)
 │   └── message_buffer.py
 ├── handler/             # Request routing & callbacks
 │   ├── request_handler.py   # RequestHandler
@@ -533,7 +533,7 @@ class ServerConfig:
     handshake_timeout: float = 5.0
     max_workers: int = 4
     socket_core: SocketCore = SocketCore.ASYNC
-    id_window: int = 30000  # unique IDs per direction per server
+    id_window: int = 30000  # max pending request IDs per server (1..65535)
 ```
 
 #### `ClientConfig`

@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`IDsExhaustedError`**: raised by `IDAllocator.allocate()` when every request
+  ID is currently pending
+  ([a2dcb6f](https://github.com/NytroxDev/Veltix/commit/a2dcb6f)).
+
+### Changed
+
+- **Pending-safe `IDAllocator`**: allocation now skips request IDs that still
+  have a pending `send_and_wait()`/`ping`, eliminating the wrap-around ID
+  collision instead of relying on probability. The default window grows to the
+  full uint16 range (65535)
+  ([a3d8fd3](https://github.com/NytroxDev/Veltix/commit/a3d8fd3),
+  [de6024d](https://github.com/NytroxDev/Veltix/commit/de6024d),
+  [1054b58](https://github.com/NytroxDev/Veltix/commit/1054b58)).
+- **Handshake no longer exchanges `id_window`**: the client allocator is fixed at
+  65535. Old peers still send/read `meta.id_window` and fall back gracefully, so
+  the wire format stays compatible. `ServerConfig.id_window` is kept and now
+  validated (`1..65535`)
+  ([1054b58](https://github.com/NytroxDev/Veltix/commit/1054b58),
+  [c332b2b](https://github.com/NytroxDev/Veltix/commit/c332b2b)).
+
+### Removed
+
+- **`ClientAllocator`** (dead code), the `ClientInfo.id_offset` global-ID
+  indirection and **`_resolve_global_id()`**: pending responses now match on raw
+  wire request IDs
+  ([a3d8fd3](https://github.com/NytroxDev/Veltix/commit/a3d8fd3),
+  [c332b2b](https://github.com/NytroxDev/Veltix/commit/c332b2b)).
+- **Dead `_handshake_meta` storage** on the client sockets: no consumer reads it
+  anymore.
+
 ## [2.0.3] - 2026-08-31
 
 ### Breaking

@@ -14,7 +14,7 @@ config = ServerConfig(
     handshake_timeout=5.0,  # Handshake timeout in seconds
     max_workers=4,  # Thread pool size for callbacks
     socket_core=SocketCore.ASYNC,  # Socket backend (default: ASYNC)
-    id_window=30000,  # Unique IDs per direction (default: 30000)
+    id_window=30000,  # Max pending request IDs before wrap (range: 1..65535)
 )
 
 server = Server(config)
