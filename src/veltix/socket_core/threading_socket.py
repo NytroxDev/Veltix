@@ -271,15 +271,13 @@ class ThreadingSocket(BaseSocket):
             self.bus.info(f"Connecting to {host}:{port}")
             self._sock.connect((host, port))
 
-            success, meta = self.request_handler.handshake_handler.do_client_handshake(
+            success, _ = self.request_handler.handshake_handler.do_client_handshake(
                 self._sock, timeout=timeout
             )
             if not success:
                 self.bus.error("Client handshake failed")
                 self._sock.close()
                 return False
-
-            self._handshake_meta = meta
 
             self._running_event.set()
 
