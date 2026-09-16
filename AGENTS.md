@@ -132,6 +132,7 @@ tests/
 ├── test_client_tags.py
 ├── test_clients_manager.py
 ├── test_compatibility.py
+├── test_config.py
 ├── test_error_handling.py
 ├── test_handshake.py
 ├── test_id_system.py
