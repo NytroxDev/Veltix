@@ -364,6 +364,25 @@ class TestServerHandshakeFailurePaths:
         assert handler.do_server_handshake(sock) is False
 
 
+# ── Server payload ─────────────────────────────────────────────────────────────
+
+
+class TestServerHandshakePayload:
+    """Server handshake no longer announces an ID window."""
+
+    def test_server_payload_meta_is_empty(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = MockSocket(recv_data=handler._encode(_peer_payload()))
+        assert handler.do_server_handshake(sock) is True
+        sent = handler._decode(sock.sent[0])
+        assert sent is not None
+        assert sent["meta"] == {}
+
+    def test_handler_has_no_id_window_attribute(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        assert not hasattr(handler, "id_window")
+
+
 # ── Client failure paths ───────────────────────────────────────────────────────
 
 

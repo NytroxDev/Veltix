@@ -13,7 +13,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from veltix.exceptions import IDsExhaustedError
-from veltix.handler.rules import _resolve_global_id
 from veltix.handler.rules_manager import MessageContext
 from veltix.network.id_allocator import IDAllocator
 from veltix.network.response import Response
@@ -174,48 +173,8 @@ class TestPendingSafeAllocator:
 
 
 # ===========================================================================
-# _resolve_global_id — pending lookup uses raw wire IDs (kept until cleanup)
+# Full simulation — request IDs are matched directly, no global ID indirection
 # ===========================================================================
-
-
-class TestResolveGlobalID:
-    def test_client_side_no_offset(self) -> None:
-        ctx = _make_context(request_id=42, is_server=False)
-        assert _resolve_global_id(ctx) == 42
-
-    def test_server_side_no_client(self) -> None:
-        ctx = MessageContext(
-            response=_make_response(42),
-            handler=MagicMock(),
-            client=None,
-            is_server=True,
-        )
-        assert _resolve_global_id(ctx) == 42
-
-    def test_server_side_offset_is_ignored(self) -> None:
-        """Offset is not added: pending requests use raw wire IDs."""
-        client = MagicMock()
-        client.id_offset = 5
-        ctx = MessageContext(
-            response=_make_response(42),
-            handler=MagicMock(),
-            client=client,
-            is_server=True,
-        )
-        assert _resolve_global_id(ctx) == 42
-
-
-class TestPendingRequestMatching:
-    def test_single_client_pending_match(self) -> None:
-        pending = {0: "queue"}
-        ctx = _make_context(request_id=0, is_server=True)
-        assert _resolve_global_id(ctx) in pending
-
-    def test_nonzero_wire_id_matches_pending(self) -> None:
-        wire_id = 5
-        pending = {wire_id: "queue"}
-        ctx = _make_context(request_id=wire_id, is_server=True)
-        assert _resolve_global_id(ctx) in pending
 
 
 class TestFullSimulation:
@@ -228,4 +187,4 @@ class TestFullSimulation:
             wire_id = server_ids.allocate()
             pending[wire_id] = f"queue_{name}"
             ctx = _make_context(request_id=wire_id, is_server=True)
-            assert _resolve_global_id(ctx) in pending
+            assert ctx.response.request_id in pending
