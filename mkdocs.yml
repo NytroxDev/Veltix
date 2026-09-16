@@ -60,6 +60,8 @@ nav:
       - Logger: guides/logger.md
       - Migration: guides/migration.md
       - Advanced: guides/advanced.md
+  - Design:
+      - Request-ID Correlation: design/request-id-correlation.md
   - API Reference:
       - Server: api/server.md
       - Client: api/client.md

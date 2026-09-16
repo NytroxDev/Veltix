@@ -162,6 +162,7 @@ docs/
 ├── changelog.md
 ├── getting-started/
 ├── guides/
+├── design/
 └── api/
 ```
 
