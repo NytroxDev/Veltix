@@ -51,3 +51,9 @@ class ServerFullError(VeltixError):
     """Raised when the server rejects a connection because it is at capacity."""
 
     pass
+
+
+class IDsExhaustedError(VeltixError):
+    """Raised when all request IDs in the window are currently pending."""
+
+    pass
