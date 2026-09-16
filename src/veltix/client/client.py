@@ -84,19 +84,25 @@ class Client:
         )
         self.socket.client = self
         self.socket.settimeout(self.config.handshake_timeout)
-        self._id_allocator = IDAllocator(max_ids=30000)
+
+        self.request_handler: RequestHandler = RequestHandler(
+            mode=Mode.CLIENT,
+            bus=self.bus,
+            max_workers=self.config.max_workers,
+        )
+
+        self._id_allocator = IDAllocator(
+            is_pending=lambda rid: rid in self.request_handler.pending_requests,
+        )
+
         self._sender: Sender = Sender(
             mode=Mode.CLIENT,
             conn=self.socket,
             bus=self.bus,
             id_allocator=self._id_allocator,
         )
-        self.request_handler: RequestHandler = RequestHandler(
-            sender=self.sender,
-            mode=Mode.CLIENT,
-            max_workers=self.config.max_workers,
-            bus=self.bus,
-        )
+        self.request_handler.sender = self._sender
+
         self.socket.request_handler = self.request_handler
 
         if self._reconnect_handler is None:
@@ -259,10 +265,6 @@ class Client:
 
             with self._state_lock:
                 self.is_connected = True
-
-            handshake_meta = getattr(self.socket, "_handshake_meta", None) or {}
-            id_window = handshake_meta.get("id_window", 30000)
-            self._id_allocator.max_ids = id_window
 
             if self._reconnect_handler is not None:
                 self._reconnect_handler.init_connect()
