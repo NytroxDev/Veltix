@@ -5,16 +5,6 @@ from ..network.system_types import PING, PONG
 from .rules_manager import MessageContext, Rule
 
 
-def _resolve_global_id(context: MessageContext) -> int:
-    """Resolve the wire request ID for pending request matching.
-
-    Pending requests are always server-initiated: the server allocates
-    wire IDs from its own ``IDAllocator`` which already produces unique
-    IDs across all clients, so no client offset is needed.
-    """
-    return context.response.request_id
-
-
 class PingRule(Rule):
     """Responds to PING messages with a PONG carrying the same request ID."""
 
@@ -57,9 +47,9 @@ class PendingRequestRule(Rule):
     """Routes responses to a pending ``send_and_wait`` request queue."""
 
     def can_handle(self, context: MessageContext) -> bool:
-        global_id = _resolve_global_id(context)
+        request_id = context.response.request_id
         with context.handler.pending_requests_lock:
-            return global_id in context.handler.pending_requests
+            return request_id in context.handler.pending_requests
 
     def handle(self, context: MessageContext) -> None:
         """No-op; the real work happens in :meth:`try_handle`."""
@@ -74,9 +64,9 @@ class PendingRequestRule(Rule):
         Returns:
             True if a pending request was satisfied.
         """
-        global_id = _resolve_global_id(context)
+        request_id = context.response.request_id
         with context.handler.pending_requests_lock:
-            queue = context.handler.pending_requests.get(global_id)
+            queue = context.handler.pending_requests.get(request_id)
         if queue is None:
             return False
         queue.put(context.response)
@@ -84,10 +74,10 @@ class PendingRequestRule(Rule):
             context.handler.bus.emit(
                 MessageEvent.PENDING_SATISFIED,
                 {
-                    "request_id": global_id,
+                    "request_id": request_id,
                 },
             )
-        context.handler.bus.debug(f"Routing response to pending request (global_id={global_id})")
+        context.handler.bus.debug(f"Routing response to pending request (request_id={request_id})")
         return True
 
 

@@ -40,18 +40,16 @@ class HandshakeHandler:
     waits for the server ack before returning.
     """
 
-    def __init__(self, mode: Mode, bus: VeltixBus, id_window: int = 30000) -> None:
+    def __init__(self, mode: Mode, bus: VeltixBus) -> None:
         """Initialise the handshake handler for a given role.
 
         Args:
             mode: Whether this handler operates as ``SERVER`` or ``CLIENT``.
             bus: Event bus for emitting handshake events and logging.
-            id_window: The ID window size announced to the peer (server only).
         """
         self.mode = mode
         self.is_server = mode == Mode.SERVER
         self.bus = bus
-        self.id_window = id_window
         self.bus.debug(
             f"[Handshake] {self.mode.name.lower()} handshake handler initialized (version={__version__})"
         )
@@ -164,7 +162,7 @@ class HandshakeHandler:
         """Perform the server-side 3-way handshake.
 
         Steps:
-            1. Send ``{"v": ..., "pv": ..., "meta": {"id_window": ...}}`` to the client.
+            1. Send ``{"v": ..., "pv": ..., "meta": {}}`` to the client.
             2. Receive the client's ``{"v": ..., "pv": ..., "meta": ...}`` response.
             3. Validate the client's protocol version.
             4. Send ``{"result": "ok"}`` to acknowledge.
@@ -183,7 +181,7 @@ class HandshakeHandler:
             {
                 "v": __version__,
                 "pv": protocol_version_str(),
-                "meta": {"id_window": self.id_window},
+                "meta": {},
             },
         ):
             self.bus.emit(

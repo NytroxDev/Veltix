@@ -25,8 +25,8 @@ class ServerConfig:
         socket_core:       Socket implementation to use (default: ASYNC).
                             Switch to THREADING or RUST (v3.0.0) without changing
                             any other code.
-        id_window:         Number of unique IDs per direction in the protocol (default: 30000).
-                            Sent to clients during the handshake. Must fit in REQUEST_ID_SIZE bytes.
+        id_window:         Number of unique request IDs per direction in the protocol (default: 30000).
+                            Must fit in REQUEST_ID_SIZE bytes (max 65535).
     """
 
     host: str = "0.0.0.0"
@@ -38,3 +38,7 @@ class ServerConfig:
     max_workers: int = 4
     socket_core: SocketCore = SocketCore.ASYNC
     id_window: int = 30000
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.id_window <= 65535:
+            raise ValueError(f"id_window ({self.id_window}) must be between 1 and 65535")
