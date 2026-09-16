@@ -112,13 +112,13 @@ No manual framing. No thread management. No boilerplate.
 - **Auto-reconnect**: configurable retry with disconnect state callbacks
 - **Message integrity**: CRC32 verification on every message
 - **Request/Response**: `send_and_wait()` with timeout and correlation
-- **Convenience send**: `server.send()` / `client.send()` — no need to touch `Sender` directly
-- **Content decoding**: `response.text` and `response.json` — lazy, cached, zero-copy
+- **Convenience send**: `server.send()` / `client.send()` : no need to touch `Sender` directly
+- **Content decoding**: `response.text` and `response.json` : lazy, cached, zero-copy
 - **Text & JSON payloads**: `Request(MY_TYPE, text="hello")` / `Request(MY_TYPE, json={"x": 1})`
 - **Thread-safe callbacks**: slow handlers never block reception
 - **Client tagging**: attach metadata, broadcast to groups
 - **Integrated logger**: colorized, rotating, thread-safe
-- **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra) — subscribe to lifecycle, message,
+- **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra) : subscribe to lifecycle, message,
   protocol, and error events
 
 **Designed for:** LAN tools, multiplayer games, real-time dashboards, custom protocols, IPC, remote tooling, file
@@ -310,9 +310,8 @@ Everything else? Veltix has you covered.
 
 Projects using Veltix in production:
 
-- **[Nexo](https://github.com/NytroxDev/Nexo)** : Fast LAN file transfer tool CLI + GUI. Uses Veltix's TCP server,
-  client tags, route decorators, and `send_and_wait()` for reliable chunked file transfers with concurrent connection
-  handling.
+- A new project is under construction. It will be based on Veltix to replace the abandoned Nexo (LAN file transfer
+  tool).
 
 > Built something with Veltix ? [Open a PR](https://github.com/NytroxDev/Veltix/pulls)
 > or [start a discussion](https://github.com/NytroxDev/Veltix/discussions) to add your project.
