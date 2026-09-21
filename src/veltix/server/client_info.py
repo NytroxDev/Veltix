@@ -157,6 +157,33 @@ class ClientInfo:
             )
         return True
 
+    def set_tag(self, name: str, value: Optional[Any] = None) -> bool:
+        """Set a tag value, creating or overwriting it.
+
+        Unlike :meth:`add_tag`, ``set_tag`` updates the value when the tag
+        already exists instead of failing. It is the intended way to persist
+        mutable tag state (e.g. a score that changes over time).
+
+        Args:
+            name: The tag name.
+            value: The tag value (defaults to ``None``).
+
+        Returns:
+            Always ``True``.
+        """
+        with self._tags_lock:
+            self._tags[name] = value
+        if self._bus:
+            self._bus.emit(
+                ClientEvent.TAG_UPDATED,
+                {
+                    "client": self.addr,
+                    "tag": name,
+                    "value": value,
+                },
+            )
+        return True
+
     def has_tag(self, name: str) -> bool:
         """Check whether this client has a specific tag.
 

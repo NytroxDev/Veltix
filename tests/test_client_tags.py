@@ -2,6 +2,7 @@
 
 import socket
 
+from veltix.internal.events import ClientEvent
 from veltix.server.client_info import ClientInfo
 
 # ── Fixture ───────────────────────────────────────────────────────────────────
@@ -52,6 +53,63 @@ class TestAddTag:
         assert client.has_tag("admin")
         assert client.has_tag("verified")
         assert client.get_tag("role") == "mod"
+
+
+# ── set_tag ───────────────────────────────────────────────────────────────────
+
+
+class TestSetTag:
+    def test_set_new_tag(self):
+        client = make_client()
+        result = client.set_tag("role", value="admin")
+        assert result is True
+        assert client.get_tag("role") == "admin"
+
+    def test_set_without_value(self):
+        client = make_client()
+        client.set_tag("guest")
+        assert client.get_tag("guest") is None
+
+    def test_set_various_types(self):
+        client = make_client()
+        client.set_tag("score", value=42)
+        client.set_tag("data", value={"key": "val"})
+        assert client.get_tag("score") == 42
+        assert client.get_tag("data") == {"key": "val"}
+
+    def test_set_overwrites_existing_tag(self):
+        client = make_client()
+        client.set_tag("score", value=1500)
+        client.set_tag("score", value=9999)
+        assert client.get_tag("score") == 9999
+
+    def test_set_updates_tag_added_by_add_tag(self):
+        client = make_client()
+        client.add_tag("role", value="admin")
+        client.set_tag("role", value="guest")
+        assert client.get_tag("role") == "guest"
+
+    def test_set_emits_tag_updated(self):
+        emitted = []
+
+        class FakeBus:
+            def emit(self, event, payload):
+                emitted.append((event, payload))
+
+        client = ClientInfo(
+            conn=socket.socket(socket.AF_INET, socket.SOCK_STREAM),
+            addr=("127.0.0.1", 8080),
+            thread_id=1,
+            bus=FakeBus(),
+        )
+
+        client.set_tag("score", value=42)
+
+        assert len(emitted) == 1
+        event, payload = emitted[0]
+        assert event is ClientEvent.TAG_UPDATED
+        assert payload["tag"] == "score"
+        assert payload["value"] == 42
 
 
 # ── has_tag ───────────────────────────────────────────────────────────────────

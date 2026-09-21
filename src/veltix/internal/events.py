@@ -29,6 +29,7 @@ class ClientEvent(Enum):
         CONNECTING: A connection attempt is in progress.
         DISCONNECTING: A disconnection is in progress.
         TAG_ADDED: A tag was added to the client info.
+        TAG_UPDATED: A tag was set on the client info, creating or overwriting it.
         TAG_REMOVED: A tag was removed from the client info.
         TAG_CLEARED: All tags were cleared from the client info.
     """
@@ -39,6 +40,7 @@ class ClientEvent(Enum):
     CONNECTING = auto()
     DISCONNECTING = auto()
     TAG_ADDED = auto()
+    TAG_UPDATED = auto()
     TAG_REMOVED = auto()
     TAG_CLEARED = auto()
 

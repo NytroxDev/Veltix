@@ -44,6 +44,7 @@ Available tag methods on `ClientInfo`:
 ```python
 client.add_tag("authenticated")  # Add a tag (returns False if already exists)
 client.add_tag("role", value="admin")  # Add a tag with a value
+client.set_tag("score", value=1500)  # Set or overwrite a tag value
 client.has_tag("authenticated")  # Check for a single tag
 client.has_all_tags(["auth", "admin"])  # Check all tags are present (AND)
 client.has_any_tags(["admin", "mod"])  # Check at least one tag is present (OR)

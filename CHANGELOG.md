@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`ClientInfo.set_tag()`**: sets or overwrites a tag value in a single call.
+  Unlike `add_tag()`, which intentionally refuses to overwrite existing tags,
+  `set_tag()` is the intended way to persist mutable tag state (e.g. a score
+  that changes over time). Emits the new `ClientEvent.TAG_UPDATED` event.
+- **`ClientEvent.TAG_UPDATED`**: emitted by `ClientInfo.set_tag()` whenever a
+  tag value is created or overwritten.
 - **`IDsExhaustedError`**: raised by `IDAllocator.allocate()` when every request
   ID is currently pending
   ([a2dcb6f](https://github.com/NytroxDev/Veltix/commit/a2dcb6f)).
