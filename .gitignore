@@ -35,6 +35,10 @@ htmlcov/
 # Linting
 .ruff_cache/
 
+# Rust
+rust/target/
+Cargo.lock
+
 # OS
 .DS_Store
 Thumbs.db

@@ -11,8 +11,6 @@ if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
     from .response import Response
 
-_MAGIC_SIZE = len(MAGIC)
-
 MAX_BUFFER_SIZE = 20 * 1024 * 1024
 
 
