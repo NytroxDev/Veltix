@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import struct
 from typing import TYPE_CHECKING, Optional
 
-from .constants import HEADER_SIZE, MAGIC
+from .constants import HEADER_SIZE, MAGIC, SIZE_PREFIX_STRUCT
 from .parser import MessageParser
 
 if TYPE_CHECKING:
@@ -13,7 +12,6 @@ if TYPE_CHECKING:
     from .response import Response
 
 _MAGIC_SIZE = len(MAGIC)
-_MAGIC_AND_SIZE = struct.Struct(">2s3xI")
 
 MAX_BUFFER_SIZE = 20 * 1024 * 1024
 
@@ -85,7 +83,7 @@ class MessageBuffer:
             if len(self._buffer) < HEADER_SIZE:
                 break
 
-            magic, content_size = _MAGIC_AND_SIZE.unpack_from(self._buffer, 0)
+            magic, content_size = SIZE_PREFIX_STRUCT.unpack_from(self._buffer, 0)
             if magic != MAGIC:
                 self._resync()
                 continue
