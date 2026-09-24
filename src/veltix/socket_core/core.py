@@ -11,4 +11,4 @@ class SocketCore(Enum):
 
     THREADING = ThreadingSocket
     ASYNC = AsyncSocket
-    # RUST = RustSocket     # planned: v3.0.0
+    # RUST = RustSocket     # planned: v5.0.0
