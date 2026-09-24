@@ -75,6 +75,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [c332b2b](https://github.com/NytroxDev/Veltix/commit/c332b2b)).
 - **Dead `_handshake_meta` storage** on the client sockets: no consumer reads it
   anymore.
+- **Deprecated `Version`/`COMPATIBILITY` API removed**: `from veltix import
+  Version, COMPATIBILITY` and `Version.is_compatible()` are gone. Use
+  `PROTOCOL_VERSION` / `protocol_is_compatible()` instead.
+- **Deprecated `get_sender()` methods removed** from `Server` and `Client`: use
+  the `server.sender` / `client.sender` properties instead.
+- **Legacy `veltix-benchmark` console script alias removed**: only `vltxbench`
+  is shipped.
 
 ## [2.0.3] - 2026-08-31
 

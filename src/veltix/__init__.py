@@ -18,7 +18,6 @@ from .exceptions import (
     VeltixError,
 )
 from .internal.buffer_size import BufferSize
-from .internal.compatibility import COMPATIBILITY, Version
 from .internal.version import __version__
 from .logger.config import LoggerConfig
 from .logger.core import Logger
@@ -38,9 +37,6 @@ from .utils.format_size import format_bytes
 __all__ = [
     # Version
     "__version__",
-    # Compatibility
-    "Version",
-    "COMPATIBILITY",
     # Client
     "Client",
     "ClientConfig",

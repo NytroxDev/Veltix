@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import threading
 import time
-import warnings
 from typing import TYPE_CHECKING
 
 from ..exceptions import ServerFullError
@@ -327,18 +326,6 @@ class Client:
     def sender(self) -> Sender:
         """Return the sender instance for this client."""
         return self._sender
-
-    def get_sender(self) -> Sender:
-        """
-        Deprecated: use client.sender instead.
-        """
-        warnings.warn(
-            "Client.get_sender() is deprecated and will be removed in a future version. "
-            "Use Client.sender instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.sender
 
     def send(self, request: Request) -> bool:
         """Send a request to the server.

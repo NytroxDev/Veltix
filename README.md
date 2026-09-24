@@ -16,7 +16,7 @@
 Sync, thread-friendly, zero dependencies : TCP done right. Veltix handles framing, threading, handshake, routing, and
 reconnection so you can focus on your application logic.
 
-**Mature & tested** - 635 tests · CI on Python 3.11-3.14 · Rust-powered hot path
+**Mature & tested** - 615 tests · CI on Python 3.11-3.14 · Rust-powered hot path
 
 ---
 

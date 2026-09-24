@@ -136,7 +136,7 @@ src/veltix/
 │   ├── bus.py           # VeltixBus (wraps Avyra EventBus)
 │   ├── events.py        # Event enums (ServerEvent, ClientEvent, …)
 │   ├── buffer_size.py   # BufferSize enum
-│   ├── compatibility.py # PROTOCOL_VERSION, Version/COMPATIBILITY (deprecated)
+│   ├── compatibility.py # PROTOCOL_VERSION, protocol_is_compatible()
 │   ├── mode.py          # Mode enum
 │   ├── network.py
 │   └── version.py       # __version__ (from package metadata)
@@ -480,7 +480,7 @@ _rust.rust_enabled()          # -> bool - True when the native extension is load
 - **Wire protocol changes** must bump the `PROTOCOL_VERSION` MAJOR (`internal/compatibility.py`); the handshake validates
   compatibility by protocol MAJOR.
 - **Backward compatibility** within a minor series is preferred but not guaranteed; a wire-breaking change must bump the
-  `PROTOCOL_VERSION` MAJOR. The `COMPATIBILITY` table is deprecated.
+  `PROTOCOL_VERSION` MAJOR.
 
 ## Git & Commit
 
@@ -869,11 +869,6 @@ protocol_is_compatible("2.0", (1, 0))       # -> False (different major)
 Two peers are wire-compatible if and only if their protocol **MAJOR** matches:
 this is symmetric, so both a newer and an older peer accept each other.
 Peers that do not advertise a `pv` are rejected.
-
-> **Deprecated (kept for the public API):** `from veltix import Version, COMPATIBILITY`
-> and `Version.is_compatible()` use the old per-version table and are no longer
-> used by the handshake. New code should use `PROTOCOL_VERSION` /
-> `protocol_is_compatible()`.
 
 ### Logger
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import threading
 import time
-import warnings
 from typing import TYPE_CHECKING, Any
 
 from ..handler.request_handler import RequestHandler
@@ -183,18 +182,6 @@ class Server:
     def sender(self) -> Sender:
         """Return the sender instance for this server."""
         return self._sender
-
-    def get_sender(self) -> Sender:
-        """
-        Deprecated: use server.sender instead.
-        """
-        warnings.warn(
-            "Server.get_sender() is deprecated and will be removed in a future version. "
-            "Use Server.sender instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.sender
 
     def send(self, request: Request, client: ClientInfo | BaseSocket) -> bool:
         """Send a request to a client. Accepts ClientInfo or BaseSocket.

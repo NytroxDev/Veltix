@@ -14,9 +14,8 @@ Usage
     # Save results to JSON
     python -m veltix.benchmark --save results.json
 
-    # CLI entry points (installed with ``veltix[benchmark]``)
+    # CLI entry point (installed with ``veltix[benchmark]``)
     vltxbench
-    veltix-benchmark
 
 Available benchmark IDs: memory, latency, fps, burst, stress
 """

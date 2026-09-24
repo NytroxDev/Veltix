@@ -62,7 +62,6 @@ benchmark = [
 
 [project.scripts]
 vltxbench = "veltix.benchmark.cli:main"
-veltix-benchmark = "veltix.benchmark.cli:main"  # legacy alias
 
 [project.urls]
 Homepage = "https://github.com/NytroxDev/Veltix"
