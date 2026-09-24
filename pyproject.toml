@@ -82,6 +82,7 @@ packages = ["src/veltix"]
 # Pytest configuration
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -158,7 +159,7 @@ ignore = [
 "tests/*" = ["S101"]  # Allow assert in tests
 
 [tool.ruff.lint.isort]
-known-first-party = ["veltix"]
+known-first-party = ["veltix", "protocol_vectors"]
 
 [tool.ruff.format]
 quote-style = "double"
