@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import threading
-from typing import Callable, Optional
+from typing import TYPE_CHECKING
 
 from ..exceptions import IDsExhaustedError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class IDAllocator:
@@ -23,7 +26,7 @@ class IDAllocator:
     def __init__(
         self,
         max_ids: int = 65535,
-        is_pending: Optional[Callable[[int], bool]] = None,
+        is_pending: Callable[[int], bool] | None = None,
     ) -> None:
         self._max = max_ids
         self._counter = 0

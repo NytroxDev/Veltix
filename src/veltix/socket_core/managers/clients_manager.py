@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ...network.message_buffer import MessageBuffer
 
@@ -52,7 +52,7 @@ class ClientsManager:
         id_count: Counter for the next client ID to assign.
     """
 
-    def __init__(self, max_message_size: Optional[int] = None, bus: Optional[VeltixBus] = None):
+    def __init__(self, max_message_size: int | None = None, bus: VeltixBus | None = None):
         """Initialise the ClientsManager.
 
         Args:
@@ -96,7 +96,7 @@ class ClientsManager:
             entry = self.clients.pop(id_client, None)
             return entry is not None
 
-    def get_client(self, id_client: int) -> Optional[ClientEntry]:
+    def get_client(self, id_client: int) -> ClientEntry | None:
         """Look up a client by its ID.
 
         Args:

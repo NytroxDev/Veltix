@@ -10,7 +10,7 @@ Usage:
 from __future__ import annotations
 
 import json
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from .display import _B as _BOLD
 from .display import _C as _CYAN
@@ -39,7 +39,7 @@ def _delta(a: Any, b: Any) -> str:
         return ""
 
 
-def _pct(a: Any, b: Any, higher_better: Optional[bool]) -> str:
+def _pct(a: Any, b: Any, higher_better: bool | None) -> str:
     if a is None or b is None:
         return ""
     try:
@@ -65,7 +65,7 @@ def _pct(a: Any, b: Any, higher_better: Optional[bool]) -> str:
 
 # ── Metrics per bench: (label, json_key, fmt, higher_better) ────────────────
 
-_MEMORY_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
+_MEMORY_METRICS: list[tuple[str, str, str, bool | None]] = [
     ("Baseline RSS", "baseline_kb", "{:.1f} KB", None),
     ("Idle server", "server_idle_kb", "{:.1f} KB", False),
     ("Per client (avg)", "client_cost_avg_kb", "{:.1f} KB", False),
@@ -79,7 +79,7 @@ _MEMORY_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
     ("Leak delta", "leak_kb", "{:+.1f} KB", False),
 ]
 
-_LATENCY_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
+_LATENCY_METRICS: list[tuple[str, str, str, bool | None]] = [
     ("Count", "count", "{:,}", None),
     ("Avg", "avg_ms", "{:.4f} ms", False),
     ("P50", "p50_ms", "{:.4f} ms", False),
@@ -92,7 +92,7 @@ _LATENCY_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
     ("Throughput", "throughput", "{:,.1f} ping/s", True),
 ]
 
-_FPS_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
+_FPS_METRICS: list[tuple[str, str, str, bool | None]] = [
     ("Target tick", "tick_rate", "{} Hz", None),
     ("Actual tick", "actual_tick_rate", "{:.1f} Hz", True),
     ("Duration", "duration_s", "{:.2f} s", None),
@@ -110,7 +110,7 @@ _FPS_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
     ("Overrun ticks", "overrun_ticks", "{:,}", False),
 ]
 
-_BURST_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
+_BURST_METRICS: list[tuple[str, str, str, bool | None]] = [
     ("Messages", "count", "{:,}", None),
     ("Payload", "payload_bytes", "{} B", None),
     ("Send throughput", "send_throughput", "{:,.0f} msg/s", True),
@@ -127,7 +127,7 @@ _BURST_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
     ("Recv gap avg", "recv_gap_avg_ms", "{:.3f} ms", False),
 ]
 
-_STRESS_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
+_STRESS_METRICS: list[tuple[str, str, str, bool | None]] = [
     ("Clients", "num_clients", "{:,}", None),
     ("Msgs/client", "msgs_per_client", "{:,}", None),
     ("Sent", "total_sent", "{:,}", None),
@@ -145,7 +145,7 @@ _STRESS_METRICS: list[tuple[str, str, str, Optional[bool]]] = [
     ("Per-client TPS sd", "per_client_tps_stdev", "{:,.0f}", False),
 ]
 
-_BENCH_METRICS: dict[str, list[tuple[str, str, str, Optional[bool]]]] = {
+_BENCH_METRICS: dict[str, list[tuple[str, str, str, bool | None]]] = {
     "memory": _MEMORY_METRICS,
     "latency": _LATENCY_METRICS,
     "fps_64": _FPS_METRICS,
@@ -168,7 +168,7 @@ def _show_section(
     label: str,
     a_data: dict[str, Any],
     b_data: dict[str, Any],
-    metrics: list[tuple[str, str, str, Optional[bool]]],
+    metrics: list[tuple[str, str, str, bool | None]],
 ) -> tuple[int, int, int]:
     """Render a section and return (a_wins, b_wins, ties)."""
     print()
@@ -218,7 +218,7 @@ def _load(path: str) -> dict[str, Any]:
         return cast("dict[str, Any]", json.load(f))
 
 
-def _first_result(results: Any) -> Optional[dict[str, Any]]:
+def _first_result(results: Any) -> dict[str, Any] | None:
     """Extract first result object from a bench entry (handles list/None)."""
     if results is None:
         return None

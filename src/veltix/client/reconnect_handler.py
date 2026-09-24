@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Callable, Optional, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from ..internal.events import ReconnectEvent
 from .disconnect import DisconnectReason, DisconnectState
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ..handler.request_handler import RequestHandler
     from ..internal.bus import VeltixBus
     from ..socket_core.base_socket import BaseSocket
@@ -27,9 +29,9 @@ class ClientContext(Protocol):
     def _context_init(self) -> None: ...
     def _context_set_running(self, value: bool) -> None: ...
     def _context_set_connected(self, value: bool) -> None: ...
-    def _context_get_request_handler(self) -> Optional[RequestHandler]: ...
-    def _context_get_on_recv(self) -> Optional[Callable]: ...
-    def _context_get_socket(self) -> Optional[BaseSocket]: ...
+    def _context_get_request_handler(self) -> RequestHandler | None: ...
+    def _context_get_on_recv(self) -> Callable | None: ...
+    def _context_get_socket(self) -> BaseSocket | None: ...
 
 
 class ReconnectHandler:
@@ -43,7 +45,7 @@ class ReconnectHandler:
         bus: Event bus for logging and reconnection events.
     """
 
-    def __init__(self, context: ClientContext, bus: Optional[VeltixBus] = None) -> None:
+    def __init__(self, context: ClientContext, bus: VeltixBus | None = None) -> None:
         """Initialise the reconnect handler.
 
         Args:
@@ -89,7 +91,7 @@ class ReconnectHandler:
     def reconnect_loop(
         self,
         reason: DisconnectReason = DisconnectReason.SERVER_CLOSED,
-        retry_max: Optional[int] = None,
+        retry_max: int | None = None,
     ) -> bool:
         """Run the retry loop until success, cancellation, or max retries.
 
@@ -201,7 +203,7 @@ class ReconnectHandler:
             self._stop_retry_flag = True
         self._stop_event.set()
 
-    def retry(self, max_: Optional[int] = None) -> None:
+    def retry(self, max_: int | None = None) -> None:
         """Force a new reconnection attempt in a background thread.
 
         Args:
@@ -212,7 +214,7 @@ class ReconnectHandler:
         thread = threading.Thread(target=self._retry_in_thread, kwargs={"max_": max_}, daemon=True)
         thread.start()
 
-    def _retry_in_thread(self, max_: Optional[int] = None) -> None:
+    def _retry_in_thread(self, max_: int | None = None) -> None:
         if not self._reconnect_lock.acquire(blocking=False):
             if self.bus:
                 self.bus.warning("retry() ignored — reconnect loop already active")

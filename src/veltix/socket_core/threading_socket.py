@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import socket
 import threading
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
@@ -28,7 +28,7 @@ class ThreadingSocket(BaseSocket):
         request_handler: RequestHandler,
         max_message_size: int,
         bus: VeltixBus,
-        sock: Optional[socket.socket] = None,
+        sock: socket.socket | None = None,
         handshake_timeout: float = 5.0,
     ) -> None:
         self.bus = bus
@@ -41,8 +41,8 @@ class ThreadingSocket(BaseSocket):
         self._threads_lock = threading.Lock()
 
         self._running_event = threading.Event()
-        self.start_th: Optional[threading.Thread] = None
-        self.thread_handler: Optional[threading.Thread] = None
+        self.start_th: threading.Thread | None = None
+        self.thread_handler: threading.Thread | None = None
 
         self.max_message_size = max_message_size
         self.request_handler = request_handler
@@ -145,7 +145,7 @@ class ThreadingSocket(BaseSocket):
                 with self._threads_lock:
                     self.threads[thread_id] = thread
 
-            except socket.timeout:
+            except TimeoutError:
                 continue
             except OSError:
                 self.bus.emit(ErrorEvent.ACCEPT, {"error": "OSError"})
@@ -223,7 +223,7 @@ class ThreadingSocket(BaseSocket):
         except Exception as e:
             self.bus.error(f"ServerEvent.ON_DISCONNECT error: {type(e).__name__}: {e}")
 
-    def close_client(self, client: Union[ClientEntry, int]) -> bool:
+    def close_client(self, client: ClientEntry | int) -> bool:
         if isinstance(client, ClientEntry):
             self._close_server_client(client)
             return True
@@ -294,7 +294,7 @@ class ThreadingSocket(BaseSocket):
             self.thread_handler.start()
             return True
 
-        except (socket.timeout, ConnectionRefusedError) as e:
+        except (TimeoutError, ConnectionRefusedError) as e:
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
             return False

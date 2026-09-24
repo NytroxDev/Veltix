@@ -3,11 +3,10 @@
 
 from __future__ import annotations
 
-import socket
 import threading
 import time
 import warnings
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING
 
 from ..exceptions import ServerFullError
 from ..handler.request_handler import RequestHandler
@@ -22,6 +21,8 @@ from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ..network.response import Response
     from ..network.types import MessageType
     from ..socket_core.base_socket import BaseSocket
@@ -51,7 +52,7 @@ class Client:
         self.bus = VeltixBus()
         self.config: ClientConfig = config
 
-        self._reconnect_handler: Optional[ReconnectHandler] = None
+        self._reconnect_handler: ReconnectHandler | None = None
 
         self._state_lock = threading.Lock()
         self.is_connected: bool = False
@@ -145,15 +146,15 @@ class Client:
         if old != value:
             self.bus.debug(f"Client connected state: {value}")
 
-    def _context_get_request_handler(self) -> Optional[RequestHandler]:
+    def _context_get_request_handler(self) -> RequestHandler | None:
         """Return the current request handler instance."""
         return self.request_handler
 
-    def _context_get_on_recv(self) -> Optional[Callable]:
+    def _context_get_on_recv(self) -> Callable | None:
         """Return the current on_recv callback."""
         return self.request_handler.on_recv if self.request_handler else None
 
-    def _context_get_socket(self) -> Optional[BaseSocket]:
+    def _context_get_socket(self) -> BaseSocket | None:
         """Return the current socket instance."""
         return self.socket
 
@@ -276,7 +277,7 @@ class Client:
 
             return True
 
-        except (socket.timeout, ConnectionRefusedError) as e:
+        except (TimeoutError, ConnectionRefusedError) as e:
             self.bus.emit(
                 ErrorEvent.NETWORK,
                 {
@@ -350,7 +351,7 @@ class Client:
         """
         return self.sender.send(request)
 
-    def send_and_wait(self, request: Request, timeout: float = 5.0) -> Optional[Response]:
+    def send_and_wait(self, request: Request, timeout: float = 5.0) -> Response | None:
         """
         Send a request and block until the matching response is received.
 
@@ -379,7 +380,7 @@ class Client:
 
         return self.request_handler.wait(request_id, timeout)
 
-    def ping_server(self, timeout: float = 5.0) -> Optional[float]:
+    def ping_server(self, timeout: float = 5.0) -> float | None:
         """
         Ping the server and measure round-trip latency.
 
@@ -449,7 +450,7 @@ class Client:
         except KeyboardInterrupt:
             self.disconnect()
 
-    def retry(self, max_: Optional[int] = None) -> None:
+    def retry(self, max_: int | None = None) -> None:
         """
         Force reconnection attempts, optionally overriding retry count.
 

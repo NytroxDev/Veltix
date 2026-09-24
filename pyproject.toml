@@ -8,7 +8,7 @@ version = "2.0.3"
 description = "Python TCP, without the boilerplate — sync, thread-friendly, zero dependencies"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 authors = [
     { name = "Nytrox", email = "nytrox.dev@gmail.com" }
 ]
@@ -28,9 +28,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -122,7 +119,7 @@ exclude_lines = [
 # Ruff configuration (linter)
 [tool.ruff]
 line-length = 100
-target-version = "py38"
+target-version = "py311"
 src = ["src", "tests"]
 exclude = [
     ".git",
@@ -132,6 +129,7 @@ exclude = [
     "dist",
     "*.egg-info",
     "*.md",
+    "_vendor",
 ]
 
 [tool.ruff.lint]
@@ -149,8 +147,6 @@ select = [
 ]
 ignore = [
     "E501",
-    "UP045",
-    "UP007",
     "W293",
 ]
 
@@ -167,10 +163,8 @@ indent-style = "space"
 line-ending = "auto"
 
 # MyPy configuration (type checking)
-# python_version is set to 3.10 instead of 3.8 to avoid the deprecation warning
-# about Python 3.8 no longer being supported by mypy. The codebase still targets 3.8+.
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

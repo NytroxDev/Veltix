@@ -7,7 +7,7 @@ them into the Veltix wire format.
 from __future__ import annotations
 
 import zlib
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import RequestError
 from ..utils.encoding import encode_json, encode_utf8
@@ -36,7 +36,7 @@ class Request:
         *,
         text: Any = _UNSET,
         json: Any = _UNSET,
-        request_id: Optional[int] = None,
+        request_id: int | None = None,
     ) -> None:
         """Initialize a new request.
 
@@ -68,7 +68,7 @@ class Request:
         else:
             self.content = encode_json(json)
 
-        self.request_id: Optional[int] = request_id
+        self.request_id: int | None = request_id
         self.flags: MessageFlag = MessageFlag.NONE
         self.type: MessageType = _type
 

@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import zlib
-from typing import Union
 
 from ..exceptions import RequestError
 from .constants import HEADER_SIZE, HEADER_STRUCT, MAGIC
 from .response import Response
 from .types import MessageTypeRegistry
 
-_BufferLike = Union[bytes, bytearray, memoryview]
+_BufferLike = bytes | bytearray | memoryview
 
 
 class MessageParser:

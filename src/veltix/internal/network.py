@@ -5,12 +5,14 @@ from __future__ import annotations
 import contextlib
 import socket
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING
 
 from ..logger.core import Logger
 from .events import ErrorEvent, MessageEvent
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ..network.message_buffer import MessageBuffer
     from ..network.response import Response
     from ..socket_core.base_socket import BaseSocket
@@ -47,7 +49,7 @@ class RecvResult:
 
     __slots__ = ("status", "data")
 
-    def __init__(self, status: RecvStatus, data: Optional[bytes] = None) -> None:
+    def __init__(self, status: RecvStatus, data: bytes | None = None) -> None:
         self.status = status
         self.data = data
 
@@ -86,7 +88,7 @@ def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
 
         return RecvResult(RecvStatus.OK, data)
 
-    except socket.timeout:
+    except TimeoutError:
         return RecvResult(RecvStatus.TIMEOUT)
 
     except BlockingIOError:
@@ -109,7 +111,7 @@ def dispatch_messages(
     buffer: MessageBuffer,
     bus: VeltixBus,
     handler: Callable[[Response], object],
-    client_addr: Optional[tuple[str, int]] = None,
+    client_addr: tuple[str, int] | None = None,
 ) -> None:
     """Extract and dispatch all complete messages from a buffer.
 

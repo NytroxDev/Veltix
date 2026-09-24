@@ -9,7 +9,7 @@ Shared low-level helpers used across benchmarks:
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import threading
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     import psutil  # type: ignore[import-untyped]
 
 # ── psutil process handle (lazy) ─────────────────────────────────────────────
-_proc: Optional[psutil.Process] = None
+_proc: psutil.Process | None = None
 
 
 def _get_proc() -> psutil.Process:

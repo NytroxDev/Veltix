@@ -6,7 +6,7 @@ import contextlib
 import selectors
 import socket
 import threading
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
@@ -37,7 +37,7 @@ class AsyncSocket(BaseSocket):
         request_handler: RequestHandler,
         max_message_size: int,
         bus: VeltixBus,
-        sock: Optional[socket.socket] = None,
+        sock: socket.socket | None = None,
         handshake_timeout: float = 5.0,
         nonblocking: bool = True,
     ) -> None:
@@ -48,7 +48,7 @@ class AsyncSocket(BaseSocket):
 
         self._running_event = threading.Event()
 
-        self._selector_thread: Optional[threading.Thread] = None
+        self._selector_thread: threading.Thread | None = None
 
         self.max_message_size = max_message_size
         self.request_handler = request_handler
@@ -245,7 +245,7 @@ class AsyncSocket(BaseSocket):
                 lambda response: self.request_handler.handle(response),
             )
 
-    def close_client(self, client: Union[ClientEntry, int]) -> bool:
+    def close_client(self, client: ClientEntry | int) -> bool:
         if isinstance(client, ClientEntry):
             self._close_server_client(client)
             return True
@@ -319,7 +319,7 @@ class AsyncSocket(BaseSocket):
             self._selector_thread.start()
             self.bus.debug(f"connected to {host}:{port}")
             return True
-        except (socket.timeout, ConnectionRefusedError) as e:
+        except (TimeoutError, ConnectionRefusedError) as e:
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.debug(f"connect to {host}:{port} failed: {e}")
             return False

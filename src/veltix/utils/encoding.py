@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Union
+from typing import Any
 
 
-def encode_utf8(data: Union[str, bytes]) -> bytes:
+def encode_utf8(data: str | bytes) -> bytes:
     """Encode string or bytes to UTF-8."""
     if isinstance(data, str):
         return data.encode("utf-8")

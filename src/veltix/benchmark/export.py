@@ -9,8 +9,8 @@ from __future__ import annotations
 import json
 import platform
 import sys
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 import veltix
 
@@ -42,17 +42,17 @@ def _get_system_info() -> dict:
 
 
 def build_json(
-    mem: Optional[Union[MemoryResult, list[MemoryResult]]],
-    lat: Optional[Union[LatencyStats, list[LatencyStats]]],
-    fps64: Optional[Union[FpsResult, list[FpsResult]]],
-    fps128: Optional[Union[FpsResult, list[FpsResult]]],
-    burst: Optional[Union[BurstResult, list[BurstResult]]],
-    stress: Optional[Union[StressResult, list[StressResult]]],
+    mem: MemoryResult | list[MemoryResult] | None,
+    lat: LatencyStats | list[LatencyStats] | None,
+    fps64: FpsResult | list[FpsResult] | None,
+    fps128: FpsResult | list[FpsResult] | None,
+    burst: BurstResult | list[BurstResult] | None,
+    stress: StressResult | list[StressResult] | None,
 ) -> dict:
     """Build a JSON-serializable dict from benchmark results."""
     return {
         "veltix_version": veltix.__version__,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "system": _get_system_info(),
         "results": {
             "memory": _normalise(mem),

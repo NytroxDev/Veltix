@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..network.response import Response
@@ -23,7 +23,7 @@ class MessageContext:
 
     response: Response
     handler: RequestHandler
-    client: Optional[ClientInfo] = None
+    client: ClientInfo | None = None
     is_server: bool = False
 
 

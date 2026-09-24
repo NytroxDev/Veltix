@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import sys
 from pathlib import Path
-from typing import Optional, TextIO, Union
+from typing import TextIO
 
 from .levels import LogLevel
 
@@ -41,7 +41,7 @@ class LoggerConfig:
     show_caller: bool = True
 
     # File logging
-    file_path: Optional[Union[str, Path]] = None
+    file_path: str | Path | None = None
     file_rotation_size: int = 10 * 1024 * 1024  # 10 MB
     file_backup_count: int = 5
 

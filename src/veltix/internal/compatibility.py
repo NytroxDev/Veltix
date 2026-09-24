@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from typing import Optional
 
 from ..logger.core import Logger
 
@@ -48,7 +47,7 @@ def protocol_version_str() -> str:
     return f"{major}.{minor}"
 
 
-def _parse_protocol_version(value: str) -> Optional[tuple[int, int]]:
+def _parse_protocol_version(value: str) -> tuple[int, int] | None:
     """Parse a ``MAJOR.MINOR`` protocol version string.
 
     Args:
@@ -67,7 +66,7 @@ def _parse_protocol_version(value: str) -> Optional[tuple[int, int]]:
         return None
 
 
-def protocol_is_compatible(peer_pv: str, local_pv: Optional[tuple[int, int]] = None) -> bool:
+def protocol_is_compatible(peer_pv: str, local_pv: tuple[int, int] | None = None) -> bool:
     """Check whether a peer protocol version is compatible with the local one.
 
     Compatibility is determined by the MAJOR component: peers with the same
@@ -130,7 +129,7 @@ class Version:
         version_str = version_str[1:] if version_str.startswith("v") else version_str
         return Version(*[int(re.sub(r"[^0-9].*", "", p)) for p in version_str.split(".")[:3]])
 
-    def is_compatible(self, other: Version) -> Optional[bool]:
+    def is_compatible(self, other: Version) -> bool | None:
         """
         Check whether this version is compatible with another.
 

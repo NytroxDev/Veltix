@@ -7,7 +7,8 @@ Terminal rendering helpers and the README-ready summary table.
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from veltix import format_bytes
 
@@ -232,7 +233,7 @@ def _show_side_by_side(
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
-def _results(value: Any) -> Optional[list[Any]]:
+def _results(value: Any) -> list[Any] | None:
     """Normalize to list or None."""
     if value is None:
         return None
@@ -246,12 +247,12 @@ def _is_both(*groups: Any) -> bool:
 
 
 def print_summary(
-    mem: Optional[Union[MemoryResult, list[MemoryResult]]],
-    lat: Optional[Union[LatencyStats, list[LatencyStats]]],
-    fps64: Optional[Union[FpsResult, list[FpsResult]]],
-    fps128: Optional[Union[FpsResult, list[FpsResult]]],
-    burst: Optional[Union[BurstResult, list[BurstResult]]],
-    stress: Optional[Union[StressResult, list[StressResult]]],
+    mem: MemoryResult | list[MemoryResult] | None,
+    lat: LatencyStats | list[LatencyStats] | None,
+    fps64: FpsResult | list[FpsResult] | None,
+    fps128: FpsResult | list[FpsResult] | None,
+    burst: BurstResult | list[BurstResult] | None,
+    stress: StressResult | list[StressResult] | None,
 ) -> None:
     header("BENCHMARK RESULTS")
     print()

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import threading
-from typing import Optional, Union
 
 from ..exceptions import MessageTypeError
 
@@ -44,7 +43,7 @@ class MessageTypeRegistry:
         raise MessageTypeError(f"No available codes in range {_USER_CODE_MIN}-{_USER_CODE_MAX}")
 
     @classmethod
-    def get(cls, code: int) -> Optional[MessageType]:
+    def get(cls, code: int) -> MessageType | None:
         with cls._lock:
             return cls._registry.get(code)
 
@@ -74,9 +73,9 @@ class MessageType:
 
     def __init__(
         self,
-        code: Union[int, str, None] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        code: int | str | None = None,
+        name: str | None = None,
+        description: str | None = None,
         *,
         _system: bool = False,
     ) -> None:
@@ -111,7 +110,7 @@ class MessageType:
 
         self.code: int = code
         self.name: str = name or f"type_{code}"
-        self.description: Optional[str] = description
+        self.description: str | None = description
 
         MessageTypeRegistry.register(self)
 

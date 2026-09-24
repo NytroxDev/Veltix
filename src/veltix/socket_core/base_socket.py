@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import socket
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from ..internal.events import ErrorEvent
 
@@ -28,7 +28,7 @@ class BaseSocket(ABC):
         bus: Event bus for structured observability.
     """
 
-    client: Optional[Any] = None
+    client: Any | None = None
     client_manager: ClientsManager
     handshake_timeout: float
     bus: VeltixBus
@@ -140,7 +140,7 @@ class BaseSocket(ABC):
         ...
 
     @abstractmethod
-    def close_client(self, client: Union[ClientEntry, int]) -> bool:
+    def close_client(self, client: ClientEntry | int) -> bool:
         """Close a specific client connection on the server side.
 
         Args:

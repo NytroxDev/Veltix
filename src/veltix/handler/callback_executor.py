@@ -5,11 +5,13 @@ from __future__ import annotations
 import contextlib
 import threading
 from queue import Empty, SimpleQueue
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 
 from ..internal.events import ErrorEvent
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ..internal.bus import VeltixBus
 
 
@@ -22,7 +24,7 @@ class CallbackExecutor:
     called beforehand.
     """
 
-    def __init__(self, max_workers: int = 4, bus: Optional[VeltixBus] = None) -> None:
+    def __init__(self, max_workers: int = 4, bus: VeltixBus | None = None) -> None:
         self.bus = bus
         self._max_workers = max_workers
         self._workers: list[threading.Thread] = []

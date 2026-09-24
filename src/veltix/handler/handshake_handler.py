@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import struct
-from typing import TYPE_CHECKING, Any, Optional, Protocol, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from ..exceptions import ServerFullError
 from ..internal.compatibility import protocol_is_compatible, protocol_version_str
@@ -21,7 +21,7 @@ _HANDSHAKE_STRUCT = struct.Struct(">H")
 class RawSocket(Protocol):
     """Minimal raw TCP socket interface for handshake I/O."""
 
-    def settimeout(self, timeout: Optional[float]) -> None: ...
+    def settimeout(self, timeout: float | None) -> None: ...
     def sendall(self, data: bytes) -> None: ...
     def recv(self, bufsize: int) -> bytes: ...
 
@@ -64,7 +64,7 @@ class HandshakeHandler:
         return data
 
     @staticmethod
-    def _decode(data: bytes) -> Optional[dict[str, Any]]:
+    def _decode(data: bytes) -> dict[str, Any] | None:
         """Parse length-prefixed JSON."""
         payload_len = _HANDSHAKE_STRUCT.unpack(data[:2])[0]
         return cast("dict[str, Any]", json.loads(data[2 : 2 + payload_len]))
@@ -79,10 +79,10 @@ class HandshakeHandler:
             self.bus.error(f"Handshake send failed: {e}")
             return False
 
-    def _recv_handshake(self, sock: RawSocket, timeout: float = 5.0) -> Optional[dict[str, Any]]:
+    def _recv_handshake(self, sock: RawSocket, timeout: float = 5.0) -> dict[str, Any] | None:
         """Receive a handshake JSON payload from a raw TCP socket."""
 
-        def _recv_all(sock: RawSocket, n: int) -> Optional[bytes]:
+        def _recv_all(sock: RawSocket, n: int) -> bytes | None:
             chunks = []
             remaining = n
             while remaining > 0:
@@ -122,7 +122,7 @@ class HandshakeHandler:
         """
         return self._send_handshake(sock, {"error": reason})
 
-    def recv_rejection(self, sock: RawSocket, timeout: float = 5.0) -> Optional[str]:
+    def recv_rejection(self, sock: RawSocket, timeout: float = 5.0) -> str | None:
         """Try to read a rejection message from the server.
 
         If the server is full, it sends ``{"error": "server_full"}``
@@ -227,7 +227,7 @@ class HandshakeHandler:
 
     def do_client_handshake(
         self, sock: RawSocket, timeout: float = 5.0
-    ) -> tuple[bool, Optional[dict[str, Any]]]:
+    ) -> tuple[bool, dict[str, Any] | None]:
         """Perform the client-side 3-way handshake.
 
         Steps:

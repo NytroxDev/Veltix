@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import socket
 import time
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -15,6 +15,9 @@ from veltix import (
     ServerConfig,
     ServerFullError,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def find_free_port() -> int:

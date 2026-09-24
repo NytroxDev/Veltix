@@ -7,7 +7,6 @@ import socket
 import struct
 import threading
 import time
-from typing import Optional
 
 import pytest
 
@@ -108,7 +107,7 @@ class TestHandshakeIntegration:
         server_handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
         client_handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
 
-        results: dict[str, Optional[bool]] = {"server": None, "client": None}
+        results: dict[str, bool | None] = {"server": None, "client": None}
 
         def server_thread() -> None:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -145,7 +144,7 @@ class TestHandshakeIntegration:
         server_handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
         client_handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
 
-        results: dict[str, Optional[bool]] = {"server": None, "client": None}
+        results: dict[str, bool | None] = {"server": None, "client": None}
 
         def server_thread() -> None:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -268,9 +267,9 @@ class MockSocket:
 
     def __init__(
         self,
-        recv_data: Optional[bytes] = None,
-        send_error: Optional[Exception] = None,
-        send_error_on_call: Optional[int] = None,
+        recv_data: bytes | None = None,
+        send_error: Exception | None = None,
+        send_error_on_call: int | None = None,
     ) -> None:
         self._recv_data = recv_data or b""
         self._recv_pos = 0
@@ -279,7 +278,7 @@ class MockSocket:
         self.sent: list[bytes] = []
         self._send_call = 0
 
-    def settimeout(self, timeout: Optional[float]) -> None:
+    def settimeout(self, timeout: float | None) -> None:
         pass
 
     def sendall(self, data: bytes) -> None:

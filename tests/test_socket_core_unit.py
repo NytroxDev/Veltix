@@ -109,18 +109,24 @@ class TestThreadingSocketUnit:
         assert not sock._running_event.is_set()
 
     def test_connect_handshake_failure(self, sock):
-        with patch.object(socket.socket, "connect"), patch.object(
-            sock.request_handler.handshake_handler,
-            "do_client_handshake",
-            return_value=(False, None),
+        with (
+            patch.object(socket.socket, "connect"),
+            patch.object(
+                sock.request_handler.handshake_handler,
+                "do_client_handshake",
+                return_value=(False, None),
+            ),
         ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
 
     def test_connect_unexpected_exception(self, sock):
-        with patch.object(socket.socket, "connect"), patch.object(
-            sock.request_handler.handshake_handler,
-            "do_client_handshake",
-            side_effect=RuntimeError("boom"),
+        with (
+            patch.object(socket.socket, "connect"),
+            patch.object(
+                sock.request_handler.handshake_handler,
+                "do_client_handshake",
+                side_effect=RuntimeError("boom"),
+            ),
         ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
 
@@ -154,19 +160,25 @@ class TestAsyncSocketUnit:
             assert sock.send(b"data") is False
 
     def test_send_blockingioerror_fallback(self, sock):
-        with patch.object(
-            socket.socket,
-            "sendall",
-            side_effect=BlockingIOError("mock"),
-        ), patch.object(socket.socket, "setblocking", side_effect=OSError("mock")):
+        with (
+            patch.object(
+                socket.socket,
+                "sendall",
+                side_effect=BlockingIOError("mock"),
+            ),
+            patch.object(socket.socket, "setblocking", side_effect=OSError("mock")),
+        ):
             assert sock.send(b"data") is False
 
     def test_send_blockingioerror_fallback_success(self, sock):
-        with patch.object(
-            socket.socket,
-            "sendall",
-            side_effect=[BlockingIOError("mock"), None],
-        ), patch.object(socket.socket, "setblocking", return_value=None):
+        with (
+            patch.object(
+                socket.socket,
+                "sendall",
+                side_effect=[BlockingIOError("mock"), None],
+            ),
+            patch.object(socket.socket, "setblocking", return_value=None),
+        ):
             assert sock.send(b"data") is True
 
     def test_accept_client_rejects_and_closes_when_full(self, sock):
@@ -221,10 +233,13 @@ class TestAsyncSocketUnit:
         assert result is False
 
     def test_connect_handshake_failure(self, sock):
-        with patch.object(socket.socket, "connect"), patch.object(
-            sock.request_handler.handshake_handler,
-            "do_client_handshake",
-            return_value=(False, None),
+        with (
+            patch.object(socket.socket, "connect"),
+            patch.object(
+                sock.request_handler.handshake_handler,
+                "do_client_handshake",
+                return_value=(False, None),
+            ),
         ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import threading
 import time
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
@@ -16,6 +16,8 @@ from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ..network.response import Response
     from ..network.types import MessageType
     from ..socket_core.base_socket import BaseSocket
@@ -194,7 +196,7 @@ class Server:
         )
         return self.sender
 
-    def send(self, request: Request, client: Union[ClientInfo, BaseSocket]) -> bool:
+    def send(self, request: Request, client: ClientInfo | BaseSocket) -> bool:
         """Send a request to a client. Accepts ClientInfo or BaseSocket.
 
         Args:
@@ -212,7 +214,7 @@ class Server:
     def broadcast(
         self,
         request: Request,
-        except_clients: Optional[list[Union[ClientInfo, BaseSocket]]] = None,
+        except_clients: list[ClientInfo | BaseSocket] | None = None,
     ) -> bool:
         """Broadcast a request to all connected clients.
 
@@ -227,7 +229,7 @@ class Server:
 
     def send_and_wait(
         self, request: Request, client: ClientInfo, timeout: float = 5.0
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         Send a request to a client and block until the matching response is received.
 
@@ -254,7 +256,7 @@ class Server:
 
         return self.request_handler.wait(request_id, timeout)
 
-    def ping_client(self, client: ClientInfo, timeout: float = 5.0) -> Optional[float]:
+    def ping_client(self, client: ClientInfo, timeout: float = 5.0) -> float | None:
         """
         Ping a client and measure round-trip latency.
 
@@ -282,7 +284,7 @@ class Server:
     def ping_client_async(
         self,
         client: ClientInfo,
-        callback: Callable[[Optional[float]], None],
+        callback: Callable[[float | None], None],
         timeout: float = 5.0,
     ) -> None:
         """
@@ -303,7 +305,7 @@ class Server:
 
         threading.Thread(target=_ping, daemon=True).start()
 
-    def close_client(self, client: ClientInfo, id_: Optional[int] = None) -> bool:
+    def close_client(self, client: ClientInfo, id_: int | None = None) -> bool:
         """Forcefully close a specific client connection."""
         if id_ is not None:
             return self.socket.close_client(id_)

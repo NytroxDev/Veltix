@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ..internal.events import ClientEvent
 
@@ -51,7 +51,7 @@ class ClientInfo:
         addr: tuple[str, int],
         thread_id: int,
         handshake_done: bool = False,
-        bus: Optional[VeltixBus] = None,
+        bus: VeltixBus | None = None,
     ) -> None:
         """Initialise a new ClientInfo.
 
@@ -128,7 +128,7 @@ class ClientInfo:
         """
         return self.addr[1]
 
-    def add_tag(self, name: str, value: Optional[Any] = None) -> bool:
+    def add_tag(self, name: str, value: Any | None = None) -> bool:
         """Add a tag to this client.
 
         Tags are key-value pairs used for filtering and grouping clients
@@ -157,7 +157,7 @@ class ClientInfo:
             )
         return True
 
-    def set_tag(self, name: str, value: Optional[Any] = None) -> bool:
+    def set_tag(self, name: str, value: Any | None = None) -> bool:
         """Set a tag value, creating or overwriting it.
 
         Unlike :meth:`add_tag`, ``set_tag`` updates the value when the tag
@@ -220,7 +220,7 @@ class ClientInfo:
         with self._tags_lock:
             return any(name in self._tags for name in names)
 
-    def get_tag(self, name: str) -> Optional[Any]:
+    def get_tag(self, name: str) -> Any | None:
         """Return the value of a tag, or ``None`` if it does not exist.
 
         Args:

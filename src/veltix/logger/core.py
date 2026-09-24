@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import logging.handlers
 import threading
-from typing import Optional
 
 from .config import LoggerConfig
 from .formatter import VeltixFormatter
@@ -26,11 +25,11 @@ class Logger:
         logger.info("Server started")
     """
 
-    _instance: Optional[Logger] = None
+    _instance: Logger | None = None
     _initialized: bool = False
     _lock = threading.RLock()
 
-    def __new__(cls, config: Optional[LoggerConfig] = None) -> Logger:
+    def __new__(cls, config: LoggerConfig | None = None) -> Logger:
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
@@ -38,14 +37,14 @@ class Logger:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, config: Optional[LoggerConfig] = None) -> None:
+    def __init__(self, config: LoggerConfig | None = None) -> None:
         if not self._initialized:
             self._initialized = True
             self._stats = dict.fromkeys(LogLevel, 0)
             self._internal = logging.getLogger("veltix")
             self._internal.propagate = False
-            self._console_handler: Optional[logging.StreamHandler] = None
-            self._file_handler: Optional[logging.handlers.RotatingFileHandler] = None
+            self._console_handler: logging.StreamHandler | None = None
+            self._file_handler: logging.handlers.RotatingFileHandler | None = None
             self._setup(config or LoggerConfig())
         elif config is not None:
             self._setup(config)
@@ -96,7 +95,7 @@ class Logger:
             self._internal.addHandler(self._file_handler)
 
     @classmethod
-    def get_instance(cls, config: Optional[LoggerConfig] = None) -> Logger:
+    def get_instance(cls, config: LoggerConfig | None = None) -> Logger:
         """Get or create the singleton instance."""
         return cls(config)
 

@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Union
 
 from ..exceptions import SenderError
 from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
     from enum import Enum
 
     from ..internal.bus import VeltixBus
@@ -30,11 +31,11 @@ class Sender:
 
     def __init__(
         self,
-        mode: Union[Mode, str],
-        conn: Optional[BaseSocket] = None,
-        bus: Optional[VeltixBus] = None,
-        get_all_clients: Optional[Callable[[], Sequence[_ClientLike]]] = None,
-        id_allocator: Optional[IDAllocator] = None,
+        mode: Mode | str,
+        conn: BaseSocket | None = None,
+        bus: VeltixBus | None = None,
+        get_all_clients: Callable[[], Sequence[_ClientLike]] | None = None,
+        id_allocator: IDAllocator | None = None,
     ) -> None:
         """Initialize the sender with a mode and an optional connection.
 
@@ -56,7 +57,7 @@ class Sender:
 
         self.mode = mode
         self.is_client = mode == Mode.CLIENT
-        self.conn: Optional[BaseSocket] = conn
+        self.conn: BaseSocket | None = conn
         self._get_all_clients = get_all_clients
 
     def _emit(self, event: Enum, data: dict) -> None:
@@ -67,7 +68,7 @@ class Sender:
         if self.bus:
             self.bus.error(message)
 
-    def _resolve_target(self, client: Optional[BaseSocket]) -> Optional[BaseSocket]:
+    def _resolve_target(self, client: BaseSocket | None) -> BaseSocket | None:
         return self.conn if self.is_client else client
 
     def _log_send_error(self, error: Exception, context: str = "send") -> None:
@@ -78,7 +79,7 @@ class Sender:
         if self.bus:
             self.bus.warning(f"Connection error during {context}: {type(error).__name__}")
 
-    def send(self, data: Request, client: Optional[BaseSocket] = None) -> bool:
+    def send(self, data: Request, client: BaseSocket | None = None) -> bool:
         """Send a request over the network.
 
         In CLIENT mode, uses the internal connection.
@@ -128,9 +129,7 @@ class Sender:
 
         return client.conn if isinstance(client, ClientInfo) else client
 
-    def _build_exclude_set(
-        self, except_clients: Optional[Sequence[_ClientLike]]
-    ) -> set[BaseSocket]:
+    def _build_exclude_set(self, except_clients: Sequence[_ClientLike] | None) -> set[BaseSocket]:
         if not except_clients:
             return set()
         return {self._resolve_socket(c) for c in except_clients}
@@ -138,8 +137,8 @@ class Sender:
     def broadcast(
         self,
         data: Request,
-        list_of_client: Optional[Sequence[_ClientLike]] = None,
-        except_clients: Optional[Sequence[_ClientLike]] = None,
+        list_of_client: Sequence[_ClientLike] | None = None,
+        except_clients: Sequence[_ClientLike] | None = None,
     ) -> bool:
         """Send a request to multiple clients (SERVER mode only).
 

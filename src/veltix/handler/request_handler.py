@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from queue import Empty, Queue
 from threading import Lock
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING
 
 from ..handler.callback_executor import CallbackExecutor
 from ..handler.handshake_handler import HandshakeHandler
@@ -14,6 +14,8 @@ from .rules import ALL_RULES
 from .rules_manager import MessageContext, RulesManager
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ..internal.bus import VeltixBus
     from ..network.response import Response
     from ..network.sender import Sender
@@ -35,10 +37,10 @@ class RequestHandler:
 
     def __init__(
         self,
-        mode: Union[Mode, str],
+        mode: Mode | str,
         bus: VeltixBus,
         max_workers: int = 4,
-        sender: Optional[Sender] = None,
+        sender: Sender | None = None,
     ) -> None:
         if isinstance(mode, str):
             mode = Mode(mode)
@@ -65,7 +67,7 @@ class RequestHandler:
         for rule in ALL_RULES:
             self.rules_manager.add_rule(rule)
 
-    def handle(self, response: Response, client: Optional[ClientInfo] = None) -> bool:
+    def handle(self, response: Response, client: ClientInfo | None = None) -> bool:
         """Handle an incoming message with full routing logic.
 
         Args:
@@ -107,7 +109,7 @@ class RequestHandler:
         with self.pending_requests_lock:
             self.pending_requests.pop(request_id, None)
 
-    def wait(self, request_id: int, timeout: float = 5.0) -> Optional[Response]:
+    def wait(self, request_id: int, timeout: float = 5.0) -> Response | None:
         """
         Wait for a response matching request_id. Must be called after register().
 
@@ -143,7 +145,7 @@ class RequestHandler:
         with self._routes_lock:
             return type_ in self._routes
 
-    def get_route(self, type_: MessageType) -> Optional[Callable]:
+    def get_route(self, type_: MessageType) -> Callable | None:
         with self._routes_lock:
             return self._routes.get(type_)
 

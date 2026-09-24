@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import statistics
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -21,7 +20,7 @@ class LatencyStats:
     throughput: float = 0.0
     backend: str = "async"
 
-    def add(self, value: Optional[float]) -> None:
+    def add(self, value: float | None) -> None:
         if value is not None:
             self._samples.append(value)
 

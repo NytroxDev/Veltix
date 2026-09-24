@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import InvalidContentError
 from ..utils.encoding import decode_json, decode_utf8
@@ -42,7 +42,7 @@ class Response:
         content: bytes,
         _hash: bytes = b"",
         _request_id: int = 0,
-        request_id: Optional[int] = None,
+        request_id: int | None = None,
     ) -> None:
         """Initialize a response object.
 

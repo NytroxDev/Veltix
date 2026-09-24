@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from .constants import HEADER_SIZE, MAGIC, SIZE_PREFIX_STRUCT
 from .parser import MessageParser
@@ -31,7 +31,7 @@ class MessageBuffer:
         self,
         max_message_size: int = 10 * 1024 * 1024,
         max_buffer_size: int = MAX_BUFFER_SIZE,
-        bus: Optional[VeltixBus] = None,
+        bus: VeltixBus | None = None,
     ) -> None:
         """Initialise the message buffer.
 
