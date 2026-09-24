@@ -16,7 +16,7 @@
 Sync, thread-friendly, zero dependencies : TCP done right. Veltix handles framing, threading, handshake, routing, and
 reconnection so you can focus on your application logic.
 
-**Mature & tested** - 592 tests · CI on Python 3.8-3.14 · 25 releases
+**Mature & tested** - 635 tests · CI on Python 3.11-3.14 · Rust-powered hot path
 
 ---
 
@@ -27,6 +27,7 @@ reconnection so you can focus on your application logic.
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)
+- [Rust-powered hot path](#rust-powered-hot-path)
 - [Backend Comparison: Threading vs Async](#backend-comparison-threading-vs-async)
 - [Performance](#performance)
 - [When NOT to use Veltix](#when-not-to-use-veltix)
@@ -121,6 +122,7 @@ No manual framing. No thread management. No boilerplate.
 - **Integrated logger**: colorized, rotating, thread-safe
 - **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra) : subscribe to lifecycle, message,
   protocol, and error events
+- **Rust-powered engine**: framing / parse / compile in native Rust — with automatic pure-Python fallback
 
 **Designed for:** LAN tools, multiplayer games, real-time dashboards, custom protocols, IPC, remote tooling, file
 transfer.
@@ -133,7 +135,9 @@ transfer.
 pip install veltix
 ```
 
-Requirements: Python 3.8+, no additional dependencies.
+Requirements: Python 3.11+, no runtime dependencies. Prebuilt wheels ship the compiled Rust engine (one `cp311-abi3`
+wheel per platform); when the native component is unavailable, Veltix automatically falls back to the pure-Python
+implementation. Building from source requires a Rust toolchain (handled automatically by the maturin build backend).
 
 ---
 
@@ -226,6 +230,23 @@ targets = server.get_clients_by_tag("channel", "general")
 
 ---
 
+## ⚡ Rust-powered hot path
+
+Veltix 3.0.0 introduces a Rust-powered hot path for message parsing, compilation, and buffering.
+
+Benchmarks against the Python fallback:
+
+- **129k msg/s** under 100-client stress (**+23%**)
+- **-41% P99 latency**
+- **-68% jitter**
+- **+14% burst send throughput**
+
+The Python fallback remains available when the native component is not used.
+
+> Results are workload-dependent and were measured on Veltix 3.0.0.
+
+---
+
 ## Backend Comparison: Threading vs Async
 
 Veltix lets you switch between two socket backends via `SocketCore`. Pick the one that fits your use case.
@@ -255,6 +276,8 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 ## Performance
 
 > Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
+> On v3.0.0+ the message hot path runs in Rust — see [Rust-powered hot path](#rust-powered-hot-path) for the
+> Rust engine vs pure-Python fallback numbers.
 
 | Metric                             | Threading       | Async            |
 |------------------------------------|-----------------|------------------|
@@ -323,12 +346,11 @@ Projects using Veltix in production:
 
 What is being worked on right now:
 
-- **First Rust integration**: the message framing/parsing hot path recompiled in Rust via PyO3, with automatic
-  fallback to the pure-Python implementation when the native extension is not installed.
 - **Handshake hardening**: more robust handshake handling, from per-step timeouts to cleaner version negotiation and
   failure recovery.
-- **Performance optimization**: cutting hot-path overhead (wasted logging, structural events, redundant buffer copies)
-  to push burst throughput and latency further. See [PERFORMANCE.md](PERFORMANCE.md).
+- **Performance optimization**: now that framing/parse/compile run in Rust, pushing the remaining hot-path overhead
+  further. See [PERFORMANCE.md](PERFORMANCE.md).
+- **`vltxbench` rework**: a faster, cleaner benchmark CLI built around the per-platform wheel builds.
 
 > Experimental work lands on dedicated branches and only merges once fully validated.
 
