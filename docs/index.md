@@ -12,7 +12,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.
 
-**Mature & tested** : 564 tests · CI on Python 3.8-3.14 · 30+ releases
+**Mature & tested** : 635 tests · CI on Python 3.11-3.14 · v3.0.0 Rust-powered hot path
 
 ---
 
@@ -31,7 +31,7 @@ particular architecture. Define your message types, register your handlers, and 
 socket plumbing.
 
 That's the idea behind Veltix: modern TCP communication with a simple, synchronous API, sensible defaults, and zero
-dependencies.
+runtime dependencies.
 
 ---
 
@@ -87,7 +87,8 @@ No manual framing. No thread management. No boilerplate.
 
 **Core**
 
-- Zero dependencies : pure Python stdlib
+- Zero runtime dependencies : Python stdlib + optional Rust engine
+- Rust-powered hot path : framing / parse / compile in native Rust, automatic pure-Python fallback
 - Binary protocol with CRC32 integrity verification
 - Automatic JSON raw-socket handshake with version compatibility
 - Thread-safe callback execution : slow handlers never block reception
@@ -111,13 +112,22 @@ No manual framing. No thread management. No boilerplate.
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 564 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14
+- 635 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)
 
 ---
 
 ## Performance
 
-> Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
+**Rust engine vs Python fallback (v3.0.0)** — Python 3.14.7, 12-core CPU, 5-run averages:
+
+| Metric                          | Rust engine    | Python fallback | Gain      |
+|---------------------------------|----------------|-----------------|-----------|
+| Concurrent stress (100 clients) | 129,127 msg/s  | 105,264 msg/s   | **+23%**  |
+| Latency P99                     | 0.090 ms       | 0.153 ms        | **-41%**  |
+| Jitter                          | 0.014 ms       | 0.044 ms        | **-68%**  |
+| Burst send                      | 67,492 msg/s   | 59,292 msg/s    | **+14%**  |
+
+Socket backends, pure-Python path (Python 3.14.5, 12-core CPU, 30.5 GB RAM, loopback):
 
 | Metric                          | Threading       | Async           |
 |---------------------------------|-----------------|-----------------|

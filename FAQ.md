@@ -43,7 +43,7 @@ default settings. You can increase the buffer size to speed up reception of long
 
 ## Does Veltix support message compression?
 
-Not yet. Compression is planned for v2.1.0 or v2.2.0 and will use the flags system.
+Not yet. Compression is planned for a future 3.x release and will use the flags system.
 
 ## Can I use Veltix for audio/video streaming?
 
@@ -52,9 +52,9 @@ critical. Native UDP support may be explored in the future, but it is not part o
 
 ## How do I update Veltix without breaking my project?
 
-- Patch releases (2.1.0 → 2.1.1) never break the API.
-- Minor releases (2.1.0 → 2.2.0) may introduce new features but remain backward compatible.
-- Major releases (2.x → 3.0) may contain breaking changes and always include a migration guide.
+- Patch releases (3.0.0 → 3.0.1) never break the API.
+- Minor releases (3.0.0 → 3.1.0) may introduce new features but remain backward compatible.
+- Major releases (3.x → 4.0) may contain breaking changes and always include a migration guide.
 
 ## Can I use Veltix in Docker / containerized environments?
 
@@ -68,12 +68,23 @@ on your chunk size (slightly larger than the chunk is ideal), and use the THREAD
 
 ## Does Veltix have external dependencies?
 
-No. Veltix only requires Python 3.8+ and certain stdlib libraries. You can clone the repo and use it directly without
-even running `pip install`.
+No. Veltix only requires Python 3.11+ and stdlib libraries. The Rust engine ships packed inside the
+prebuilt wheels — no runtime toolchain or third-party packages are needed. You can clone the repo
+and use it directly without even running `pip install`.
 
-## Does Veltix support Python versions below 3.8?
+## Does Veltix support Python 3.10 or below?
 
-No. Versions below Python 3.8 are too restrictive and have been unmaintained for a long time.
+No. Veltix requires Python 3.11+ (3.10 is end-of-life), so it can use modern syntax and stdlib
+features.
+
+## What is the Rust engine in v3.0.0?
+
+Since v3.0.0, the message hot path (parsing, compilation, buffering) is compiled in Rust via PyO3
+and ships as a `cp311-abi3` extension inside the prebuilt wheels. It is used automatically when
+available; otherwise Veltix falls back to the pure-Python implementation transparently. Set
+`VELTIX_DISABLE_RUST=1` to force the fallback, or check `veltix.network._rust.rust_enabled()`.
+It cuts P99 latency by **-41%**, jitter by **-68%**, and raises 100-client stress throughput by
+**+23%** — see [PERFORMANCE.md](PERFORMANCE.md).
 
 ## How do I debug connection issues with Veltix?
 

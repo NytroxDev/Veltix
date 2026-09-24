@@ -2,6 +2,36 @@
 
 ---
 
+## v2.0.3 → v3.0.0
+
+**Breaking change : minimum Python version — wire-compatible with v2.0.x.**
+
+v3.0.0 raises the minimum Python version to **3.11+** and recompiles the message hot path
+(parse, compile, buffering) in Rust (`veltix._rust`), with an automatic fallback to the
+pure-Python implementation.
+
+### Action required
+
+- **Python 3.11+** is now required — 3.8, 3.9, and 3.10 are no longer supported.
+- No source-level API changes: `Request` / `Response` / routing / events are unchanged.
+- The wire protocol is unchanged (`pv` 1.0): v2.0.x peers remain fully compatible.
+
+### Behavioral change
+
+- **Unknown message types received through the wire pipeline are now dropped with a `warning`**
+  instead of triggering buffer resynchronization. Direct `MessageParser.parse()` calls still
+  raise `RequestError`.
+- The Rust engine is used automatically; set `VELTIX_DISABLE_RUST=1` to force the pure-Python
+  fallback (e.g. for debugging).
+
+### Performance
+
+The Rust engine cuts hot-path overhead: **+23%** throughput under 100-client stress, **-41%** P99
+latency, and **-68%** jitter vs the Python fallback — see
+[PERFORMANCE.md](../../PERFORMANCE.md).
+
+---
+
 ## v1.8.0 → v1.8.1
 
 **No breaking changes — wire-compatible with v1.8.0.**

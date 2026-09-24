@@ -57,8 +57,8 @@ client.clear_tags()  # Remove all tags
 
 Veltix abstracts the socket layer behind a `SocketCore` enum. `ASYNC` (selectors-based single-thread event loop) is the
 default since v1.7.0,
-`THREADING` (one thread per client) is also available. Future versions will add `RUST`
-(Tokio via PyO3, v3.0.0).
+`THREADING` (one thread per client) is also available. A `RUST` backend
+(Tokio via PyO3) is planned for v5.0.0.
 
 ```python
 # Default — selectors-based, up to 2x stress throughput
