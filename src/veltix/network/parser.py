@@ -5,6 +5,7 @@ from __future__ import annotations
 import zlib
 
 from ..exceptions import RequestError
+from . import _rust
 from .constants import HEADER_SIZE, HEADER_STRUCT, MAGIC
 from .response import Response
 from .types import MessageTypeRegistry
@@ -49,6 +50,9 @@ class MessageParser:
         if len(data) > max_message_size:
             raise RequestError(f"Message too large: {len(data)} bytes (maximum {max_message_size})")
 
+        if _rust.rust_enabled():
+            return MessageParser._parse_rust(data, max_message_size)
+
         header = data[:HEADER_SIZE]
         content = data[HEADER_SIZE:]
 
@@ -75,3 +79,23 @@ class MessageParser:
             _hash=hash_received,
             _request_id=request_id,
         )
+
+    @staticmethod
+    def _parse_rust(data: _BufferLike, max_message_size: int) -> Response:
+        type_code, content, request_id, _flags, hash_received = _rust.parse(
+            _as_bytes(data), max_message_size
+        )
+        msg_type = MessageTypeRegistry.get(type_code)
+        if not msg_type:
+            raise RequestError(f"Unknown message type code: {type_code}")
+        return Response(
+            _type=msg_type,
+            content=content,
+            _hash=hash_received,
+            _request_id=request_id,
+        )
+
+
+def _as_bytes(data: _BufferLike) -> bytes | bytearray:
+    """Convert a memoryview to bytes; pass bytes and bytearray through unchanged."""
+    return bytes(data) if isinstance(data, memoryview) else data

@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from .constants import HEADER_SIZE, MAGIC, SIZE_PREFIX_STRUCT
+from . import _rust
+from .constants import CODE_OFFSET, HEADER_SIZE, MAGIC, SIZE_PREFIX_STRUCT
 from .parser import MessageParser
+from .response import Response
+from .types import MessageTypeRegistry
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
-    from .response import Response
 
 MAX_BUFFER_SIZE = 20 * 1024 * 1024
 
@@ -18,6 +20,10 @@ class MessageBuffer:
     """
     Accumulates TCP stream data and extracts complete framed messages.
 
+    Uses the compiled Rust engine when available (see ``network._rust``);
+    otherwise falls back to a pure-Python implementation with identical
+    observable behaviour.
+
     Features:
     - Stream resynchronization via MAGIC byte search on parse failure
     - Hard buffer limit (MAX_BUFFER_SIZE) to prevent memory exhaustion
@@ -25,7 +31,7 @@ class MessageBuffer:
     - Thread-safe when used with a single reader thread per instance
     """
 
-    __slots__ = ("_buffer", "_max_message_size", "_bus", "_max_buffer_size")
+    __slots__ = ("_bus", "_engine", "_max_buffer_size", "_max_message_size", "_use_rust")
 
     def __init__(
         self,
@@ -40,10 +46,15 @@ class MessageBuffer:
             max_buffer_size: Hard limit on total buffer growth in bytes.
             bus: Optional event bus for error and debug logging.
         """
-        self._buffer = bytearray()
         self._max_message_size = max_message_size
         self._max_buffer_size = max_buffer_size
         self._bus = bus
+        self._use_rust = _rust.rust_enabled()
+        self._engine: Any = (
+            _rust.RustMessageBuffer(max_message_size, max_buffer_size)
+            if self._use_rust
+            else bytearray()
+        )
 
     def add_data(self, data: bytes) -> None:
         """Append raw bytes to the internal buffer.
@@ -54,15 +65,20 @@ class MessageBuffer:
         Args:
             data: Raw bytes received from the TCP stream.
         """
-        if len(self._buffer) + len(data) > self._max_buffer_size:
+        if self._use_rust:
+            accepted, detail = self._engine.add_data(data)
+            if not accepted and self._bus:
+                self._bus.error(detail)
+            return
+        if len(self._engine) + len(data) > self._max_buffer_size:
             if self._bus:
                 self._bus.error(
-                    f"Buffer size {len(self._buffer) + len(data)} exceeds maximum "
+                    f"Buffer size {len(self._engine) + len(data)} exceeds maximum "
                     f"{self._max_buffer_size} — clearing buffer."
                 )
             self.clear()
             return
-        self._buffer.extend(data)
+        self._engine.extend(data)
 
     def extract_messages(self) -> list[Response]:
         """Parse and return all complete framed messages currently in the buffer.
@@ -72,16 +88,60 @@ class MessageBuffer:
         is not found where expected, the buffer is resynchronized by scanning
         forward for the next MAGIC occurrence.
 
+        Frames carrying an unknown message type are dropped with a warning
+        and do NOT trigger a resynchronization.
+
         Returns:
             A list of :class:`Response` objects parsed from the buffer.
         """
+        if self._use_rust:
+            return self._extract_rust()
+        return self._extract_python()
+
+    def _extract_rust(self) -> list[Response]:
+        messages: list[Response] = []
+        for kind, payload in self._engine.extract_messages():
+            if kind == "message":
+                type_code, content, request_id, _flags, _hash = payload
+                msg_type = MessageTypeRegistry.get(type_code)
+                if msg_type is None:
+                    if self._bus:
+                        self._bus.warning(
+                            f"Unknown message type code: {type_code} — message dropped"
+                        )
+                    continue
+                messages.append(
+                    Response(
+                        _type=msg_type,
+                        content=content,
+                        _hash=_hash,
+                        _request_id=request_id,
+                    )
+                )
+            elif kind == "dropped":
+                drop_kind, detail = payload
+                suffix = (
+                    " — possible corruption. Resyncing."
+                    if drop_kind == "too_large"
+                    else " — Resyncing."
+                )
+                if self._bus:
+                    self._bus.error(f"{detail}{suffix}")
+            elif kind == "resynced" and self._bus:
+                self._bus.debug(
+                    f"Resynced: discarded {payload} bytes, found MAGIC at offset {payload}"
+                )
+        return messages
+
+    def _extract_python(self) -> list[Response]:
         messages = []
+        buffer = self._engine
 
         while True:
-            if len(self._buffer) < HEADER_SIZE:
+            if len(buffer) < HEADER_SIZE:
                 break
 
-            magic, content_size = SIZE_PREFIX_STRUCT.unpack_from(self._buffer, 0)
+            magic, content_size = SIZE_PREFIX_STRUCT.unpack_from(buffer, 0)
             if magic != MAGIC:
                 self._resync()
                 continue
@@ -97,14 +157,21 @@ class MessageBuffer:
                 self._resync()
                 continue
 
-            if len(self._buffer) < total_size:
+            if len(buffer) < total_size:
                 break
 
-            message_data = bytes(self._buffer[:total_size])
+            type_code = int.from_bytes(buffer[CODE_OFFSET : CODE_OFFSET + 2], "big")
+            if MessageTypeRegistry.get(type_code) is None:
+                if self._bus:
+                    self._bus.warning(f"Unknown message type code: {type_code} — message dropped")
+                del buffer[:total_size]
+                continue
+
+            message_data = bytes(buffer[:total_size])
 
             try:
                 response = MessageParser.parse(message_data)
-                del self._buffer[:total_size]
+                del buffer[:total_size]
                 messages.append(response)
             except Exception as e:
                 if self._bus:
@@ -117,12 +184,12 @@ class MessageBuffer:
         return messages
 
     def _resync(self) -> None:
-        idx = self._buffer.find(MAGIC, 1)
+        idx = self._engine.find(MAGIC, 1)
         if idx == -1:
             self.clear()
         else:
             discarded = idx
-            del self._buffer[:idx]
+            del self._engine[:idx]
             if self._bus:
                 self._bus.debug(
                     f"Resynced: discarded {discarded} bytes, found MAGIC at offset {idx}"
@@ -130,7 +197,7 @@ class MessageBuffer:
 
     def clear(self) -> None:
         """Discard all data currently held in the buffer."""
-        self._buffer.clear()
+        self._engine.clear()
 
     def __len__(self) -> int:
         """Return the number of bytes currently in the buffer.
@@ -138,7 +205,7 @@ class MessageBuffer:
         Returns:
             The buffer length in bytes.
         """
-        return len(self._buffer)
+        return len(self._engine)
 
     def __repr__(self) -> str:
         """Return a concise string representation of the buffer state.
@@ -147,6 +214,6 @@ class MessageBuffer:
             A string showing current size and configured limits.
         """
         return (
-            f"MessageBuffer(size={len(self._buffer)}, "
+            f"MessageBuffer(size={len(self)}, "
             f"max_msg={self._max_message_size}, max_buf={self._max_buffer_size})"
         )

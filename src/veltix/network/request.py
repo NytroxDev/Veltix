@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from ..exceptions import RequestError
 from ..utils.encoding import encode_json, encode_utf8
+from . import _rust
 from .constants import HEADER_STRUCT, MAGIC, REQUEST_ID_SIZE
 from .flags import MessageFlag
 
@@ -103,15 +104,28 @@ class Request:
 
         hash_value = zlib.crc32(self.content).to_bytes(4, "big")
         max_request_id = (1 << (8 * REQUEST_ID_SIZE)) - 1
-        if self.request_id is not None:
-            if not isinstance(self.request_id, int) or not (0 <= self.request_id <= max_request_id):
-                raise RequestError(
-                    f"request_id must be an int between 0 and {max_request_id}, "
-                    f"got: {self.request_id!r}"
-                )
-            request_id_bytes = self.request_id.to_bytes(REQUEST_ID_SIZE, "big")
-        else:
-            request_id_bytes = b"\x00" * REQUEST_ID_SIZE
+        if self.request_id is not None and (
+            not isinstance(self.request_id, int) or not (0 <= self.request_id <= max_request_id)
+        ):
+            raise RequestError(
+                f"request_id must be an int between 0 and {max_request_id}, "
+                f"got: {self.request_id!r}"
+            )
+
+        if _rust.rust_enabled():
+            return _rust.compile(
+                self.type.code,
+                self.content,
+                self.request_id if self.request_id is not None else 0,
+                int(self.flags),
+            )
+
+        hash_value = zlib.crc32(self.content).to_bytes(4, "big")
+        request_id_bytes = (
+            self.request_id.to_bytes(REQUEST_ID_SIZE, "big")
+            if self.request_id is not None
+            else b"\x00" * REQUEST_ID_SIZE
+        )
 
         header = HEADER_STRUCT.pack(
             MAGIC,
