@@ -5,29 +5,94 @@ on:
     types: [published]
 
 jobs:
+  # ── Per-platform wheels (cp311-abi3 → one wheel per platform) ─────────────
   build:
+    name: Wheel (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            manylinux: "2014"
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            manylinux: "2014"
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            manylinux: off
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            manylinux: off
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            manylinux: off
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --out dist
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "10.12"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist
+
+  # ── Source distribution ────────────────────────────────────────────────────
+  sdist:
+    name: sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: dist-sdist
+          path: dist
+
+  # ── Attach all artifacts to the GitHub release ─────────────────────────────
+  release:
+    name: Attach assets to release
+    needs: [build, sdist]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/download-artifact@v6
         with:
-          python-version: "3.12"
-      - run: pip install build
-      - run: python -m build
-      - uses: actions/upload-artifact@v6
-        with:
-          name: dist
-          path: dist/
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
+  # ── PyPI (rc releases → TestPyPI; stable releases → PyPI) ──────────────────
   publish-testpypi:
-    needs: build
+    needs: [build, sdist]
     if: contains(github.event.release.tag_name, 'rc')
     runs-on: ubuntu-latest
     environment: testpypi
@@ -36,14 +101,16 @@ jobs:
     steps:
       - uses: actions/download-artifact@v6
         with:
-          name: dist
-          path: dist/
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
 
   publish-pypi:
-    needs: build
+    needs: [build, sdist]
     if: "!contains(github.event.release.tag_name, 'rc')"
     runs-on: ubuntu-latest
     environment: pypi
@@ -52,6 +119,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v6
         with:
-          name: dist
-          path: dist/
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+
       - uses: pypa/gh-action-pypi-publish@release/v1
