@@ -4,13 +4,16 @@ Guidelines for AI coding agents working on the Veltix project.
 
 ## Project Overview
 
-Veltix is a high-level TCP library for Python: sync, thread-friendly, zero dependencies.  
-It handles framing, threading, handshake, routing, and reconnection.
+Veltix is a high-level TCP library for Python: sync, thread-friendly, zero runtime dependencies.
+It handles framing, threading, handshake, routing, and reconnection. Since v3.0.0 the message
+hot path (parse, compile, buffering) is compiled in Rust via PyO3, with an automatic pure-Python
+fallback.
 
-- **Version:** 2.0.3
-- **Python:** 3.8+
+- **Version:** 3.0.0
+- **Python:** 3.11+
 - **License:** MIT
-- **Zero runtime dependencies:** pure stdlib only.
+- **Zero runtime dependencies:** pure stdlib only — the Rust engine ships as a prebuilt wheel and
+  falls back to the Python implementation when unavailable.
 
 ## Use Cases (When to Use Veltix)
 
@@ -39,6 +42,29 @@ framing, handshake, ping/pong, and reconnection: zero dependencies, zero boilerp
 
 ## Performance
 
+> Rust-vs-fallback numbers measured on Python 3.14.7: 12-core CPU, 30.5 GB RAM, Linux (loopback).
+> All numbers are 5-run averages (`--runs 5`).
+
+### Rust engine vs Python fallback (v3.0.0)
+
+| Metric                             | Rust engine     | Python fallback  | Gain      |
+|------------------------------------|-----------------|------------------|-----------|
+| Concurrent stress (100 clients)    | 129,127 msg/s   | 105,264 msg/s    | **+23%**  |
+| Latency average                    | 0.0425 ms       | 0.0575 ms        | **-26%**  |
+| Latency P95                        | 0.056 ms        | 0.103 ms         | **-45%**  |
+| Latency P99                        | 0.090 ms        | 0.153 ms         | **-41%**  |
+| Jitter                             | 0.014 ms        | 0.044 ms         | **-68%**  |
+| Burst send                         | 67,492 msg/s    | 59,292 msg/s     | **+14%**  |
+| FPS 64 tick stdev                  | 0.123 ms        | 0.229 ms         | **-46%**  |
+| Idle server memory                 | 60 KB           | 60 KB            | 0%        |
+
+> The Rust engine cuts framing/parse overhead: lower latency and jitter, steadier FPS ticks, and higher throughput
+> under concurrency. FPS *throughput* is tick-limited and unchanged, as expected. Reproduce with
+> `vltxbench --runs 5 --save a.json` and `VELTIX_DISABLE_RUST=1 vltxbench --runs 5 --save b.json`, then
+> `vltxbench --compare a.json b.json`.
+
+### Socket backends (pure-Python path)
+
 > Benchmarked on Python 3.14.5: 12-core CPU, 30.5 GB RAM, Linux (loopback). All numbers are 5-run averages.
 
 | Metric                             | Threading    | Async            |
@@ -55,17 +81,18 @@ Async stress throughput is **2.6x higher** than Threading under high concurrency
 
 ## Tech Stack
 
-| Tool           | Purpose                 | Config                                        |
-|----------------|-------------------------|-----------------------------------------------|
-| hatchling      | Build/packaging         | `pyproject.toml`                              |
-| pytest         | Testing                 | `[tool.pytest.ini_options]` in pyproject.toml |
-| pytest-cov     | Code coverage           | `[tool.coverage.*]` in pyproject.toml         |
-| pytest-asyncio | Async test support      |                                               |
-| pytest-xdist   | Parallel test execution | `-n=auto` in `[tool.pytest.ini_options]`      |
-| ruff           | Linting & formatting    | `[tool.ruff.*]` in pyproject.toml             |
-| mypy           | Static type checking    | `[tool.mypy]` in pyproject.toml               |
-| mkdocs         | Documentation           | `mkdocs.yml`                                  |
-| mkdocstrings   | Auto-generated API docs | Google-style docstrings                       |
+| Tool           | Purpose                         | Config                                        |
+|----------------|---------------------------------|-----------------------------------------------|
+| maturin        | Build/packaging (compiled engine)| `[tool.maturin]` in pyproject.toml           |
+| cargo          | Rust workspace                  | `rust/Cargo.toml`                             |
+| pytest         | Testing                         | `[tool.pytest.ini_options]` in pyproject.toml |
+| pytest-cov     | Code coverage                   | `[tool.coverage.*]` in pyproject.toml         |
+| pytest-asyncio | Async test support              |                                               |
+| pytest-xdist   | Parallel test execution         | `-n=auto` in `[tool.pytest.ini_options]`      |
+| ruff           | Linting & formatting            | `[tool.ruff.*]` in pyproject.toml             |
+| mypy           | Static type checking            | `[tool.mypy]` in pyproject.toml               |
+| mkdocs         | Documentation                   | `mkdocs.yml`                                  |
+| mkdocstrings   | Auto-generated API docs         | Google-style docstrings                       |
 
 ## Project Structure
 
@@ -90,7 +117,8 @@ src/veltix/
 │   ├── constants.py     # MAGIC, HEADER_SIZE, REQUEST_ID_SIZE, HEADER_STRUCT
 │   ├── flags.py         # MessageFlag (IntFlag, internal)
 │   ├── id_allocator.py  # IDAllocator (internal, pending-safe)
-│   └── message_buffer.py
+│   ├── message_buffer.py
+│   └── _rust.py         # engine detection (VELTIX_DISABLE_RUST, typed helpers, fallback)
 ├── handler/             # Request routing & callbacks
 │   ├── request_handler.py   # RequestHandler
 │   ├── handshake_handler.py # HandshakeHandler
@@ -121,10 +149,16 @@ src/veltix/
 │   ├── encoding.py      # encode/decode utf8 & json
 │   └── format_size.py   # format_bytes
 ├── _vendor/             # Vendored third-party libs
-│   └── avyra/           # EventBus library (Avyra v1.1.1, Python 3.8 compat)
+│   └── avyra/           # EventBus library (Avyra v1.1.1, Python 3.11 compat)
 ├── benchmark/           # CLI benchmarking suite (optional: pip install veltix[benchmark])
+├── _rust.pyi            # type stub for the compiled veltix._rust extension
 ├── exceptions.py        # VeltixError hierarchy
 └── __init__.py          # Public API exports
+rust/                    # Rust workspace (compiled engine, since v3.0.0)
+├── Cargo.toml           # workspace: veltix-protocol, veltix-message-buffer, veltix-bindings
+├── veltix-protocol/     # wire format: parse & compile (pure Rust, unit-tested)
+├── veltix-message-buffer/  # TCP stream framing: add_data / extract_messages (pure Rust)
+└── veltix-bindings/     # PyO3 wrappers → veltix._rust (abi3-py311)
 tests/
 ├── conftest.py              # Shared fixtures
 ├── test_callback_executor.py
@@ -147,6 +181,7 @@ tests/
 ├── test_request.py
 ├── test_response.py
 ├── test_routing.py
+├── test_rust_backend.py   # engine selection (rust/fallback) + parity tests
 ├── test_rules_unit.py
 ├── test_send_and_wait.py
 ├── test_sender.py
@@ -170,7 +205,8 @@ docs/
 
 ### Python & Syntax
 
-- Target **Python 3.8:** no walrus operator (`:=`), no `match`/`case`, no `|` union syntax.
+- Target **Python 3.11+** (3.10 is EOL): modern syntax is allowed — `match`/`case`,
+  walrus operator (`:=`), and `X | Y` union types are fine in new code.
 - Use `from __future__ import annotations` for forward references.
 - Line length: **100** characters.
 - Indentation: **4 spaces**.
@@ -181,8 +217,8 @@ docs/
 ```python
 from typing import Callable, Optional, Union
 
-# Use Optional[X], not X | None
-# Use Union[X, Y], not X | Y
+# Use X | None / X | Y (Python 3.11+); typing.Optional / typing.Union are kept
+# where existing code already uses them
 # Use TYPE_CHECKING guards for type-only imports
 if TYPE_CHECKING:
     from ...network.types import MessageType
@@ -300,6 +336,10 @@ self._logger.debug("Some message")
 
 Levels (same for both): `trace`, `debug`, `info`, `success`, `warning`, `error`, `critical`.
 
+The Rust engine does **not** log directly: it returns classification items to the Python wrapper
+(`network/_rust.py`), which logs via the bus — `error` on overflow/max-size violations, `warning`
+on unknown message types, `debug` on buffer resync.
+
 ### Thread Safety
 
 - Use `threading.Lock` for shared mutable state.
@@ -329,6 +369,16 @@ Run all tests:
 ```bash
 python -m pytest tests/ -v --tb=short
 ```
+
+Test the pure-Python fallback explicitly (no Rust engine):
+
+```bash
+VELTIX_DISABLE_RUST=1 python -m pytest tests/ -v --tb=short
+```
+
+`tests/test_rust_backend.py` covers engine selection (`VELTIX_DISABLE_RUST`, missing extension)
+and parity between the Rust and Python engines (buffer, parse, compile). Both engines must pass
+the full suite — CI runs it twice per Python version.
 
 Run with coverage:
 
@@ -398,14 +448,35 @@ class MyNewError(VeltixError):
     """Description."""
 ```
 
+### The Rust engine (v3.0.0+)
+
+Framing, parsing, and compilation route through the compiled `veltix._rust` extension when
+available; otherwise the pure-Python implementations are used transparently.
+
+```python
+from veltix.network import _rust
+
+_rust.rust_enabled()          # -> bool — True when the native extension is loaded
+# Force the Python fallback for the process:  VELTIX_DISABLE_RUST=1
+```
+
+- The Python registry (`MessageTypeRegistry`) stays in Python — Rust does **wire validation only**.
+- Rust `parse` returns `(type_code, content, request_id, flags, hash)`; `compile` takes
+  `(type_code, content, request_id, flags)`.
+- Backend selection is cached at module import; tests `importlib.reload()` `network._rust` to
+  switch engines. Key off `rust_enabled()` at call time, not import time.
+
 ## Constraints
 
-- **NO new runtime dependencies.** Pure stdlib only.
+- **NO new runtime dependencies.** Pure stdlib only. The Rust extension is optional at runtime:
+  the pure-Python fallback keeps the library fully functional without it.
 - **NO async public API.** Internally async is OK (AsyncSocket), but the public API is synchronous.
-- **Support Python 3.8+:** no syntax or stdlib features from 3.9+.
+- **Support Python 3.11+** (3.10 is EOL): no syntax or stdlib features from 3.12+.
 - **Thread safety:** all shared state must be protected.
 - **Type hints** required on all public symbols.
 - **Google-style docstrings** required on all public symbols.
+- **Building from source requires the Rust toolchain** (`pip install .` handles it via the maturin
+  build isolation); prebuilt wheels ship the compiled engine.
 - **Wire protocol changes** must bump the `PROTOCOL_VERSION` MAJOR (`internal/compatibility.py`); the handshake validates
   compatibility by protocol MAJOR.
 - **Backward compatibility** within a minor series is preferred but not guaranteed; a wire-breaking change must bump the
@@ -434,13 +505,22 @@ test: parametrize integration tests over socket backends
 
 Defined in `.github/workflows/ci.yml`:
 
-1. **Lint & format:** `ruff check .` and `ruff format . --check` on Python 3.12.
-2. **Type check:** `mypy src/veltix/` on Python 3.12.
-3. **Version check:** validates that `pyproject.toml` contains a valid semver `version`.
-4. **Build check:** builds sdist + wheel, installs the wheel and imports `veltix`.
-5. **Tests:** run on Python 3.8, 3.10, 3.12, 3.14 with `pytest`.
+1. **Rust checks:** `cargo fmt --manifest-path rust/Cargo.toml --check`,
+   `cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings`, and
+   `cargo test --manifest-path rust/Cargo.toml` (with `Swatinem/rust-cache@v2`, `workspaces: rust`).
+2. **Lint & format:** `ruff check .` and `ruff format . --check` on Python 3.12.
+3. **Type check:** `mypy src/veltix/` on Python 3.12.
+4. **Version check:** validates that `pyproject.toml` contains a valid semver `version`.
+5. **Build check:** builds sdist + wheel with maturin and asserts the wheel ships the compiled
+   `veltix._rust` extension (`_rust.rust_enabled()` must be True).
+6. **Tests:** run on Python 3.11, 3.12, 3.13, 3.14 with `pytest` — twice per version: once with the
+   Rust engine, once with `VELTIX_DISABLE_RUST=1` (pure-Python fallback).
 
 All pushed branches and PRs run through CI.
+
+Releases (`.github/workflows/publish.yml`) attach per-platform `cp311-abi3` wheels (Linux
+x86_64/aarch64 manylinux 2014, macOS x86_64/arm64, Windows x86_64) plus an sdist: `rc` tags go to
+TestPyPI, stable tags to PyPI.
 
 ## Public API Reference
 
@@ -740,7 +820,7 @@ from veltix import SocketCore
 
 SocketCore.THREADING  # thread-per-client
 SocketCore.ASYNC  # selectors-based (default)
-# SocketCore.RUST    # planned v3.0.0
+# SocketCore.RUST    # planned v5.0.0
 ```
 
 ### Disconnect System
