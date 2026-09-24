@@ -17,14 +17,24 @@ use veltix_message_buffer::{
 };
 use veltix_protocol::{compile as protocol_compile, parse as protocol_parse};
 
+/// Decoded frame passed across the FFI boundary:
+/// ``(type_code, content, request_id, flags, hash)``.
+type ParsedFrame = (u16, Vec<u8>, u16, u8, Vec<u8>);
+
 /// Parse a complete Veltix frame from *data* (magic, size and CRC32 checks).
 ///
-/// Returns ``(type_code, content, request_id, flags)`` on success and raises
-/// ``ValueError`` when the frame is invalid.
+/// Returns a [`ParsedFrame`] on success and raises ``ValueError`` when the
+/// frame is invalid.
 #[pyfunction]
-pub fn parse(data: &[u8], max_message_size: usize) -> PyResult<(u16, Vec<u8>, u16, u8)> {
+pub fn parse(data: &[u8], max_message_size: usize) -> PyResult<ParsedFrame> {
     match protocol_parse(data, max_message_size) {
-        Ok(resp) => Ok((resp.type_code, resp.content, resp.request_id, resp.flags)),
+        Ok(resp) => Ok((
+            resp.type_code,
+            resp.content,
+            resp.request_id,
+            resp.flags,
+            resp.hash.to_vec(),
+        )),
         Err(error) => Err(PyValueError::new_err(error.to_string())),
     }
 }
@@ -76,7 +86,7 @@ impl MessageBuffer {
     /// Extract all complete messages as a list of tuples.
     ///
     /// Item shapes:
-    ///     ("message", type_code, content, request_id, flags)
+    ///     ("message", type_code, content, request_id, flags, hash)
     ///     ("dropped", kind, message)   kind: "too_large" | "parse_failed"
     ///     ("resynced", discarded)
     fn extract_messages(&mut self, py: Python<'_>) -> PyResult<Vec<(String, Py<PyAny>)>> {
@@ -86,7 +96,13 @@ impl MessageBuffer {
             .map(|item| {
                 let entry = match item {
                     ExtractItem::Message(resp) => {
-                        let payload = (resp.type_code, resp.content, resp.request_id, resp.flags);
+                        let payload = (
+                            resp.type_code,
+                            resp.content,
+                            resp.request_id,
+                            resp.flags,
+                            resp.hash.to_vec(),
+                        );
                         (
                             "message".to_string(),
                             payload.into_pyobject(py)?.into_any().unbind(),
@@ -141,8 +157,9 @@ impl MessageBuffer {
     }
 }
 
-/// Veltix Rust bindings module.
+/// Veltix Rust bindings module (imported as ``veltix._rust``).
 #[pymodule]
+#[pyo3(name = "_rust")]
 fn veltix_bindings(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse, m)?)?;
     m.add_function(wrap_pyfunction!(compile, m)?)?;
@@ -157,11 +174,12 @@ mod tests {
     #[test]
     fn parse_roundtrip() {
         let wire = protocol_compile(200, b"hello", 0x1234, 0).unwrap();
-        let (type_code, content, request_id, flags) = parse(&wire, 1024).unwrap();
+        let (type_code, content, request_id, flags, hash) = parse(&wire, 1024).unwrap();
         assert_eq!(type_code, 200);
         assert_eq!(content, b"hello");
         assert_eq!(request_id, 0x1234);
         assert_eq!(flags, 0);
+        assert_eq!(hash, [0x36, 0x10, 0xA6, 0x86]); // crc32("hello"), from the wire vectors
     }
 
     #[test]

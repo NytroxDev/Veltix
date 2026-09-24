@@ -177,3 +177,10 @@ warn_no_return = true
 strict_equality = true
 strict_optional = true
 
+# Maturin configuration (compiled veltix._rust extension).
+# Inert for hatchling builds; consumed when building the Rust extension
+# (maturin develop/build) or once the build backend is switched to maturin.
+[tool.maturin]
+python-source = "src"
+module-name = "veltix._rust"
+
