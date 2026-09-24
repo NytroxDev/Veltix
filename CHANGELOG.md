@@ -5,10 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0] - 2026-09-24
+
+### Breaking
+
+- **Minimum Python version raised to 3.11+** — 3.8–3.10 are no longer supported
+  ([9cfc325](https://github.com/NytroxDev/Veltix/commit/9cfc325)).
+- **Rust-powered hot path**: message parsing, compilation, and buffering are
+  recompiled in Rust and shipped as a compiled `veltix._rust` extension
+  (`cp311-abi3`; one prebuilt wheel per platform covers Python 3.11+). The
+  build backend switches from hatchling to **maturin**
+  ([8d01e84](https://github.com/NytroxDev/Veltix/commit/8d01e84),
+  [91210d3](https://github.com/NytroxDev/Veltix/commit/91210d3),
+  [a8f3549](https://github.com/NytroxDev/Veltix/commit/a8f3549)).
+- **Unknown message types are now dropped with a `warning`** instead of
+  triggering buffer resynchronization when received through the wire pipeline.
+  Direct `MessageParser.parse()` calls still raise `RequestError`.
+- **Wire protocol unchanged** (`pv` 1.0): v2.0.x peers remain fully compatible.
 
 ### Added
 
+- **Rust engine**: `parse`, `compile`, and
+  `MessageBuffer.add_data()`/`extract_messages()` route through the compiled
+  extension when available, with transparent pure-Python fallback.
+- **`VELTIX_DISABLE_RUST`**: set to `1`, `true`, or `yes` to force the
+  pure-Python fallback (e.g. for debugging or exotic platforms).
+- **Per-platform prebuilt wheels** in CI/publish: Linux x86_64 + aarch64
+  (manylinux 2014), macOS x86_64 + arm64, Windows x86_64, plus sdist; `rc`
+  tags publish to TestPyPI
+  ([5ea6eec](https://github.com/NytroxDev/Veltix/commit/5ea6eec),
+  [929afae](https://github.com/NytroxDev/Veltix/commit/929afae)).
 - **`ClientInfo.set_tag()`**: sets or overwrites a tag value in a single call.
   Unlike `add_tag()`, which intentionally refuses to overwrite existing tags,
   `set_tag()` is the intended way to persist mutable tag state (e.g. a score
@@ -23,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`SocketCore.RUST` postponed to v5.0.0**: the planned Tokio-based socket
+  backend is out of scope for v3 — the v3 Rust work is the message hot path
+  (parse/compile/buffering), not a socket backend.
 - **Pending-safe `IDAllocator`**: allocation now skips request IDs that still
   have a pending `send_and_wait()`/`ping`, eliminating the wrap-around ID
   collision instead of relying on probability. The default window grows to the
