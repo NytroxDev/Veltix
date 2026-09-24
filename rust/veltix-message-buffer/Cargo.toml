@@ -1,0 +1,9 @@
+[package]
+name = "veltix-message-buffer"
+description = "Veltix TCP stream framing: accumulation, resync and extraction"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+veltix-protocol = { path = "../veltix-protocol" }
