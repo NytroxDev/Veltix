@@ -18,6 +18,9 @@ reconnection so you can focus on your application logic.
 
 **Mature & tested** - 615 tests · CI on Python 3.11-3.14 · Rust-powered hot path
 
+> **Temporary note:** v3.0.0 is scheduled to be released within the next few hours - the last features (the
+> `vltxbench` rework) are still in development.
+
 ---
 
 ## Table of Contents
