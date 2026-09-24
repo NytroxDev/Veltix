@@ -1,24 +1,53 @@
 # Performance
 
-> Benchmarked on Python 3.14.5 : 12-core CPU (6 physical), 30.5 GB RAM, Linux (loopback).
-> All numbers are **5-run averages** (`--runs 5`). Latency uses **250 000 iterations** (`--latency-iterations 250000`).
+Veltix 3.0.0 ships a Rust-powered hot path (parse / compile / buffering via `veltix._rust`) with
+an automatic pure-Python fallback. Two independent comparisons:
+
+- **Rust engine vs Python fallback (v3.0.0)** — Python 3.14.7, 12-core CPU, 30.5 GB RAM, Linux
+  (loopback), 5-run averages.
+- **Socket backends** (Threading vs Async, pure-Python path) — Python 3.14.5, same machine,
+  5-run averages; latency uses **250 000 iterations** (`--latency-iterations 250000`).
 
 To run the benchmarks yourself:
 
 ```bash
-# Run all benchmarks on both backends
+# Run all benchmarks (Rust engine)
 python -m veltix.benchmark --socket-core both --runs 5
+
+# Same suite with the pure-Python fallback
+VELTIX_DISABLE_RUST=1 python -m veltix.benchmark --socket-core both --runs 5
+
+# Save JSON results and compare engines (run sequentially — no CPU contention)
+python -m veltix.benchmark --runs 5 --save rust.json
+VELTIX_DISABLE_RUST=1 python -m veltix.benchmark --runs 5 --save python.json
+python -m veltix.benchmark --compare rust.json python.json
 
 # Run specific benchmarks
 python -m veltix.benchmark --only memory latency burst --socket-core both
-
-# Save results to JSON
-python -m veltix.benchmark --save results.json
 ```
 
 ---
 
-## Side-by-Side Summary
+## Rust engine vs Python fallback (v3.0.0)
+
+| Metric                          | Rust engine  | Python fallback | Gain      |
+|---------------------------------|--------------|-----------------|-----------|
+| Concurrent stress (100 clients) | 129,127 msg/s| 105,264 msg/s   | **+23%**  |
+| Latency average                 | 0.0425 ms    | 0.0575 ms       | **-26%**  |
+| Latency P95                     | 0.056 ms     | 0.103 ms        | **-45%**  |
+| Latency P99                     | 0.090 ms     | 0.153 ms        | **-41%**  |
+| Jitter                          | 0.014 ms     | 0.044 ms        | **-68%**  |
+| Burst send                      | 67,492 msg/s | 59,292 msg/s    | **+14%**  |
+| FPS 64 tick stdev               | 0.123 ms     | 0.229 ms        | **-46%**  |
+| Idle server memory              | 60 KB        | 60 KB           | 0%        |
+
+> The Rust engine cuts framing/parse overhead: **-41% P99 latency**, **-68% jitter**, **+23%**
+> throughput under 100-client stress, and steadier FPS ticks. FPS *throughput* is tick-limited and
+> unchanged, as expected. Results are workload-dependent and were measured on Veltix 3.0.0.
+
+---
+
+## Side-by-Side Summary (socket backends — pure-Python path)
 
 | Metric                              | Threading        | Async            |
 |-------------------------------------|------------------|------------------|
