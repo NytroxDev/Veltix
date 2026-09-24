@@ -7,6 +7,30 @@ on:
     branches: [ "**" ]
 
 jobs:
+  # ── Rust workspace (fmt, clippy, tests) ────────────────────────────────────
+  rust:
+    name: Rust checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: cargo fmt
+        run: cargo fmt --manifest-path rust/Cargo.toml --check
+
+      - name: cargo clippy
+        run: cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
+
+      - name: cargo test
+        run: cargo test --manifest-path rust/Cargo.toml
+
   # ── Lint & format ──────────────────────────────────────────────────────────
   lint:
     name: Lint & format
@@ -71,13 +95,19 @@ jobs:
 
           echo "✅ Version valid: $VERSION"
 
-  # ── Build check ────────────────────────────────────────────────────────────
+  # ── Build check (sdist + abi3 wheel with Rust engine) ──────────────────────
   build:
     name: Build check
     runs-on: ubuntu-latest
     needs: version-check
     steps:
       - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -93,10 +123,16 @@ jobs:
       - name: Verify wheel contents
         run: |
           pip install dist/*.whl
-          python -c "import veltix; print(f'veltix {veltix.__version__} imported successfully')"
+          python -c "
+          import veltix
+          from veltix.network import _rust
+          assert _rust.rust_enabled(), 'compiled veltix._rust extension is missing from the wheel!'
+          print(f'veltix {veltix.__version__} imported successfully (rust engine active)')
+          "
           pip uninstall veltix -y
+          ls dist/*.tar.gz
 
-  # ── Tests ──────────────────────────────────────────────────────────────────
+  # ── Tests (Rust engine + Python fallback) ──────────────────────────────────
   tests:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -109,6 +145,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
@@ -117,5 +159,8 @@ jobs:
       - name: Install package + test dependencies
         run: pip install -e ".[test]"
 
-      - name: Run tests
+      - name: Run tests (Rust engine)
         run: python -m pytest tests/ --tb=short
+
+      - name: Run tests (Python fallback)
+        run: VELTIX_DISABLE_RUST=1 python -m pytest tests/ --tb=short
