@@ -1,0 +1,15 @@
+[package]
+name = "veltix-bindings"
+description = "PyO3 bindings exposing the Veltix Rust protocol and message buffer to Python"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "veltix_bindings"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3.workspace = true
+veltix-message-buffer = { path = "../veltix-message-buffer" }
+veltix-protocol = { path = "../veltix-protocol" }
