@@ -1,4 +1,4 @@
-"""Tests for Sender — send and broadcast."""
+"""Tests for Sender - send and broadcast."""
 
 from unittest.mock import MagicMock, patch
 

@@ -15,7 +15,7 @@ FILE = MessageType(code=201, name="file", description="File transfer")
 
 ### Auto-allocated code
 
-Omit the code (or pass a name string as the first argument) and Veltix will automatically assign the next available code in the 200–9999 range:
+Omit the code (or pass a name string as the first argument) and Veltix will automatically assign the next available code in the 200-9999 range:
 
 ```python
 from veltix import MessageType
@@ -32,12 +32,12 @@ STATUS = MessageType(name="status")            # keyword style, same result
 
 | Range       | Usage              |
 |-------------|--------------------|
-| 0–199       | System (reserved)  |
-| 200–9999    | User application   |
-| 10000–65535 | Plugins            |
+| 0-199       | System (reserved)  |
+| 200-9999    | User application   |
+| 10000-65535 | Plugins            |
 
 !!! warning
-    Codes 0–199 are reserved by Veltix. Use 200+ for your own message types.
+    Codes 0-199 are reserved by Veltix. Use 200+ for your own message types.
     The protocol supports codes up to 65535 (uint16).
 
 ## Request
@@ -65,7 +65,7 @@ request = Request(CHAT, json={"key": "value"})  # serialized to JSON automatical
 ### With custom request_id
 
 ```python
-request = Request(CHAT, b"Hello!", request_id=42)  # uint16, 0–65535
+request = Request(CHAT, b"Hello!", request_id=42)  # uint16, 0-65535
 ```
 
 Exactly one payload argument (`content`, `text`, or `json`) is required. Passing zero or more than one raises `RequestError`.
@@ -90,7 +90,7 @@ Responses are received in callbacks. They have the following fields and properti
 def on_message(client, response):
     print(response.type.name)       # message type name
     print(response.content)         # raw bytes payload
-    print(response.request_id)     # int (0–65535)
+    print(response.request_id)     # int (0-65535)
 ```
 
 ### Content decoding
@@ -99,10 +99,10 @@ def on_message(client, response):
 
 ```python
 def on_message(client, response):
-    text = response.text          # str — UTF-8 decoded, cached
-    data = response.json          # Any — parsed JSON, cached
-    is_json = response.is_json    # bool — safe check, no exception
-    is_text = response.is_text    # bool — safe check, no exception
+    text = response.text          # str - UTF-8 decoded, cached
+    data = response.json          # Any - parsed JSON, cached
+    is_json = response.is_json    # bool - safe check, no exception
+    is_text = response.is_text    # bool - safe check, no exception
 ```
 
 `response.text` and `response.json` raise `InvalidContentError` if the content cannot be decoded. Use `response.is_text` and `response.is_json` for safe checks without exceptions.

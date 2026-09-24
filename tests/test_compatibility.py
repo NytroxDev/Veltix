@@ -1,4 +1,4 @@
-"""Tests for veltix.internal.compatibility — protocol version and Version/COMPATIBILITY."""
+"""Tests for veltix.internal.compatibility - protocol version and Version/COMPATIBILITY."""
 
 import pytest
 

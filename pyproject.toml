@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "veltix"
 version = "3.0.0"
-description = "Python TCP, without the boilerplate — sync, thread-friendly, zero dependencies"
+description = "Python TCP, without the boilerplate - sync, thread-friendly, zero dependencies"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -173,7 +173,7 @@ warn_no_return = true
 strict_equality = true
 strict_optional = true
 
-# Maturin configuration — builds the compiled `veltix._rust` extension
+# Maturin configuration - builds the compiled `veltix._rust` extension
 # (Rust engine: framing / parse / compile) alongside the pure-Python package.
 [tool.maturin]
 python-source = "src"

@@ -1,7 +1,7 @@
 """
 __main__.py
 -----------
-Package entry point — allows running the suite with:
+Package entry point - allows running the suite with:
 
     python -m benchmark
     python -m benchmark --only latency burst

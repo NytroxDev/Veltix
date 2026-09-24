@@ -1,4 +1,4 @@
-"""Tests for CallbackExecutor — v1.4.0."""
+"""Tests for CallbackExecutor - v1.4.0."""
 
 import socket
 import time
@@ -86,7 +86,7 @@ class TestCallbackExecutor:
 
 @pytest.mark.usefixtures("socket_core_backend")
 class TestCallbackExecutorIntegration:
-    """Integration tests — slow on_recv should not block recv loop."""
+    """Integration tests - slow on_recv should not block recv loop."""
 
     def test_slow_callback_does_not_block_reception(self):
         """A slow on_recv should not prevent other messages from being received."""

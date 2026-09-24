@@ -79,7 +79,7 @@ class MessageType:
         *,
         _system: bool = False,
     ) -> None:
-        # Handle MessageType("chat") — first arg is a string (the name)
+        # Handle MessageType("chat") - first arg is a string (the name)
         if isinstance(code, str):
             if name is not None:
                 raise MessageTypeError(

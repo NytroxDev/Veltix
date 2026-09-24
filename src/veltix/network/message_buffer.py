@@ -74,7 +74,7 @@ class MessageBuffer:
             if self._bus:
                 self._bus.error(
                     f"Buffer size {len(self._engine) + len(data)} exceeds maximum "
-                    f"{self._max_buffer_size} — clearing buffer."
+                    f"{self._max_buffer_size} - clearing buffer."
                 )
             self.clear()
             return
@@ -107,7 +107,7 @@ class MessageBuffer:
                 if msg_type is None:
                     if self._bus:
                         self._bus.warning(
-                            f"Unknown message type code: {type_code} — message dropped"
+                            f"Unknown message type code: {type_code} - message dropped"
                         )
                     continue
                 messages.append(
@@ -121,9 +121,9 @@ class MessageBuffer:
             elif kind == "dropped":
                 drop_kind, detail = payload
                 suffix = (
-                    " — possible corruption. Resyncing."
+                    " - possible corruption. Resyncing."
                     if drop_kind == "too_large"
-                    else " — Resyncing."
+                    else " - Resyncing."
                 )
                 if self._bus:
                     self._bus.error(f"{detail}{suffix}")
@@ -151,7 +151,7 @@ class MessageBuffer:
             if total_size > self._max_message_size:
                 if self._bus:
                     self._bus.error(
-                        f"Message size {total_size} exceeds maximum {self._max_message_size} — "
+                        f"Message size {total_size} exceeds maximum {self._max_message_size} - "
                         f"possible corruption. Resyncing."
                     )
                 self._resync()
@@ -163,7 +163,7 @@ class MessageBuffer:
             type_code = int.from_bytes(buffer[CODE_OFFSET : CODE_OFFSET + 2], "big")
             if MessageTypeRegistry.get(type_code) is None:
                 if self._bus:
-                    self._bus.warning(f"Unknown message type code: {type_code} — message dropped")
+                    self._bus.warning(f"Unknown message type code: {type_code} - message dropped")
                 del buffer[:total_size]
                 continue
 

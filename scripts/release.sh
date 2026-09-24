@@ -35,4 +35,4 @@ echo "=== Tests ==="
 python -m pytest tests/ --tb=short
 
 echo ""
-echo "✅ All checks passed — ready to release."
+echo "✅ All checks passed - ready to release."

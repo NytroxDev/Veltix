@@ -66,7 +66,7 @@ class EventBus(_BaseEventBus):
 
         The function is automatically unsubscribed after the first
         :meth:`emit`.  If *event_type* is an ``Enum`` class, a separate
-        one-shot registration is created for **each** member — each
+        one-shot registration is created for **each** member - each
         member fires independently once.
 
         Args:

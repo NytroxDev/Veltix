@@ -1,6 +1,6 @@
 # Logger
 
-Veltix includes a production-ready logging system — singleton, thread-safe, colorized, with file rotation.
+Veltix includes a production-ready logging system - singleton, thread-safe, colorized, with file rotation.
 
 ## Basic usage
 

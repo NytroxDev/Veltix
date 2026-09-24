@@ -1,4 +1,4 @@
-"""Tests for Request/Response binary protocol (v2 — magic bytes + compact IDs)."""
+"""Tests for Request/Response binary protocol (v2 - magic bytes + compact IDs)."""
 
 import pytest
 

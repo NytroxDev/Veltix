@@ -1,4 +1,4 @@
-//! Veltix wire protocol — framing constants and message (de)serialization.
+//! Veltix wire protocol - framing constants and message (de)serialization.
 //!
 //! Pure-Rust mirror of `src/veltix/network/constants.py`, `request.py` and
 //! `parser.py`. The wire format described here is the single source of truth

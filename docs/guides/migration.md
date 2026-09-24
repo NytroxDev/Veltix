@@ -4,7 +4,7 @@
 
 ## v2.0.3 → v3.0.0
 
-**Breaking change : minimum Python version — wire-compatible with v2.0.x.**
+**Breaking change : minimum Python version - wire-compatible with v2.0.x.**
 
 v3.0.0 raises the minimum Python version to **3.11+** and recompiles the message hot path
 (parse, compile, buffering) in Rust (`veltix._rust`), with an automatic fallback to the
@@ -12,7 +12,7 @@ pure-Python implementation.
 
 ### Action required
 
-- **Python 3.11+** is now required — 3.8, 3.9, and 3.10 are no longer supported.
+- **Python 3.11+** is now required - 3.8, 3.9, and 3.10 are no longer supported.
 - No source-level API changes: `Request` / `Response` / routing / events are unchanged.
 - The wire protocol is unchanged (`pv` 1.0): v2.0.x peers remain fully compatible.
 
@@ -27,14 +27,14 @@ pure-Python implementation.
 ### Performance
 
 The Rust engine cuts hot-path overhead: **+23%** throughput under 100-client stress, **-41%** P99
-latency, and **-68%** jitter vs the Python fallback — see
+latency, and **-68%** jitter vs the Python fallback - see
 [PERFORMANCE.md](../../PERFORMANCE.md).
 
 ---
 
 ## v1.8.0 → v1.8.1
 
-**No breaking changes — wire-compatible with v1.8.0.**
+**No breaking changes - wire-compatible with v1.8.0.**
 
 v1.8.1 is a maintenance release focusing on bug fixes, type cleanup, and documentation.
 
@@ -53,7 +53,7 @@ v1.8.1 is a maintenance release focusing on bug fixes, type cleanup, and documen
 - **AsyncSocket selector loop fixed** : no more busy-loop after self-disconnect.
 - **Test suite ~7× faster** (49s → 7s) via `pytest-xdist`.
 - **30 new unit tests**, 100% coverage on `Writer`.
-- **Compatibility table** updated — both `1.8.0` and `1.8.1` are registered.
+- **Compatibility table** updated - both `1.8.0` and `1.8.1` are registered.
 
 ### Action required
 
@@ -79,7 +79,7 @@ client.sender.send(request)
 
 ## v1.7.5 → v1.8.0
 
-**Breaking change : handshake protocol — NOT backward compatible.**
+**Breaking change : handshake protocol - NOT backward compatible.**
 
 v1.8.0 replaces the old HELLO/HELLO_ACK message-based handshake with a **JSON raw-socket
 protocol**. Handshake now exchanges JSON payloads (`{"v": "1.8.0", "meta": {}}`) directly
@@ -87,9 +87,9 @@ over the TCP stream before any Veltix framing.
 
 ### Action required
 
-- **All clients and servers must be upgraded together** — mixed-version handshakes will
+- **All clients and servers must be upgraded together** - mixed-version handshakes will
   fail (v1.7.x sends a binary Veltix frame as HELLO, v1.8.0 expects a JSON payload).
-- No source-level API changes needed — `client.connect()` still returns `bool`, the
+- No source-level API changes needed - `client.connect()` still returns `bool`, the
   handshake is still automatic and transparent.
 - `HELLO` / `HELLO_ACK` are no longer available as imports (they were never meant for
   public use).
@@ -98,15 +98,15 @@ over the TCP stream before any Veltix framing.
 
 - Handshake is now **synchronous**: `connect()` blocks until the JSON handshake completes
   or the socket timeout fires. The internal `_handshake_done` Event has been removed.
-- `HelloRule` removed — the handshake no longer routes through the message dispatch
+- `HelloRule` removed - the handshake no longer routes through the message dispatch
   pipeline. This is an internal change only.
 - `ERROR` / `INVALID_REQUEST` system types (codes 20, 21) were kept and re-exported in v1.8.0 (since removed in
   v2.0.0b3).
 - Compatibility table now includes `Version(1, 8, 0)` and `Version(1, 8, 1)`.
 
 ```python
-# Before (v1.7.5) — HELLO/HELLO_ACK over Veltix wire protocol
-# After (v1.8.0) — JSON over raw TCP, then normal Veltix protocol
+# Before (v1.7.5) - HELLO/HELLO_ACK over Veltix wire protocol
+# After (v1.8.0) - JSON over raw TCP, then normal Veltix protocol
 # No code changes required.
 ```
 
@@ -114,14 +114,14 @@ over the TCP stream before any Veltix framing.
 
 ## v1.7.1 → v1.7.2
 
-**No breaking changes — wire-compatible with v1.7.0/v1.7.1.**
+**No breaking changes - wire-compatible with v1.7.0/v1.7.1.**
 
 v1.7.2 is a stability release with 10 bug fixes, +108 tests, and documentation polish.
 No protocol changes.
 
 ### Action required
 
-None — drop-in upgrade.
+None - drop-in upgrade.
 
 ```bash
 pip install --upgrade veltix
@@ -131,7 +131,7 @@ pip install --upgrade veltix
 
 ## v1.7.0 → v1.7.1
 
-**No breaking changes — wire-compatible with v1.7.0.**
+**No breaking changes - wire-compatible with v1.7.0.**
 
 v1.7.1 is a stability release with 6 bug fixes and no protocol changes.
 
@@ -147,7 +147,7 @@ v1.7.1 is a stability release with 6 bug fixes and no protocol changes.
 
 ### Action required
 
-None — drop-in upgrade.
+None - drop-in upgrade.
 
 ```bash
 pip install --upgrade veltix
@@ -157,7 +157,7 @@ pip install --upgrade veltix
 
 ## v1.6.10 → v1.7.0
 
-**Breaking change : wire format — NOT backward compatible.**
+**Breaking change : wire format - NOT backward compatible.**
 
 v1.7.0 adds **2 MAGIC bytes** (`b"VX"`) at the start of every frame. The header size
 increases from 14 to 16 bytes. v1.7.0 **cannot communicate** with earlier versions.
@@ -166,19 +166,19 @@ increases from 14 to 16 bytes. v1.7.0 **cannot communicate** with earlier versio
 Before (v1.6.10) : [2B  size][2B  code][4B CRC][4B request_id][     content     ]
 After  (v1.7.0)  : [2B MAGIC][2B  size][2B  code][4B CRC][4B request_id][content ]
                     ^^^^^^^^
-                    new — always 0x56 0x58 ("VX")
+                    new - always 0x56 0x58 ("VX")
 ```
 
 ### Action required
 
-- **All clients and servers must be upgraded together** — mixed-version communication
+- **All clients and servers must be upgraded together** - mixed-version communication
   will fail with `RequestError("Invalid magic bytes")`.
-- No source-level API changes needed — the wire format change is transparent to
+- No source-level API changes needed - the wire format change is transparent to
   application code using `Request` / `Response` objects.
 
 ### New features
 
-- **`AsyncSocket`** : selectors-based backend — switch via `SocketCore.ASYNC`.
+- **`AsyncSocket`** : selectors-based backend - switch via `SocketCore.ASYNC`.
   Up to **2x stress throughput** (76 929 msg/s vs 37 676 msg/s).
 - **Protocol hardening** : MAGIC bytes, auto-resynchronization on corruption,
   `MAX_BUFFER_SIZE` (20 MB) for DoS protection.
@@ -204,14 +204,14 @@ from veltix import PerformanceMode
 
 config = ServerConfig(host="0.0.0.0", port=8080, performance_mode=PerformanceMode.HIGH)
 
-# After (v1.6.10) — just remove the parameter
+# After (v1.6.10) - just remove the parameter
 config = ServerConfig(host="0.0.0.0", port=8080)
 ```
 
 ### `@server.route` callback order flipped
 
 Server route callbacks now receive `(client, response)` instead of `(response, client)`. Client routes
-(`@client.route`) are unaffected — they still use `(response, client=None)`.
+(`@client.route`) are unaffected - they still use `(response, client=None)`.
 
 ```python
 # Before (v1.6.9)
@@ -302,7 +302,7 @@ pattern.
 
 Breaking changes in protocol/API:
 
-- `request_id` changed from UUID string to `bytes` (4 bytes) — **NOTE: this was later changed to `int` (2 bytes) in
+- `request_id` changed from UUID string to `bytes` (4 bytes) - **NOTE: this was later changed to `int` (2 bytes) in
   v2.0.0**
 - Wire format changed (header/hash/request_id), upgrade both client/server together
 - Handshake version check now requires exact `major.minor.patch` match
@@ -330,7 +330,7 @@ response.request_id[:8]
 # After (v1.6.2)
 response.request_id.hex()[:8]
 
-# After (v2.0.0) — request_id is now an int, not bytes
+# After (v2.0.0) - request_id is now an int, not bytes
 response.request_id  # just use the int directly
 ```
 
@@ -354,7 +354,7 @@ No breaking changes to public API.
 client.set_callback(Events.ON_DISCONNECT, lambda: print("Disconnected"))
 
 # After (v1.5.0)
-client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected — permanent={state.permanent}"))
+client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected - permanent={state.permanent}"))
 ```
 
 New optional fields in `ClientConfig`: `retry`, `retry_delay`, `buffer_size`.
@@ -365,7 +365,7 @@ New optional fields in `ServerConfig`: `buffer_size`.
 
 No breaking changes to public API.
 
-- `on_connect` (server-side) now fires after the handshake is complete — `client.handshake_done` is always `True` when
+- `on_connect` (server-side) now fires after the handshake is complete - `client.handshake_done` is always `True` when
   it fires.
 - `connect()` (client-side) now blocks until the handshake is done. It is safe to send messages immediately after it
   returns.

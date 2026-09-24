@@ -16,7 +16,7 @@ from ..network.id_allocator import IDAllocator
 from ..network.request import Request
 from ..network.sender import Mode, Sender
 from ..network.system_types import PING
-from .config import ClientConfig  # noqa: TC001 — re-exported by __init__.py
+from .config import ClientConfig  # noqa: TC001 - re-exported by __init__.py
 from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
 

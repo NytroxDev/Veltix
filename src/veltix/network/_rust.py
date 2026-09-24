@@ -2,8 +2,8 @@
 
 Loads the compiled ``veltix._rust`` extension when it is installed and not
 explicitly disabled, so the hot paths (framing, parsing, compiling) run in
-Rust. When the extension is unavailable — or ``VELTIX_DISABLE_RUST`` is set
-to a truthy value (``1``, ``true``, ``yes``) — the pure-Python
+Rust. When the extension is unavailable - or ``VELTIX_DISABLE_RUST`` is set
+to a truthy value (``1``, ``true``, ``yes``) - the pure-Python
 implementations are used instead.
 
 The availability decision is taken once at module import time; change the

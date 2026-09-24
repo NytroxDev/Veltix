@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
-- **Minimum Python version raised to 3.11+** — 3.8–3.10 are no longer supported
+- **Minimum Python version raised to 3.11+** - 3.8-3.10 are no longer supported
   ([9cfc325](https://github.com/NytroxDev/Veltix/commit/9cfc325)).
 - **Rust-powered hot path**: message parsing, compilation, and buffering are
   recompiled in Rust and shipped as a compiled `veltix._rust` extension
@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **`SocketCore.RUST` postponed to v5.0.0**: the planned Tokio-based socket
-  backend is out of scope for v3 — the v3 Rust work is the message hot path
+  backend is out of scope for v3 - the v3 Rust work is the message hot path
   (parse/compile/buffering), not a socket backend.
 - **Pending-safe `IDAllocator`**: allocation now skips request IDs that still
   have a pending `send_and_wait()`/`ping`, eliminating the wrap-around ID
@@ -421,28 +421,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Flags field in protocol header** (1 byte) — new `MessageFlag(IntFlag)` in `network/flags.py` for future
+- **Flags field in protocol header** (1 byte) - new `MessageFlag(IntFlag)` in `network/flags.py` for future
   compression/encryption support. Currently only
   `NONE = 0x00` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **`IDAllocator`** — thread-safe monotonic counter for per-connection request IDs, replaces `generate_random_id()`.
+- **`IDAllocator`** - thread-safe monotonic counter for per-connection request IDs, replaces `generate_random_id()`.
   Allocates sequential IDs within a fixed range `[0, max_ids)`, wraps around after reaching the limit
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **`ClientAllocator`** — server-side counter that assigns unique offsets to connected clients so that
+- **`ClientAllocator`** - server-side counter that assigns unique offsets to connected clients so that
   `wire_id + client_offset` produces globally unique IDs across all clients
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **`ServerConfig.id_window`** — configurable unique ID window per direction (default: 30000). Sent to clients
+- **`ServerConfig.id_window`** - configurable unique ID window per direction (default: 30000). Sent to clients
   during the handshake via `meta.id_window` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **Handshake meta** — server now sends `{"v": "2.0.0", "meta": {"id_window": 30000}}` to clients
+- **Handshake meta** - server now sends `{"v": "2.0.0", "meta": {"id_window": 30000}}` to clients
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 
 ### Changed
 
 #### Wire protocol (Breaking)
 
-- **Header size reduced from 16 to 15 bytes** — new layout:
+- **Header size reduced from 16 to 15 bytes** - new layout:
   `[2B MAGIC][1B flags][2B code][4B size][4B CRC][2B request_id][content]`
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **`request_id` type changed from `bytes` (4 bytes) to `int` (2 bytes)** — uint16, max 65535. The
+- **`request_id` type changed from `bytes` (4 bytes) to `int` (2 bytes)** - uint16, max 65535. The
   `generate_random_id()`
   function has been removed; IDs are now auto-allocated by `IDAllocator` via the `Sender`
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
@@ -452,22 +452,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 - **`REQUEST_ID_SIZE`** changed from `4` to `2` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 - **`HEADER_SIZE`** changed from `16` to `15` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **Split ID ranges** — Server→Client uses `[0, id_window)`, Client→Server uses `[id_window, id_window*2)`.
+- **Split ID ranges** - Server→Client uses `[0, id_window)`, Client→Server uses `[id_window, id_window*2)`.
   Each client receives a unique offset via
   `ClientAllocator` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **`Sender` auto-allocates request IDs** — `send()` now allocates via `IDAllocator` if `request_id is None`
+- **`Sender` auto-allocates request IDs** - `send()` now allocates via `IDAllocator` if `request_id is None`
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
-- **`MessageBuffer` struct updated** — new struct `">2sBHI4s2s"` for the 15-byte header format
+- **`MessageBuffer` struct updated** - new struct `">2sBHI4s2s"` for the 15-byte header format
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 
 ### Removed
 
-- **`generate_random_id()`** — replaced by
+- **`generate_random_id()`** - replaced by
   `IDAllocator` ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 
 ### Tests
 
-- **522 tests** — all existing tests updated for the new wire format; new tests added for `IDAllocator`,
+- **522 tests** - all existing tests updated for the new wire format; new tests added for `IDAllocator`,
   `ClientAllocator`, `MessageFlag`, split ranges, and handshake `id_window` exchange
   ([49fb15a](https://github.com/NytroxDev/Veltix/commit/49fb15a)).
 
@@ -587,18 +587,18 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
   `_send_handshake()` / `_recv_handshake()` for raw socket I/O, `do_server_handshake()` /
   `do_client_handshake()` as the public entry points.
 - Server-side handshake executes before the client is registered in `ClientsManager` on the
-  `AsyncSocket` backend — the `ClientInfo` is created, registered, and only marked
+  `AsyncSocket` backend - the `ClientInfo` is created, registered, and only marked
   `handshake_done=True` after a successful handshake. On failure, cleanup is immediate and
   complete.
 
 ### Removed
 
-- **`HELLO` / `HELLO_ACK` system types** (codes 10, 11) — no longer used.
-- **`HelloRule`** — removed from `handler/rules.py` and `ALL_RULES`.
-- **`_handshake_done` Event** from `Client` — handshake is now synchronous; `connect()`
+- **`HELLO` / `HELLO_ACK` system types** (codes 10, 11) - no longer used.
+- **`HelloRule`** - removed from `handler/rules.py` and `ALL_RULES`.
+- **`_handshake_done` Event** from `Client` - handshake is now synchronous; `connect()`
   returns True/False directly.
 - **`handshake_timeout` config** (retained in config for future use but no longer used in
-  the handshake path — the raw socket timeout serves the same purpose).
+  the handshake path - the raw socket timeout serves the same purpose).
 - **`_handshake_pending` / `_process_pending_handshakes()`** dead code from `AsyncSocket`
   (noted as dead in v1.7.0 changelog).
 
@@ -606,7 +606,7 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 
 - **`ERROR` / `INVALID_REQUEST` system types** (codes 20, 21) confirmed as kept and
   re-exported.
-- **`HandshakeHandler` constructor** no longer takes a `sender` parameter — only `mode`.
+- **`HandshakeHandler` constructor** no longer takes a `sender` parameter - only `mode`.
 - **Wire protocol**: Handshake no longer uses MAGIC/HEADER_SIZE framing. Post-handshake
   messages continue to use the existing Veltix frame format unchanged.
 - **Compatibility table**: only `Version(1, 8, 0) : [Version(1, 8, 0)]`.
@@ -625,7 +625,7 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 
 ### Tests
 
-- **377 tests** (up from 261) — test count reflects the broader coverage built across
+- **377 tests** (up from 261) - test count reflects the broader coverage built across
   the 1.7.x cycle.
 - **`test_handshake.py`** rewritten: tests JSON encode/decode roundtrips, version check
   logic, integration with real sockets (success, version mismatch, timeout, multiple
@@ -649,56 +649,56 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 
 #### Socket Core
 
-- **`SO_REUSEPORT` guarded on all platforms** — `socket.SO_REUSEPORT` doesn't exist on Windows and may raise
+- **`SO_REUSEPORT` guarded on all platforms** - `socket.SO_REUSEPORT` doesn't exist on Windows and may raise
   `AttributeError` on older Python builds ; wrapped with `contextlib.suppress` in both `ThreadingSocket` and
   `AsyncSocket` ([330be08])
 
 ### Chore
 
-- **Compatibility table updated** — `Version(1, 7, 5)` registered as compatible with 1.7.0–1.7.5
+- **Compatibility table updated** - `Version(1, 7, 5)` registered as compatible with 1.7.0-1.7.5
 
 ## [1.7.2] - 2026-06-20
 
 ### Added
 
-- **108 new tests** — coverage increased across routing, handshake, reconnection, and logging ; existing tests
+- **108 new tests** - coverage increased across routing, handshake, reconnection, and logging ; existing tests
   accelerated ([be78e94])
 
 ### Fixed
 
 #### Server
 
-- **`ClientInfo.tags` locked** — tags dict now protected with `threading.Lock` across all reads/writes ; property
+- **`ClientInfo.tags` locked** - tags dict now protected with `threading.Lock` across all reads/writes ; property
   returns a read-only copy ([84e586d], [1c2a60d])
-- **`_routes` dict race condition** — all reads and writes now properly locked ([1148fe4])
+- **`_routes` dict race condition** - all reads and writes now properly locked ([1148fe4])
 
 #### Client
 
-- **`_handshake_done` cleared before reconnect** — prevents stale event state from blocking the next connection
+- **`_handshake_done` cleared before reconnect** - prevents stale event state from blocking the next connection
   attempt ([7e89e74])
-- **Premature disconnect callback on connect** — guarded the window between socket bind and handshake completion
+- **Premature disconnect callback on connect** - guarded the window between socket bind and handshake completion
   ([380b1ed])
-- **Old socket not closed on reconnect** — `close()` and `shutdown()` now called on the previous socket and handler
+- **Old socket not closed on reconnect** - `close()` and `shutdown()` now called on the previous socket and handler
   before creating new ones ([5063baa])
-- **Double reconnect loop** — `_reconnect_lock` prevents concurrent reconnection attempts ([1a8d78c])
-- **Imports cleaned up** — unused imports removed from `client.py` ([c6cbc23])
+- **Double reconnect loop** - `_reconnect_lock` prevents concurrent reconnection attempts ([1a8d78c])
+- **Imports cleaned up** - unused imports removed from `client.py` ([c6cbc23])
 
 #### Logger / Writer
 
-- **`_flush_buffer` lock** — file writer flush access wrapped in thread-safe lock ([3677d1c])
+- **`_flush_buffer` lock** - file writer flush access wrapped in thread-safe lock ([3677d1c])
 
 #### ReconnectHandler
 
-- **Log message language corrected** — French alert message fixed to proper English ([b33b39b])
+- **Log message language corrected** - French alert message fixed to proper English ([b33b39b])
 
 ### CI
 
-- **`actions/checkout` and `setup-python` versions updated** — workflow now uses latest GitHub Actions versions
+- **`actions/checkout` and `setup-python` versions updated** - workflow now uses latest GitHub Actions versions
   ([0592e36])
 
 ### Docs
 
-- **Guides and quickstart refined** — `retry` parameter documentation adjusted, info sections updated ([a405433])
+- **Guides and quickstart refined** - `retry` parameter documentation adjusted, info sections updated ([a405433])
 
 ### Chore
 
@@ -712,69 +712,69 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 
 #### AsyncSocket
 
-- **`_close_server_client()` idempotent on selector unregister** — calling `unregister()` on an already-closed file
+- **`_close_server_client()` idempotent on selector unregister** - calling `unregister()` on an already-closed file
   descriptor no longer raises `KeyError` ([1bee90e])
-- **Selector threads set as daemons** — ensures the process can exit cleanly even if selector threads are still running
+- **Selector threads set as daemons** - ensures the process can exit cleanly even if selector threads are still running
   during shutdown ([d2ffed4])
 
 #### Server
 
-- **`ClientInfo._id` with `__eq__`/`__hash__`** — stable identity for `ClientInfo` objects, fixing set/dict membership
+- **`ClientInfo._id` with `__eq__`/`__hash__`** - stable identity for `ClientInfo` objects, fixing set/dict membership
   issues ([48cbbf2])
-- **`close_client()` type hint** — `id_` parameter type fixed to `Optional[int]` ([dd991e5])
-- **Handshake version validation** — HELLO_ACK version is now validated in `_check_server_handshake`, rejecting
+- **`close_client()` type hint** - `id_` parameter type fixed to `Optional[int]` ([dd991e5])
+- **Handshake version validation** - HELLO_ACK version is now validated in `_check_server_handshake`, rejecting
   incompatible clients earlier ([6d377ee])
 
 #### Client / Sender
 
-- **`_sock.close()` wrapped in try/except** — client cleanup is never skipped even if the socket is already
+- **`_sock.close()` wrapped in try/except** - client cleanup is never skipped even if the socket is already
   closed ([24fc1e5])
-- **`request_id` bytes in log f-strings** — `.hex()` prevents `TypeError` from raw bytes interpolation in log
+- **`request_id` bytes in log f-strings** - `.hex()` prevents `TypeError` from raw bytes interpolation in log
   messages ([91f68e8])
 
 #### Python < 3.11 Compatibility
 
-- **`TimeoutError` replaced with `socket.timeout`** — `TimeoutError` is a builtin only since Python 3.11; now uses
+- **`TimeoutError` replaced with `socket.timeout`** - `TimeoutError` is a builtin only since Python 3.11; now uses
   `socket.timeout` which exists in all supported versions ([2069879])
 
 #### RequestHandler
 
-- **`sender` parameter made `Optional`** — constructor accepts `None` sender, matching usage from client-side
+- **`sender` parameter made `Optional`** - constructor accepts `None` sender, matching usage from client-side
   paths ([2d20a88])
-- **Dead `handle()` replaced with no-op** — `PendingRequestRule.handle()` was unreachable (only `try_handle()` is used);
+- **Dead `handle()` replaced with no-op** - `PendingRequestRule.handle()` was unreachable (only `try_handle()` is used);
   no longer misleading ([56df37a])
 
 ### Features
 
-- **Export `NetworkError` and `TimeoutError` in `__all__`** — both exception classes are now part of the public
+- **Export `NetworkError` and `TimeoutError` in `__all__`** - both exception classes are now part of the public
   API ([4a6e7a6])
 
 ### Chores
 
-- **Remove unused `HEARTBEAT` message type** — was never registered or referenced in the codebase ([cf76069])
+- **Remove unused `HEARTBEAT` message type** - was never registered or referenced in the codebase ([cf76069])
 
 ### Documentation
 
-- **AGENTS.md** — new comprehensive guide for AI agents with project conventions, API reference, and
+- **AGENTS.md** - new comprehensive guide for AI agents with project conventions, API reference, and
   examples ([c9c3683])
-- **AGENTS.md expanded** — added performance benchmarks, detailed examples, and updated conventions ([12aff33])
-- **AGENTS.md SocketCore default** — updated to reflect `SocketCore.ASYNC` as the default backend ([b3388d4])
-- **AGENTS.md backward compatibility** — fixed constraint description to match actual policy ([a5bf915])
-- **Sender docstrings** — translated from French to English ([8f4a26c])
-- **README rewrite** — added socket comparison table, backend selection guide, and maturity highlights ([5f843e0])
-- **README badge** — added AI guide badge linking to AGENTS.md ([8aa5b94])
+- **AGENTS.md expanded** - added performance benchmarks, detailed examples, and updated conventions ([12aff33])
+- **AGENTS.md SocketCore default** - updated to reflect `SocketCore.ASYNC` as the default backend ([b3388d4])
+- **AGENTS.md backward compatibility** - fixed constraint description to match actual policy ([a5bf915])
+- **Sender docstrings** - translated from French to English ([8f4a26c])
+- **README rewrite** - added socket comparison table, backend selection guide, and maturity highlights ([5f843e0])
+- **README badge** - added AI guide badge linking to AGENTS.md ([8aa5b94])
 
 ### Refactors
 
-- **Sender instances reused** — client and server examples reuse `sender` for broadcasts and sends, improving
+- **Sender instances reused** - client and server examples reuse `sender` for broadcasts and sends, improving
   readability ([8807f39], [55f7160])
-- **Broadcast excluded sender** — `CHAT` handler excludes the sender client from broadcast recipients ([b83c181])
-- **`add_tag()` used in CHANNEL_JOIN handler** — replaces direct `tags` dict update with the idiomatic
+- **Broadcast excluded sender** - `CHAT` handler excludes the sender client from broadcast recipients ([b83c181])
+- **`add_tag()` used in CHANNEL_JOIN handler** - replaces direct `tags` dict update with the idiomatic
   method ([a9b21cc])
 
 ### Tests
 
-- **Handshake version rejection** — new test verifying the server rejects an incompatible HELLO_ACK version ([b7a1d84])
+- **Handshake version rejection** - new test verifying the server rejects an incompatible HELLO_ACK version ([b7a1d84])
 
 ---
 
@@ -784,85 +784,85 @@ HELLO/HELLO_ACK message-based handshake replaced with a **JSON raw-socket protoc
 
 #### AsyncSocket (Selectors-Based Backend)
 
-New `SocketCore.ASYNC` backend (`veltix/socket_core/async_socket.py`) — a selectors-based
+New `SocketCore.ASYNC` backend (`veltix/socket_core/async_socket.py`) - a selectors-based
 I/O loop that replaces the one-thread-per-client model:
 
-- **Selector loop** with `selectors.DefaultSelector()` — single thread handles all clients,
+- **Selector loop** with `selectors.DefaultSelector()` - single thread handles all clients,
   no thread-per-client overhead
-- **`_accept_client()`** + **`_send_hello()`** — HELLO is sent immediately on accept,
+- **`_accept_client()`** + **`_send_hello()`** - HELLO is sent immediately on accept,
   eliminating the 500 ms `select()` latency of the old deferred handshake queue
-- **Client mode** — `connect()` / `disconnect()` / self-read via `_handle_self_read()`
-- **`_close_server_client()`** — clean teardown with `close()` + `on_disconnect` callback
-- **`_check_handshake_timeouts()`** — configurable timeout for stalled handshakes
-- **`_create_client_instance()`** — factory method for per-client socket instances with
+- **Client mode** - `connect()` / `disconnect()` / self-read via `_handle_self_read()`
+- **`_close_server_client()`** - clean teardown with `close()` + `on_disconnect` callback
+- **`_check_handshake_timeouts()`** - configurable timeout for stalled handshakes
+- **`_create_client_instance()`** - factory method for per-client socket instances with
   their own selector, buffer, and handshake state
 
 #### Protocol Hardening
 
-- **MAGIC bytes** (`b"VX"`) prepended to every frame — validates frame alignment on
+- **MAGIC bytes** (`b"VX"`) prepended to every frame - validates frame alignment on
   the receiving end. Invalid magic triggers automatic stream resynchronization.
-- **`MessageBuffer._resync()`** — on parse failure (CRC, size, or magic mismatch),
+- **`MessageBuffer._resync()`** - on parse failure (CRC, size, or magic mismatch),
   searches the buffer for the next valid MAGIC byte and discards corrupted data.
   If no MAGIC is found, the entire buffer is cleared.
-- **`MAX_BUFFER_SIZE`** — hard 20 MB limit on the accumulation buffer. Exceeding it
+- **`MAX_BUFFER_SIZE`** - hard 20 MB limit on the accumulation buffer. Exceeding it
   clears the buffer entirely (DoS protection).
-- **Per-message `max_message_size`** — individual message size validated at `parse()`
+- **Per-message `max_message_size`** - individual message size validated at `parse()`
   time (default 10 MB).
 
 #### Benchmark Suite Enhancements
 
-- **`--socket-core` argument** — benchmark threading, async, or both backends
+- **`--socket-core` argument** - benchmark threading, async, or both backends
   side-by-side
-- **`--runs N`** — run each benchmark N times and average all results, eliminating
+- **`--runs N`** - run each benchmark N times and average all results, eliminating
   run-to-run noise
 - **`--latency-iterations`** default increased from 2 000 to **50 000** for stable
   P95/P99/max stats
 - **`average()` static methods** on all result models (`LatencyStats`, `MemoryResult`,
-  `FpsResult`, `BurstResult`, `StressResult`) — `LatencyStats` concatenates raw
+  `FpsResult`, `BurstResult`, `StressResult`) - `LatencyStats` concatenates raw
   samples for accurate percentile computation across runs
-- **Side-by-side summary** — `--socket-core both` now displays threading and async
+- **Side-by-side summary** - `--socket-core both` now displays threading and async
   results in adjacent columns for direct comparison
-- **Benchmark label fix** — each per-bench output shows which backend is being tested
-- **Callback executor error suppression** — `CallbackExecutor` errors no longer pollute
+- **Benchmark label fix** - each per-bench output shows which backend is being tested
+- **Callback executor error suppression** - `CallbackExecutor` errors no longer pollute
   benchmark output during teardown
 
 #### Integration Tests
 
-- **Parametrized over both backends** — all integration tests (`test_client_server.py`,
+- **Parametrized over both backends** - all integration tests (`test_client_server.py`,
   `test_callback_executor.py`) run on both `SocketCore.THREADING` and `SocketCore.ASYNC`
 
 ### Changed
 
 #### Protocol Wire Format (Breaking)
 
-- **Header size increased from 14 to 16 bytes** — 2 bytes added for MAGIC (`b"VX"`)
+- **Header size increased from 14 to 16 bytes** - 2 bytes added for MAGIC (`b"VX"`)
   at the start of every frame
 - **`Request.compile()`** now prepends MAGIC before the binary header
 - **`Request.parse()`** validates MAGIC bytes first, then proceeds to type, CRC, and
   content. Raises `RequestError("Invalid magic bytes")` on mismatch.
 - **`HEADER_SIZE` constant** updated from `14` to `16`
 - **`_HEADER_STRUCT`** format changed from `">HI4s4s"` to `">2sHI4s4s"`
-- **Version compatibility** — v1.7.0 is only compatible with itself. Entry added to
+- **Version compatibility** - v1.7.0 is only compatible with itself. Entry added to
   `COMPATIBILITY` table: `Version(1, 7, 0): [Version(1, 7, 0)]`
 
 #### MessageBuffer
 
-- **`extract_messages()`** — uses `struct.unpack_from` to read MAGIC + content size
+- **`extract_messages()`** - uses `struct.unpack_from` to read MAGIC + content size
   in a single zero-copy operation (replaces `buffer[:2]` + `int.from_bytes(buffer[4:8])`)
-- **`extract_messages()`** — passes `bytearray` slice directly to `Request.parse()`,
+- **`extract_messages()`** - passes `bytearray` slice directly to `Request.parse()`,
   eliminating an extra `bytes()` copy
-- **`Request.parse()`** — accepts `bytes | bytearray` (type hint updated)
+- **`Request.parse()`** - accepts `bytes | bytearray` (type hint updated)
 
 #### Sender
 
-- **`broadcast()`** — compiles the `Request` once and reuses the serialized bytes
+- **`broadcast()`** - compiles the `Request` once and reuses the serialized bytes
   for all recipients, instead of calling `data.compile()` per client
 
 #### Test Protocol
 
-- **`test_invalid_magic_bytes`** — new test verifying that corrupted magic is properly
+- **`test_invalid_magic_bytes`** - new test verifying that corrupted magic is properly
   rejected
-- **`test_message_buffer.py`** — 15 new tests covering corruption recovery,
+- **`test_message_buffer.py`** - 15 new tests covering corruption recovery,
   resynchronization (multiple corruptions, continuous garbage), and buffer
   protection (overflow, max-size enforcement)
 - **All existing parse tests updated** for 16-byte header and MAGIC offsets
@@ -871,33 +871,33 @@ I/O loop that replaces the one-thread-per-client model:
 
 #### AsyncSocket
 
-- **Race condition on HELLO delivery** — the original code queued HELLO sending to
+- **Race condition on HELLO delivery** - the original code queued HELLO sending to
   `_process_pending_handshakes()` which ran after `select()`, adding up to 500 ms
   latency before the handshake initiated. Fixed by sending HELLO immediately in
   `_accept_client()` via the new `_send_hello()` method.
-- **`BlockingIOError` on send** — caught and retried with temporary blocking mode
-- **`accept()` errors** — `BlockingIOError` and `OSError` caught gracefully
-- **Non-blocking mode** — all client sockets set to non-blocking on creation
-- **Handshake timeout** — stalled connections are cleaned up after `handshake_timeout`
+- **`BlockingIOError` on send** - caught and retried with temporary blocking mode
+- **`accept()` errors** - `BlockingIOError` and `OSError` caught gracefully
+- **Non-blocking mode** - all client sockets set to non-blocking on creation
+- **Handshake timeout** - stalled connections are cleaned up after `handshake_timeout`
   seconds
-- **`on_disconnect` in self-read** — client-side disconnection properly triggers
+- **`on_disconnect` in self-read** - client-side disconnection properly triggers
   the callback
 
 #### ThreadingSocket
 
-- **`max_client=-1` blocking accept** — when `max_client` was -1 (unlimited), the
+- **`max_client=-1` blocking accept** - when `max_client` was -1 (unlimited), the
   accept loop could block indefinitely. Now treated as "no limit".
-- **`send()` `BlockingIOError` fallback** — caught and retried with blocking mode
-- **`on_disconnect` in self-read** — server-originated disconnection now fires the
+- **`send()` `BlockingIOError` fallback** - caught and retried with blocking mode
+- **`on_disconnect` in self-read** - server-originated disconnection now fires the
   callback
 
 ### Internal
 
-- **`_handshake_pending` / `_process_pending_handshakes()`** — now dead code in
+- **`_handshake_pending` / `_process_pending_handshakes()`** - now dead code in
   `AsyncSocket` (nothing pushes to the pending queue since `_send_hello` is called
   directly). Left in place for backward compatibility; will be removed in v1.8.0.
-- **`_check_handshake_timeouts()`** — shared between threading and async backends
-- **Message buffer pre-compiled struct** — `_MAGIC_AND_SIZE = Struct(">2s2xI")`
+- **`_check_handshake_timeouts()`** - shared between threading and async backends
+- **Message buffer pre-compiled struct** - `_MAGIC_AND_SIZE = Struct(">2s2xI")`
   for zero-copy magic + size extraction
 
 ### Performance (v1.7.0 @ 5-run average)
@@ -1178,7 +1178,7 @@ from veltix import ServerConfig
 
 config = ServerConfig(host="0.0.0.0", port=8080, performance_mode=PerformanceMode.HIGH)
 
-# After (v1.6.10) — remove the parameter entirely
+# After (v1.6.10) - remove the parameter entirely
 config = ServerConfig(host="0.0.0.0", port=8080)
 ```
 
@@ -1201,7 +1201,7 @@ def handler(client: ClientInfo, response: Response):
 
 ##### `Response.latency` and `Response.timestamp` removed
 
-These fields were always `0.0` / `None` in practice — they were never populated by the wire protocol.
+These fields were always `0.0` / `None` in practice - they were never populated by the wire protocol.
 Use the ping methods (`ping_server()` / `ping_client()`) which measure RTT via `time.perf_counter()`.
 
 ##### `Server.clients` returns `list[ClientInfo]`
@@ -1221,58 +1221,58 @@ server.clients[0].addr
 
 ### Fixed
 
-- **Routes preserved across reconnection** — `ReconnectHandler.reset()` was re-creating the
+- **Routes preserved across reconnection** - `ReconnectHandler.reset()` was re-creating the
   `RequestHandler` without re-registering existing routes, silently losing all `@client.route()`
   handlers after automatic reconnection. Now saves and restores them.
 
-- **`MessageBuffer(None)` TypeError** — `ClientsManager` passed `None` as `max_message_size`
+- **`MessageBuffer(None)` TypeError** - `ClientsManager` passed `None` as `max_message_size`
   to `MessageBuffer` when no argument was given, overriding the 10 MB default and causing
   `extract_messages()` to crash with `TypeError`. Now falls back to 10 MB when `None`.
 
-- **Initial `on_disconnect` not fired when `retry > 0`** — `try_reconnect()` skipped the
+- **Initial `on_disconnect` not fired when `retry > 0`** - `try_reconnect()` skipped the
   initial `on_disconnect(permanent=False)` event when auto-reconnect was enabled, diverging
   from documented behaviour. Now fires the initial disconnection event before entering the
   reconnect loop.
 
-- **`retry()` could start parallel reconnect loops** — calling `client.retry()` multiple
+- **`retry()` could start parallel reconnect loops** - calling `client.retry()` multiple
   times launched concurrent threads, each competing to reconnect. Now guards against
   overlapping loops via a thread reference + `is_alive()` check.
 
-- **`thread_handler` never joined in `close_all()`** — `close_all()` (aliased as `close()`
+- **`thread_handler` never joined in `close_all()`** - `close_all()` (aliased as `close()`
   for client mode) joined `start_th` but not `thread_handler`, leaving the receive thread
   alive until the socket error forced it out. Now joins `thread_handler` with proper
   `None` guard and `current_thread` check.
 
-- **Missing attributes in `_create_client_instance()`** — server-side client socket
+- **Missing attributes in `_create_client_instance()`** - server-side client socket
   instances created via `_create_client_instance()` were missing `start_th`, `threads`,
   `_threads_lock`, `n_th`, `_n_th_lock`, and `thread_handler`, causing silent
   `AttributeError` in `close_all()`. All attributes are now properly initialized.
 
-- **Stale `running=True` on `_accept_loop` exception** — when `_accept_loop` exited on
+- **Stale `running=True` on `_accept_loop` exception** - when `_accept_loop` exited on
   `OSError` or unexpected exception, `self.running` remained `True`, making the server
   appear active. Now sets `self.running = False` before each early return.
 
 ### Changed
 
-- **Time source for latency timestamps** — `Request.parse()` and `Request.compile()` now
+- **Time source for latency timestamps** - `Request.parse()` and `Request.compile()` now
   use `time.monotonic()` instead of `time.time()` to avoid negative latency readings when
   the system clock is adjusted (NTP).
 
 ### Removed
 
-- **Dead `ping_result` attribute** from `Server` — was declared in `__slots__` and
+- **Dead `ping_result` attribute** from `Server` - was declared in `__slots__` and
   initialized to `None` but never read or written.
 
-- **Redundant `_handshake_done` initialisation** in `Client.__init__()` — was set to `None`
+- **Redundant `_handshake_done` initialisation** in `Client.__init__()` - was set to `None`
   then immediately overwritten by `init_components()`. Now initialised as `Event()` directly.
 
-- **Magic number `settimeout(0.5)`** in `ThreadingSocket.__init__()` — this value was
+- **Magic number `settimeout(0.5)`** in `ThreadingSocket.__init__()` - this value was
   immediately overwritten by subsequent `settimeout()` calls from the performance mode
   settings.
 
 ### Internal
 
-- **Guarded `psutil` import** in `benchmark/cli.py` — now wrapped in `try/except ImportError`
+- **Guarded `psutil` import** in `benchmark/cli.py` - now wrapped in `try/except ImportError`
   with a clear message instructing users to install `veltix[benchmark]`.
 
 ## [1.6.8] - 2026-05-20
@@ -1377,8 +1377,8 @@ server.clients[0].addr
 
 - **`ThreadingSocket._create_client_instance()`** was missing the `client_manager` attribute, causing
   `entry.info.conn.close()` to silently crash with `AttributeError` when the server tried to close a client
-  connection. The underlying TCP socket was never closed — the client only detected the disconnection when
-  Python's garbage collector eventually freed the file descriptor, causing unpredictable delays (2–3s) and
+  connection. The underlying TCP socket was never closed - the client only detected the disconnection when
+  Python's garbage collector eventually freed the file descriptor, causing unpredictable delays (2-3s) and
   flaky disconnect detection in tests.
 
 - **`ReconnectHandler.reconnect_loop()`** retry delay was applied *before* each connection attempt instead of
@@ -1392,7 +1392,7 @@ server.clients[0].addr
 - **`ThreadingSocket.close_all()`** closed client connections before closing the listening socket,
   creating a window where a reconnecting client could attach to the dying server's still-open
   listener. The connection appeared to succeed (TCP handshake completed) but the server's handler
-  thread was already stopped, so no handshake occurred — `ON_CONNECT` never fired. Now closes the
+  thread was already stopped, so no handshake occurred - `ON_CONNECT` never fired. Now closes the
   listening socket first, so rogue reconnections get a clean `ConnectionRefusedError`.
 
 - **Reconnect tests** (`test_reconnect.py`): even with `close_all` ordering fixed, a brief kernel
@@ -1405,38 +1405,38 @@ server.clients[0].addr
 
 ### Added
 
-- **`close_client()` method** in `Server` — forcefully close a specific client connection
+- **`close_client()` method** in `Server` - forcefully close a specific client connection
     - Accepts `ClientInfo` or client ID (int) via `id_` parameter
-    - Both paths route through `socket.close_client()` — socket closed + `ON_DISCONNECT` triggered
-- **`get_clients_by_tag()` method** in `ClientsManager` — thread-safe tag-based client filtering
+    - Both paths route through `socket.close_client()` - socket closed + `ON_DISCONNECT` triggered
+- **`get_clients_by_tag()` method** in `ClientsManager` - thread-safe tag-based client filtering
     - Accepts a tag name and optional value for exact matching
     - Returns `list[ClientEntry]`
-- **`to_sockets()` method** in `ClientsManager` — converts `list[ClientEntry]` to `list[BaseSocket]`
-- **`get_clients_by_tag()` method** in `Server` — high-level wrapper over `ClientsManager.get_clients_by_tag()`
-    - Returns sockets directly — no access to internal `socket.client_manager` required
+- **`to_sockets()` method** in `ClientsManager` - converts `list[ClientEntry]` to `list[BaseSocket]`
+- **`get_clients_by_tag()` method** in `Server` - high-level wrapper over `ClientsManager.get_clients_by_tag()`
+    - Returns sockets directly - no access to internal `socket.client_manager` required
 
 ### Fixed
 
-- **`close_client()` via ID** in previous implementation called `client_manager.remove_client()` directly — socket was
+- **`close_client()` via ID** in previous implementation called `client_manager.remove_client()` directly - socket was
   not closed and `ON_DISCONNECT` was never triggered. Now correctly routes through `socket.close_client()`
 
 ## [1.6.4] - 2026-05-07
 
 ### Added
 
-- **`ClientsManager`** — new centralized, thread-safe client management layer (`veltix/socket_core/managers/`)
+- **`ClientsManager`** - new centralized, thread-safe client management layer (`veltix/socket_core/managers/`)
     - `ClientEntry` dataclass with `id`, `info` (ClientInfo), and `buffer` (MessageBuffer)
     - `add_client()`, `remove_client()`, `get_client()`, `get_all_clients()`, `count()` methods
     - `iter_on_clients()` for safe concurrent iteration
     - `has_client_id()` / `has_client_info()` for efficient lookup
-- **`close_client()` method** in `ThreadingSocket` — accepts `ClientEntry` or client ID (int)
+- **`close_client()` method** in `ThreadingSocket` - accepts `ClientEntry` or client ID (int)
 
 ### Changed
 
 - **Socket module restructured**: `veltix/socket/` → `veltix/socket_core/`
     - All imports updated across client, server, and internal modules
 - **`ThreadingSocket`**: Replaced manual client list + buffer dict with `ClientsManager`
-    - Removed `_clients_lock`, `_buffers_lock`, `_client_buffers` — unified through `ClientEntry.buffer`
+    - Removed `_clients_lock`, `_buffers_lock`, `_client_buffers` - unified through `ClientEntry.buffer`
     - `_handle_server_client()` now operates on `client_id` (int) and resolves via `ClientsManager`
     - `_close_server_client()` accepts `ClientEntry` instead of `ClientInfo`
 - **`Server.clients` property**: Now returns `list[ClientEntry]` (access client data via `.info`)
@@ -1444,8 +1444,8 @@ server.clients[0].addr
 
 ### Internal
 
-- `veltix/socket/` → `veltix/socket_core/` — directory renamed
-- `veltix/socket_core/managers/clients_manager.py` — new module
+- `veltix/socket/` → `veltix/socket_core/` - directory renamed
+- `veltix/socket_core/managers/clients_manager.py` - new module
 - `benchmark.py` cleanup: removed from VCS tracking, root-level `benchmark.py` dropped
 - Tests aligned with new `ClientEntry` API (`server.clients[0].info.*`)
 
@@ -1453,20 +1453,20 @@ server.clients[0].addr
 
 ### Added
 
-- **Benchmark module refactor** — split into a clean, reusable package under `veltix/benchmark/`
-    - `benchmark/__init__.py` — module docstring and public entry points
-    - `benchmark/__main__.py` — `python -m veltix.benchmark` entry point
-    - `benchmark/cli.py` — CLI argument parsing and main orchestrator
-    - `benchmark/config.py` — message types, port constants, terminal width
-    - `benchmark/models.py` — `LatencyStats`, `MemoryResult`, `FpsResult`, `BurstResult`, `StressResult`
-    - `benchmark/display.py` — terminal rendering and README-ready summary table
-    - `benchmark/export.py` — JSON build/export for results
-    - `benchmark/utils.py` — `ram_kb()`, `ram_mb()` helpers
-    - `benchmark/benches/memory.py` — memory footprint benchmark with leak detection
-    - `benchmark/benches/latency.py` — ping/pong latency with full statistics
-    - `benchmark/benches/fps.py` — FPS server simulation with tick accuracy metrics
-    - `benchmark/benches/burst.py` — burst throughput with pipeline drain metrics
-    - `benchmark/benches/stress.py` — concurrent stress with per-client throughput
+- **Benchmark module refactor** - split into a clean, reusable package under `veltix/benchmark/`
+    - `benchmark/__init__.py` - module docstring and public entry points
+    - `benchmark/__main__.py` - `python -m veltix.benchmark` entry point
+    - `benchmark/cli.py` - CLI argument parsing and main orchestrator
+    - `benchmark/config.py` - message types, port constants, terminal width
+    - `benchmark/models.py` - `LatencyStats`, `MemoryResult`, `FpsResult`, `BurstResult`, `StressResult`
+    - `benchmark/display.py` - terminal rendering and README-ready summary table
+    - `benchmark/export.py` - JSON build/export for results
+    - `benchmark/utils.py` - `ram_kb()`, `ram_mb()` helpers
+    - `benchmark/benches/memory.py` - memory footprint benchmark with leak detection
+    - `benchmark/benches/latency.py` - ping/pong latency with full statistics
+    - `benchmark/benches/fps.py` - FPS server simulation with tick accuracy metrics
+    - `benchmark/benches/burst.py` - burst throughput with pipeline drain metrics
+    - `benchmark/benches/stress.py` - concurrent stress with per-client throughput
 
 ### Changed
 
@@ -1493,9 +1493,9 @@ server.clients[0].addr
     - Tooling targets aligned for Python 3.8 (Ruff, MyPy)
     - Type annotation compatibility pass across client/server modules
 - **Client module split**:
-    - `veltix/client/config.py` — `ClientConfig` dataclass
-    - `veltix/client/disconnect.py` — `DisconnectReason`, `DisconnectState`
-    - `veltix/client/reconnect_handler.py` — `ReconnectHandler` for retry logic
+    - `veltix/client/config.py` - `ClientConfig` dataclass
+    - `veltix/client/disconnect.py` - `DisconnectReason`, `DisconnectState`
+    - `veltix/client/reconnect_handler.py` - `ReconnectHandler` for retry logic
     - Cleaner boundaries between API, state models, and reconnect flow
 - **Benchmark module relocation**: `benchmark.py` moved to `veltix/benchmark.py`
 
@@ -1553,29 +1553,29 @@ server.clients[0].addr
 ### Added
 
 - **Socket Abstraction Layer**: Universal socket interface via `BaseSocket` Protocol
-    - `BaseSocket` — `typing.Protocol` defining the universal socket contract
-    - `ThreadingSocket` — current threading implementation behind the abstraction
-    - `SocketCore` enum — selects the socket backend at config time
-    - `SocketCore.THREADING` — default, one thread per client (current behavior)
-    - `SocketCore.ASYNC` — reserved for v1.7.0 (selectors-based)
-    - `SocketCore.RUST` — reserved for v3.0.0 (Tokio via PyO3)
+    - `BaseSocket` - `typing.Protocol` defining the universal socket contract
+    - `ThreadingSocket` - current threading implementation behind the abstraction
+    - `SocketCore` enum - selects the socket backend at config time
+    - `SocketCore.THREADING` - default, one thread per client (current behavior)
+    - `SocketCore.ASYNC` - reserved for v1.7.0 (selectors-based)
+    - `SocketCore.RUST` - reserved for v3.0.0 (Tokio via PyO3)
     - Switching backends requires zero changes to application code
     - `Server` and `Client` no longer import the `socket` module directly
 - **Client Tags**: Arbitrary metadata on connected clients
-    - `client.add_tag(name, value=None)` — attach a tag, returns `False` if already exists
-    - `client.has_tag(name)` — check for a single tag
-    - `client.has_all_tags(names)` — check all tags are present (AND)
-    - `client.has_any_tags(names)` — check at least one tag is present (OR)
-    - `client.get_tag(name)` — retrieve the value associated with a tag
-    - `client.remove_tag(name)` — remove a tag, returns `False` if not found
-    - `client.clear_tags()` — remove all tags
-    - Tags are stored in a `dict[str, Any]` — O(1) lookup, minimal memory overhead
+    - `client.add_tag(name, value=None)` - attach a tag, returns `False` if already exists
+    - `client.has_tag(name)` - check for a single tag
+    - `client.has_all_tags(names)` - check all tags are present (AND)
+    - `client.has_any_tags(names)` - check at least one tag is present (OR)
+    - `client.get_tag(name)` - retrieve the value associated with a tag
+    - `client.remove_tag(name)` - remove a tag, returns `False` if not found
+    - `client.clear_tags()` - remove all tags
+    - Tags are stored in a `dict[str, Any]` - O(1) lookup, minimal memory overhead
 - **`veltix.utils`**: New public utilities module
-    - `format_bytes(size)` — human-readable byte formatting (`148_000` → `"144.5 KB"`)
-    - `encode_utf8(data)` — encode `str` or `bytes` to UTF-8 bytes
-    - `decode_utf8(data)` — decode UTF-8 bytes to `str`
-    - `encode_json(data)` — encode any object to JSON bytes
-    - `decode_json(data)` — decode JSON bytes to Python object
+    - `format_bytes(size)` - human-readable byte formatting (`148_000` → `"144.5 KB"`)
+    - `encode_utf8(data)` - encode `str` or `bytes` to UTF-8 bytes
+    - `decode_utf8(data)` - decode UTF-8 bytes to `str`
+    - `encode_json(data)` - encode any object to JSON bytes
+    - `decode_json(data)` - decode JSON bytes to Python object
     - All utilities exported from `veltix` directly
 - **Benchmark JSON export**: `python benchmark.py --save results.json`
     - Saves full results with system info (Python version, CPU, RAM, OS)
@@ -1594,7 +1594,7 @@ server.clients[0].addr
 - **`utils/` → `internal/`**: Internal utilities moved to `veltix/internal/`
     - `veltix/utils/` is now the public utilities module
 - **`Sender`**: Migrated from `socket.socket` to `BaseSocket`
-    - `sendall()` replaced by `send()` — consistent with `BaseSocket` interface
+    - `sendall()` replaced by `send()` - consistent with `BaseSocket` interface
 - **`network.recv()`**: Accepts `BaseSocket` instead of `socket.socket`
     - `socket.timeout` replaced by built-in `TimeoutError`
 
@@ -1607,14 +1607,14 @@ server.clients[0].addr
 
 ### Internal
 
-- `veltix/socket/base_socket.py` — `BaseSocket` Protocol with `@runtime_checkable`
-- `veltix/socket/threading_socket.py` — `ThreadingSocket` implementation
-- `veltix/socket/core.py` — `SocketCore` enum
-- `veltix/socket/__init__.py` — module exports
-- `veltix/server/client_info.py` — `ClientInfo` with tags
-- `veltix/server/config.py` — `ServerConfig`
-- `veltix/utils/encoding.py` — encoding helpers
-- `veltix/utils/format_size.py` — `format_bytes`
+- `veltix/socket/base_socket.py` - `BaseSocket` Protocol with `@runtime_checkable`
+- `veltix/socket/threading_socket.py` - `ThreadingSocket` implementation
+- `veltix/socket/core.py` - `SocketCore` enum
+- `veltix/socket/__init__.py` - module exports
+- `veltix/server/client_info.py` - `ClientInfo` with tags
+- `veltix/server/config.py` - `ServerConfig`
+- `veltix/utils/encoding.py` - encoding helpers
+- `veltix/utils/format_size.py` - `format_bytes`
 
 ### Notes
 
@@ -1632,31 +1632,31 @@ server.clients[0].addr
     - `@server.route(MY_TYPE)` and `@client.route(MY_TYPE)` decorators
     - Routes take priority over the global `on_recv` callback
     - `request_handler.register_route(type_, func)` and `unregister_route(type_)` for programmatic control
-    - Route callbacks run in the thread pool — slow handlers never block the recv loop
+    - Route callbacks run in the thread pool - slow handlers never block the recv loop
     - Server route signature: `func(response: Response, client: ClientInfo)`
     - Client route signature: `func(response: Response, client=None)`
 - **Auto-Reconnect**: Automatic reconnection on initial failure and mid-session disconnection
-    - `ClientConfig.retry` — number of reconnection attempts (default: `0` = disabled)
-    - `ClientConfig.retry_delay` — seconds between attempts (default: `1.0`)
-    - `client.stop_retry()` — cancel pending retries, fires `on_disconnect(permanent=True)`
-    - `client.retry(max=N)` — force a new attempt, optionally override `retry_max`
+    - `ClientConfig.retry` - number of reconnection attempts (default: `0` = disabled)
+    - `ClientConfig.retry_delay` - seconds between attempts (default: `1.0`)
+    - `client.stop_retry()` - cancel pending retries, fires `on_disconnect(permanent=True)`
+    - `client.retry(max=N)` - force a new attempt, optionally override `retry_max`
     - Reconnection preserves all registered callbacks and routes
 - **DisconnectState**: Rich disconnect info passed to `on_disconnect` callback
-    - `permanent: bool` — `True` when retries are exhausted or `stop_retry()` was called
-    - `attempt: int` — current retry attempt number
-    - `retry_max: int` — configured maximum
-    - `reason: DisconnectReason` — `SERVER_CLOSED`, `ERROR`, or `MANUAL`
+    - `permanent: bool` - `True` when retries are exhausted or `stop_retry()` was called
+    - `attempt: int` - current retry attempt number
+    - `retry_max: int` - configured maximum
+    - `reason: DisconnectReason` - `SERVER_CLOSED`, `ERROR`, or `MANUAL`
 - **PerformanceMode**: Tunable timing presets for CPU/reactivity trade-off
-    - `PerformanceMode.LOW` — socket timeout 1.0s, minimal CPU usage
-    - `PerformanceMode.BALANCED` — socket timeout 0.5s, default
-    - `PerformanceMode.HIGH` — socket timeout 0.1s, fast disconnection detection
-    - `PerformanceMode.AUTO` — reserved for future dynamic adjustment
+    - `PerformanceMode.LOW` - socket timeout 1.0s, minimal CPU usage
+    - `PerformanceMode.BALANCED` - socket timeout 0.5s, default
+    - `PerformanceMode.HIGH` - socket timeout 0.1s, fast disconnection detection
+    - `PerformanceMode.AUTO` - reserved for future dynamic adjustment
     - Configurable via `ServerConfig.performance_mode` and `ClientConfig.performance_mode`
 - **BufferSize**: Enum presets for common buffer sizes
-    - `BufferSize.SMALL` — 1KB (default)
-    - `BufferSize.MEDIUM` — 8KB
-    - `BufferSize.LARGE` — 64KB
-    - `BufferSize.HUGE` — 1MB
+    - `BufferSize.SMALL` - 1KB (default)
+    - `BufferSize.MEDIUM` - 8KB
+    - `BufferSize.LARGE` - 64KB
+    - `BufferSize.HUGE` - 1MB
     - `buffer_size` fields in `ServerConfig` / `ClientConfig` still accept any custom integer
 
 ### Changed
@@ -1665,26 +1665,26 @@ server.clients[0].addr
     - Before: `func()`
     - After: `func(state: DisconnectState)`
 - **`network.recv()`**: Replaced `Optional[bytes]` return with `RecvResult`
-    - `result.ok` — data received normally
-    - `result.timed_out` — socket timeout, connection still alive
-    - `result.disconnected` — peer closed or fatal error
+    - `result.ok` - data received normally
+    - `result.timed_out` - socket timeout, connection still alive
+    - `result.disconnected` - peer closed or fatal error
     - Eliminates the ambiguity between timeout and real disconnection
 - **`ServerConfig`**: Added `performance_mode` and `buffer_size` (now `BufferSize.SMALL` default)
 - **`ClientConfig`**: Added `performance_mode`, `retry`, `retry_delay`, and `buffer_size` (now `BufferSize.SMALL`
   default)
-- **`Server._handle_client()`**: Uses `RecvResult` — no more `if msg is None` ambiguity
-- **`Client._handle_client()`**: Uses `RecvResult` — reconnect loop triggered on `result.disconnected`
+- **`Server._handle_client()`**: Uses `RecvResult` - no more `if msg is None` ambiguity
+- **`Client._handle_client()`**: Uses `RecvResult` - reconnect loop triggered on `result.disconnected`
 
 ### Breaking Changes
 
-- **`on_disconnect` on Client** now receives a `DisconnectState` argument — update all existing callbacks:
+- **`on_disconnect` on Client** now receives a `DisconnectState` argument - update all existing callbacks:
 
 ```python
 # Before (v1.4.0)
 client.set_callback(Events.ON_DISCONNECT, lambda: print("Disconnected"))
 
 # After (v1.5.0)
-client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected — permanent={state.permanent}"))
+client.set_callback(Events.ON_DISCONNECT, lambda state: print(f"Disconnected - permanent={state.permanent}"))
 ```
 
 ### Migration Guide
@@ -1695,7 +1695,7 @@ Update all `ON_DISCONNECT` callbacks on the client side to accept a `DisconnectS
 
 New optional fields in `ClientConfig`:
 
-- `retry` (default: `0`) — set to a positive integer to enable auto-reconnect
+- `retry` (default: `0`) - set to a positive integer to enable auto-reconnect
 - `retry_delay` (default: `1.0`)
 - `performance_mode` (default: `PerformanceMode.BALANCED`)
 - `buffer_size` (default: `BufferSize.SMALL`)
@@ -1707,9 +1707,9 @@ New optional field in `ServerConfig`:
 
 ### Internal
 
-- `utils/performance_mode.py` — `PerformanceMode` enum and `PerformanceModeSettings` dataclass
-- `utils/network.py` — `RecvResult`, `RecvStatus` replacing bare `Optional[bytes]`
-- `handler/request_handler.py` — `_routes` dict, `register_route()`, `unregister_route()`
+- `utils/performance_mode.py` - `PerformanceMode` enum and `PerformanceModeSettings` dataclass
+- `utils/network.py` - `RecvResult`, `RecvStatus` replacing bare `Optional[bytes]`
+- `handler/request_handler.py` - `_routes` dict, `register_route()`, `unregister_route()`
 - Test suite expanded with `test_reconnect.py` (9 tests) and `test_routing.py` (10 tests)
 
 ---
@@ -1720,17 +1720,17 @@ New optional field in `ServerConfig`:
 
 - **Handshake Protocol**: Automatic HELLO/HELLO_ACK exchange on every new connection
     - Server sends HELLO immediately after TCP connection is established
-    - Client automatically responds with HELLO_ACK — fully transparent to the developer
+    - Client automatically responds with HELLO_ACK - fully transparent to the developer
     - Version compatibility check: `major.minor` must match, patch is ignored
     - Incompatible versions are rejected before any application message is exchanged
-    - `ClientInfo.handshake_done` flag — always `True` when `on_connect` fires
+    - `ClientInfo.handshake_done` flag - always `True` when `on_connect` fires
 - **Version Payload**: Version string embedded in HELLO and HELLO_ACK frames
     - Wire format: `[2B length][NB version UTF-8]`
     - Both sides log `server version=X` / `client version=X` on successful handshake
 - **CallbackExecutor**: Thread pool for callback execution
     - `on_recv` callbacks now run in a dedicated `ThreadPoolExecutor`
     - Slow or blocking callbacks never delay message reception
-    - Exceptions inside callbacks are caught and logged — they never crash the recv loop
+    - Exceptions inside callbacks are caught and logged - they never crash the recv loop
     - Configurable via `max_workers` in `ServerConfig` / `ClientConfig` (default: 4)
 - **Blocking `connect()`**: Client `connect()` now blocks until the handshake completes
     - Safe to send messages immediately after `connect()` returns
@@ -1740,14 +1740,14 @@ New optional field in `ServerConfig`:
     - `on_connect` fires after the handshake is complete, not at raw TCP connect time
     - `on_disconnect` fires when the server closes the connection
 - **`version.py`**: Dedicated version module
-    - `__version__` lives in `veltix/version.py` — importable without circular imports
+    - `__version__` lives in `veltix/version.py` - importable without circular imports
     - `__init__.py` re-exports it as before
 
 ### Changed
 
 - **`ServerConfig`**: Added `handshake_timeout` and `max_workers` fields
 - **`ClientConfig`**: Added `handshake_timeout` and `max_workers` fields
-- **`ClientInfo`**: Added `handshake_done: bool` slot — initialized to `False`, set to `True` after HELLO_ACK is
+- **`ClientInfo`**: Added `handshake_done: bool` slot - initialized to `False`, set to `True` after HELLO_ACK is
   received
 - **`handle_client()` (Server)**: Handshake is now driven inside the recv loop
     - HELLO is sent before entering the loop
@@ -1771,7 +1771,7 @@ New optional field in `ServerConfig`:
 ### Notes
 
 - No breaking changes to public API
-- `on_connect` now fires slightly later (after handshake) — this is intentional and correct behavior
+- `on_connect` now fires slightly later (after handshake) - this is intentional and correct behavior
 
 ## [1.3.0] - 2026-02-24
 

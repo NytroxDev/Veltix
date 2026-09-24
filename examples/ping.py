@@ -1,4 +1,4 @@
-"""Ping example — measures round-trip latency between client and server."""
+"""Ping example - measures round-trip latency between client and server."""
 
 from veltix import Client, ClientConfig, Server, ServerConfig
 

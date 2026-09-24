@@ -1,7 +1,7 @@
 """
 benches/burst.py
 ----------------
-Benchmark 4 — Burst throughput.
+Benchmark 4 - Burst throughput.
 
 Measures:
   - Send throughput (msg/s): how fast the client can push messages out
@@ -13,7 +13,7 @@ Measures:
       p50, p95, p99, max  (ms)
       (measures how quickly the pipeline drains under full load)
   - Inter-arrival jitter on the receive side: stdev of gaps between
-      consecutive received timestamps (ms) — a high value means the server
+      consecutive received timestamps (ms) - a high value means the server
       is batching or choking rather than processing messages steadily
   - Send duration vs total duration split: shows how long the client was
       blocked sending vs how long it took for all acks to arrive
@@ -57,7 +57,7 @@ def run(
     time.sleep(0.2)
 
     payload = b"X" * payload_size
-    sender = client.sender  # resolve once — not inside the hot loop
+    sender = client.sender  # resolve once - not inside the hot loop
     request = Request(PLAYER_MOVE, payload)  # immutable payload, reuse same object
     gc.collect()
 

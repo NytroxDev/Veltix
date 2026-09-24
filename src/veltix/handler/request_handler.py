@@ -156,7 +156,7 @@ class RequestHandler:
     def register_route(self, type_: MessageType, function: Callable) -> bool:
         with self._routes_lock:
             if type_ in self._routes:
-                self.bus.warning(f"Route for type {type_} already registered — ignoring")
+                self.bus.warning(f"Route for type {type_} already registered - ignoring")
                 return False
             self._routes[type_] = function
         self.bus.emit(
@@ -171,7 +171,7 @@ class RequestHandler:
     def unregister_route(self, type_: MessageType) -> bool:
         with self._routes_lock:
             if type_ not in self._routes:
-                self.bus.warning(f"Route for type {type_} not registered — ignoring")
+                self.bus.warning(f"Route for type {type_} not registered - ignoring")
                 return False
             self._routes.pop(type_)
         self.bus.emit(

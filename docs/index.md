@@ -99,7 +99,7 @@ No manual framing. No thread management. No boilerplate.
 - `send_and_wait()` : built-in request/response correlation with timeout
 - Text & JSON payloads : `Request(MY_TYPE, text="hello")` / `Request(MY_TYPE, json={"k": "v"})`
 - Content decoding : `response.text`, `response.json`, `response.is_json`, `response.is_text`
-- Convenience send : `server.send()` / `client.send()` — no need to touch `Sender` directly
+- Convenience send : `server.send()` / `client.send()` - no need to touch `Sender` directly
 - Built-in ping/pong : bidirectional latency measurement
 - Client tags : attach arbitrary metadata to connected clients
 
@@ -118,7 +118,7 @@ No manual framing. No thread management. No boilerplate.
 
 ## Performance
 
-**Rust engine vs Python fallback (v3.0.0)** — Python 3.14.7, 12-core CPU, 5-run averages:
+**Rust engine vs Python fallback (v3.0.0)** - Python 3.14.7, 12-core CPU, 5-run averages:
 
 | Metric                          | Rust engine    | Python fallback | Gain      |
 |---------------------------------|----------------|-----------------|-----------|

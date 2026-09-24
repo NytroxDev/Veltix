@@ -341,7 +341,7 @@ class Server:
         """
         Start the server and begin accepting connections.
 
-        Non-blocking — starts a background thread and returns immediately.
+        Non-blocking - starts a background thread and returns immediately.
         """
         with self._state_lock:
             if self._started:

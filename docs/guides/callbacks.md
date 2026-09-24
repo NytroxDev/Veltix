@@ -33,7 +33,7 @@ client = Client(ClientConfig(server_addr="127.0.0.1", port=8080))
 
 client.on_connect(lambda: print("Handshake complete!"))
 client.on_recv(lambda response: print(response.text))
-client.on_disconnect(lambda state: print(f"Disconnected — permanent={state.permanent}"))
+client.on_disconnect(lambda state: print(f"Disconnected - permanent={state.permanent}"))
 ```
 
 ## Routing vs on_recv
@@ -60,7 +60,7 @@ See the [Routing guide](routing.md) for full details.
 All `on_recv` callbacks and route callbacks run in a dedicated thread pool (`CallbackExecutor`). This means:
 
 - A slow or blocking callback **never** delays message reception
-- Exceptions inside callbacks are caught and logged — they never crash the recv loop
+- Exceptions inside callbacks are caught and logged - they never crash the recv loop
 - Workers are configurable via `max_workers` in `ServerConfig` / `ClientConfig`
 
 ```python
@@ -69,4 +69,4 @@ config = ServerConfig(host="0.0.0.0", port=8080, max_workers=8)
 ```
 
 !!! warning
-`on_connect` and `on_disconnect` run directly in the recv thread — keep them fast.
+`on_connect` and `on_disconnect` run directly in the recv thread - keep them fast.

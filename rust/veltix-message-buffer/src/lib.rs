@@ -1,4 +1,4 @@
-//! Veltix message buffer — TCP stream framing with protocol hardening.
+//! Veltix message buffer - TCP stream framing with protocol hardening.
 //!
 //! Pure-Rust mirror of `src/veltix/network/message_buffer.py`. Accumulates
 //! raw TCP stream data, extracts complete framed messages and recovers from

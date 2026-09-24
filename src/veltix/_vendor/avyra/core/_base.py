@@ -32,7 +32,7 @@ class _BaseEventBus:
     def __init__(self) -> None:
         """Create an event bus.
 
-        The bus starts empty — use :meth:`register` to add event types.
+        The bus starts empty - use :meth:`register` to add event types.
         """
         self._subscribers: dict[Enum, list[Subscriber]] = {}
         self._sub_lock = threading.RLock()

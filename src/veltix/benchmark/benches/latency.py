@@ -1,19 +1,19 @@
 """
 benches/latency.py
 ------------------
-Benchmark 2 — Ping / pong latency.
+Benchmark 2 - Ping / pong latency.
 
 Measures:
   - avg, median, p95, p99, min, max, stdev  (ms)
   - Jitter: stdev of *consecutive* sample deltas (ms)
     (stdev measures spread from the mean; jitter measures moment-to-moment
-     variability — a low-jitter connection is more predictable even if avg is high)
+     variability - a low-jitter connection is more predictable even if avg is high)
   - Throughput: successful pings per second
   - Latency histogram bucketed into four ranges:
-      < 0.1 ms  — essentially instant (loopback ideal)
-      0.1–0.5 ms — normal loopback range
-      0.5–1 ms  — mild scheduling noise
-      > 1 ms    — outliers / OS scheduler hiccup
+      < 0.1 ms  - essentially instant (loopback ideal)
+      0.1-0.5 ms - normal loopback range
+      0.5-1 ms  - mild scheduling noise
+      > 1 ms    - outliers / OS scheduler hiccup
   - Warmup stats (displayed separately, not included in main results)
 """
 
@@ -30,10 +30,10 @@ from ..models import LatencyStats
 _WARMUP = 20
 
 _BUCKETS = [
-    ("<0.1 ms  — instant", lambda v: v < 0.1),
-    ("0.1–0.5 ms — normal", lambda v: 0.1 <= v < 0.5),
-    ("0.5–1 ms  — noisy", lambda v: 0.5 <= v < 1.0),
-    (">1 ms     — outlier", lambda v: v >= 1.0),
+    ("<0.1 ms  - instant", lambda v: v < 0.1),
+    ("0.1-0.5 ms - normal", lambda v: 0.1 <= v < 0.5),
+    ("0.5-1 ms  - noisy", lambda v: 0.5 <= v < 1.0),
+    (">1 ms     - outlier", lambda v: v >= 1.0),
 ]
 
 

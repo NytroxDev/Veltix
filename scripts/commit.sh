@@ -26,4 +26,4 @@ echo "=== Tests ==="
 python -m pytest tests/ --tb=short
 
 echo ""
-echo "✅ All checks passed — ready to commit."
+echo "✅ All checks passed - ready to commit."

@@ -30,7 +30,7 @@ _ALL_EVENTS = [
 
 
 class VeltixBus(EventBus):
-    """Veltix event bus — wraps Avyra EventBus with sugar + auto-log subscriber.
+    """Veltix event bus - wraps Avyra EventBus with sugar + auto-log subscriber.
 
     Each Server and Client owns its own ``VeltixBus`` instance. The bus
     automatically registers all Veltix event enums and subscribes the

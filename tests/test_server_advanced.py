@@ -233,14 +233,14 @@ class TestServerCloseClient:
         server.close_all()
 
     def test_close_client_with_id_none(self):
-        """close_client(id_=None) should return False — bugfix v1.6.6."""
+        """close_client(id_=None) should return False - bugfix v1.6.6."""
         server = Server(ServerConfig(host="127.0.0.1", port=find_free_port()))
         result = server.close_client(client=None, id_=None)
         assert result is False
         server.close_all()
 
     def test_close_client_with_zero_id(self):
-        """id_=0 should not crash — bugfix v1.6.6."""
+        """id_=0 should not crash - bugfix v1.6.6."""
         server = Server(ServerConfig(host="127.0.0.1", port=find_free_port()))
         result = server.close_client(client=None, id_=0)
         assert result is False

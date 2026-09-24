@@ -1,7 +1,7 @@
 """
 Veltix benchmark suite.
 
-Requires ``psutil`` — install with ``pip install veltix[benchmark]``.
+Requires ``psutil`` - install with ``pip install veltix[benchmark]``.
 
 Usage
 -----

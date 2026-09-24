@@ -1,4 +1,4 @@
-"""Tests for ClientInfo tag system — v1.6.0."""
+"""Tests for ClientInfo tag system - v1.6.0."""
 
 import socket
 

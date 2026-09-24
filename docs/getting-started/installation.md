@@ -8,7 +8,7 @@
 ## The Rust engine
 
 Since v3.0.0, the message hot path (parse, compile, buffering) is compiled in Rust and ships as a
-`cp311-abi3` extension inside the prebuilt wheels — one wheel per platform covers Python 3.11+.
+`cp311-abi3` extension inside the prebuilt wheels - one wheel per platform covers Python 3.11+.
 No toolchain is needed to install or run Veltix:
 
 - If the compiled `veltix._rust` extension is available, it is used automatically.

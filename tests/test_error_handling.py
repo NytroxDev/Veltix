@@ -125,7 +125,7 @@ class TestNetworkErrors:
         assert not client.is_connected
 
     def test_connection_refused_does_not_raise(self):
-        """connect() should never raise — always return False on failure."""
+        """connect() should never raise - always return False on failure."""
         client = Client(ClientConfig(server_addr="127.0.0.1", port=11113))
         try:
             client.connect()

@@ -23,7 +23,7 @@ _RED = "\033[31m" if __import__("sys").stdout.isatty() else ""
 
 def _v(value: Any, fmt: str) -> str:
     if value is None:
-        return "——"
+        return "--"
     return fmt.format(value)
 
 

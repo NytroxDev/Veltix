@@ -55,7 +55,7 @@ class AsyncEventBus(_BaseEventBus):
         """Register *function* to fire at most once for *event_type*.
 
         Works with both sync and async functions.  Automatically
-        unsubscribes after the first :meth:`emit` — even if the
+        unsubscribes after the first :meth:`emit` - even if the
         function raises.
         """
 

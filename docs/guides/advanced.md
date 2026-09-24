@@ -61,10 +61,10 @@ default since v1.7.0,
 (Tokio via PyO3) is planned for v5.0.0.
 
 ```python
-# Default — selectors-based, up to 2x stress throughput
+# Default - selectors-based, up to 2x stress throughput
 server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.ASYNC))
 
-# Thread-per-client — predictable per-connection latency
+# Thread-per-client - predictable per-connection latency
 server = Server(ServerConfig(host="0.0.0.0", port=8080, socket_core=SocketCore.THREADING))
 ```
 
@@ -75,10 +75,10 @@ Switching backends requires no changes to application code.
 ```python
 from veltix import ServerConfig, ClientConfig, BufferSize
 
-# SMALL  — 1KB
-# MEDIUM — 8KB  (default)
-# LARGE  — 64KB
-# HUGE   — 1MB
+# SMALL  - 1KB
+# MEDIUM - 8KB  (default)
+# LARGE  - 64KB
+# HUGE   - 1MB
 
 server = Server(ServerConfig(host="0.0.0.0", port=8080, buffer_size=BufferSize.LARGE))
 ```
@@ -90,10 +90,10 @@ Message type codes are divided into ranges by convention:
 ```python
 from veltix import MessageType
 
-# System messages (0–199) — reserved, internal use only
+# System messages (0-199) - reserved, internal use only
 # PING, PONG are pre-registered system types
 
-# Application messages (200–9999) — explicit codes
+# Application messages (200-9999) - explicit codes
 CHAT = MessageType(200, "chat", "Chat message")
 FILE_TRANSFER = MessageType(201, "file", "File transfer")
 

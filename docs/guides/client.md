@@ -62,7 +62,7 @@ from veltix import DisconnectState
 
 client.on_connect(lambda: print("Connected!"))
 client.on_recv(lambda response: print(response.text))
-client.on_disconnect(lambda state: print(f"Disconnected — permanent={state.permanent}"))
+client.on_disconnect(lambda state: print(f"Disconnected - permanent={state.permanent}"))
 ```
 
 !!! tip

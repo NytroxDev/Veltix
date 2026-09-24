@@ -122,7 +122,7 @@ No manual framing. No thread management. No boilerplate.
 - **Integrated logger**: colorized, rotating, thread-safe
 - **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra) : subscribe to lifecycle, message,
   protocol, and error events
-- **Rust-powered engine**: framing / parse / compile in native Rust — with automatic pure-Python fallback
+- **Rust-powered engine**: framing / parse / compile in native Rust - with automatic pure-Python fallback
 
 **Designed for:** LAN tools, multiplayer games, real-time dashboards, custom protocols, IPC, remote tooling, file
 transfer.
@@ -276,7 +276,7 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 ## Performance
 
 > Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
-> On v3.0.0+ the message hot path runs in Rust — see [Rust-powered hot path](#rust-powered-hot-path) for the
+> On v3.0.0+ the message hot path runs in Rust - see [Rust-powered hot path](#rust-powered-hot-path) for the
 > Rust engine vs pure-Python fallback numbers.
 
 | Metric                             | Threading       | Async            |

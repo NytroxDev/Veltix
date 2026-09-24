@@ -1,6 +1,6 @@
 # Contributing to Veltix
 
-Contributions of any kind are welcome — bug reports, feature requests, documentation improvements, or code changes. This
+Contributions of any kind are welcome - bug reports, feature requests, documentation improvements, or code changes. This
 guide explains how to get involved effectively.
 
 ---
@@ -76,7 +76,7 @@ pip install -e ".[dev]"
 - Follow **PEP 8**
 - Use **type hints** on all public methods
 - Write **docstrings** for all public classes and methods (Google style)
-- Keep the code readable — clarity over cleverness
+- Keep the code readable - clarity over cleverness
 - Do not add external dependencies
 
 ```python
@@ -110,7 +110,7 @@ You do not need to write code to contribute meaningfully:
 
 - **Star the project** on GitHub to increase visibility
 - **Report bugs** or unclear documentation
-- **Improve the docs** — fix typos, clarify explanations, add examples
+- **Improve the docs** - fix typos, clarify explanations, add examples
 - **Answer questions** in issues or on Discord
 - **Share the project** if you find it useful
 

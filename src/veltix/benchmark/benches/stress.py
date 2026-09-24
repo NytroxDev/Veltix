@@ -1,14 +1,14 @@
 """
 benches/stress.py
 -----------------
-Benchmark 5 — Concurrent stress.
+Benchmark 5 - Concurrent stress.
 
 Measures:
   - Total sent / received / lost
   - Success rate and overall throughput (msg/s)
   - RAM delta
   - Per-client throughput: avg, min, max, stdev
-    (reveals hot/cold spots — if stdev is high, some clients are being
+    (reveals hot/cold spots - if stdev is high, some clients are being
      starved while others blast through)
   - Thread pool saturation: time from last future submitted to all futures
     resolved (measures executor overhead under full concurrency)

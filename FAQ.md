@@ -69,7 +69,7 @@ on your chunk size (slightly larger than the chunk is ideal), and use the THREAD
 ## Does Veltix have external dependencies?
 
 No. Veltix only requires Python 3.11+ and stdlib libraries. The Rust engine ships packed inside the
-prebuilt wheels — no runtime toolchain or third-party packages are needed. You can clone the repo
+prebuilt wheels - no runtime toolchain or third-party packages are needed. You can clone the repo
 and use it directly without even running `pip install`.
 
 ## Does Veltix support Python 3.10 or below?
@@ -84,7 +84,7 @@ and ships as a `cp311-abi3` extension inside the prebuilt wheels. It is used aut
 available; otherwise Veltix falls back to the pure-Python implementation transparently. Set
 `VELTIX_DISABLE_RUST=1` to force the fallback, or check `veltix.network._rust.rust_enabled()`.
 It cuts P99 latency by **-41%**, jitter by **-68%**, and raises 100-client stress throughput by
-**+23%** — see [PERFORMANCE.md](PERFORMANCE.md).
+**+23%** - see [PERFORMANCE.md](PERFORMANCE.md).
 
 ## How do I debug connection issues with Veltix?
 

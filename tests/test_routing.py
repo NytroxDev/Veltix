@@ -1,4 +1,4 @@
-"""Tests for the routing system — v1.5.0."""
+"""Tests for the routing system - v1.5.0."""
 
 import socket
 import time

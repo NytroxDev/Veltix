@@ -187,7 +187,7 @@ class ReconnectHandler:
 
         if not self._reconnect_lock.acquire(blocking=False):
             if self.bus:
-                self.bus.warning("try_reconnect ignored — reconnect loop already active")
+                self.bus.warning("try_reconnect ignored - reconnect loop already active")
             return False
 
         try:
@@ -198,7 +198,7 @@ class ReconnectHandler:
     def stop_retry(self) -> None:
         """Cancel any active reconnection loop and prevent further attempts."""
         if self.bus:
-            self.bus.info("stop_retry() called — cancelling reconnection attempts")
+            self.bus.info("stop_retry() called - cancelling reconnection attempts")
         with self._state_lock:
             self._stop_retry_flag = True
         self._stop_event.set()
@@ -210,14 +210,14 @@ class ReconnectHandler:
             max_: Optional override for the maximum number of retries.
         """
         if self.bus:
-            self.bus.info("retry() called — forcing reconnection attempt")
+            self.bus.info("retry() called - forcing reconnection attempt")
         thread = threading.Thread(target=self._retry_in_thread, kwargs={"max_": max_}, daemon=True)
         thread.start()
 
     def _retry_in_thread(self, max_: int | None = None) -> None:
         if not self._reconnect_lock.acquire(blocking=False):
             if self.bus:
-                self.bus.warning("retry() ignored — reconnect loop already active")
+                self.bus.warning("retry() ignored - reconnect loop already active")
             return
 
         try:

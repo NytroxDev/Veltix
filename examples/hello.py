@@ -1,4 +1,4 @@
-"""Hello Veltix — minimal example. Run this file, it starts server + client."""
+"""Hello Veltix - minimal example. Run this file, it starts server + client."""
 
 from veltix import (
     Client,

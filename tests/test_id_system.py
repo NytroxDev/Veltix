@@ -33,7 +33,7 @@ def _make_context(request_id: int, is_server: bool = False) -> MessageContext:
 
 
 # ===========================================================================
-# IDAllocator — no pending: sequential behavior is unchanged
+# IDAllocator - no pending: sequential behavior is unchanged
 # ===========================================================================
 
 
@@ -101,7 +101,7 @@ class TestIDAllocator:
 
 
 # ===========================================================================
-# Pending-safe allocator — the new behavior
+# Pending-safe allocator - the new behavior
 # ===========================================================================
 
 
@@ -173,7 +173,7 @@ class TestPendingSafeAllocator:
 
 
 # ===========================================================================
-# Full simulation — request IDs are matched directly, no global ID indirection
+# Full simulation - request IDs are matched directly, no global ID indirection
 # ===========================================================================
 
 

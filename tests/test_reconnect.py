@@ -1,4 +1,4 @@
-"""Tests for auto-reconnect functionality — v1.5.0."""
+"""Tests for auto-reconnect functionality - v1.5.0."""
 
 import socket
 import threading

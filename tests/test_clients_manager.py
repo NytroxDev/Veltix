@@ -1,4 +1,4 @@
-"""Tests for ClientsManager and ClientEntry — v1.6.4."""
+"""Tests for ClientsManager and ClientEntry - v1.6.4."""
 
 import threading
 
@@ -246,17 +246,17 @@ class TestClientsManagerThreadSafety:
 @pytest.mark.usefixtures("socket_core_backend")
 class TestCloseClientById:
     def test_close_client_with_none_id(self):
-        """close_client(id_=None) should not crash — bugfix v1.6.6."""
+        """close_client(id_=None) should not crash - bugfix v1.6.6."""
         from veltix import Server, ServerConfig
 
         server = Server(ServerConfig(host="127.0.0.1", port=18200))
-        # id_=0 used to be falsy — should now be handled correctly
+        # id_=0 used to be falsy - should now be handled correctly
         result = server.close_client(client=None, id_=None)
         assert result is False
         server.close_all()
 
     def test_close_client_with_zero_id(self):
-        """id_=0 should not be treated as falsy — bugfix v1.6.6."""
+        """id_=0 should not be treated as falsy - bugfix v1.6.6."""
         from veltix import Server, ServerConfig
 
         server = Server(ServerConfig(host="127.0.0.1", port=18201))

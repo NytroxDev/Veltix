@@ -170,7 +170,7 @@ class TestMessageBufferBackend:
 
     def test_unknown_type_dropped_without_resync(self, backend, test_message_type):
         """Unknown-type frames are dropped with a warning and consume exactly
-        one frame — the following message is parsed without resyncing."""
+        one frame - the following message is parsed without resyncing."""
         bus = VeltixBus()
         warnings: list[str] = []
         bus.subscribe(LogEvent.WARNING, lambda _event, msg: warnings.append(msg))

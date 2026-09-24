@@ -16,7 +16,7 @@ client = Client(ClientConfig(
 ))
 ```
 
-With `retry=0` (default), the client behaves exactly as in v1.4.0 — no automatic reconnection.
+With `retry=0` (default), the client behaves exactly as in v1.4.0 - no automatic reconnection.
 
 ## DisconnectState
 
@@ -74,7 +74,7 @@ client = Client(ClientConfig(
 
 def on_disconnect(state: DisconnectState):
     if state.permanent:
-        print(f"Permanently disconnected — reason: {state.reason.name}")
+        print(f"Permanently disconnected - reason: {state.reason.name}")
     else:
         print(f"Retrying... attempt {state.attempt}/{state.retry_max}")
 
@@ -87,7 +87,7 @@ client.connect()
 ## Manual control
 
 ```python
-# Cancel all pending retries — fires on_disconnect(permanent=True)
+# Cancel all pending retries - fires on_disconnect(permanent=True)
 client.stop_retry()
 
 # Force a new attempt even if retry_max was reached
@@ -98,4 +98,4 @@ client.retry(max_=10)
 ```
 
 !!! warning
-Callbacks and routes are preserved across reconnections — no need to re-register them.
+Callbacks and routes are preserved across reconnections - no need to re-register them.

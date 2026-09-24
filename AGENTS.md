@@ -12,7 +12,7 @@ fallback.
 - **Version:** 3.0.0
 - **Python:** 3.11+
 - **License:** MIT
-- **Zero runtime dependencies:** pure stdlib only — the Rust engine ships as a prebuilt wheel and
+- **Zero runtime dependencies:** pure stdlib only - the Rust engine ships as a prebuilt wheel and
   falls back to the Python implementation when unavailable.
 
 ## Use Cases (When to Use Veltix)
@@ -110,7 +110,7 @@ src/veltix/
 ├── network/             # Protocol layer
 │   ├── request.py       # Request class
 │   ├── response.py      # Response class (content decoding: .text, .json, .is_json, .is_text)
-│   ├── parser.py        # MessageParser — parse raw bytes into Response objects
+│   ├── parser.py        # MessageParser - parse raw bytes into Response objects
 │   ├── sender.py        # Sender, Mode
 │   ├── types.py         # MessageType, MessageTypeRegistry
 │   ├── system_types.py  # PING, PONG
@@ -205,7 +205,7 @@ docs/
 
 ### Python & Syntax
 
-- Target **Python 3.11+** (3.10 is EOL): modern syntax is allowed — `match`/`case`,
+- Target **Python 3.11+** (3.10 is EOL): modern syntax is allowed - `match`/`case`,
   walrus operator (`:=`), and `X | Y` union types are fine in new code.
 - Use `from __future__ import annotations` for forward references.
 - Line length: **100** characters.
@@ -311,7 +311,7 @@ class MessageType:
 ### Inheritance & Protocols
 
 - Use `Protocol` from `typing` for structural subtyping (e.g., `ClientContext`).
-- `BaseSocket` was refactored from `Protocol` to `ABC` in v1.8.1 — use `abstractmethod` for base class contracts that
+- `BaseSocket` was refactored from `Protocol` to `ABC` in v1.8.1 - use `abstractmethod` for base class contracts that
   need stronger inheritance guarantees and slot-sharing.
 - Avoid deep inheritance trees. Prefer composition.
 
@@ -324,7 +324,7 @@ to `LogEvent.*` so all `bus.*()` calls produce log output. Prefer the bus in new
 from ..logger.core import Logger
 from ..internal.bus import VeltixBus
 
-# Via bus (preferred for internal modules — emits structured events)
+# Via bus (preferred for internal modules - emits structured events)
 self.bus = VeltixBus()
 self.bus.debug("Some message")
 self.bus.error("Something went wrong: %s", error)
@@ -337,7 +337,7 @@ self._logger.debug("Some message")
 Levels (same for both): `trace`, `debug`, `info`, `success`, `warning`, `error`, `critical`.
 
 The Rust engine does **not** log directly: it returns classification items to the Python wrapper
-(`network/_rust.py`), which logs via the bus — `error` on overflow/max-size violations, `warning`
+(`network/_rust.py`), which logs via the bus - `error` on overflow/max-size violations, `warning`
 on unknown message types, `debug` on buffer resync.
 
 ### Thread Safety
@@ -378,7 +378,7 @@ VELTIX_DISABLE_RUST=1 python -m pytest tests/ -v --tb=short
 
 `tests/test_rust_backend.py` covers engine selection (`VELTIX_DISABLE_RUST`, missing extension)
 and parity between the Rust and Python engines (buffer, parse, compile). Both engines must pass
-the full suite — CI runs it twice per Python version.
+the full suite - CI runs it twice per Python version.
 
 Run with coverage:
 
@@ -456,11 +456,11 @@ available; otherwise the pure-Python implementations are used transparently.
 ```python
 from veltix.network import _rust
 
-_rust.rust_enabled()          # -> bool — True when the native extension is loaded
+_rust.rust_enabled()          # -> bool - True when the native extension is loaded
 # Force the Python fallback for the process:  VELTIX_DISABLE_RUST=1
 ```
 
-- The Python registry (`MessageTypeRegistry`) stays in Python — Rust does **wire validation only**.
+- The Python registry (`MessageTypeRegistry`) stays in Python - Rust does **wire validation only**.
 - Rust `parse` returns `(type_code, content, request_id, flags, hash)`; `compile` takes
   `(type_code, content, request_id, flags)`.
 - Backend selection is cached at module import; tests `importlib.reload()` `network._rust` to
@@ -513,7 +513,7 @@ Defined in `.github/workflows/ci.yml`:
 4. **Version check:** validates that `pyproject.toml` contains a valid semver `version`.
 5. **Build check:** builds sdist + wheel with maturin and asserts the wheel ships the compiled
    `veltix._rust` extension (`_rust.rust_enabled()` must be True).
-6. **Tests:** run on Python 3.11, 3.12, 3.13, 3.14 with `pytest` — twice per version: once with the
+6. **Tests:** run on Python 3.11, 3.12, 3.13, 3.14 with `pytest` - twice per version: once with the
    Rust engine, once with `VELTIX_DISABLE_RUST=1` (pure-Python fallback).
 
 All pushed branches and PRs run through CI.
@@ -646,7 +646,7 @@ from veltix import Request
 req = Request(MY_TYPE, b"hello")  # raw bytes
 req = Request(MY_TYPE, text="hello")  # UTF-8 encoded automatically
 req = Request(MY_TYPE, json={"key": "val"})  # JSON serialized automatically
-req.request_id  # Optional[int] — auto-allocated by Sender if None
+req.request_id  # Optional[int] - auto-allocated by Sender if None
 req.compile()  # -> bytes (wire format)
 req.respond(response)  # copy request_id from response for correlation
 ```
@@ -856,7 +856,7 @@ BufferSize.HUGE  # 1 MB
 
 ```python
 from veltix.internal.compatibility import (
-    PROTOCOL_VERSION,      # (1, 0) — (major, minor)
+    PROTOCOL_VERSION,      # (1, 0) - (major, minor)
     protocol_version_str,  # "1.0"
     protocol_is_compatible,
 )

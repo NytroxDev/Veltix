@@ -1,14 +1,14 @@
 """
 benches/memory.py
 -----------------
-Benchmark 1 — Baseline memory footprint.
+Benchmark 1 - Baseline memory footprint.
 
 Measures:
   - Python process baseline RSS before any veltix object is created
   - Idle server overhead (RSS delta after server.start())
   - Per-client cost: avg, min, max, median, stdev over the first 10 clients
   - Total RSS with 10 and 50 connected clients
-  - RSS after full teardown (detects leaks — should be close to baseline)
+  - RSS after full teardown (detects leaks - should be close to baseline)
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ def run(port: int = PORT_MEMORY, socket_core: str = "async", step_label: str = "
         f"{format_bytes(int(server_ram * 1_024))}  (+{format_bytes(int(server_cost * 1_024))})",
     )
 
-    # ── First 10 clients — detailed per-client cost ───────────────────────────
+    # ── First 10 clients - detailed per-client cost ───────────────────────────
     clients: list[Client] = []
     costs: list[float] = []
 
@@ -68,11 +68,11 @@ def run(port: int = PORT_MEMORY, socket_core: str = "async", step_label: str = "
     cost_median = statistics.median(costs)
     cost_stdev = statistics.stdev(costs) if len(costs) > 1 else 0.0
 
-    row("Cost per client — avg", format_bytes(int(cost_avg * 1_024)))
-    row("Cost per client — min", format_bytes(int(cost_min * 1_024)))
-    row("Cost per client — max", format_bytes(int(cost_max * 1_024)))
-    row("Cost per client — median", format_bytes(int(cost_median * 1_024)))
-    row("Cost per client — stdev", format_bytes(int(cost_stdev * 1_024)))
+    row("Cost per client - avg", format_bytes(int(cost_avg * 1_024)))
+    row("Cost per client - min", format_bytes(int(cost_min * 1_024)))
+    row("Cost per client - max", format_bytes(int(cost_max * 1_024)))
+    row("Cost per client - median", format_bytes(int(cost_median * 1_024)))
+    row("Cost per client - stdev", format_bytes(int(cost_stdev * 1_024)))
     row("Server + 10 clients", format_bytes(int(ram_10 * 1_024)))
 
     # ── Scale to 50 clients ───────────────────────────────────────────────────

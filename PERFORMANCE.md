@@ -3,9 +3,9 @@
 Veltix 3.0.0 ships a Rust-powered hot path (parse / compile / buffering via `veltix._rust`) with
 an automatic pure-Python fallback. Two independent comparisons:
 
-- **Rust engine vs Python fallback (v3.0.0)** — Python 3.14.7, 12-core CPU, 30.5 GB RAM, Linux
+- **Rust engine vs Python fallback (v3.0.0)** - Python 3.14.7, 12-core CPU, 30.5 GB RAM, Linux
   (loopback), 5-run averages.
-- **Socket backends** (Threading vs Async, pure-Python path) — Python 3.14.5, same machine,
+- **Socket backends** (Threading vs Async, pure-Python path) - Python 3.14.5, same machine,
   5-run averages; latency uses **250 000 iterations** (`--latency-iterations 250000`).
 
 To run the benchmarks yourself:
@@ -17,7 +17,7 @@ python -m veltix.benchmark --socket-core both --runs 5
 # Same suite with the pure-Python fallback
 VELTIX_DISABLE_RUST=1 python -m veltix.benchmark --socket-core both --runs 5
 
-# Save JSON results and compare engines (run sequentially — no CPU contention)
+# Save JSON results and compare engines (run sequentially - no CPU contention)
 python -m veltix.benchmark --runs 5 --save rust.json
 VELTIX_DISABLE_RUST=1 python -m veltix.benchmark --runs 5 --save python.json
 python -m veltix.benchmark --compare rust.json python.json
@@ -47,7 +47,7 @@ python -m veltix.benchmark --only memory latency burst --socket-core both
 
 ---
 
-## Side-by-Side Summary (socket backends — pure-Python path)
+## Side-by-Side Summary (socket backends - pure-Python path)
 
 | Metric                              | Threading        | Async            |
 |-------------------------------------|------------------|------------------|
@@ -60,7 +60,7 @@ python -m veltix.benchmark --only memory latency burst --socket-core both
 | FPS simulation (64 players @ 64Hz)  | 4 490 msg/s      | 4 491 msg/s      |
 | FPS simulation (128 players @ 20Hz) | 2 813 msg/s      | 2 813 msg/s      |
 
-> **Async stress throughput is 2.6x higher** than Threading — the selectors-based single-thread model eliminates context-switch overhead under high concurrency.
+> **Async stress throughput is 2.6x higher** than Threading - the selectors-based single-thread model eliminates context-switch overhead under high concurrency.
 > Both backends score similarly on FPS simulations (bottleneck is the simulation logic, not the transport layer).
 
 ---
@@ -201,5 +201,5 @@ Zero overruns, zero lost messages in both scenarios.
 | Per-client avg     | 9 332 msg/s   |
 | Per-client stdev   | 8 626 msg/s   |
 
-> **Async is 2.6x faster under stress** — single-thread selectors eliminate Python GIL contention between client-handler threads.
+> **Async is 2.6x faster under stress** - single-thread selectors eliminate Python GIL contention between client-handler threads.
 > Threading still handles 32k+ msg/s with zero failures; the GIL is the limiter at high concurrency.

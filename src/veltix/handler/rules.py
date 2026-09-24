@@ -156,7 +156,7 @@ class UnhandledRule(Rule):
         context.handler.bus.warning(f"No handler registered for message from {src}")
 
     def can_handle(self, context: MessageContext) -> bool:
-        """Always returns True — this is the catch-all rule."""
+        """Always returns True - this is the catch-all rule."""
         return True
 
 

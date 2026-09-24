@@ -1,4 +1,4 @@
-"""Tests for veltix.utils — encoding helpers and format_bytes."""
+"""Tests for veltix.utils - encoding helpers and format_bytes."""
 
 import json
 

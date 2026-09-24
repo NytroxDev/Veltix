@@ -1,7 +1,7 @@
 """
 benches/fps.py
 --------------
-Benchmark 3 — FPS game-server simulation.
+Benchmark 3 - FPS game-server simulation.
 
 Measures:
   - Messages sent / received / lost
@@ -9,7 +9,7 @@ Measures:
   - Success rate and error count
   - RAM delta during simulation
   - Per-tick stats: avg, min, max, stdev tick duration (ms)
-    (reveals scheduling jitter — a high stdev means the OS is not giving
+    (reveals scheduling jitter - a high stdev means the OS is not giving
      the process consistent time slices)
   - Tick budget compliance: % of ticks that finished within the target interval
     (a tick that overruns pushes the next one late, causing cascading lag)

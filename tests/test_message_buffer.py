@@ -1,4 +1,4 @@
-"""Tests for MessageBuffer — TCP stream handling with protocol hardening (v1.7.0)."""
+"""Tests for MessageBuffer - TCP stream handling with protocol hardening (v1.7.0)."""
 
 from veltix import MessageType, Request
 from veltix.network.message_buffer import MessageBuffer

@@ -158,7 +158,7 @@ def main() -> None:
     # ── Suite header ──────────────────────────────────────────────────────────
     print()
     sep("═")
-    print(f"  VELTIX BENCHMARK SUITE  –  v{veltix.__version__}")
+    print(f"  VELTIX BENCHMARK SUITE  -  v{veltix.__version__}")
     sep("═")
     row("Python", sys.version.split()[0])
     row(

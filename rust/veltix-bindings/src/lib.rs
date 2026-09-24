@@ -78,7 +78,7 @@ impl MessageBuffer {
             AddDataOutcome::Accepted => (true, String::new()),
             AddDataOutcome::Overflow { size, maximum } => (
                 false,
-                format!("Buffer size {size} exceeds maximum {maximum} — cleared"),
+                format!("Buffer size {size} exceeds maximum {maximum} - cleared"),
             ),
         }
     }

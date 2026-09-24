@@ -181,9 +181,9 @@ def _show_single(
     if lat:
         _show_single_section("LATENCY", _latency_defs(), lat[0])
     if fps64:
-        _show_single_section("FPS — 64 players @ 64 Hz", _fps_defs(), fps64[0])
+        _show_single_section("FPS - 64 players @ 64 Hz", _fps_defs(), fps64[0])
     if fps128:
-        _show_single_section("FPS — 128 players @ 20 Hz", _fps_defs(), fps128[0])
+        _show_single_section("FPS - 128 players @ 20 Hz", _fps_defs(), fps128[0])
     if burst:
         _show_single_section("BURST", _burst_defs(), burst[0])
     if stress:
@@ -221,9 +221,9 @@ def _show_side_by_side(
     if lat:
         _show_both_section("LATENCY", _latency_defs(), lat)
     if fps64:
-        _show_both_section("FPS — 64 players @ 64 Hz", _fps_defs(), fps64)
+        _show_both_section("FPS - 64 players @ 64 Hz", _fps_defs(), fps64)
     if fps128:
-        _show_both_section("FPS — 128 players @ 20 Hz", _fps_defs(), fps128)
+        _show_both_section("FPS - 128 players @ 20 Hz", _fps_defs(), fps128)
     if burst:
         _show_both_section("BURST", _burst_defs(), burst)
     if stress:
