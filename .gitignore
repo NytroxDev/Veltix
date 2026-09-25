@@ -37,7 +37,6 @@ htmlcov/
 
 # Rust
 rust/target/
-Cargo.lock
 
 # OS
 .DS_Store
