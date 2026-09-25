@@ -8,11 +8,14 @@ Orchestrates benchmark selection, execution, summary and JSON export.
 from __future__ import annotations
 
 import argparse
+import importlib
+import os
 import sys
 from typing import Any
 
 import veltix
 from veltix import Logger, LogLevel
+from veltix.network import _rust
 
 from .display import print_summary, row, sep
 from .export import build_json, save_json
@@ -54,6 +57,13 @@ def parse_args() -> argparse.Namespace:
         help="Socket backend to benchmark ('threading', 'async', or 'both')",
     )
     p.add_argument(
+        "--engine",
+        choices=["rust", "python", "auto"],
+        default="auto",
+        metavar="ENGINE",
+        help="Protocol engine to benchmark ('rust', 'python', or 'auto' - use the available one)",
+    )
+    p.add_argument(
         "--runs",
         type=int,
         default=1,
@@ -85,6 +95,27 @@ def _backends_from_args(socket_core: str) -> list[str]:
     if socket_core == "both":
         return BACKENDS
     return [socket_core]
+
+
+def _apply_engine(engine: str) -> str:
+    """Force the requested protocol engine and return its effective name.
+
+    The engine decision is cached at ``veltix.network._rust`` import time, so
+    the module is reloaded after adjusting the environment.
+
+    Args:
+        engine: "rust", "python" or "auto".
+
+    Returns:
+        "rust" when the compiled engine is active, "python" otherwise.
+    """
+    if engine == "python":
+        os.environ["VELTIX_DISABLE_RUST"] = "1"
+        importlib.reload(_rust)
+    elif engine == "rust":
+        os.environ.pop("VELTIX_DISABLE_RUST", None)
+        importlib.reload(_rust)
+    return _rust.engine_name()
 
 
 def _run_for_backends(
@@ -151,12 +182,21 @@ def main() -> None:
     run = set(args.only)
     backends = _backends_from_args(args.socket_core)
 
+    engine_name = _apply_engine(args.engine)
+    if args.engine == "rust" and engine_name != "rust":
+        print(
+            "Rust engine requested but unavailable (compiled veltix._rust extension not installed)."
+        )
+        sys.exit(1)
+
     # ── Suite header ──────────────────────────────────────────────────────────
     print()
     sep("═")
     print(f"  VELTIX BENCHMARK SUITE  -  v{veltix.__version__}")
     sep("═")
     row("Python", sys.version.split()[0])
+    engine_label = "rust (compiled)" if engine_name == "rust" else "python (pure)"
+    row("Engine", engine_label)
     row(
         "CPU",
         f"{psutil.cpu_count(logical=True)} logical cores"

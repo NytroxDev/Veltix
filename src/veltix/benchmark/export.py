@@ -41,6 +41,12 @@ def _get_system_info() -> dict:
     }
 
 
+def _engine_name() -> str:
+    from veltix.network import _rust
+
+    return _rust.engine_name()
+
+
 def build_json(
     mem: MemoryResult | list[MemoryResult] | None,
     lat: LatencyStats | list[LatencyStats] | None,
@@ -51,6 +57,7 @@ def build_json(
     """Build a JSON-serializable dict from benchmark results."""
     return {
         "veltix_version": veltix.__version__,
+        "engine": _engine_name(),
         "timestamp": datetime.now(UTC).isoformat(),
         "system": _get_system_info(),
         "results": {

@@ -43,6 +43,15 @@ def rust_enabled() -> bool:
     return _EXTENSION_LOADED and not _EXTENSION_DISABLED
 
 
+def engine_name() -> str:
+    """Return the active protocol engine name.
+
+    Returns:
+        "rust" when the Rust extension is active, "python" otherwise.
+    """
+    return "rust" if rust_enabled() else "python"
+
+
 def parse(data: bytes | bytearray, max_message_size: int) -> tuple[int, bytes, int, int, bytes]:
     """Validate a wire frame through the Rust parser.
 

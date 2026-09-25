@@ -60,7 +60,7 @@ framing, handshake, ping/pong, and reconnection: zero dependencies, zero boilerp
 
 > The Rust engine cuts framing/parse overhead: lower latency and jitter, steadier FPS ticks, and higher throughput
 > under concurrency. FPS *throughput* is tick-limited and unchanged, as expected. Reproduce with
-> `vltxbench --runs 5 --save a.json` and `VELTIX_DISABLE_RUST=1 vltxbench --runs 5 --save b.json`, then
+> `vltxbench --engine rust --runs 5 --save a.json` and `vltxbench --engine python --runs 5 --save b.json`, then
 > `vltxbench --compare a.json b.json`.
 
 ### Socket backends (pure-Python path)
