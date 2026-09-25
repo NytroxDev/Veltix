@@ -25,6 +25,12 @@ from ..models import MemoryResult
 from ..utils import ram_kb
 
 
+def _signed_delta(size_kb: float) -> str:
+    """Format a KB delta with an explicit sign (e.g. '+176 KB', '-240 KB')."""
+    sign = "+" if size_kb > 0 else "-" if size_kb < 0 else ""
+    return f"{sign}{format_bytes(int(abs(size_kb) * 1_024))}"
+
+
 def run(port: int = PORT_MEMORY, socket_core: str = "async", step_label: str = "") -> MemoryResult:
     header("BASELINE MEMORY FOOTPRINT", prefix=step_label)
 
@@ -43,7 +49,7 @@ def run(port: int = PORT_MEMORY, socket_core: str = "async", step_label: str = "
     server_cost = server_ram - baseline
     row(
         "Idle server (0 clients)",
-        f"{format_bytes(int(server_ram * 1_024))}  (+{format_bytes(int(server_cost * 1_024))})",
+        f"{format_bytes(int(server_ram * 1_024))}  ({_signed_delta(server_cost)})",
     )
 
     # ── First 10 clients - detailed per-client cost ───────────────────────────
@@ -102,7 +108,7 @@ def run(port: int = PORT_MEMORY, socket_core: str = "async", step_label: str = "
     leak = ram_after - baseline
     row(
         "RSS after full teardown",
-        f"{format_bytes(int(ram_after * 1_024))}  (leak delta: {'' if leak >= 0 else '-'}{format_bytes(int(abs(leak) * 1_024))}{'  OK' if abs(leak) < 512 else '  possible leak'})",
+        f"{format_bytes(int(ram_after * 1_024))}  (leak delta: {format_bytes(int(leak * 1_024))}{'  OK' if abs(leak) < 512 else '  possible leak'})",
     )
 
     return MemoryResult(

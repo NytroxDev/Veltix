@@ -28,6 +28,12 @@ class TestFormatBytes:
     def test_returns_string(self):
         assert isinstance(format_bytes(100), str)
 
+    def test_negative_values(self):
+        assert format_bytes(-512) == "-512 B"
+        assert format_bytes(-148_000) == "-144.5 KB"
+        assert format_bytes(-3_000_000) == "-2.861 MB"
+        assert format_bytes(-1024 * 1024) == "-1 MB"
+
 
 class TestEncodeUtf8:
     def test_encode_string(self):

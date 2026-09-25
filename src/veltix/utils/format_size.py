@@ -18,9 +18,13 @@ def format_bytes(size: float) -> str:
         '144.5 KB'
         >>> format_bytes(3_000_000)
         '2.86 MB'
+        >>> format_bytes(-148_000)
+        '-144.5 KB'
     """
+    sign = "-" if size < 0 else ""
+    size = abs(size)
     for unit in ("B", "KB", "MB", "GB"):
         if size < 1024:
-            return f"{size:.4g} {unit}"
+            return f"{sign}{size:.4g} {unit}"
         size /= 1024
-    return f"{size:.4g} TB"
+    return f"{sign}{size:.4g} TB"
