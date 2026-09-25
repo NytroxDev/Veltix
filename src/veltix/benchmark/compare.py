@@ -5,11 +5,15 @@ Side-by-side comparison of two saved benchmark JSON files.
 
 Usage:
     python -m veltix.benchmark --compare results_a.json results_b.json
+
+Both files must share the same file format version (``format_version`` in
+the JSON) to be comparable; legacy files without the field count as v0.
 """
 
 from __future__ import annotations
 
 import json
+import sys
 from typing import Any, cast
 
 from .display import _B as _BOLD
@@ -225,6 +229,18 @@ def _first_result(results: Any) -> dict[str, Any] | None:
     return cast("dict[str, Any]", results)
 
 
+def _format_version(data: dict[str, Any]) -> int:
+    """Return the file format version (0 for legacy files without the field)."""
+    try:
+        return int(data.get("format_version", 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _fmt_label(version: int) -> str:
+    return "legacy" if version == 0 else f"v{version}"
+
+
 def cmd_compare(a_path: str, b_path: str) -> None:
     """
     Compare two saved benchmark JSON result files.
@@ -235,6 +251,15 @@ def cmd_compare(a_path: str, b_path: str) -> None:
     """
     a_data = _load(a_path)
     b_data = _load(b_path)
+
+    a_fmt = _format_version(a_data)
+    b_fmt = _format_version(b_data)
+    if a_fmt != b_fmt:
+        print(
+            f"  {_RED}✗ Format version mismatch{_RESET}: {a_path} is format {_fmt_label(a_fmt)}, "
+            f"{b_path} is format {_fmt_label(b_fmt)} - results are not comparable."
+        )
+        sys.exit(1)
 
     a_results = a_data.get("results", {})
     b_results = b_data.get("results", {})
@@ -249,7 +274,13 @@ def cmd_compare(a_path: str, b_path: str) -> None:
     print(f"  {_BOLD}COMPARE{_RESET}  {a_path}  vs  {b_path}")
     sep("=")
     row("Version", f"{a_ver}  vs  {b_ver}")
+    row("Format", f"{_fmt_label(a_fmt)}  vs  {_fmt_label(b_fmt)}")
     row("Timestamp", f"{a_ts}  vs  {b_ts}")
+
+    a_eng = a_data.get("engine", "?")
+    b_eng = b_data.get("engine", "?")
+    if a_eng != b_eng:
+        row("Engine", f"{a_eng}  vs  {b_eng}")
 
     a_sys = a_data.get("system", {})
     b_sys = b_data.get("system", {})

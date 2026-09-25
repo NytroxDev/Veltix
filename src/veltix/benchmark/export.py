@@ -17,6 +17,9 @@ import veltix
 if TYPE_CHECKING:
     from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
 
+# File format version of the exported JSON - bump on breaking schema changes
+FORMAT_VERSION = 1
+
 
 def _normalise(value: Any) -> Any:
     if value is None:
@@ -56,6 +59,7 @@ def build_json(
 ) -> dict:
     """Build a JSON-serializable dict from benchmark results."""
     return {
+        "format_version": FORMAT_VERSION,
         "veltix_version": veltix.__version__,
         "engine": _engine_name(),
         "timestamp": datetime.now(UTC).isoformat(),
