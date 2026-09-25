@@ -161,6 +161,7 @@ rust/                    # Rust workspace (compiled engine, since v3.0.0)
 └── veltix-bindings/     # PyO3 wrappers → veltix._rust (abi3-py311)
 tests/
 ├── conftest.py              # Shared fixtures
+├── protocol_vectors.py      # Shared wire vectors (Python/Rust parity)
 ├── test_callback_executor.py
 ├── test_client_server.py
 ├── test_client_tags.py
@@ -177,6 +178,7 @@ tests/
 ├── test_network_internal.py
 ├── test_ping_pong.py
 ├── test_protocol.py
+├── test_protocol_vectors.py
 ├── test_reconnect.py
 ├── test_request.py
 ├── test_response.py
@@ -505,7 +507,7 @@ test: parametrize integration tests over socket backends
 
 Defined in `.github/workflows/ci.yml`:
 
-1. **Rust checks:** `cargo fmt --manifest-path rust/Cargo.toml --check`,
+1. **Rust checks:** `cargo fmt --manifest-path rust/Cargo.toml --all --check`,
    `cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings`, and
    `cargo test --manifest-path rust/Cargo.toml` (with `Swatinem/rust-cache@v2`, `workspaces: rust`).
 2. **Lint & format:** `ruff check .` and `ruff format . --check` on Python 3.12.
