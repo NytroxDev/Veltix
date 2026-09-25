@@ -171,8 +171,7 @@ def _show_single_section(title: str, defs: list[tuple[str, str, _ColFmt]], resul
 def _show_single(
     mem: Any,
     lat: Any,
-    fps64: Any,
-    fps128: Any,
+    fps: Any,
     burst: Any,
     stress: Any,
 ) -> None:
@@ -180,10 +179,10 @@ def _show_single(
         _show_single_section("MEMORY", _memory_defs(), mem[0])
     if lat:
         _show_single_section("LATENCY", _latency_defs(), lat[0])
-    if fps64:
-        _show_single_section("FPS - 64 players @ 64 Hz", _fps_defs(), fps64[0])
-    if fps128:
-        _show_single_section("FPS - 128 players @ 20 Hz", _fps_defs(), fps128[0])
+    if fps:
+        _show_single_section(
+            f"FPS - {fps[0].players} players @ {fps[0].tick_rate} Hz", _fps_defs(), fps[0]
+        )
     if burst:
         _show_single_section("BURST", _burst_defs(), burst[0])
     if stress:
@@ -211,8 +210,7 @@ def _show_both_section(
 def _show_side_by_side(
     mem: Any,
     lat: Any,
-    fps64: Any,
-    fps128: Any,
+    fps: Any,
     burst: Any,
     stress: Any,
 ) -> None:
@@ -220,10 +218,10 @@ def _show_side_by_side(
         _show_both_section("MEMORY", _memory_defs(), mem)
     if lat:
         _show_both_section("LATENCY", _latency_defs(), lat)
-    if fps64:
-        _show_both_section("FPS - 64 players @ 64 Hz", _fps_defs(), fps64)
-    if fps128:
-        _show_both_section("FPS - 128 players @ 20 Hz", _fps_defs(), fps128)
+    if fps:
+        _show_both_section(
+            f"FPS - {fps[0].players} players @ {fps[0].tick_rate} Hz", _fps_defs(), fps
+        )
     if burst:
         _show_both_section("BURST", _burst_defs(), burst)
     if stress:
@@ -249,8 +247,7 @@ def _is_both(*groups: Any) -> bool:
 def print_summary(
     mem: MemoryResult | list[MemoryResult] | None,
     lat: LatencyStats | list[LatencyStats] | None,
-    fps64: FpsResult | list[FpsResult] | None,
-    fps128: FpsResult | list[FpsResult] | None,
+    fps: FpsResult | list[FpsResult] | None,
     burst: BurstResult | list[BurstResult] | None,
     stress: StressResult | list[StressResult] | None,
 ) -> None:
@@ -259,14 +256,13 @@ def print_summary(
 
     mem = _results(mem)
     lat = _results(lat)
-    fps64 = _results(fps64)
-    fps128 = _results(fps128)
+    fps = _results(fps)
     burst = _results(burst)
     stress = _results(stress)
 
-    if _is_both(mem, lat, fps64, fps128, burst, stress):
+    if _is_both(mem, lat, fps, burst, stress):
         backends = []
-        for g in (mem, lat, fps64, fps128, burst, stress):
+        for g in (mem, lat, fps, burst, stress):
             if g:
                 backends = [r.backend for r in g]
                 break
@@ -274,9 +270,9 @@ def print_summary(
         header_parts = "".join(f"{_B}{_G}{b:>{CW}}{_R}" for b in backends)
         print(f"  {'':<{label_w}}{header_parts}")
         sep("─")
-        _show_side_by_side(mem, lat, fps64, fps128, burst, stress)
+        _show_side_by_side(mem, lat, fps, burst, stress)
     else:
-        _show_single(mem, lat, fps64, fps128, burst, stress)
+        _show_single(mem, lat, fps, burst, stress)
 
     sep("─")
     print()

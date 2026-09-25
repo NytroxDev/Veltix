@@ -44,8 +44,7 @@ def _get_system_info() -> dict:
 def build_json(
     mem: MemoryResult | list[MemoryResult] | None,
     lat: LatencyStats | list[LatencyStats] | None,
-    fps64: FpsResult | list[FpsResult] | None,
-    fps128: FpsResult | list[FpsResult] | None,
+    fps: FpsResult | list[FpsResult] | None,
     burst: BurstResult | list[BurstResult] | None,
     stress: StressResult | list[StressResult] | None,
 ) -> dict:
@@ -57,8 +56,7 @@ def build_json(
         "results": {
             "memory": _normalise(mem),
             "latency": _normalise(lat),
-            "fps_64": _normalise(fps64),
-            "fps_128": _normalise(fps128),
+            "fps": _normalise(fps),
             "burst": _normalise(burst),
             "stress": _normalise(stress),
         },

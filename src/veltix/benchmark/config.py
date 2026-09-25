@@ -21,7 +21,6 @@ PLAYER_SHOOT = MessageType(402, "player_shoot")  # 16 B - bullet event
 # Ports (one per benchmark, never reused)
 PORT_MEMORY = 20_001
 PORT_LATENCY = 20_002
-PORT_FPS_1 = 20_003
-PORT_FPS_2 = 20_006
+PORT_FPS = 20_003
 PORT_BURST = 20_004
 PORT_STRESS = 20_005

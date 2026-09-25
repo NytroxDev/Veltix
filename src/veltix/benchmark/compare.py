@@ -148,8 +148,7 @@ _STRESS_METRICS: list[tuple[str, str, str, bool | None]] = [
 _BENCH_METRICS: dict[str, list[tuple[str, str, str, bool | None]]] = {
     "memory": _MEMORY_METRICS,
     "latency": _LATENCY_METRICS,
-    "fps_64": _FPS_METRICS,
-    "fps_128": _FPS_METRICS,
+    "fps": _FPS_METRICS,
     "burst": _BURST_METRICS,
     "stress": _STRESS_METRICS,
 }
@@ -157,8 +156,7 @@ _BENCH_METRICS: dict[str, list[tuple[str, str, str, bool | None]]] = {
 _BENCH_LABELS: dict[str, str] = {
     "memory": "MEMORY",
     "latency": "LATENCY",
-    "fps_64": "FPS \u2014 64 players @ 64 Hz",
-    "fps_128": "FPS \u2014 128 players @ 20 Hz",
+    "fps": "FPS",
     "burst": "BURST",
     "stress": "STRESS",
 }

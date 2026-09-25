@@ -25,7 +25,7 @@ import time
 
 from veltix import Client, ClientConfig, Request, Server, ServerConfig, SocketCore
 
-from ..config import PLAYER_MOVE, PLAYER_SHOOT, PORT_FPS_1
+from ..config import PLAYER_MOVE, PLAYER_SHOOT, PORT_FPS
 from ..display import header, row
 from ..models import FpsResult
 from ..utils import incr, ram_mb
@@ -35,7 +35,7 @@ def run(
     num_players: int = 64,
     tick_rate: int = 64,
     duration_s: float = 5.0,
-    port: int = PORT_FPS_1,
+    port: int = PORT_FPS,
     socket_core: str = "async",
     step_label: str = "",
 ) -> FpsResult:

@@ -65,14 +65,10 @@ def parse_args() -> argparse.Namespace:
     g = p.add_argument_group("latency")
     g.add_argument("--latency-iterations", type=int, default=50_000, metavar="N")
 
-    g = p.add_argument_group("fps (run 1)")
+    g = p.add_argument_group("fps")
     g.add_argument("--fps-players", type=int, default=64, metavar="N")
     g.add_argument("--fps-tick-rate", type=int, default=64, metavar="HZ")
     g.add_argument("--fps-duration", type=float, default=5.0, metavar="S")
-
-    g = p.add_argument_group("fps (run 2)")
-    g.add_argument("--fps2-players", type=int, default=128, metavar="N")
-    g.add_argument("--fps2-tick-rate", type=int, default=20, metavar="HZ")
 
     g = p.add_argument_group("burst")
     g.add_argument("--burst-count", type=int, default=10_000, metavar="N")
@@ -178,7 +174,7 @@ def main() -> None:
     step_counter: list[int] = [0, total_steps]
 
     # ── Run selected benchmarks ───────────────────────────────────────────────
-    mem = lat = fps64 = fps128 = burst = stress = None
+    mem = lat = fps = burst = stress = None
 
     if "memory" in run:
         from .benches.memory import run as run_memory
@@ -194,9 +190,9 @@ def main() -> None:
 
     if "fps" in run:
         from .benches.fps import run as run_fps
-        from .config import PORT_FPS_1, PORT_FPS_2
+        from .config import PORT_FPS
 
-        fps64 = _run_runs(
+        fps = _run_runs(
             run_fps,
             backends,
             args.runs,
@@ -205,18 +201,7 @@ def main() -> None:
             args.fps_players,
             args.fps_tick_rate,
             args.fps_duration,
-            PORT_FPS_1,
-        )
-        fps128 = _run_runs(
-            run_fps,
-            backends,
-            args.runs,
-            step_counter,
-            "fps",
-            args.fps2_players,
-            args.fps2_tick_rate,
-            args.fps_duration,
-            PORT_FPS_2,
+            PORT_FPS,
         )
 
     if "burst" in run:
@@ -246,8 +231,8 @@ def main() -> None:
         )
 
     # ── Summary + export ──────────────────────────────────────────────────────
-    print_summary(mem, lat, fps64, fps128, burst, stress)
+    print_summary(mem, lat, fps, burst, stress)
 
     if args.save:
-        data = build_json(mem, lat, fps64, fps128, burst, stress)
+        data = build_json(mem, lat, fps, burst, stress)
         save_json(data, args.save)
