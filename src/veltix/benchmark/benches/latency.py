@@ -27,6 +27,7 @@ from veltix import Client, ClientConfig, Server, ServerConfig, SocketCore
 from ..config import PORT_LATENCY
 from ..display import header, row
 from ..models import LatencyStats
+from ..utils import track, untrack
 
 _WARMUP = 20
 
@@ -62,6 +63,7 @@ def run(
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
 
     server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
+    track(server)
     server.start()
     time.sleep(0.3)
 
@@ -90,6 +92,7 @@ def run(
 
     client.disconnect()
     server.close_all()
+    untrack(server)
     time.sleep(0.3)
 
     # ── Jitter: stdev of consecutive deltas ───────────────────────────────────

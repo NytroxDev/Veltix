@@ -8,8 +8,9 @@ Shared low-level helpers used across benchmarks:
 
 from __future__ import annotations
 
+import contextlib
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import threading
@@ -42,6 +43,32 @@ def ram_kb() -> float:
 
 def ram_mb() -> float:
     return ram_kb() / 1_024
+
+
+# ── Live benchmark resources (interrupt-time cleanup) ─────────────────────────
+
+_live: list[Any] = []
+
+
+def track(server: Any) -> None:
+    """Register a live server so it is closed if the suite is interrupted."""
+    _live.append(server)
+
+
+def untrack(server: Any) -> None:
+    """Remove a server from the live set after it has been closed normally."""
+    if server in _live:
+        _live.remove(server)
+
+
+def cleanup() -> None:
+    """Force-close every tracked server (called on KeyboardInterrupt)."""
+    for obj in reversed(_live):
+        close = getattr(obj, "close_all", None)
+        if callable(close):
+            with contextlib.suppress(Exception):
+                close()
+    _live.clear()
 
 
 # ── Thread-safe helpers ───────────────────────────────────────────────────────

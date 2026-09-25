@@ -32,7 +32,7 @@ from veltix import Client, ClientConfig, Request, Server, ServerConfig, SocketCo
 from ..config import PLAYER_MOVE, PORT_STRESS
 from ..display import header, row
 from ..models import StressResult
-from ..utils import incr, ram_mb
+from ..utils import incr, ram_mb, track, untrack
 
 
 def run(
@@ -63,6 +63,7 @@ def run(
 
     server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
     server.on_recv(on_recv)
+    track(server)
     server.start()
     time.sleep(0.5)
 
@@ -165,6 +166,7 @@ def run(
     for c in clients:
         c.disconnect()
     server.close_all()
+    untrack(server)
     time.sleep(0.3)
 
     return StressResult(

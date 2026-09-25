@@ -164,6 +164,17 @@ def _run_runs(
 
 def main() -> None:
     try:
+        _main_impl()
+    except KeyboardInterrupt:
+        from .utils import cleanup
+
+        cleanup()
+        print("\n  Interrupted - cleaned up benchmark servers", file=sys.stderr)
+        sys.exit(130)
+
+
+def _main_impl() -> None:
+    try:
         import psutil  # type: ignore[import-untyped]
     except ImportError:
         print("psutil is required for benchmarks.\nInstall it with:  pip install veltix[benchmark]")

@@ -22,7 +22,7 @@ from veltix import Client, ClientConfig, Server, ServerConfig, SocketCore, forma
 from ..config import PORT_MEMORY
 from ..display import header, row
 from ..models import MemoryResult
-from ..utils import ram_kb
+from ..utils import ram_kb, track, untrack
 
 
 def _signed_delta(size_kb: float) -> str:
@@ -42,6 +42,7 @@ def run(port: int = PORT_MEMORY, socket_core: str = "async", step_label: str = "
     # ── Idle server ───────────────────────────────────────────────────────────
     _socket = SocketCore.THREADING if socket_core == "threading" else SocketCore.ASYNC
     server = Server(ServerConfig(host="127.0.0.1", port=port, socket_core=_socket))
+    track(server)
     server.start()
     time.sleep(0.3)
     gc.collect()
@@ -101,6 +102,7 @@ def run(port: int = PORT_MEMORY, socket_core: str = "async", step_label: str = "
     for c in clients:
         c.disconnect()
     server.close_all()
+    untrack(server)
     time.sleep(0.5)
     gc.collect()
 
