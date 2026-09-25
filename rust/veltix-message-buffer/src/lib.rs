@@ -11,7 +11,7 @@
 
 use std::fmt;
 
-use veltix_protocol::{parse, ProtocolError, HEADER_SIZE, MAGIC, SIZE_OFFSET};
+use veltix_protocol::{HEADER_SIZE, MAGIC, ProtocolError, SIZE_OFFSET, parse};
 
 /// Default hard cap on total buffer growth in bytes (mirrors the Python
 /// `MAX_BUFFER_SIZE` constant).
@@ -273,7 +273,7 @@ impl MessageBuffer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use veltix_protocol::{ProtocolError, DEFAULT_MAX_MESSAGE_SIZE};
+    use veltix_protocol::{DEFAULT_MAX_MESSAGE_SIZE, ProtocolError};
 
     /// Decode a frame from its hexadecimal representation.
     fn hex(s: &str) -> Vec<u8> {

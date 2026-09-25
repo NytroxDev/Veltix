@@ -23,7 +23,7 @@ jobs:
           workspaces: rust
 
       - name: cargo fmt
-        run: cargo fmt --manifest-path rust/Cargo.toml --check
+        run: cargo fmt --manifest-path rust/Cargo.toml --all --check
 
       - name: cargo clippy
         run: cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings

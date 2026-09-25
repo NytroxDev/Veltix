@@ -12,8 +12,8 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use veltix_message_buffer::{
-    AddDataOutcome, DropReason, ExtractItem, MessageBuffer as RustMessageBuffer,
-    DEFAULT_MAX_BUFFER_SIZE,
+    AddDataOutcome, DEFAULT_MAX_BUFFER_SIZE, DropReason, ExtractItem,
+    MessageBuffer as RustMessageBuffer,
 };
 use veltix_protocol::{compile as protocol_compile, parse as protocol_parse};
 
