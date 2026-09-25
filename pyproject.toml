@@ -84,11 +84,6 @@ addopts = [
     "--tb=short",
     "-n=auto",
 ]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-]
 
 # Coverage configuration
 [tool.coverage.run]
@@ -147,7 +142,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]  # Allow unused imports in __init__.py
-"tests/*" = ["S101"]  # Allow assert in tests
 
 [tool.ruff.lint.isort]
 known-first-party = ["veltix", "protocol_vectors"]
