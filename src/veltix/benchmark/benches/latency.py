@@ -19,6 +19,7 @@ Measures:
 
 from __future__ import annotations
 
+import statistics
 import time
 
 from veltix import Client, ClientConfig, Server, ServerConfig, SocketCore
@@ -94,8 +95,6 @@ def run(
     # ── Jitter: stdev of consecutive deltas ───────────────────────────────────
     if len(samples_raw) >= 2:
         deltas = [abs(samples_raw[i] - samples_raw[i - 1]) for i in range(1, len(samples_raw))]
-        import statistics
-
         jitter = statistics.stdev(deltas) if len(deltas) > 1 else 0.0
     else:
         jitter = 0.0

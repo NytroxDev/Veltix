@@ -87,7 +87,7 @@ def run(
     senders = [c.sender for c in clients]
     req_move = Request(PLAYER_MOVE, b"\x00" * 32)  # shared immutable request
 
-    def _blast(idx: int, c: Client) -> None:
+    def _blast(idx: int) -> None:
         t = time.perf_counter()
         s = senders[idx]
         for _ in range(msgs_per_client):
@@ -99,7 +99,7 @@ def run(
     t0 = time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=num_clients) as pool:
-        futures = [pool.submit(_blast, i, c) for i, c in enumerate(clients)]
+        futures = [pool.submit(_blast, i) for i in range(num_clients)]
         for f in futures:
             f.result()
 

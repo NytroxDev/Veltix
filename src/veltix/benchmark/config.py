@@ -17,9 +17,6 @@ WIDTH: int = 72
 # Message types
 PLAYER_MOVE = MessageType(401, "player_move")  # 32 B - position + rotation
 PLAYER_SHOOT = MessageType(402, "player_shoot")  # 16 B - bullet event
-GAME_STATE = MessageType(403, "game_state")  # 512 B - world snapshot
-PLAYER_JOIN = MessageType(404, "player_join")  # 64 B - join handshake
-CHAT_MSG = MessageType(405, "chat_msg")  # 128 B - chat packet
 
 # Ports (one per benchmark, never reused)
 PORT_MEMORY = 20_001

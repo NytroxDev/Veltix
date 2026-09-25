@@ -4,7 +4,7 @@ compare.py
 Side-by-side comparison of two saved benchmark JSON files.
 
 Usage:
-    python -m benchmark --compare results_a.json results_b.json
+    python -m veltix.benchmark --compare results_a.json results_b.json
 """
 
 from __future__ import annotations

@@ -137,7 +137,7 @@ def _run_runs(
 
 def main() -> None:
     try:
-        import psutil  # type: ignore[import-untyped]  # noqa: F401
+        import psutil  # type: ignore[import-untyped]
     except ImportError:
         print("psutil is required for benchmarks.\nInstall it with:  pip install veltix[benchmark]")
         sys.exit(1)
