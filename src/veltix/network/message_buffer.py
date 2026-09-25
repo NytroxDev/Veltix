@@ -38,6 +38,7 @@ class MessageBuffer:
         max_message_size: int = 10 * 1024 * 1024,
         max_buffer_size: int = MAX_BUFFER_SIZE,
         bus: VeltixBus | None = None,
+        use_rust: bool | None = None,
     ) -> None:
         """Initialise the message buffer.
 
@@ -45,11 +46,13 @@ class MessageBuffer:
             max_message_size: Maximum allowed size of a single message in bytes.
             max_buffer_size: Hard limit on total buffer growth in bytes.
             bus: Optional event bus for error and debug logging.
+            use_rust: Pin the protocol engine for this buffer. ``None``
+                (default) captures the process-wide engine at construction.
         """
         self._max_message_size = max_message_size
         self._max_buffer_size = max_buffer_size
         self._bus = bus
-        self._use_rust = _rust.rust_enabled()
+        self._use_rust = _rust.rust_enabled() if use_rust is None else use_rust
         self._engine: Any = (
             _rust.RustMessageBuffer(max_message_size, max_buffer_size)
             if self._use_rust
@@ -170,7 +173,7 @@ class MessageBuffer:
             message_data = bytes(buffer[:total_size])
 
             try:
-                response = MessageParser.parse(message_data)
+                response = MessageParser.parse(message_data, use_rust=self._use_rust)
                 del buffer[:total_size]
                 messages.append(response)
             except Exception as e:

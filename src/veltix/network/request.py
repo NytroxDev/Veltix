@@ -84,11 +84,15 @@ class Request:
         """
         self.request_id = response.request_id
 
-    def compile(self) -> bytes:
+    def compile(self, use_rust: bool | None = None) -> bytes:
         """Serialize the request into the Veltix wire format.
 
         Builds the protocol header, calculates the content integrity hash,
         and appends the raw payload.
+
+        Args:
+            use_rust: Pin the protocol engine for this call. ``None``
+                (default) uses the process-wide engine at call time.
 
         Raises:
             RequestError: If the payload exceeds the maximum supported size.
@@ -112,7 +116,8 @@ class Request:
                 f"got: {self.request_id!r}"
             )
 
-        if _rust.rust_enabled():
+        use_rust = _rust.rust_enabled() if use_rust is None else use_rust
+        if use_rust:
             return _rust.compile(
                 self.type.code,
                 self.content,

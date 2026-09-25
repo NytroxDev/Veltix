@@ -458,15 +458,34 @@ available; otherwise the pure-Python implementations are used transparently.
 ```python
 from veltix.network import _rust
 
-_rust.rust_enabled()          # -> bool - True when the native extension is loaded
+_rust.rust_enabled()          # -> bool - True when the native extension is active
 # Force the Python fallback for the process:  VELTIX_DISABLE_RUST=1
 ```
 
+Runtime switch (`veltix.enable_rust()` / `veltix.disable_rust()`, public since v3.0.0):
+
+```python
+from veltix import disable_rust, enable_rust
+
+disable_rust()   # all NEW initializations use the pure-Python engine
+enable_rust()    # re-enable the compiled engine (when installed)
+```
+
+- The engine is **captured at each (re)initialization**: `Server`/`Client` construction,
+  `Server.restart()` (`_init_components`), and `Client` reconnection (`init_components`).
+  Toggling the switch afterwards never changes an already-initialized instance.
+- `VELTIX_DISABLE_RUST` is a hard, process-wide off evaluated at `network._rust` import;
+  `enable_rust()` cannot override it. The runtime switch is a soft off that
+  `rust_enabled()` ANDs with the env decision.
 - The Python registry (`MessageTypeRegistry`) stays in Python - Rust does **wire validation only**.
 - Rust `parse` returns `(type_code, content, request_id, flags, hash)`; `compile` takes
   `(type_code, content, request_id, flags)`.
-- Backend selection is cached at module import; tests `importlib.reload()` `network._rust` to
-  switch engines. Key off `rust_enabled()` at call time, not import time.
+- `MessageBuffer` and `Request.compile()` accept an optional `use_rust: bool | None` to pin the
+  engine explicitly (`None` = capture the process-wide engine). `MessageParser.parse()` accepts
+  the same parameter.
+- Backend selection is cached at `network._rust` import (env var only); tests
+  `importlib.reload()` `network._rust` to re-evaluate the env decision. Key off
+  `rust_enabled()` at call time, not import time.
 
 ## Constraints
 
@@ -823,6 +842,22 @@ from veltix import SocketCore
 SocketCore.THREADING  # thread-per-client
 SocketCore.ASYNC  # selectors-based (default)
 # SocketCore.RUST    # planned v5.0.0
+```
+
+### Protocol Engine
+
+```python
+from veltix import enable_rust, disable_rust
+from veltix.network import _rust
+
+disable_rust()             # force the pure-Python engine
+enable_rust()              # re-enable the compiled Rust engine (when installed)
+_rust.rust_enabled()       # -> bool - current engine decision
+_rust.engine_name()        # -> "rust" | "python"
+
+# The engine is captured at each (re)initialization: Server/Client construction,
+# Server.restart(), Client reconnection. Already-built components keep their engine.
+# VELTIX_DISABLE_RUST=1 (env) is a hard process-wide off that enable_rust() cannot override.
 ```
 
 ### Disconnect System

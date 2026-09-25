@@ -22,6 +22,7 @@ from .internal.version import __version__
 from .logger.config import LoggerConfig
 from .logger.core import Logger
 from .logger.levels import LogLevel
+from .network._rust import disable_rust, enable_rust
 from .network.request import Request
 from .network.response import Response
 from .network.sender import Mode, Sender
@@ -54,6 +55,9 @@ __all__ = [
     "MessageType",
     # Socket
     "SocketCore",
+    # Protocol engine
+    "enable_rust",
+    "disable_rust",
     # System types
     "PING",
     "PONG",

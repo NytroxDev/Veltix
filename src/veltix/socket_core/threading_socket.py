@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import RecvResult, apply_tcp_tunings, dispatch_messages, recv
+from ..network import _rust
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
 from .base_socket import BaseSocket
@@ -30,12 +31,14 @@ class ThreadingSocket(BaseSocket):
         bus: VeltixBus,
         sock: socket.socket | None = None,
         handshake_timeout: float = 5.0,
+        use_rust: bool | None = None,
     ) -> None:
         self.bus = bus
         self.n_th = 0
         self._n_th_lock = threading.Lock()
+        self._use_rust: bool = _rust.rust_enabled() if use_rust is None else use_rust
 
-        self.client_manager = ClientsManager(max_message_size, bus=bus)
+        self.client_manager = ClientsManager(max_message_size, bus=bus, use_rust=self._use_rust)
 
         self.threads: dict[int, threading.Thread] = {}
         self._threads_lock = threading.Lock()
@@ -308,7 +311,9 @@ class ThreadingSocket(BaseSocket):
             return False
 
     def _handle_client(self, buffer_size: int, timeout: float) -> None:
-        message_buffer = MessageBuffer(max_message_size=self.max_message_size)
+        message_buffer = MessageBuffer(
+            max_message_size=self.max_message_size, use_rust=self._use_rust
+        )
 
         while self._running_event.is_set():
             result = recv(self, buffer_size)

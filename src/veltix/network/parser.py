@@ -27,6 +27,7 @@ class MessageParser:
     def parse(
         data: _BufferLike,
         max_message_size: int = 10 * 1024 * 1024,
+        use_rust: bool | None = None,
     ) -> Response:
         """Parse raw protocol data into a Response object.
 
@@ -35,6 +36,8 @@ class MessageParser:
                 Accepts bytes, bytearray, or memoryview. Using memoryview
                 avoids intermediate copies during parsing.
             max_message_size: Maximum accepted message size in bytes.
+            use_rust: Pin the protocol engine for this call. ``None``
+                (default) uses the process-wide engine at call time.
 
         Returns:
             The decoded Response object.
@@ -50,7 +53,8 @@ class MessageParser:
         if len(data) > max_message_size:
             raise RequestError(f"Message too large: {len(data)} bytes (maximum {max_message_size})")
 
-        if _rust.rust_enabled():
+        use_rust = _rust.rust_enabled() if use_rust is None else use_rust
+        if use_rust:
             return MessageParser._parse_rust(data, max_message_size)
 
         header = data[:HEADER_SIZE]

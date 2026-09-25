@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Union
 from ..exceptions import SenderError
 from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
+from . import _rust
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -36,6 +37,7 @@ class Sender:
         bus: VeltixBus | None = None,
         get_all_clients: Callable[[], Sequence[_ClientLike]] | None = None,
         id_allocator: IDAllocator | None = None,
+        use_rust: bool | None = None,
     ) -> None:
         """Initialize the sender with a mode and an optional connection.
 
@@ -45,9 +47,12 @@ class Sender:
             bus: Event bus instance.
             get_all_clients: Callable returning all connected client sockets (SERVER mode).
             id_allocator: ID allocator for auto-assigning request IDs.
+            use_rust: Pin the protocol engine for outgoing compilation.
+                ``None`` (default) captures the process-wide engine.
         """
         self.bus = bus
         self._id_allocator = id_allocator
+        self._use_rust: bool = _rust.rust_enabled() if use_rust is None else use_rust
 
         if isinstance(mode, str):
             mode = Mode(mode)
@@ -104,7 +109,7 @@ class Sender:
             data.request_id = self._id_allocator.allocate()
 
         try:
-            target.send(data.compile())
+            target.send(data.compile(use_rust=self._use_rust))
             self._emit(
                 MessageEvent.SENT,
                 {
@@ -166,7 +171,7 @@ class Sender:
 
         exclude = self._build_exclude_set(except_clients)
         try:
-            compiled = data.compile()
+            compiled = data.compile(use_rust=self._use_rust)
         except Exception as e:
             self._log_error(f"Unexpected broadcast error: {type(e).__name__}: {e}")
             return False

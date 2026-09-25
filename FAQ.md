@@ -82,7 +82,9 @@ features.
 Since v3.0.0, the message hot path (parsing, compilation, buffering) is compiled in Rust via PyO3
 and ships as a `cp311-abi3` extension inside the prebuilt wheels. It is used automatically when
 available; otherwise Veltix falls back to the pure-Python implementation transparently. Set
-`VELTIX_DISABLE_RUST=1` to force the fallback, or check `veltix.network._rust.rust_enabled()`.
+`VELTIX_DISABLE_RUST=1` to force the fallback, or call `veltix.disable_rust()` / `veltix.enable_rust()`
+at runtime (the switch is captured at each `Server`/`Client` initialization; `Server.restart()`
+re-captures it). Check `veltix.network._rust.rust_enabled()` for the current decision.
 It cuts P99 latency by **-41%**, jitter by **-68%**, and raises 100-client stress throughput by
 **+23%** - see [PERFORMANCE.md](PERFORMANCE.md).
 

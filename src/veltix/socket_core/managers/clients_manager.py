@@ -3,6 +3,7 @@ from __future__ import annotations
 from threading import Lock
 from typing import TYPE_CHECKING, Any
 
+from ...network import _rust
 from ...network.message_buffer import MessageBuffer
 
 if TYPE_CHECKING:
@@ -52,14 +53,22 @@ class ClientsManager:
         id_count: Counter for the next client ID to assign.
     """
 
-    def __init__(self, max_message_size: int | None = None, bus: VeltixBus | None = None):
+    def __init__(
+        self,
+        max_message_size: int | None = None,
+        bus: VeltixBus | None = None,
+        use_rust: bool | None = None,
+    ):
         """Initialise the ClientsManager.
 
         Args:
             max_message_size: Maximum message size in bytes (default 10 MB).
             bus: Optional event bus for structured logging.
+            use_rust: Pin the protocol engine for per-client buffers.
+                ``None`` (default) captures the process-wide engine.
         """
         self.max_message_size = max_message_size or (10 * 1024 * 1024)
+        self._use_rust: bool = _rust.rust_enabled() if use_rust is None else use_rust
         self.clients: dict[int, ClientEntry] = {}
         self._clients_lock = Lock()
         self.id_count = 0
@@ -79,7 +88,7 @@ class ClientsManager:
             self.clients[self.id_count] = ClientEntry(
                 id=self.id_count,
                 info=client_info,
-                buffer=MessageBuffer(self.max_message_size, bus=self._bus),
+                buffer=MessageBuffer(self.max_message_size, bus=self._bus, use_rust=self._use_rust),
             )
             return self.id_count
 

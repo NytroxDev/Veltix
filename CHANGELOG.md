@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extension when available, with transparent pure-Python fallback.
 - **`VELTIX_DISABLE_RUST`**: set to `1`, `true`, or `yes` to force the
   pure-Python fallback (e.g. for debugging or exotic platforms).
+- **Runtime engine switch**: `veltix.disable_rust()` / `veltix.enable_rust()`
+  toggles the engine in code. The engine is captured at each `Server`/`Client`
+  (re)initialization - construction, `Server.restart()`, client reconnection -
+  so already-initialized components keep the engine they were built with.
 - **Per-platform prebuilt wheels** in CI/publish: Linux x86_64 + aarch64
   (manylinux 2014), macOS x86_64 + arm64, Windows x86_64, plus sdist; `rc`
   tags publish to TestPyPI

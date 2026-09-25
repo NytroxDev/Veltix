@@ -11,6 +11,7 @@ from ..exceptions import ServerFullError
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ClientEvent, ErrorEvent
+from ..network import _rust
 from ..network.id_allocator import IDAllocator
 from ..network.request import Request
 from ..network.sender import Mode, Sender
@@ -69,6 +70,8 @@ class Client:
 
     def init_components(self) -> None:
         """(Re)initialise all internal components (socket, sender, handler)."""
+        use_rust = _rust.rust_enabled()
+
         old_handler = getattr(self, "request_handler", None)
         old_socket = getattr(self, "socket", None)
 
@@ -81,6 +84,7 @@ class Client:
             request_handler=None,
             max_message_size=self.config.max_message_size,
             bus=self.bus,
+            use_rust=use_rust,
         )
         self.socket.client = self
         self.socket.settimeout(self.config.handshake_timeout)
@@ -100,6 +104,7 @@ class Client:
             conn=self.socket,
             bus=self.bus,
             id_allocator=self._id_allocator,
+            use_rust=use_rust,
         )
         self.request_handler.sender = self._sender
 

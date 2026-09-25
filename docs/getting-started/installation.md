@@ -14,6 +14,9 @@ No toolchain is needed to install or run Veltix:
 - If the compiled `veltix._rust` extension is available, it is used automatically.
 - Otherwise (or with `VELTIX_DISABLE_RUST=1`), Veltix falls back to the pure-Python implementation
   transparently.
+- At runtime you can also switch in code: `veltix.disable_rust()` / `veltix.enable_rust()`. The
+  engine is captured when a `Server`/`Client` is (re)initialized, so the switch affects new
+  instances and `server.restart()`.
 
 ## Install from PyPI
 

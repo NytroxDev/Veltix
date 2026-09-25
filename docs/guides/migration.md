@@ -22,7 +22,9 @@ pure-Python implementation.
   instead of triggering buffer resynchronization. Direct `MessageParser.parse()` calls still
   raise `RequestError`.
 - The Rust engine is used automatically; set `VELTIX_DISABLE_RUST=1` to force the pure-Python
-  fallback (e.g. for debugging).
+  fallback (e.g. for debugging). For runtime control, `veltix.disable_rust()` /
+  `veltix.enable_rust()` switch the engine captured by each new `Server`/`Client`
+  initialization (`Server.restart()` re-captures it).
 
 ### Performance
 

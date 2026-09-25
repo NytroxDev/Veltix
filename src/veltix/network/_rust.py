@@ -3,11 +3,15 @@
 Loads the compiled ``veltix._rust`` extension when it is installed and not
 explicitly disabled, so the hot paths (framing, parsing, compiling) run in
 Rust. When the extension is unavailable - or ``VELTIX_DISABLE_RUST`` is set
-to a truthy value (``1``, ``true``, ``yes``) - the pure-Python
-implementations are used instead.
+to a truthy value (``1``, ``true``, ``yes``) - or :func:`disable_rust` has
+been called - the pure-Python implementations are used instead.
 
-The availability decision is taken once at module import time; change the
-environment variable and ``importlib.reload`` this module to re-evaluate.
+The ``VELTIX_DISABLE_RUST`` environment variable is evaluated once at module
+import time; change it and ``importlib.reload`` this module to re-evaluate.
+The runtime switch (:func:`disable_rust` / :func:`enable_rust`) takes effect
+on the next (re)initialization: components capture the engine they are built
+with, so ``Server``/``Client`` construction and ``Server.restart()`` decide
+for the whole lifetime of their network objects.
 """
 
 from __future__ import annotations
@@ -31,16 +35,40 @@ _EXTENSION_DISABLED: bool = os.environ.get("VELTIX_DISABLE_RUST", "").lower() in
     "true",
     "yes",
 )
+_API_DISABLED: bool = False
 
 
 def rust_enabled() -> bool:
     """Return True when the compiled Rust extension should be used.
 
     Returns:
-        True when the extension is installed and ``VELTIX_DISABLE_RUST`` is
-        not set to a truthy value.
+        True when the extension is installed, ``VELTIX_DISABLE_RUST`` is not
+        set to a truthy value, and the engine has not been disabled via
+        :func:`disable_rust`.
     """
-    return _EXTENSION_LOADED and not _EXTENSION_DISABLED
+    return _EXTENSION_LOADED and not _EXTENSION_DISABLED and not _API_DISABLED
+
+
+def disable_rust() -> None:
+    """Force the pure-Python engine for the whole process.
+
+    Call :func:`enable_rust` to re-enable the compiled engine. Already
+    initialized components keep the engine they were built with: the switch
+    only affects the next initialization (new ``Server``/``Client``,
+    ``Server.restart()``, ``Client`` reconnection).
+    """
+    global _API_DISABLED
+    _API_DISABLED = True
+
+
+def enable_rust() -> None:
+    """Re-enable the compiled Rust engine after :func:`disable_rust`.
+
+    No-op when the extension is not installed: :func:`rust_enabled` stays
+    False.
+    """
+    global _API_DISABLED
+    _API_DISABLED = False
 
 
 def engine_name() -> str:

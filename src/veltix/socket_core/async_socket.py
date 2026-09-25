@@ -17,6 +17,7 @@ from ..internal.network import (
 from ..internal.network import (
     recv as _network_recv,
 )
+from ..network import _rust
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
 from .base_socket import BaseSocket
@@ -40,9 +41,11 @@ class AsyncSocket(BaseSocket):
         sock: socket.socket | None = None,
         handshake_timeout: float = 5.0,
         nonblocking: bool = True,
+        use_rust: bool | None = None,
     ) -> None:
         self.bus = bus
-        self.client_manager = ClientsManager(max_message_size, bus=bus)
+        self._use_rust: bool = _rust.rust_enabled() if use_rust is None else use_rust
+        self.client_manager = ClientsManager(max_message_size, bus=bus, use_rust=self._use_rust)
 
         self.id_count = 0
 
@@ -60,7 +63,7 @@ class AsyncSocket(BaseSocket):
 
             self._selector = selectors.DefaultSelector()
 
-            self._client_buffer = MessageBuffer(max_message_size)
+            self._client_buffer = MessageBuffer(max_message_size, use_rust=self._use_rust)
 
             self.bus.debug("AsyncSocket initialized")
         else:
@@ -158,6 +161,7 @@ class AsyncSocket(BaseSocket):
             sock=conn,
             handshake_timeout=self.handshake_timeout,
             nonblocking=False,
+            use_rust=self._use_rust,
         )
         client = ClientInfo(
             client_sock,

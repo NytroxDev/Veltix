@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ServerEvent
+from ..network import _rust
 from ..network.id_allocator import IDAllocator
 from ..network.request import Request
 from ..network.sender import Mode, Sender
@@ -85,6 +86,8 @@ class Server:
 
     def _init_components(self) -> None:
         """(Re)create internal components (handler, sender, socket)."""
+        use_rust = _rust.rust_enabled()
+
         self.request_handler = RequestHandler(
             mode=Mode.SERVER,
             bus=self.bus,
@@ -101,6 +104,7 @@ class Server:
             bus=self.bus,
             get_all_clients=lambda: self.clients,
             id_allocator=self._id_allocator,
+            use_rust=use_rust,
         )
 
         self.request_handler.sender = self._sender
@@ -109,6 +113,7 @@ class Server:
             request_handler=self.request_handler,
             max_message_size=self.config.max_message_size,
             bus=self.bus,
+            use_rust=use_rust,
         )
         self.socket.handshake_timeout = self.config.handshake_timeout
 
