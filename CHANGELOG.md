@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Request-ID correlation is now direction-scoped.** Clients allocate IDs from
-  `[0, 32768)` and servers from `[32768, 65536)`, so an unsolicited push or
-  broadcast can never collide with a pending `send_and_wait()` in the opposite
-  direction. Before, both sides started at 0 and a push that arrived during an
+- **Request-ID correlation is direction-scoped again.** Clients allocate IDs
+  from `[0, 32768)` and servers from `[32768, 65536)`, restoring the
+  two-direction allocator design from `docs/design/request-id-correlation.md`
+  that had collapsed into a single flat space in the v3.0.0 pending-safe
+  refactor. Before, both sides started at 0 and a push that arrived during an
   RPC was frequently returned as the RPC response, corrupting the
   request/response path. `broadcast()` now allocates an ID instead of always
   sending 0
@@ -35,15 +36,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the fallback engine, a message above the hard-coded parser default but below
   the configured limit was silently dropped and the stream resynced
   ([205ba6a](https://github.com/NytroxDev/Veltix/commit/205ba6a)).
+- **Docs corrected**: the v3.0.0 RPC example replied with a fresh auto-ID
+  `Request(...)`, which matched the pending request only by ID coincidence. The
+  required form was always `Request(..., request_id=response.request_id)` or
+  `req.respond()` - the reply must carry the request's ID. Fire-and-forget
+  echoes via routes (no correlation) are unaffected
+  ([e91fd38](https://github.com/NytroxDev/Veltix/commit/e91fd38)).
 
 ### Changed
 
-- **A reply must echo the request's `request_id`.** With the direction-scoped
-  ID space, building a fresh auto-ID `Request(...)` as a reply no longer
-  correlates with the pending RPC. Use
-  `Request(..., request_id=response.request_id)` or `req.respond()`. Example
-  code and docs updated
-  ([e91fd38](https://github.com/NytroxDev/Veltix/commit/e91fd38)).
 - `ServerConfig.id_window` is capped to 32768 (the server half of the uint16 ID
   space is reserved for clients).
 
