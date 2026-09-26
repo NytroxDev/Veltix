@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0rc1] - 2026-09-26
+
+First release candidate of v3.0.0: published to TestPyPI to validate the per-platform
+wheels (Linux x86_64/aarch64, macOS x86_64/arm64, Windows x86_64) before the stable
+release. See [3.0.0] below for the full change list.
+
 ## [3.0.0] - 2026-09-24
 
 ### Breaking
