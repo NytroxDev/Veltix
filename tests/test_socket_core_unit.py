@@ -159,27 +159,52 @@ class TestAsyncSocketUnit:
         with patch.object(socket.socket, "sendall", side_effect=OSError("mock")):
             assert sock.send(b"data") is False
 
-    def test_send_blockingioerror_fallback(self, sock):
+    def test_send_blockingioerror_returns_false(self, sock):
+        """A full send buffer must fail fast without toggling blocking mode."""
         with (
+            patch.object(socket.socket, "setblocking", return_value=None) as setblocking,
             patch.object(
                 socket.socket,
                 "sendall",
                 side_effect=BlockingIOError("mock"),
             ),
-            patch.object(socket.socket, "setblocking", side_effect=OSError("mock")),
         ):
             assert sock.send(b"data") is False
+            setblocking.assert_not_called()
 
-    def test_send_blockingioerror_fallback_success(self, sock):
-        with (
-            patch.object(
-                socket.socket,
-                "sendall",
-                side_effect=[BlockingIOError("mock"), None],
-            ),
-            patch.object(socket.socket, "setblocking", return_value=None),
-        ):
-            assert sock.send(b"data") is True
+    def test_send_full_buffer_returns_false_and_stays_nonblocking(self):
+        """A full kernel send buffer returns False; the socket stays nonblocking.
+
+        Regression: the old code switched to a blocking sendall, which never
+        returned while the peer was not reading, freezing the selector loop.
+        """
+        from veltix.socket_core.async_socket import AsyncSocket
+
+        a, b = socket.socketpair()
+        try:
+            a.setblocking(False)
+            b.setblocking(False)
+            a.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
+            b.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
+
+            client = AsyncSocket(
+                request_handler=_make_handler(), max_message_size=1024, bus=_make_bus()
+            )
+            client._sock.close()
+            client._sock = a
+
+            # Fill the kernel send buffer until not even one byte fits.
+            for _ in range(4 * 1024 * 1024):
+                try:
+                    a.sendall(b"x")
+                except (BlockingIOError, ConnectionError):
+                    break
+
+            assert client.send(b"y" * 1024) is False
+            assert a.getblocking() is False
+        finally:
+            a.close()
+            b.close()
 
     def test_accept_client_rejects_and_closes_when_full(self, sock):
         from veltix.internal.events import ServerEvent

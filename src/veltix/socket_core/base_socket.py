@@ -47,15 +47,14 @@ class BaseSocket(ABC):
             self._sock.sendall(data)
             return True
         except BlockingIOError:
-            try:
-                self._sock.setblocking(True)
-                self._sock.sendall(data)
-                self._sock.setblocking(False)
-                return True
-            except Exception as e:
-                self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
-                self.bus.debug(f"send BlockingIOError fallback failed: {e}")
-                return False
+            # Non-blocking socket with a full kernel send buffer. Never fall
+            # back to a blocking send: on the ASYNC backend that would stall
+            # the selector loop (and with it the whole server) on a slow or
+            # stuck peer. Report the failure and let the caller decide
+            # (drop, queue, retry).
+            self.bus.emit(ErrorEvent.SEND, {"error": "send buffer full (BlockingIOError)"})
+            self.bus.warning("send blocked: peer not reading, message dropped")
+            return False
         except Exception as e:
             self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
             self.bus.error(f"send failed: {e}")
