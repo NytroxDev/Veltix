@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-09-26
+
+### Fixed
+
+- **Request-ID correlation is now direction-scoped.** Clients allocate IDs from
+  `[0, 32768)` and servers from `[32768, 65536)`, so an unsolicited push or
+  broadcast can never collide with a pending `send_and_wait()` in the opposite
+  direction. Before, both sides started at 0 and a push that arrived during an
+  RPC was frequently returned as the RPC response, corrupting the
+  request/response path. `broadcast()` now allocates an ID instead of always
+  sending 0
+  ([e91fd38](https://github.com/NytroxDev/Veltix/commit/e91fd38)).
+- **The ASYNC handshake no longer blocks the selector loop.** The blocking
+  handshake now runs in a worker thread; a peer that connects but never
+  completes its handshake used to freeze the whole server for
+  `handshake_timeout` seconds (remote DoS)
+  ([ffd0065](https://github.com/NytroxDev/Veltix/commit/ffd0065)).
+- **`send()` never blocks on a full socket buffer.** The blocking fallback on
+  `BlockingIOError` was removed - it could stall the selector thread (and the
+  whole server) indefinitely when a peer stopped reading. Sends now fail fast
+  with a warning
+  ([681843e](https://github.com/NytroxDev/Veltix/commit/681843e)).
+- **A server-full rejection no longer kills the reconnect loop.**
+  `ServerFullError` used to escape the retry loop when the server was at
+  capacity, silently leaving the client dead while `wait_until_closed()` hung
+  forever ([ff9ff98](https://github.com/NytroxDev/Veltix/commit/ff9ff98)).
+- **`max_message_size` is forwarded to the pure-Python message parser.** With
+  the fallback engine, a message above the hard-coded parser default but below
+  the configured limit was silently dropped and the stream resynced
+  ([205ba6a](https://github.com/NytroxDev/Veltix/commit/205ba6a)).
+
+### Changed
+
+- **A reply must echo the request's `request_id`.** With the direction-scoped
+  ID space, building a fresh auto-ID `Request(...)` as a reply no longer
+  correlates with the pending RPC. Use
+  `Request(..., request_id=response.request_id)` or `req.respond()`. Example
+  code and docs updated
+  ([e91fd38](https://github.com/NytroxDev/Veltix/commit/e91fd38)).
+- `ServerConfig.id_window` is capped to 32768 (the server half of the uint16 ID
+  space is reserved for clients).
+
 ## [3.0.0rc2] - 2026-09-26
 
 Second release candidate of v3.0.0. Superseded by the stable [3.0.0] release.
