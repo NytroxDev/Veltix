@@ -85,8 +85,8 @@ available; otherwise Veltix falls back to the pure-Python implementation transpa
 `VELTIX_DISABLE_RUST=1` to force the fallback, or call `veltix.disable_rust()` / `veltix.enable_rust()`
 at runtime (the switch is captured at each `Server`/`Client` initialization; `Server.restart()`
 re-captures it). Check `veltix.network._rust.rust_enabled()` for the current decision.
-It cuts P99 latency by **-41%**, jitter by **-68%**, and raises 100-client stress throughput by
-**+23%** - see [PERFORMANCE.md](PERFORMANCE.md).
+It cuts P99 latency by **-31%** and raises 100-client stress throughput by **+30%**, with **+20%**
+burst send throughput and **-49%** steadier FPS ticks - see [PERFORMANCE.md](PERFORMANCE.md).
 
 ## How do I debug connection issues with Veltix?
 

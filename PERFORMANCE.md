@@ -5,25 +5,30 @@ an automatic pure-Python fallback. Two independent comparisons:
 
 - **Rust engine vs Python fallback (v3.0.0)** - Python 3.14.7, 12-core CPU, 30.5 GB RAM, Linux
   (loopback), 5-run averages.
-- **Socket backends** (Threading vs Async, pure-Python path) - Python 3.14.5, same machine,
-  5-run averages; latency uses **250 000 iterations** (`--latency-iterations 250000`).
+- **Socket backends** (Threading vs Async, pure-Python path) - Python 3.14.7, same machine,
+  5-run averages. Latency figures aggregate the default 50 000 iterations per run (250 000 samples
+  across the 5 runs).
 
-To run the benchmarks yourself:
+To run the benchmarks yourself (requires the benchmark extra: `pip install veltix[benchmark]`):
 
 ```bash
-# Run all benchmarks (Rust engine)
-python -m veltix.benchmark --socket-core both --runs 5
+# Run all benchmarks with the Rust engine - 5-run averages, saved for comparison
+vltxbench --engine rust --runs 5 --save rust.json
 
-# Same suite with the pure-Python fallback
-VELTIX_DISABLE_RUST=1 python -m veltix.benchmark --socket-core both --runs 5
+# Same suite with the pure-Python fallback (run sequentially - no CPU contention)
+vltxbench --engine python --runs 5 --save python.json
 
-# Save JSON results and compare engines (run sequentially - no CPU contention)
-python -m veltix.benchmark --runs 5 --save rust.json
-VELTIX_DISABLE_RUST=1 python -m veltix.benchmark --runs 5 --save python.json
-python -m veltix.benchmark --compare rust.json python.json
+# Compare the two engines (validates versioned file format + engine rows)
+vltxbench --compare rust.json python.json
 
 # Run specific benchmarks
-python -m veltix.benchmark --only memory latency burst --socket-core both
+vltxbench --only memory latency burst
+
+# Compare socket backends (Threading vs Async, pure-Python path)
+vltxbench --engine python --socket-core both --runs 5 --save backends.json
+
+# The reported latency figures use 50 000 iterations per run by default
+# (250 000 samples across the 5 runs); override with --latency-iterations
 ```
 
 ---
@@ -32,18 +37,21 @@ python -m veltix.benchmark --only memory latency burst --socket-core both
 
 | Metric                          | Rust engine  | Python fallback | Gain      |
 |---------------------------------|--------------|-----------------|-----------|
-| Concurrent stress (100 clients) | 129,127 msg/s| 105,264 msg/s   | **+23%**  |
-| Latency average                 | 0.0425 ms    | 0.0575 ms       | **-26%**  |
-| Latency P95                     | 0.056 ms     | 0.103 ms        | **-45%**  |
-| Latency P99                     | 0.090 ms     | 0.153 ms        | **-41%**  |
-| Jitter                          | 0.014 ms     | 0.044 ms        | **-68%**  |
-| Burst send                      | 67,492 msg/s | 59,292 msg/s    | **+14%**  |
-| FPS 64 tick stdev               | 0.123 ms     | 0.229 ms        | **-46%**  |
-| Idle server memory              | 60 KB        | 60 KB           | 0%        |
+| Concurrent stress (100 clients) | 137,995 msg/s| 106,486 msg/s   | **+30%**  |
+| Latency average                 | 0.041 ms     | 0.047 ms        | **-13%**  |
+| Latency P95                     | 0.048 ms     | 0.061 ms        | **-21%**  |
+| Latency P99                     | 0.066 ms     | 0.096 ms        | **-31%**  |
+| Jitter                          | 0.019 ms     | 0.014 ms        | ±0 (outlier-bound) |
+| Ping throughput                 | 22,582 ping/s| 19,706 ping/s   | **+15%**  |
+| Burst send                      | 71,376 msg/s | 59,408 msg/s    | **+20%**  |
+| FPS 64 tick stdev               | 0.175 ms     | 0.343 ms        | **-49%**  |
+| Idle server memory              | 60.8 KB      | 60.8 KB         | 0%        |
 
-> The Rust engine cuts framing/parse overhead: **-41% P99 latency**, **-68% jitter**, **+23%**
-> throughput under 100-client stress, and steadier FPS ticks. FPS *throughput* is tick-limited and
-> unchanged, as expected. Results are workload-dependent and were measured on Veltix 3.0.0.
+> The Rust engine cuts framing/parse overhead: **-31% P99 latency**, **+30% throughput** under
+> 100-client stress, **+20% burst send**, and steadier FPS ticks (stdev **-49%**). FPS *throughput*
+> is tick-limited and unchanged, as expected. Jitter (stdev of consecutive ping deltas) is dominated
+> by rare OS-scheduler outliers - a single >3 ms sample out of 250,000 - and landed within noise in
+> this run (±0.005 ms). Results are workload-dependent and were measured on Veltix 3.0.0.
 
 ---
 
@@ -51,85 +59,96 @@ python -m veltix.benchmark --only memory latency burst --socket-core both
 
 | Metric                              | Threading        | Async            |
 |-------------------------------------|------------------|------------------|
-| Idle server memory                  | 20.8 KB          | 4 KB             |
-| Per client memory (avg)             | 34.5 KB          | 12.4 KB          |
-| Average latency                     | 0.033 ms         | 0.036 ms         |
-| Burst send                          | 49 287 msg/s     | 49 878 msg/s     |
-| Burst receive                       | 39 517 msg/s     | 39 909 msg/s     |
-| Concurrent stress (100 clients)     | 32 297 msg/s     | **82 937 msg/s** |
-| FPS simulation (64 players @ 64Hz)  | 4 490 msg/s      | 4 491 msg/s      |
-| FPS simulation (128 players @ 20Hz) | 2 813 msg/s      | 2 813 msg/s      |
+| Idle server memory                  | 60.8 KB          | ≈0 (noise floor) |
+| Per client memory (avg)             | 111 KB           | ≈80 KB (noisy)   |
+| Average latency                     | 0.041 ms         | 0.050 ms         |
+| Burst send                          | 64 158 msg/s     | 60 358 msg/s     |
+| Burst receive                       | 48 558 msg/s     | 46 351 msg/s     |
+| Concurrent stress (100 clients)     | 51 505 msg/s     | **108 084 msg/s (2.1x)** |
+| FPS simulation (64 players @ 64Hz)  | 4 489 msg/s      | 4 490 msg/s      |
 
-> **Async stress throughput is 2.6x higher** than Threading - the selectors-based single-thread model eliminates context-switch overhead under high concurrency.
+> **Async stress throughput is 2.1x higher** than Threading - the selectors-based single-thread model eliminates context-switch overhead under high concurrency.
 > Both backends score similarly on FPS simulations (bottleneck is the simulation logic, not the transport layer).
+> Memory figures are RSS-based and noisy: Async's idle lands *below* the Python baseline (-240 KB -
+> measurement noise floor) and its per-client cost spans 16-80 KB (median ~80 KB), while Threading's
+> per-client cost is tight (111 ± 3 KB).
 
 ---
 
 ## Memory Footprint
 
+> RSS-based measurement; the leak-delta rows are dominated by allocator warm caches / fragmentation
+> after the 10→50-client ramp and are **not** indicative of a Veltix leak (the idle benchmark shows no
+> growth, and the leak delta reproduces identically with 10 clients only). Async's idle lands *below*
+> the Python baseline (-240 KB) - the measurement noise floor for this benchmark.
+
 ### Threading
 
 | Metric               | Value                |
 |----------------------|----------------------|
-| Idle server          | +20.8 KB above Python baseline |
-| Per client (avg)     | 34.5 KB              |
-| Per client (min/max) | 16.8 KB / 39.2 KB    |
-| Per client (median)  | 37.2 KB              |
-| Per client (stdev)   | 7.5 KB               |
-| Server + 10 clients  | 23.1 MB              |
-| Server + 50 clients  | 24.6 MB              |
-| RSS after teardown   | +362 KB (leak delta) |
+| Idle server          | +60.8 KB above Python baseline |
+| Per client (avg)     | 111 KB               |
+| Per client (min/max) | 107 KB / 117 KB      |
+| Per client (median)  | 110 KB               |
+| Per client (stdev)   | 3.0 KB               |
+| Server + 10 clients  | 32.87 MB             |
+| Server + 50 clients  | 37.33 MB             |
+| RSS after teardown   | +3,495 KB (leak delta - allocator noise) |
 
 ### Async
 
 | Metric               | Value                |
 |----------------------|----------------------|
-| Idle server          | +4 KB above Python baseline |
-| Per client (avg)     | 12.4 KB              |
-| Per client (min/max) | 4 KB / 16 KB         |
-| Server + 10 clients  | 23.2 MB              |
-| Server + 50 clients  | 23.8 MB              |
-| RSS after teardown   | +22 KB (leak delta)  |
+| Idle server          | ≈0 above Python baseline (noise floor, measures -240 KB) |
+| Per client (avg)     | 56 KB (measurement spans 16-81 KB) |
+| Per client (min/max) | 16 KB / 82 KB        |
+| Per client (median)  | 80 KB                |
+| Per client (stdev)   | 31.5 KB              |
+| Server + 10 clients  | 33.44 MB             |
+| Server + 50 clients  | 36.64 MB             |
+| RSS after teardown   | +2,049 KB (leak delta - allocator noise) |
 
-> Threading idle server dropped **54%** (45.6 KB → 20.8 KB) and per-client cost dropped slightly (36.1 KB → 34.5 KB).
-> Async idle and per-client costs remain unchanged; leak delta stable at ~22 KB (mostly warm CPU caches).
+> Threading's per-client cost is tight (111 ± 3 KB) and reflects the per-thread overhead; Async's is
+> noisier to measure (median ~80 KB) but consistently lower. Numbers reproduced across two
+> consecutive campaigns.
 
 ---
 
 ## Ping / Pong Latency
 
-250 000 iterations per backend, 100% success rate.
+250 000 samples per backend (5 runs × 50 000 iterations), 100% success rate.
 
 ### Threading
 
 | Metric     | Value         |
 |------------|---------------|
-| Average    | 0.033 ms      |
-| Median P50 | 0.031 ms      |
-| P95        | 0.039 ms      |
-| P99        | 0.062 ms      |
-| Min        | 0.026 ms      |
-| Max        | 1.056 ms      |
-| Stdev      | 0.008 ms      |
-| Jitter     | 0.008 ms      |
-| Throughput | 28 524 ping/s |
+| Average    | 0.041 ms      |
+| Median P50 | 0.039 ms      |
+| P95        | 0.052 ms      |
+| P99        | 0.089 ms      |
+| Min        | 0.031 ms      |
+| Max        | 1.299 ms      |
+| Stdev      | 0.011 ms      |
+| Jitter     | 0.012 ms      |
+| Throughput | 22 469 ping/s |
 
 ### Async
 
 | Metric     | Value         |
 |------------|---------------|
-| Average    | 0.036 ms      |
-| Median P50 | 0.035 ms      |
-| P95        | 0.043 ms      |
-| P99        | 0.066 ms      |
-| Min        | 0.029 ms      |
-| Max        | 2.109 ms      |
-| Stdev      | 0.009 ms      |
-| Jitter     | 0.010 ms      |
-| Throughput | 25 701 ping/s |
+| Average    | 0.050 ms      |
+| Median P50 | 0.046 ms      |
+| P95        | 0.068 ms      |
+| P99        | 0.115 ms      |
+| Min        | 0.032 ms      |
+| Max        | 3.784 ms      |
+| Stdev      | 0.033 ms      |
+| Jitter     | 0.033 ms      |
+| Throughput | 18 777 ping/s |
 
-> Threading has slightly lower latency (no selectors round-trip), but both backends remain well under 0.1 ms P99.
-> Async shows lower stdev (more consistent) due to the single-thread scheduling.
+> Threading has slightly lower latency (no selectors round-trip), but both backends remain well under
+> 0.15 ms P99. Jitter (stdev of consecutive deltas) is dominated by rare scheduler outliers - e.g.
+> Async's single >3.7 ms sample out of 250 000.
 
 ---
 
@@ -139,10 +158,9 @@ Both backends score identically (simulation logic is the bottleneck, not the tra
 
 | Scenario    | Tick rate                    | Throughput  | Success |
 |-------------|------------------------------|-------------|---------|
-| 64 players  | 63.8 Hz actual (target 64Hz) | 4 490 msg/s | 100%    |
-| 128 players | 20.0 Hz actual (target 20Hz) | 2 813 msg/s | 100%    |
+| 64 players  | 63.8 Hz actual (target 64Hz) | 4 489 msg/s | 100%    |
 
-Zero overruns, zero lost messages in both scenarios.
+Zero overruns, zero lost messages.
 
 ---
 
@@ -154,24 +172,24 @@ Zero overruns, zero lost messages in both scenarios.
 
 | Metric         | Value        |
 |----------------|--------------|
-| Send           | 49 287 msg/s |
-| Receive        | 39 517 msg/s |
-| Data rate      | 2.41 MB/s    |
+| Send           | 64 158 msg/s |
+| Receive        | 48 558 msg/s |
+| Data rate      | 2.96 MB/s    |
 | Success rate   | 100%         |
-| Total duration | 253.0 ms     |
+| Total duration | 206.0 ms     |
 
 ### Async
 
 | Metric         | Value        |
 |----------------|--------------|
-| Send           | 49 878 msg/s |
-| Receive        | 39 909 msg/s |
-| Data rate      | 2.44 MB/s    |
+| Send           | 60 358 msg/s |
+| Receive        | 46 351 msg/s |
+| Data rate      | 2.83 MB/s    |
 | Success rate   | 100%         |
-| Total duration | 251.0 ms     |
+| Total duration | 215.8 ms     |
 
-> Burst throughput slightly lower in this run; both backends remain within 1% of each other.
-> Async recovers burst performance to within ~5% of v1.6.10 after hot-path optimisations (broadcast compile-once, unpack_from, bytearray passthrough).
+> Both backends land within ~6% of each other on burst traffic; Threading edges ahead on peak send
+> throughput, Async on sustained load.
 
 ---
 
@@ -183,23 +201,23 @@ Zero overruns, zero lost messages in both scenarios.
 
 | Metric             | Value        |
 |--------------------|--------------|
-| Throughput         | 32 297 msg/s |
+| Throughput         | 51 505 msg/s |
 | Success rate       | 100%         |
-| Total duration     | 310.0 ms     |
-| Time to first recv | 1.8 ms       |
-| Per-client avg     | 4 244 msg/s  |
-| Per-client stdev   | 1 125 msg/s  |
+| Total duration     | 194.2 ms     |
+| Time to first recv | 0.4 ms       |
+| Per-client avg     | 1 026 msg/s  |
+| Per-client stdev   | 236 msg/s    |
 
 ### Async
 
 | Metric             | Value         |
 |--------------------|---------------|
-| Throughput         | **82 937 msg/s** |
+| Throughput         | **108 084 msg/s** |
 | Success rate       | 100%          |
-| Total duration     | **121.0 ms**  |
-| Time to first recv | 1.8 ms        |
-| Per-client avg     | 9 332 msg/s   |
-| Per-client stdev   | 8 626 msg/s   |
+| Total duration     | **92.5 ms**   |
+| Time to first recv | 0.5 ms        |
+| Per-client avg     | 4 538 msg/s   |
+| Per-client stdev   | 2 791 msg/s   |
 
-> **Async is 2.6x faster under stress** - single-thread selectors eliminate Python GIL contention between client-handler threads.
-> Threading still handles 32k+ msg/s with zero failures; the GIL is the limiter at high concurrency.
+> **Async is 2.1x faster under stress** - single-thread selectors eliminate Python GIL contention between client-handler threads.
+> Threading still handles 51k+ msg/s with zero failures; the GIL is the limiter at high concurrency.

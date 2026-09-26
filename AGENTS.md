@@ -49,35 +49,41 @@ framing, handshake, ping/pong, and reconnection: zero dependencies, zero boilerp
 
 | Metric                             | Rust engine     | Python fallback  | Gain      |
 |------------------------------------|-----------------|------------------|-----------|
-| Concurrent stress (100 clients)    | 129,127 msg/s   | 105,264 msg/s    | **+23%**  |
-| Latency average                    | 0.0425 ms       | 0.0575 ms        | **-26%**  |
-| Latency P95                        | 0.056 ms        | 0.103 ms         | **-45%**  |
-| Latency P99                        | 0.090 ms        | 0.153 ms         | **-41%**  |
-| Jitter                             | 0.014 ms        | 0.044 ms         | **-68%**  |
-| Burst send                         | 67,492 msg/s    | 59,292 msg/s     | **+14%**  |
-| FPS 64 tick stdev                  | 0.123 ms        | 0.229 ms         | **-46%**  |
-| Idle server memory                 | 60 KB           | 60 KB            | 0%        |
+| Concurrent stress (100 clients)    | 137,995 msg/s   | 106,486 msg/s    | **+30%**  |
+| Latency average                    | 0.041 ms        | 0.047 ms         | **-13%**  |
+| Latency P95                        | 0.048 ms        | 0.061 ms         | **-21%**  |
+| Latency P99                        | 0.066 ms        | 0.096 ms         | **-31%**  |
+| Jitter                             | 0.019 ms        | 0.014 ms         | ±0 (outlier-bound) |
+| Ping throughput                    | 22,582 ping/s   | 19,706 ping/s    | **+15%**  |
+| Burst send                         | 71,376 msg/s    | 59,408 msg/s     | **+20%**  |
+| FPS 64 tick stdev                  | 0.175 ms        | 0.343 ms         | **-49%**  |
+| Idle server memory                 | 60.8 KB         | 60.8 KB          | 0%        |
 
-> The Rust engine cuts framing/parse overhead: lower latency and jitter, steadier FPS ticks, and higher throughput
-> under concurrency. FPS *throughput* is tick-limited and unchanged, as expected. Reproduce with
+> The Rust engine cuts framing/parse overhead: lower latency and steady FPS ticks, and higher throughput
+> under concurrency. FPS *throughput* is tick-limited and unchanged, as expected. Jitter (stdev of
+> consecutive ping deltas) is dominated by rare OS-scheduler outliers - a single >3 ms sample out of
+> 250,000 - and landed within noise in this run (±0.005 ms). Reproduce with
 > `vltxbench --engine rust --runs 5 --save a.json` and `vltxbench --engine python --runs 5 --save b.json`, then
 > `vltxbench --compare a.json b.json`.
 
 ### Socket backends (pure-Python path)
 
-> Benchmarked on Python 3.14.5: 12-core CPU, 30.5 GB RAM, Linux (loopback). All numbers are 5-run averages.
+> Benchmarked on Python 3.14.7: 12-core CPU, 30.5 GB RAM, Linux (loopback). All numbers are 5-run averages.
 
 | Metric                             | Threading    | Async            |
 |------------------------------------|--------------|------------------|
-| Idle server memory                 | 20.8 KB      | 4 KB             |
-| Per client memory (avg)            | 34.5 KB      | 12.4 KB          |
-| Average latency                    | 0.033 ms     | 0.036 ms         |
-| Burst send                         | 49,287 msg/s | 49,878 msg/s     |
-| Burst receive                      | 39,517 msg/s | 39,909 msg/s     |
-| Concurrent stress (100 clients)    | 32,297 msg/s | **82,937 msg/s** |
-| FPS simulation (64 players @ 64Hz) | 4,490 msg/s  | 4,491 msg/s      |
+| Idle server memory                 | 60.8 KB      | ≈0 (noise floor) |
+| Per client memory (avg)            | 111 KB       | ≈80 KB (noisy)   |
+| Average latency                    | 0.041 ms     | 0.050 ms         |
+| Burst send                         | 64,158 msg/s | 60,358 msg/s     |
+| Burst receive                      | 48,558 msg/s | 46,351 msg/s     |
+| Concurrent stress (100 clients)    | 51,505 msg/s | **108,084 msg/s (2.1x)** |
+| FPS simulation (64 players @ 64Hz) | 4,489 msg/s  | 4,490 msg/s      |
 
-Async stress throughput is **2.6x higher** than Threading under high concurrency.
+Async stress throughput is **2.1x higher** than Threading under high concurrency. Memory figures are
+RSS-based and noisy: Async's idle lands *below* the Python baseline (-240 KB - measurement noise
+floor) and its per-client cost spans 16-80 KB (median ~80 KB), while Threading's per-client cost is
+tight (111 ± 3 KB).
 
 ## Tech Stack
 

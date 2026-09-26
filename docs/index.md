@@ -12,7 +12,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.
 
-**Mature & tested** : 615 tests · CI on Python 3.11-3.14 · v3.0.0 Rust-powered hot path
+**Mature & tested** : 638 tests · CI on Python 3.11-3.14 · v3.0.0 Rust-powered hot path
 
 ---
 
@@ -112,7 +112,7 @@ No manual framing. No thread management. No boilerplate.
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 615 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)
+- 638 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)
 
 ---
 
@@ -122,19 +122,19 @@ No manual framing. No thread management. No boilerplate.
 
 | Metric                          | Rust engine    | Python fallback | Gain      |
 |---------------------------------|----------------|-----------------|-----------|
-| Concurrent stress (100 clients) | 129,127 msg/s  | 105,264 msg/s   | **+23%**  |
-| Latency P99                     | 0.090 ms       | 0.153 ms        | **-41%**  |
-| Jitter                          | 0.014 ms       | 0.044 ms        | **-68%**  |
-| Burst send                      | 67,492 msg/s   | 59,292 msg/s    | **+14%**  |
+| Concurrent stress (100 clients) | 137,995 msg/s  | 106,486 msg/s   | **+30%**  |
+| Latency P99                     | 0.066 ms       | 0.096 ms        | **-31%**  |
+| FPS 64 tick stdev               | 0.175 ms       | 0.343 ms        | **-49%**  |
+| Burst send                      | 71,376 msg/s   | 59,408 msg/s    | **+20%**  |
 
-Socket backends, pure-Python path (Python 3.14.5, 12-core CPU, 30.5 GB RAM, loopback):
+Socket backends, pure-Python path (Python 3.14.7, 12-core CPU, 30.5 GB RAM, loopback):
 
 | Metric                          | Threading       | Async           |
 |---------------------------------|-----------------|-----------------|
-| Concurrent stress (100 clients) | 32,297 msg/s    | **82,937 msg/s**|
-| Burst send                      | 49,287 msg/s    | 49,878 msg/s    |
-| Average latency                 | 0.033 ms        | 0.036 ms        |
-| Idle server memory              | 20.8 KB         | 4 KB            |
+| Concurrent stress (100 clients) | 51,505 msg/s    | **108,084 msg/s (2.1x)** |
+| Burst send                      | 64,158 msg/s    | 60,358 msg/s    |
+| Average latency                 | 0.041 ms        | 0.050 ms        |
+| Idle server memory              | 60.8 KB         | ≈0 (noise floor) |
 
 Full details : [Performance](../PERFORMANCE.md)
 
