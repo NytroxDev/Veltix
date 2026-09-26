@@ -232,3 +232,34 @@ class TestMessageBuffer:
 
         assert len(messages) == 1
         assert messages[0].content == b""
+
+    def test_oversize_above_parser_default_python(self, test_message_type):
+        """A message above the 10MB parser default must not be dropped.
+
+        Regression: the Python engine resynced (and lost) any message
+        between the parser's hard-coded 10MB default and the configured
+        ``max_message_size`` because the limit was not forwarded.
+        """
+        buf = MessageBuffer(max_message_size=11 * 1024 * 1024, use_rust=False)
+        content = b"X" * (10 * 1024 * 1024 + 1024)
+        request = Request(test_message_type, content)
+        compiled = request.compile(use_rust=False)
+
+        buf.add_data(compiled)
+        messages = buf.extract_messages()
+
+        assert len(messages) == 1
+        assert messages[0].content == content
+
+    def test_oversize_above_parser_default(self, test_message_type):
+        """Same as above with the default engine (Rust path parity)."""
+        buf = MessageBuffer(max_message_size=11 * 1024 * 1024)
+        content = b"X" * (10 * 1024 * 1024 + 1024)
+        request = Request(test_message_type, content)
+        compiled = request.compile()
+
+        buf.add_data(compiled)
+        messages = buf.extract_messages()
+
+        assert len(messages) == 1
+        assert messages[0].content == content

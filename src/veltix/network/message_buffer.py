@@ -173,7 +173,11 @@ class MessageBuffer:
             message_data = bytes(buffer[:total_size])
 
             try:
-                response = MessageParser.parse(message_data, use_rust=self._use_rust)
+                response = MessageParser.parse(
+                    message_data,
+                    max_message_size=self._max_message_size,
+                    use_rust=self._use_rust,
+                )
                 del buffer[:total_size]
                 messages.append(response)
             except Exception as e:
