@@ -172,4 +172,8 @@ strict_optional = true
 python-source = "src"
 module-name = "veltix._rust"
 manifest-path = "rust/veltix-bindings/Cargo.toml"
+# Ensure LICENSE lands in the sdist: maturin emits License-File: LICENSE in the
+# core metadata, and PyPI/TestPyPI reject a distribution that declares the file
+# but does not ship it (wheels get it via dist-info/licenses automatically).
+include = ["LICENSE"]
 
