@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import queue
 import selectors
 import socket
 import threading
@@ -63,6 +64,10 @@ class AsyncSocket(BaseSocket):
 
             self._selector = selectors.DefaultSelector()
 
+            # Completed (or failed) handshakes are posted here by worker
+            # threads and drained by the selector loop.
+            self._handshake_queue: queue.Queue[tuple[str, int]] = queue.Queue()
+
             self._client_buffer = MessageBuffer(max_message_size, use_rust=self._use_rust)
 
             self.bus.debug("AsyncSocket initialized")
@@ -98,6 +103,7 @@ class AsyncSocket(BaseSocket):
 
     def _selector_loop(self, max_client: int, buffer_size: int) -> None:
         while self._running_event.is_set():
+            self._drain_handshake_queue(max_client)
             events = self._selector.select(0.5)
 
             for key, _ in events:
@@ -171,33 +177,78 @@ class AsyncSocket(BaseSocket):
             bus=self.bus,
         )
         client_id = self.client_manager.add_client(client)
+        self.id_count += 1
 
+        # The blocking handshake runs in a worker thread: a peer that connects
+        # but never completes its handshake must not stall the selector loop
+        # (remote DoS). The worker posts the outcome to a queue that the
+        # selector thread drains, because only it may touch the selector.
+        threading.Thread(
+            target=self._handshake_worker,
+            args=(client_id, conn, addr),
+            daemon=True,
+            name=f"veltix-handshake-{client_id}",
+        ).start()
+
+    def _handshake_worker(self, client_id: int, conn: socket.socket, addr: tuple[str, int]) -> None:
+        """Run the blocking handshake off the selector thread.
+
+        Args:
+            client_id: Manager ID of the accepted client.
+            conn: Raw accepted socket (owned by this thread until done).
+            addr: ``(host, port)`` of the peer.
+        """
         ok = self.request_handler.handshake_handler.do_server_handshake(
-            conn, timeout=client_sock.handshake_timeout
+            conn, timeout=self.handshake_timeout
         )
         if not ok:
             self.bus.warning(f"Handshake failed for {addr}")
-            entry = self.client_manager.get_client(client_id)
-            if entry:
-                self._close_server_client(entry)
-            else:
-                client_sock._shutdown_socket()
-                with contextlib.suppress(OSError):
-                    conn.close()
+            self._handshake_queue.put(("fail", client_id))
             return
 
-        client.handshake_done = True
-        conn.setblocking(False)
-        self._selector.register(client_sock, selectors.EVENT_READ, data=client_id)
-        self.id_count += 1
-        self.bus.info(
-            f"New client connected: {addr} (total: {self.client_manager.count()}/{max_client})"
-        )
+        entry = self.client_manager.get_client(client_id)
+        if entry is None:
+            # Server shut down while the handshake was in flight.
+            with contextlib.suppress(OSError):
+                conn.close()
+            return
 
-        try:
-            self.bus.emit(ServerEvent.ON_CONNECT, client)
-        except Exception as e:
-            self.bus.error(f"ServerEvent.ON_CONNECT error for {addr}: {type(e).__name__}: {e}")
+        entry.info.handshake_done = True
+        with contextlib.suppress(OSError):
+            conn.setblocking(False)
+        self._handshake_queue.put(("ok", client_id))
+
+    def _drain_handshake_queue(self, max_client: int) -> None:
+        """Register (or clean up) clients whose handshake finished in a worker.
+
+        Args:
+            max_client: Maximum connection count, for logging only.
+        """
+        while True:
+            try:
+                kind, client_id = self._handshake_queue.get_nowait()
+            except queue.Empty:
+                break
+
+            entry = self.client_manager.get_client(client_id)
+            if entry is None:
+                continue
+
+            if kind == "ok":
+                self._selector.register(entry.info.conn, selectors.EVENT_READ, data=client_id)
+                self.bus.info(
+                    f"New client connected: {entry.info.addr} "
+                    f"(total: {self.client_manager.count()}/{max_client})"
+                )
+                try:
+                    self.bus.emit(ServerEvent.ON_CONNECT, entry.info)
+                except Exception as e:
+                    self.bus.error(
+                        f"ServerEvent.ON_CONNECT error for {entry.info.addr}: "
+                        f"{type(e).__name__}: {e}"
+                    )
+            else:
+                self._close_server_client(entry)
 
     def _handle_server_client(self, client_id: int, buffer_size: int) -> None:
         entry = self.client_manager.get_client(client_id)
