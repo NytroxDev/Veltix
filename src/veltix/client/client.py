@@ -306,6 +306,10 @@ class Client:
                 f"Server rejected connection: server full "
                 f"({self.config.server_addr}:{self.config.port})"
             )
+            if _from_retry:
+                # The reconnect loop reports the failed attempt and fires its
+                # own on_disconnect. Raising would escape and kill the loop.
+                return False
             self.bus.emit(
                 ClientEvent.ON_DISCONNECT,
                 DisconnectState(

@@ -122,7 +122,18 @@ class ReconnectHandler:
                 )
 
             self.reset()
-            if self._context._context_connect():
+            try:
+                connected = self._context._context_connect()
+            except Exception as e:
+                # Any exception from a connect attempt (ServerFullError
+                # included) is a failed attempt, never a reason to kill the
+                # retry loop.
+                if self.bus:
+                    self.bus.error(
+                        f"Reconnection attempt {attempt} failed: {type(e).__name__}: {e}"
+                    )
+                connected = False
+            if connected:
                 with self._state_lock:
                     if self._stop_retry_flag:
                         if self.bus:

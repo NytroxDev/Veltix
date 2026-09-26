@@ -7,6 +7,7 @@ import time
 import pytest
 
 from veltix import Client, ClientConfig, Server, ServerConfig
+from veltix.exceptions import ServerFullError
 
 
 def find_free_port() -> int:
@@ -225,3 +226,63 @@ class TestAutoReconnect:
 
         client.disconnect()
         server2.close_all()
+
+
+class _ServerFullContext:
+    """Fake client context whose connect attempt always raises ServerFullError."""
+
+    def __init__(self):
+        self.config = ClientConfig(server_addr="127.0.0.1", port=0, retry=3, retry_delay=0.01)
+        self.states = []
+        self.running_values = []
+
+    def _context_connect(self):
+        raise ServerFullError("server_full")
+
+    def _context_on_disconnect(self, state):
+        self.states.append(state)
+
+    def _context_init(self):
+        pass
+
+    def _context_set_running(self, value):
+        self.running_values.append(value)
+
+    def _context_set_connected(self, value):
+        pass
+
+    def _context_get_request_handler(self):
+        return None
+
+    def _context_get_on_recv(self):
+        return None
+
+    def _context_get_socket(self):
+        return None
+
+
+class TestServerFullDuringRetry:
+    """A server-full rejection must not kill the reconnect loop (regression)."""
+
+    def test_reconnect_loop_survives_server_full(self):
+        from veltix import DisconnectReason
+        from veltix.client.reconnect_handler import ReconnectHandler
+        from veltix.internal.bus import VeltixBus
+
+        bus = VeltixBus()
+        ctx = _ServerFullContext()
+        handler = ReconnectHandler(ctx, bus=bus)
+        handler.init_connect()
+
+        result = handler.reconnect_loop(reason=DisconnectReason.ERROR, retry_max=3)
+
+        assert result is False
+        assert handler._fail_count == 3
+
+        # One failed-attempt callback per retry, then a final permanent one.
+        permanent = [s for s in ctx.states if s.permanent]
+        assert len(permanent) == 1
+        assert permanent[0].attempt == 3
+
+        # The socket loop must be stopped at the end (never left running).
+        assert ctx.running_values[-1] is False
