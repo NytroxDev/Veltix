@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0rc2] - 2026-09-26
+
+Second release candidate of v3.0.0. Fixes a packaging issue found by the rc1
+TestPyPI run: the sdist declared `License-File: LICENSE` in its metadata but did
+not ship the file, so PyPI/TestPyPI rejected the upload (the wheels embed it via
+`dist-info/licenses`). `[tool.maturin] include = ["LICENSE"]` now bundles it in
+the sdist too. This would also have blocked the stable release on PyPI.
+
 ## [3.0.0rc1] - 2026-09-26
 
 First release candidate of v3.0.0: published to TestPyPI to validate the per-platform

@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "veltix"
-version = "3.0.0rc1"
+version = "3.0.0rc2"
 description = "Python TCP, without the boilerplate - sync, thread-friendly, zero dependencies"
 readme = "README.md"
 license = "MIT"
