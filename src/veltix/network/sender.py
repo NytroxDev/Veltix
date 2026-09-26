@@ -169,6 +169,12 @@ class Sender:
         if not list_of_client:
             return True
 
+        # Allocate a direction-scoped ID so unsolicited broadcasts never carry
+        # an ID that could match a recipient's pending request (see
+        # docs/design/request-id-correlation.md).
+        if data.request_id is None and self._id_allocator is not None:
+            data.request_id = self._id_allocator.allocate()
+
         exclude = self._build_exclude_set(except_clients)
         try:
             compiled = data.compile(use_rust=self._use_rust)

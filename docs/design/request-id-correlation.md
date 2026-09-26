@@ -72,8 +72,10 @@ The allocator does not just increment. It asks the `RequestHandler` whether a
 candidate ID is still in flight before handing it out, and skips it if so:
 
 ```python
+# (two directions: each side allocates its own outgoing IDs)
 _id_allocator = IDAllocator(
-    max_ids=...,  # server: config.id_window, client: 65535
+    max_ids=...,          # client: 32768, server: min(config.id_window, 32768)
+    offset=...,           # client: 0, server: 32768 (reserved upper half)
     is_pending=lambda rid: rid in self.request_handler.pending_requests,
 )
 ```
@@ -82,11 +84,11 @@ _id_allocator = IDAllocator(
 def allocate(self) -> int:
     with self._lock:
         start = self._counter
-        while self._is_pending(self._counter):
+        while self._is_pending(self._offset + self._counter):
             self._counter = (self._counter + 1) % self._max
             if self._counter == start:
                 raise IDsExhaustedError("all IDs are currently pending")
-        current = self._counter
+        current = self._offset + self._counter
         self._counter = (self._counter + 1) % self._max
         return current
 ```
@@ -95,6 +97,47 @@ The invariant is now airtight: **an ID is never reused while its previous
 request is still pending.** The only way to run out is to have every single ID
 of the pool in flight at the same time, which raises `IDsExhaustedError`
 instead of corrupting traffic.
+
+## The other hole: interleaving across directions
+
+Pending-safe allocation only protects one allocator from itself. Veltix runs
+**two** allocators on a connection (one per direction), and until v3.0.1 both
+drew from the same flat space starting at `0`. The pending-safe property does
+not help here: the two allocators are independent and know nothing about each
+other's counters.
+
+The wire contract says *a response is a response to whatever request carries
+the same ID*. There is no direction marker on the wire, so the receiver cannot
+tell an echo of its own request from an unsolicited request of the peer that
+happens to carry the same numeric ID. When the server pushes or broadcasts
+while the client has a pending `send_and_wait`, the peer's auto-assigned ID
+frequently equals the pending ID (both counters start at zero and advance
+together). `PendingRequestRule` then delivers the push as the response:
+
+- `send_and_wait()` returns the wrong message; the real reply goes unhandled.
+- `broadcast()` used to never allocate, so every broadcast carried ID 0 and
+  stole the peer's **first** pending request every time.
+
+## The fix: direction-scoped ID halves
+
+Since v3.0.1 each side reserves one half of the 16-bit space:
+
+- **Client:** `[0, 32768)` (bit 15 clear)
+- **Server:** `[32768, 65536)` (bit 15 set)
+
+This is the QUIC parity-bit trick, applied **per role** instead of per
+connection. It needs no coordinator and no handshake change: the wire still
+carries a plain `uint16` that the peer echoes back unchanged. Because the two
+ranges are disjoint, an auto-assigned ID from one direction can never equal
+an auto-assigned ID of the other, so an unsolicited push or broadcast can
+never match a pending request of the opposite direction.
+
+Responses always **echo** the request's ID, exactly as before; an explicit
+`request_id` supplied by the caller is honored unchanged on the wire. The only
+pattern this invalidates is replying to a request by sending a fresh
+`Request(...)` with an auto-assigned ID and hoping both counters are in sync.
+That pattern was only ever reliable by coincidence and must now use the echo
+form (`Request(..., request_id=response.request_id)` or `req.respond()`).
 
 Two properties make this design noteworthy:
 
@@ -141,14 +184,20 @@ first, the pending entry is unregistered so the ID becomes allocatable again.
 To highlight the design, here is what it deliberately avoids.
 
 **Split ID ranges (what v2.0.0 shipped).** Server uses `[0, id_window)`, client
-uses `[id_window, id_window*2)`; every client got its own window via a
-`ClientAllocator`. This is the same trick QUIC uses with stream-ID parity bits.
-It kills interleaving collisions by construction, but it costs you:
+uses `[id_window, id_window*2)`; every client got its own window via a global
+`ClientAllocator`. That variant kills interleaving collisions too, but it costs
+you:
 
-- Half (or more) of your ID space for ranges you will rarely saturate.
 - A global `ClientAllocator` that must assign offsets and be kept in sync with
   connection lifecycle.
 - Reintroducing a coordinator where none should be needed.
+
+v3.0.1 reuses the idea in its cheap form: **two fixed halves, split by role**
+(client `[0, 32768)`, server `[32768, 65536)`), not by connection. No
+coordinator, no per-client bookkeeping, and each side keeps a generous
+32768-ID pool. The genuine costs of the v2 design (the coordinator) are what
+make the fixed per-role split attractive: it is the same trick, minus the
+machinery.
 
 **Monotonic counter without skip.** Zero overhead, but the wrap-around
 collision above. Every in-flight ID at the boundary is a latent misroute.
@@ -168,11 +217,19 @@ The chosen design is the one that gets determinism (no collisions), a dense
 ## Wire compatibility notes
 
 The ID window is a purely local concern now: the client allocator is fixed at
-65535 and the server no longer announces `id_window` during the handshake
-(`meta` is simply `{}`). Older peers still send and read `meta.id_window` and
-fall back to 30000 if absent, so the change is transparent on the wire and the
-protocol MAJOR is untouched. `ServerConfig.id_window` remains, validated to
-`1..65535`, as the server-side pool size.
+[0, 32768) and the server allocates from the reserved upper half
+[32768, 65536); the server no longer announces `id_window` during the
+handshake (`meta` is simply `{}`). Older peers still send and read
+`meta.id_window` and fall back to 30000 if absent, so the change is transparent
+on the wire and the protocol MAJOR is untouched. `ServerConfig.id_window`
+remains, validated to `1..65535`, and is clamped to 32768 at startup because
+the client half of the space is reserved.
+
+During a mixed-version window (new peer talking to a v3.0.0 peer), the old
+peer still allocates from the full flat range, so a collision requires the old
+peer's counter to have wrapped into the far side's half. It is far less likely
+than the v3.0.0 behavior (where both sides started at 0), but only a full
+upgrade removes it entirely.
 
 ## Source map
 

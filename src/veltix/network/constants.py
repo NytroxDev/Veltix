@@ -6,6 +6,11 @@ MAGIC = b"VX"
 
 REQUEST_ID_SIZE = 2
 
+# Half of the request-ID space. Clients auto-allocate from [0, REQUEST_ID_HALF)
+# and servers from [REQUEST_ID_HALF, 2 * REQUEST_ID_HALF), so auto-assigned
+# IDs can never collide across directions (see docs/design/request-id-correlation.md).
+REQUEST_ID_HALF = 1 << (8 * REQUEST_ID_SIZE - 1)
+
 # ── Header layout (15 bytes, big-endian) ──────────────────────────────────
 # Offset  Size  Field         Struct format
 # 0       2     MAGIC         "2s"

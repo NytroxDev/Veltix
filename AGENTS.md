@@ -642,7 +642,7 @@ class ServerConfig:
     handshake_timeout: float = 5.0
     max_workers: int = 4
     socket_core: SocketCore = SocketCore.ASYNC
-    id_window: int = 30000  # max pending request IDs per server (1..65535)
+    id_window: int = 30000  # max pending request IDs per server, capped to 32768 (server half)
 ```
 
 #### `ClientConfig`
@@ -1082,7 +1082,7 @@ server = Server(ServerConfig(port=8080))
 
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
-    server.send(Request(ECHO, response.content), client)
+    server.send(Request(ECHO, response.content, request_id=response.request_id), client)
 
 
 server.start()

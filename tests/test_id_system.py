@@ -41,6 +41,15 @@ class TestIDAllocator:
     def test_first_id_is_zero(self) -> None:
         assert IDAllocator(max_ids=100).allocate() == 0
 
+    def test_offset_shifts_range(self) -> None:
+        alloc = IDAllocator(max_ids=5, offset=32768)
+        assert [alloc.allocate() for _ in range(6)] == [32768, 32769, 32770, 32771, 32772, 32768]
+
+    def test_offset_pending_uses_wire_id(self) -> None:
+        pending = {32769}
+        alloc = IDAllocator(max_ids=5, offset=32768, is_pending=lambda rid: rid in pending)
+        assert [alloc.allocate() for _ in range(3)] == [32768, 32770, 32771]
+
     def test_sequential(self) -> None:
         alloc = IDAllocator(max_ids=100)
         for i in range(10):

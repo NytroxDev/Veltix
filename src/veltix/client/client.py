@@ -12,6 +12,7 @@ from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ClientEvent, ErrorEvent
 from ..network import _rust
+from ..network.constants import REQUEST_ID_HALF
 from ..network.id_allocator import IDAllocator
 from ..network.request import Request
 from ..network.sender import Mode, Sender
@@ -95,7 +96,11 @@ class Client:
             max_workers=self.config.max_workers,
         )
 
+        # Clients allocate from the lower half of the request-ID space so
+        # their auto-assigned IDs never collide with a server pending (see
+        # docs/design/request-id-correlation.md).
         self._id_allocator = IDAllocator(
+            max_ids=REQUEST_ID_HALF,
             is_pending=lambda rid: rid in self.request_handler.pending_requests,
         )
 

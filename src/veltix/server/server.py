@@ -10,6 +10,7 @@ from ..handler.request_handler import RequestHandler
 from ..internal.bus import VeltixBus
 from ..internal.events import ServerEvent
 from ..network import _rust
+from ..network.constants import REQUEST_ID_HALF
 from ..network.id_allocator import IDAllocator
 from ..network.request import Request
 from ..network.sender import Mode, Sender
@@ -94,8 +95,19 @@ class Server:
             max_workers=self.config.max_workers,
         )
 
+        # Servers reserve the upper half of the request-ID space so their
+        # auto-assigned IDs never collide with client pendings (see
+        # docs/design/request-id-correlation.md).
+        server_pool = min(self.config.id_window, REQUEST_ID_HALF)
+        if server_pool < self.config.id_window:
+            self.bus.warning(
+                f"id_window capped to {server_pool} "
+                f"(upper half of the ID space is reserved for the server)"
+            )
+
         self._id_allocator = IDAllocator(
-            max_ids=self.config.id_window,
+            max_ids=server_pool,
+            offset=REQUEST_ID_HALF,
             is_pending=lambda rid: rid in self.request_handler.pending_requests,
         )
 
