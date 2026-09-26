@@ -7,19 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.0.0rc2] - 2026-09-26
 
-Second release candidate of v3.0.0. Fixes a packaging issue found by the rc1
-TestPyPI run: the sdist declared `License-File: LICENSE` in its metadata but did
-not ship the file, so PyPI/TestPyPI rejected the upload (the wheels embed it via
+Second release candidate of v3.0.0. Superseded by the stable [3.0.0] release.
+Fixes a packaging issue found by the rc1 TestPyPI run: the sdist declared
+`License-File: LICENSE` in its metadata but did not ship the file, so
+PyPI/TestPyPI rejected the upload (the wheels embed it via
 `dist-info/licenses`). `[tool.maturin] include = ["LICENSE"]` now bundles it in
 the sdist too. This would also have blocked the stable release on PyPI.
 
 ## [3.0.0rc1] - 2026-09-26
 
-First release candidate of v3.0.0: published to TestPyPI to validate the per-platform
-wheels (Linux x86_64/aarch64, macOS x86_64/arm64, Windows x86_64) before the stable
-release. See [3.0.0] below for the full change list.
+First release candidate of v3.0.0. Superseded by the stable [3.0.0] release.
+Published to TestPyPI to validate the per-platform wheels (Linux x86_64/aarch64,
+macOS x86_64/arm64, Windows x86_64) before the stable release. See [3.0.0] below
+for the full change list.
 
-## [3.0.0] - 2026-09-24
+## [3.0.0] - 2026-09-26
 
 ### Breaking
 
