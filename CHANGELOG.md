@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   registry explicitly, and `ON_DISCONNECT` is emitted exactly once per client
   on both backends even under a concurrent close
   ([54927fe](https://github.com/NytroxDev/Veltix/commit/54927fe)).
+- **Transient `accept()` errors no longer kill the threading server.** An
+  `OSError` from the accept loop (e.g. `EMFILE` when the process exhausts its
+  file-descriptor limit) used to terminate the listening loop permanently on
+  the threading backend - it now logs the error and keeps accepting, matching
+  the selector backend
+  ([0d56e6d](https://github.com/NytroxDev/Veltix/commit/0d56e6d)).
 
 ## [3.0.1] - 2026-09-26
 
