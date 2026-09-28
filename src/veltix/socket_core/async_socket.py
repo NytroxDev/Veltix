@@ -322,7 +322,11 @@ class AsyncSocket(BaseSocket):
         with contextlib.suppress(OSError):
             client_sock._sock.close()
 
-        self.client_manager.remove_client(entry.id)
+        # Only the caller that actually removed the entry emits the event: a
+        # concurrent close (close, close_client, the selector loop) must not
+        # fire ON_DISCONNECT twice.
+        if not self.client_manager.remove_client(entry.id):
+            return
 
         try:
             self.bus.emit(ServerEvent.ON_DISCONNECT, entry.info)

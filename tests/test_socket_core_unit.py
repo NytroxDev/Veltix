@@ -1,6 +1,7 @@
 """Unit tests for ThreadingSocket and AsyncSocket error paths."""
 
 import socket
+import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -82,6 +83,66 @@ class TestThreadingSocketUnit:
     def test_send_failure(self, sock):
         with patch.object(socket.socket, "sendall", side_effect=OSError("mock")):
             assert sock.send(b"data") is False
+
+    def test_close_all_sweeps_stuck_client_and_emits_single_disconnect(self, sock):
+        """A recv thread stuck mid-message at close time must be swept: the
+        manager is drained and ON_DISCONNECT fires exactly once.
+        """
+        from veltix.internal.events import ServerEvent
+
+        info = ClientInfo(conn=MagicMock(), addr=("127.0.0.1", 0), thread_id=1)
+        client_id = sock.client_manager.add_client(info)
+
+        sock._running_event.set()
+        sock.request_handler.handshake_handler.do_server_handshake = lambda *a, **k: True
+
+        # The recv thread blocks inside message processing, so it never
+        # observes the socket-close error that would trigger its own cleanup.
+        blocked = threading.Event()
+        release = threading.Event()
+
+        def stuck_process(result, entry_):
+            blocked.set()
+            release.wait(timeout=2)
+            return False
+
+        sock._process_server_message = stuck_process
+
+        thread = threading.Thread(
+            target=sock._handle_server_client,
+            args=(client_id, 1024, 0.5),
+            daemon=True,
+        )
+        sock.threads[client_id] = thread
+        thread.start()
+        assert blocked.wait(timeout=2)
+
+        received = []
+        sock.bus.subscribe(ServerEvent.ON_DISCONNECT, lambda e, p: received.append(p))
+
+        assert sock.close_all() is True
+
+        release.set()
+        thread.join(timeout=2)
+
+        assert sock.client_manager.count() == 0
+        assert received == [info]
+        assert sock.threads == {}
+
+    def test_close_server_client_emits_single_disconnect(self, sock):
+        from veltix.internal.events import ServerEvent
+
+        info = ClientInfo(conn=MagicMock(), addr=("127.0.0.1", 0), thread_id=1)
+        client_id = sock.client_manager.add_client(info)
+
+        received = []
+        sock.bus.subscribe(ServerEvent.ON_DISCONNECT, lambda e, p: received.append(p))
+
+        entry = sock.client_manager.get_client(client_id)
+        sock._close_server_client(entry)
+        sock._close_server_client(entry)
+
+        assert received == [info]
 
     def test_accept_loop_generic_exception(self, sock):
         sock._running_event.set()
@@ -233,6 +294,21 @@ class TestAsyncSocketUnit:
 
     def test_handle_server_client_not_found(self, sock):
         sock._handle_server_client(9999, 1024)
+
+    def test_close_server_client_emits_single_disconnect(self, sock):
+        from veltix.internal.events import ServerEvent
+
+        info = ClientInfo(conn=MagicMock(), addr=("127.0.0.1", 0), thread_id=1)
+        client_id = sock.client_manager.add_client(info)
+
+        received = []
+        sock.bus.subscribe(ServerEvent.ON_DISCONNECT, lambda e, p: received.append(p))
+
+        entry = sock.client_manager.get_client(client_id)
+        sock._close_server_client(entry)
+        sock._close_server_client(entry)
+
+        assert received == [info]
 
     def test_close_client_invalid_id(self, sock):
         assert sock.close_client(9999) is False

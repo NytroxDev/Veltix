@@ -219,7 +219,11 @@ class ThreadingSocket(BaseSocket):
             if thread and thread != threading.current_thread():
                 thread.join(timeout=0.2)
 
-        self.client_manager.remove_client(entry.id)
+        # Only the caller that actually removed the entry emits the event: a
+        # concurrent close (close_all, close_client, the client's own recv
+        # loop) must not fire ON_DISCONNECT twice.
+        if not self.client_manager.remove_client(entry.id):
+            return
 
         try:
             self.bus.emit(ServerEvent.ON_DISCONNECT, entry.info)
@@ -260,6 +264,16 @@ class ThreadingSocket(BaseSocket):
                 self.start_th.join(timeout=0.2)
             if self.thread_handler and self.thread_handler != threading.current_thread():
                 self.thread_handler.join(timeout=0.2)
+
+            # Sweep the registry: receive threads that exited via the
+            # running-event check (rather than a socket error) never clean
+            # themselves up. The remove_client gate in _close_server_client
+            # guarantees each client fires ON_DISCONNECT exactly once, even
+            # against a concurrent close from a receive thread.
+            self.client_manager.iter_on_clients(self._close_server_client)
+
+            with self._threads_lock:
+                self.threads.clear()
             return True
         except Exception:
             return False
