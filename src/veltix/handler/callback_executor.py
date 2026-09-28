@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import threading
 from queue import Empty, SimpleQueue
 from typing import TYPE_CHECKING, Any
@@ -33,8 +32,10 @@ class CallbackExecutor:
         self._spawn_workers()
 
     def _spawn_workers(self) -> None:
-        for _ in range(self._max_workers):
-            thread = threading.Thread(target=self._worker_loop, daemon=True)
+        for i in range(self._max_workers):
+            thread = threading.Thread(
+                target=self._worker_loop, daemon=True, name=f"veltix-callback-{i}"
+            )
             thread.start()
             self._workers.append(thread)
 
@@ -44,10 +45,9 @@ class CallbackExecutor:
                 item = self._queue.get(timeout=1.0)
             except Empty:
                 continue
-            with contextlib.suppress(Exception):
-                item()
+            item()
 
-    def submit(self, func: Callable, *args: Any) -> None:
+    def submit(self, func: Callable[..., Any], *args: Any) -> None:
         """
         Submit a callback for async execution.
 
