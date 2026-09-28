@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the threading backend - it now logs the error and keeps accepting, matching
   the selector backend
   ([0d56e6d](https://github.com/NytroxDev/Veltix/commit/0d56e6d)).
+- **A failed client connect releases its socket fd immediately.** When
+  `connect()` timed out or was refused after the TCP connection was already
+  established, the socket stayed open (holding the fd and a half-open
+  connection) until the next reconnection attempt or garbage collection - it
+  is now closed before returning `False`, on both socket backends
+  ([a3607e3](https://github.com/NytroxDev/Veltix/commit/a3607e3)).
 
 ## [3.0.1] - 2026-09-26
 
