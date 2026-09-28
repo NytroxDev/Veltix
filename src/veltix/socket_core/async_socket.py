@@ -379,6 +379,9 @@ class AsyncSocket(BaseSocket):
             self.bus.debug(f"connected to {host}:{port}")
             return True
         except (TimeoutError, ConnectionRefusedError) as e:
+            # The socket may be half-open (connect or handshake in flight):
+            # release its fd now instead of leaking it until reconnection.
+            self._sock.close()
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.debug(f"connect to {host}:{port} failed: {e}")
             return False

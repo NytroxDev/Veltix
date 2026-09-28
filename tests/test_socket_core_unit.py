@@ -203,6 +203,19 @@ class TestThreadingSocketUnit:
         ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
 
+    def test_connect_timeout_closes_socket(self, sock):
+        with (
+            patch.object(socket.socket, "connect"),
+            patch.object(
+                sock.request_handler.handshake_handler,
+                "do_client_handshake",
+                side_effect=TimeoutError("mock"),
+            ),
+        ):
+            assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
+        # A failed connect/handshake must release the fd, not leak it.
+        assert sock._sock.fileno() == -1
+
     def test_init_with_sock_uses_provided_socket(self, sock):
         from veltix.socket_core.threading_socket import ThreadingSocket
 
@@ -355,6 +368,19 @@ class TestAsyncSocketUnit:
             ),
         ):
             assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
+
+    def test_connect_timeout_closes_socket(self, sock):
+        with (
+            patch.object(socket.socket, "connect"),
+            patch.object(
+                sock.request_handler.handshake_handler,
+                "do_client_handshake",
+                side_effect=TimeoutError("mock"),
+            ),
+        ):
+            assert sock.connect("127.0.0.1", 9999, 1024, 1.0) is False
+        # A failed connect/handshake must release the fd, not leak it.
+        assert sock._sock.fileno() == -1
 
     def test_init_with_sock_no_selector_or_buffer(self, sock):
         from veltix.socket_core.async_socket import AsyncSocket
