@@ -59,14 +59,12 @@ class HandshakeHandler:
 
     @staticmethod
     def _encode(payload: dict[str, Any]) -> bytes:
-        """Length-prefixed JSON encoding."""
         payload_encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         data = _HANDSHAKE_STRUCT.pack(len(payload_encoded)) + payload_encoded
         return data
 
     @staticmethod
     def _decode(data: bytes) -> dict[str, Any] | None:
-        """Parse length-prefixed JSON, rejecting non-object payloads."""
         payload_len = _HANDSHAKE_STRUCT.unpack(data[:2])[0]
         payload = json.loads(data[2 : 2 + payload_len])
         if not isinstance(payload, dict):
@@ -74,7 +72,6 @@ class HandshakeHandler:
         return payload
 
     def _send_handshake(self, sock: RawSocket, payload: dict[str, Any]) -> bool:
-        """Send a handshake JSON payload over a raw TCP socket."""
         try:
             data = self._encode(payload)
             sock.sendall(data)
@@ -84,8 +81,6 @@ class HandshakeHandler:
             return False
 
     def _recv_handshake(self, sock: RawSocket, timeout: float = 5.0) -> dict[str, Any] | None:
-        """Receive a handshake JSON payload from a raw TCP socket."""
-
         def _recv_all(sock: RawSocket, n: int) -> bytes | None:
             chunks = []
             remaining = n
@@ -130,17 +125,6 @@ class HandshakeHandler:
         return self._send_handshake(sock, {"error": reason})
 
     def _check_version(self, peer_pv: str) -> bool:
-        """Check peer compatibility against the local protocol version.
-
-        Two peers are compatible when they share the same protocol major.
-        A peer without a protocol version (``pv``) is rejected.
-
-        Args:
-            peer_pv: The peer protocol version string (``MAJOR.MINOR``).
-
-        Returns:
-            True if the peer is compatible, False otherwise.
-        """
         if not peer_pv:
             self.bus.error("Peer did not advertise a protocol version (pv)")
             return False
