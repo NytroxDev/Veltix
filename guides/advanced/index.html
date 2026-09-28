@@ -16,7 +16,7 @@
         <link rel="prev" href="../migration/">
       
       
-        <link rel="next" href="../../api/server/">
+        <link rel="next" href="../../design/request-id-correlation/">
       
       
         
@@ -275,6 +275,26 @@
   
   
   Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../design/request-id-correlation/" class="md-tabs__link">
+          
+  
+  
+  Design
 
         </a>
       </li>
@@ -978,7 +998,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Design
   
 
     
@@ -991,6 +1011,93 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/request-id-correlation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request-ID Correlation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1529,32 +1636,33 @@
 <p>Available tag methods on <code>ClientInfo</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">client</span><span class="o">.</span><span class="n">add_tag</span><span class="p">(</span><span class="s2">&quot;authenticated&quot;</span><span class="p">)</span>  <span class="c1"># Add a tag (returns False if already exists)</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">client</span><span class="o">.</span><span class="n">add_tag</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;admin&quot;</span><span class="p">)</span>  <span class="c1"># Add a tag with a value</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">client</span><span class="o">.</span><span class="n">has_tag</span><span class="p">(</span><span class="s2">&quot;authenticated&quot;</span><span class="p">)</span>  <span class="c1"># Check for a single tag</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">client</span><span class="o">.</span><span class="n">has_all_tags</span><span class="p">([</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span> <span class="s2">&quot;admin&quot;</span><span class="p">])</span>  <span class="c1"># Check all tags are present (AND)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">client</span><span class="o">.</span><span class="n">has_any_tags</span><span class="p">([</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;mod&quot;</span><span class="p">])</span>  <span class="c1"># Check at least one tag is present (OR)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">client</span><span class="o">.</span><span class="n">get_tag</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span>  <span class="c1"># Retrieve a tag value</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">client</span><span class="o">.</span><span class="n">remove_tag</span><span class="p">(</span><span class="s2">&quot;guest&quot;</span><span class="p">)</span>  <span class="c1"># Remove a tag</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">client</span><span class="o">.</span><span class="n">clear_tags</span><span class="p">()</span>  <span class="c1"># Remove all tags</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">client</span><span class="o">.</span><span class="n">set_tag</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1500</span><span class="p">)</span>  <span class="c1"># Set or overwrite a tag value</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">client</span><span class="o">.</span><span class="n">has_tag</span><span class="p">(</span><span class="s2">&quot;authenticated&quot;</span><span class="p">)</span>  <span class="c1"># Check for a single tag</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">client</span><span class="o">.</span><span class="n">has_all_tags</span><span class="p">([</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span> <span class="s2">&quot;admin&quot;</span><span class="p">])</span>  <span class="c1"># Check all tags are present (AND)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">client</span><span class="o">.</span><span class="n">has_any_tags</span><span class="p">([</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;mod&quot;</span><span class="p">])</span>  <span class="c1"># Check at least one tag is present (OR)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">client</span><span class="o">.</span><span class="n">get_tag</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span>  <span class="c1"># Retrieve a tag value</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">client</span><span class="o">.</span><span class="n">remove_tag</span><span class="p">(</span><span class="s2">&quot;guest&quot;</span><span class="p">)</span>  <span class="c1"># Remove a tag</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">client</span><span class="o">.</span><span class="n">clear_tags</span><span class="p">()</span>  <span class="c1"># Remove all tags</span>
 </code></pre></div>
 <h2 id="socket-backend">Socket Backend<a class="headerlink" href="#socket-backend" title="Permanent link">&para;</a></h2>
 <p>Veltix abstracts the socket layer behind a <code>SocketCore</code> enum. <code>ASYNC</code> (selectors-based single-thread event loop) is the
 default since v1.7.0,
-<code>THREADING</code> (one thread per client) is also available. Future versions will add <code>RUST</code>
-(Tokio via PyO3, v3.0.0).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Default — selectors-based, up to 2x stress throughput</span>
+<code>THREADING</code> (one thread per client) is also available. A <code>RUST</code> backend
+(Tokio via PyO3) is planned for v5.0.0.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Default - selectors-based, up to 2x stress throughput</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">socket_core</span><span class="o">=</span><span class="n">SocketCore</span><span class="o">.</span><span class="n">ASYNC</span><span class="p">))</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Thread-per-client — predictable per-connection latency</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Thread-per-client - predictable per-connection latency</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">socket_core</span><span class="o">=</span><span class="n">SocketCore</span><span class="o">.</span><span class="n">THREADING</span><span class="p">))</span>
 </code></pre></div>
 <p>Switching backends requires no changes to application code.</p>
 <h2 id="buffer-size">Buffer Size<a class="headerlink" href="#buffer-size" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerConfig</span><span class="p">,</span> <span class="n">ClientConfig</span><span class="p">,</span> <span class="n">BufferSize</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># SMALL  — 1KB  (default)</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># MEDIUM — 8KB</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># LARGE  — 64KB</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># HUGE   — 1MB</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># SMALL  - 1KB</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># MEDIUM - 8KB  (default)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># LARGE  - 64KB</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># HUGE   - 1MB</span>
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">buffer_size</span><span class="o">=</span><span class="n">BufferSize</span><span class="o">.</span><span class="n">LARGE</span><span class="p">))</span>
 </code></pre></div>
@@ -1562,15 +1670,15 @@ default since v1.7.0,
 <p>Message type codes are divided into ranges by convention:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessageType</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># System messages (0–199) — reserved, internal use only</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># System messages (0-199) - reserved, internal use only</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># PING, PONG are pre-registered system types</span>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># Application messages (200–9999) — explicit codes</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># Application messages (200-9999) - explicit codes</span>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;chat&quot;</span><span class="p">,</span> <span class="s2">&quot;Chat message&quot;</span><span class="p">)</span>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">FILE_TRANSFER</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="mi">201</span><span class="p">,</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="s2">&quot;File transfer&quot;</span><span class="p">)</span>
 <a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
 <a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="c1"># Or auto-allocate the next available code</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="n">PLUGIN</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="s2">&quot;plugin&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Custom plugin message&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="n">SCORE_UPDATE</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="s2">&quot;score_update&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Custom game message&quot;</span><span class="p">)</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>

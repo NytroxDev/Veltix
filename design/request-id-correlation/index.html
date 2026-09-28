@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://nytroxdev.github.io/Veltix/api/exceptions/">
+        <link rel="canonical" href="https://nytroxdev.github.io/Veltix/design/request-id-correlation/">
       
       
-        <link rel="prev" href="../utils/">
+        <link rel="prev" href="../../guides/advanced/">
       
       
-        <link rel="next" href="../../changelog/">
+        <link rel="next" href="../../api/server/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Exceptions - Veltix</title>
+        <title>Request-ID Correlation - Veltix</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#exceptions" class="md-skip">
+        <a href="#request-id-correlation" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Exceptions
+              Request-ID Correlation
             
           </span>
         </div>
@@ -284,11 +284,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../design/request-id-correlation/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
           
   
   
@@ -304,13 +306,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../server/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../api/server/" class="md-tabs__link">
           
   
   
@@ -843,93 +843,6 @@
       
   
   
-  
-  
-    
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Design
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Design
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../design/request-id-correlation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Request-ID Correlation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -951,10 +864,254 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request-ID Correlation
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request-ID Correlation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-wire-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The wire contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-subtle-bug-wrap-around-collision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The subtle bug: wrap-around collision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-fix-pending-safe-allocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The fix: pending-safe allocation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-other-hole-interleaving-across-directions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The other hole: interleaving across directions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-fix-direction-scoped-id-halves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The fix: direction-scoped ID halves
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-lifecycle-of-a-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The lifecycle of a request
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-not-the-alternatives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why not the alternatives?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wire-compatibility-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wire compatibility notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source map
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -972,7 +1129,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -990,7 +1147,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../server/" class="md-nav__link">
+      <a href="../../api/server/" class="md-nav__link">
         
   
   
@@ -1018,7 +1175,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../client/" class="md-nav__link">
+      <a href="../../api/client/" class="md-nav__link">
         
   
   
@@ -1046,7 +1203,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../request/" class="md-nav__link">
+      <a href="../../api/request/" class="md-nav__link">
         
   
   
@@ -1074,7 +1231,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sender/" class="md-nav__link">
+      <a href="../../api/sender/" class="md-nav__link">
         
   
   
@@ -1102,7 +1259,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../api/types/" class="md-nav__link">
         
   
   
@@ -1130,7 +1287,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../socket/" class="md-nav__link">
+      <a href="../../api/socket/" class="md-nav__link">
         
   
   
@@ -1158,7 +1315,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../request_handler/" class="md-nav__link">
+      <a href="../../api/request_handler/" class="md-nav__link">
         
   
   
@@ -1186,7 +1343,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../handshake_handler/" class="md-nav__link">
+      <a href="../../api/handshake_handler/" class="md-nav__link">
         
   
   
@@ -1214,7 +1371,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callback_executor/" class="md-nav__link">
+      <a href="../../api/callback_executor/" class="md-nav__link">
         
   
   
@@ -1242,7 +1399,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../logger/" class="md-nav__link">
+      <a href="../../api/logger/" class="md-nav__link">
         
   
   
@@ -1270,7 +1427,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../utils/" class="md-nav__link">
+      <a href="../../api/utils/" class="md-nav__link">
         
   
   
@@ -1295,37 +1452,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Exceptions
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../api/exceptions/" class="md-nav__link">
         
   
   
@@ -1341,142 +1471,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#veltix.exceptions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;exceptions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" exceptions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.VeltixError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;VeltixError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.MessageTypeError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;MessageTypeError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.SenderError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SenderError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.RequestError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RequestError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.NetworkError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;NetworkError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.TimeoutError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;TimeoutError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.InvalidContentError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;InvalidContentError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.ServerFullError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ServerFullError
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.IDsExhaustedError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;IDsExhaustedError
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1543,118 +1537,112 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#veltix.exceptions" class="md-nav__link">
+  <a href="#the-problem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;exceptions
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" exceptions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.VeltixError" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;VeltixError
+        The problem
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.MessageTypeError" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#the-wire-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;MessageTypeError
+        The wire contract
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.SenderError" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#the-subtle-bug-wrap-around-collision" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SenderError
+        The subtle bug: wrap-around collision
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.RequestError" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#the-fix-pending-safe-allocation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RequestError
+        The fix: pending-safe allocation
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.NetworkError" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#the-other-hole-interleaving-across-directions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;NetworkError
+        The other hole: interleaving across directions
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.TimeoutError" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#the-fix-direction-scoped-id-halves" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;TimeoutError
+        The fix: direction-scoped ID halves
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.InvalidContentError" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#the-lifecycle-of-a-request" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;InvalidContentError
+        The lifecycle of a request
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.ServerFullError" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#why-not-the-alternatives" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ServerFullError
+        Why not the alternatives?
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#veltix.exceptions.IDsExhaustedError" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#wire-compatibility-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;IDsExhaustedError
+        Wire compatibility notes
       
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#source-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source map
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1678,330 +1666,233 @@
   
 
 
-<h1 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h1>
-
-
-<div class="doc doc-object doc-module">
-
-
-
-<h2 id="veltix.exceptions" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">veltix.exceptions</span>
-
-
-<a href="#veltix.exceptions" class="headerlink" title="Permanent link">&para;</a></h2>
-
-    <div class="doc doc-contents first">
-
-        <p>Veltix exception hierarchy.</p>
-<p>All Veltix exceptions inherit from VeltixError for easy catching.</p>
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.VeltixError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">VeltixError</span>
-
-
-<a href="#veltix.exceptions.VeltixError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="Exception">Exception</span></code></p>
-
-
-
-        <p>Base exception class for all Veltix framework errors.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.MessageTypeError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">MessageTypeError</span>
-
-
-<a href="#veltix.exceptions.MessageTypeError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when a message type operation is invalid.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.SenderError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">SenderError</span>
-
-
-<a href="#veltix.exceptions.SenderError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when a sender operation fails.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.RequestError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">RequestError</span>
-
-
-<a href="#veltix.exceptions.RequestError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when request parsing or compilation fails.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.NetworkError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">NetworkError</span>
-
-
-<a href="#veltix.exceptions.NetworkError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when a network operation fails.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.TimeoutError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">TimeoutError</span>
-
-
-<a href="#veltix.exceptions.TimeoutError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when an operation times out.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.InvalidContentError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">InvalidContentError</span>
-
-
-<a href="#veltix.exceptions.InvalidContentError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when message content cannot be decoded or converted to the requested format.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.ServerFullError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">ServerFullError</span>
-
-
-<a href="#veltix.exceptions.ServerFullError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when the server rejects a connection because it is at capacity.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h3 id="veltix.exceptions.IDsExhaustedError" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">IDsExhaustedError</span>
-
-
-<a href="#veltix.exceptions.IDsExhaustedError" class="headerlink" title="Permanent link">&para;</a></h3>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="            VeltixError (veltix.exceptions.VeltixError)" href="#veltix.exceptions.VeltixError">VeltixError</a></code></p>
-
-
-
-        <p>Raised when all request IDs in the window are currently pending.</p>
-
-
-
-
-
-
-
-
-
-    </div>
-
-</div>
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
+<h1 id="request-id-correlation">Request-ID Correlation<a class="headerlink" href="#request-id-correlation" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>How Veltix correlates requests and responses over raw TCP, why the naive
+approach is broken, and how the design avoids collisions without a global
+coordinator.</p>
+</blockquote>
+<h2 id="the-problem">The problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
+<p>TCP is a byte stream: there is no native notion of a request or a response.
+<code>recv()</code> gives you a sequence of bytes, but nothing tells you which request a
+given payload answers. To build <code>send_and_wait()</code>, <code>ping</code>, or any
+request/response RPC pattern, the protocol needs a correlation mechanism.</p>
+<p>HTTP solves this with a strict one-response-per-request ordering. Veltix has no
+such constraint: any peer can send several requests at once, and replies may
+interleave. So each frame carries a <strong>request ID</strong> that ties a response to its
+request.</p>
+<h2 id="the-wire-contract">The wire contract<a class="headerlink" href="#the-wire-contract" title="Permanent link">&para;</a></h2>
+<p>Every frame header embeds a 2-byte <code>request_id</code> (big-endian, range <code>0..65535</code>).
+The flow is always the same:</p>
+<ol>
+<li>The sender allocates an ID and stamps its request with it.</li>
+<li>The receiver extracts the ID and <strong>echoes it</strong> unchanged in its reply.</li>
+<li>The requester matches the incoming response against its pending map by ID.</li>
+</ol>
+<p>That echo is the entire correlation contract. A response is a response to
+whatever request carries the same ID on the wire. No sessions, no sequence
+negotiation, no bookkeeping at the application layer.</p>
+<p>A <code>ping</code> round-trip looks like this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>   Client                              Server
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     |  allocate(-&gt; 0)                   |
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>     |  register(0)                      |
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>     |  --- Request(PING, id=0) -------&gt; |
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>     |                                   |  rule: PingRule
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>     |  &lt;-- Response(PONG, id=0) ------- |
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>     |  rule: PendingRequestRule         |
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>     |  match! queue[0].put(response)    |
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>     |  wait() returns                   |
+</code></pre></div>
+<p>Because there are <strong>two directions</strong> on a connection, Veltix runs two allocators:
+one on the server (for server-initiated requests such as <code>ping_client</code>) and one
+on the client (for client-initiated calls such as <code>send_and_wait</code>). Each side
+tracks only its <strong>outgoing</strong> IDs.</p>
+<h2 id="the-subtle-bug-wrap-around-collision">The subtle bug: wrap-around collision<a class="headerlink" href="#the-subtle-bug-wrap-around-collision" title="Permanent link">&para;</a></h2>
+<p>The ID space fits in 16 bits, so it wraps. A monotonic counter that cycles
+<code>0, 1, ..., 65534, 65535, 0, ...</code> reuses an ID every 65536 requests. That is
+fine... until the previously used ID still has a pending request on the wire.</p>
+<p>If the requester allocated <code>id=7</code>, sent a request, and is still waiting for the
+reply, a counter that wraps back around to <code>7</code> for a <em>new</em> request will make the
+<strong>old</strong> reply (whenever it finally arrives) satisfy the <strong>new</strong> request. The two
+responses land in the wrong queues and <code>send_and_wait()</code> returns the wrong
+answer, silently.</p>
+<p>Until recent versions this was a probabilistic bet: with a 30000-ID window and
+short-lived requests the odds are low, but they are not zero. Latency spikes,
+retries, or a burst near the wrap point make it simply a matter of time. A
+network library must not ship a data-corruption bug with a convincing probability
+of staying hidden.</p>
+<h2 id="the-fix-pending-safe-allocation">The fix: pending-safe allocation<a class="headerlink" href="#the-fix-pending-safe-allocation" title="Permanent link">&para;</a></h2>
+<p>The allocator does not just increment. It asks the <code>RequestHandler</code> whether a
+candidate ID is still in flight before handing it out, and skips it if so:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># (two directions: each side allocates its own outgoing IDs)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">_id_allocator</span> <span class="o">=</span> <span class="n">IDAllocator</span><span class="p">(</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">max_ids</span><span class="o">=...</span><span class="p">,</span>          <span class="c1"># client: 32768, server: min(config.id_window, 32768)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">offset</span><span class="o">=...</span><span class="p">,</span>           <span class="c1"># client: 0, server: 32768 (reserved upper half)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">is_pending</span><span class="o">=</span><span class="k">lambda</span> <span class="n">rid</span><span class="p">:</span> <span class="n">rid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_handler</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">allocate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_pending</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span><span class="p">):</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">==</span> <span class="n">start</span><span class="p">:</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>                <span class="k">raise</span> <span class="n">IDsExhaustedError</span><span class="p">(</span><span class="s2">&quot;all IDs are currently pending&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        <span class="k">return</span> <span class="n">current</span>
+</code></pre></div>
+<p>The invariant is now airtight: <strong>an ID is never reused while its previous
+request is still pending.</strong> The only way to run out is to have every single ID
+of the pool in flight at the same time, which raises <code>IDsExhaustedError</code>
+instead of corrupting traffic.</p>
+<h2 id="the-other-hole-interleaving-across-directions">The other hole: interleaving across directions<a class="headerlink" href="#the-other-hole-interleaving-across-directions" title="Permanent link">&para;</a></h2>
+<p>Pending-safe allocation only protects one allocator from itself. Veltix runs
+<strong>two</strong> allocators on a connection (one per direction), and until v3.0.1 both
+drew from the same flat space starting at <code>0</code>. The pending-safe property does
+not help here: the two allocators are independent and know nothing about each
+other's counters.</p>
+<p>The wire contract says <em>a response is a response to whatever request carries
+the same ID</em>. There is no direction marker on the wire, so the receiver cannot
+tell an echo of its own request from an unsolicited request of the peer that
+happens to carry the same numeric ID. When the server pushes or broadcasts
+while the client has a pending <code>send_and_wait</code>, the peer's auto-assigned ID
+frequently equals the pending ID (both counters start at zero and advance
+together). <code>PendingRequestRule</code> then delivers the push as the response:</p>
+<ul>
+<li><code>send_and_wait()</code> returns the wrong message; the real reply goes unhandled.</li>
+<li><code>broadcast()</code> used to never allocate, so every broadcast carried ID 0 and
+  stole the peer's <strong>first</strong> pending request every time.</li>
+</ul>
+<h2 id="the-fix-direction-scoped-id-halves">The fix: direction-scoped ID halves<a class="headerlink" href="#the-fix-direction-scoped-id-halves" title="Permanent link">&para;</a></h2>
+<p>Since v3.0.1 each side reserves one half of the 16-bit space:</p>
+<ul>
+<li><strong>Client:</strong> <code>[0, 32768)</code> (bit 15 clear)</li>
+<li><strong>Server:</strong> <code>[32768, 65536)</code> (bit 15 set)</li>
+</ul>
+<p>This is the QUIC parity-bit trick, applied <strong>per role</strong> instead of per
+connection. It needs no coordinator and no handshake change: the wire still
+carries a plain <code>uint16</code> that the peer echoes back unchanged. Because the two
+ranges are disjoint, an auto-assigned ID from one direction can never equal
+an auto-assigned ID of the other, so an unsolicited push or broadcast can
+never match a pending request of the opposite direction.</p>
+<p>Responses always <strong>echo</strong> the request's ID, exactly as before; an explicit
+<code>request_id</code> supplied by the caller is honored unchanged on the wire. The only
+pattern this invalidates is replying to a request by sending a fresh
+<code>Request(...)</code> with an auto-assigned ID and hoping both counters are in sync.
+That pattern was only ever reliable by coincidence and must now use the echo
+form (<code>Request(..., request_id=response.request_id)</code> or <code>req.respond()</code>).</p>
+<p>Two properties make this design noteworthy:</p>
+<ul>
+<li><strong>One source of truth.</strong> The allocator has no opinion about which IDs are
+  busy. It delegates to <code>RequestHandler.pending_requests</code>, the same map that
+  <code>send_and_wait()</code> registers and unregisters against. There is no second
+  bookkeeping structure to keep in sync.</li>
+<li><strong>No global coordinator.</strong> Each allocator is local to one peer direction.
+  The server does not need to tell clients which IDs they may use, and clients
+  do not need to agree with each other. Correlation stays a purely per-connection
+  concern.</li>
+</ul>
+<h2 id="the-lifecycle-of-a-request">The lifecycle of a request<a class="headerlink" href="#the-lifecycle-of-a-request" title="Permanent link">&para;</a></h2>
+<p>The reader must never race with the sender. <code>send_and_wait()</code> therefore
+<strong>registers before it sends</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">request_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_allocator</span><span class="o">.</span><span class="n">allocate</span><span class="p">()</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="bp">self</span><span class="o">.</span><span class="n">request_handler</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">request_id</span><span class="p">)</span>   <span class="c1"># put a queue in pending_requests</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>            <span class="c1"># send the frame</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">request_handler</span><span class="o">.</span><span class="n">unregister</span><span class="p">(</span><span class="n">request_id</span><span class="p">)</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="k">return</span> <span class="kc">None</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_handler</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">request_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>  <span class="c1"># block for the reply</span>
+</code></pre></div>
+<p>Registering first guarantees that a response which arrives instantly (single
+hop on loopback) still finds its queue already present.</p>
+<p>On the receiving side, an incoming frame is run through the rule chain.
+<code>PendingRequestRule</code> is the correlation dispatcher:</p>
+<ol>
+<li><code>can_handle()</code>: is <code>response.request_id</code> in <code>pending_requests</code>?</li>
+<li><code>try_handle()</code>: push the response into the matching queue under the lock.</li>
+</ol>
+<p>If it matches, <code>wait()</code> wakes up with the response; if the timeout expires
+first, the pending entry is unregistered so the ID becomes allocatable again.</p>
+<h2 id="why-not-the-alternatives">Why not the alternatives?<a class="headerlink" href="#why-not-the-alternatives" title="Permanent link">&para;</a></h2>
+<p>To highlight the design, here is what it deliberately avoids.</p>
+<p><strong>Split ID ranges (what v2.0.0 shipped).</strong> Server uses <code>[0, id_window)</code>, client
+uses <code>[id_window, id_window*2)</code>; every client got its own window via a global
+<code>ClientAllocator</code>. That variant kills interleaving collisions too, but it costs
+you:</p>
+<ul>
+<li>A global <code>ClientAllocator</code> that must assign offsets and be kept in sync with
+  connection lifecycle.</li>
+<li>Reintroducing a coordinator where none should be needed.</li>
+</ul>
+<p>v3.0.1 reuses the idea in its cheap form: <strong>two fixed halves, split by role</strong>
+(client <code>[0, 32768)</code>, server <code>[32768, 65536)</code>), not by connection. No
+coordinator, no per-client bookkeeping, and each side keeps a generous
+32768-ID pool. The genuine costs of the v2 design (the coordinator) are what
+make the fixed per-role split attractive: it is the same trick, minus the
+machinery.</p>
+<p><strong>Monotonic counter without skip.</strong> Zero overhead, but the wrap-around
+collision above. Every in-flight ID at the boundary is a latent misroute.</p>
+<p><strong>UUIDs or full 32-bit random IDs.</strong> No collisions to speak of, but a fatter
+header on every frame, and you still have to filter stale replies yourself. The
+skip-based allocator gives determinism with a 2-byte ID.</p>
+<p><strong>Strict request/response serialization (HTTP/1.1 style).</strong> Trivial to
+implement, but forfeits pipelining and halves throughput for RPC bursts. Veltix
+routes callbacks through a thread pool and wants many concurrent in-flight
+calls per connection.</p>
+<p>The chosen design is the one that gets determinism (no collisions), a dense
+2-byte ID, and no cross-connection coordination at the same time.</p>
+<h2 id="wire-compatibility-notes">Wire compatibility notes<a class="headerlink" href="#wire-compatibility-notes" title="Permanent link">&para;</a></h2>
+<p>The ID window is a purely local concern now: the client allocator is fixed at
+[0, 32768) and the server allocates from the reserved upper half
+[32768, 65536); the server no longer announces <code>id_window</code> during the
+handshake (<code>meta</code> is simply <code>{}</code>). Older peers still send and read
+<code>meta.id_window</code> and fall back to 30000 if absent, so the change is transparent
+on the wire and the protocol MAJOR is untouched. <code>ServerConfig.id_window</code>
+remains, validated to <code>1..65535</code>, and is clamped to 32768 at startup because
+the client half of the space is reserved.</p>
+<p>During a mixed-version window (new peer talking to a v3.0.0 peer), the old
+peer still allocates from the full flat range, so a collision requires the old
+peer's counter to have wrapped into the far side's half. It is far less likely
+than the v3.0.0 behavior (where both sides started at 0), but only a full
+upgrade removes it entirely.</p>
+<h2 id="source-map">Source map<a class="headerlink" href="#source-map" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>network/id_allocator.py</code></td>
+<td>Pending-safe, thread-safe ID pool</td>
+</tr>
+<tr>
+<td><code>handler/rules.py</code></td>
+<td><code>PendingRequestRule</code>: dispatch reply to queue</td>
+</tr>
+<tr>
+<td><code>handler/request_handler.py</code></td>
+<td><code>pending_requests</code> map + <code>register/unregister/wait</code></td>
+</tr>
+<tr>
+<td><code>network/sender.py</code></td>
+<td>Auto-assigns IDs at send time</td>
+</tr>
+<tr>
+<td><code>network/request.py</code></td>
+<td>2-byte ID serialization + echo via <code>respond()</code></td>
+</tr>
+<tr>
+<td><code>client/client.py</code></td>
+<td>Client-side register-before-send order</td>
+</tr>
+</tbody>
+</table>
 
 
 

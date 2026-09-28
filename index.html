@@ -288,6 +288,26 @@
     
     
       <li class="md-tabs__item">
+        <a href="design/request-id-correlation/" class="md-tabs__link">
+          
+  
+  
+  Design
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
         <a href="api/server/" class="md-tabs__link">
           
   
@@ -960,7 +980,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Design
   
 
     
@@ -973,6 +993,93 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="design/request-id-correlation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request-ID Correlation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1476,7 +1583,7 @@
 <p>Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.</p>
-<p><strong>Mature &amp; tested</strong> : 564 tests · CI on Python 3.8-3.14 · 30+ releases</p>
+<p><strong>Mature &amp; tested</strong> : 638 tests · CI on Python 3.11-3.14 · v3.0.0 Rust-powered hot path</p>
 <hr />
 <h2 id="why-veltix">Why Veltix?<a class="headerlink" href="#why-veltix" title="Permanent link">&para;</a></h2>
 <p>I wrote Veltix because I got tired of rewriting the same networking boilerplate every time I needed two programs to talk
@@ -1489,7 +1596,7 @@ learning a framework than writing plain Python.</p>
 particular architecture. Define your message types, register your handlers, and focus on your application instead of
 socket plumbing.</p>
 <p>That's the idea behind Veltix: modern TCP communication with a simple, synchronous API, sensible defaults, and zero
-dependencies.</p>
+runtime dependencies.</p>
 <hr />
 <h2 id="raw-socket-vs-veltix">Raw Socket vs Veltix<a class="headerlink" href="#raw-socket-vs-veltix" title="Permanent link">&para;</a></h2>
 <p><strong>Echo server with raw sockets (15 lines):</strong></p>
@@ -1523,7 +1630,7 @@ dependencies.</p>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">ECHO</span><span class="p">)</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_echo</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">ClientInfo</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">server</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">Request</span><span class="p">(</span><span class="n">ECHO</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">),</span> <span class="n">client</span><span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">server</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">Request</span><span class="p">(</span><span class="n">ECHO</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="p">),</span> <span class="n">client</span><span class="p">)</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
@@ -1533,7 +1640,8 @@ dependencies.</p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <p><strong>Core</strong></p>
 <ul>
-<li>Zero dependencies : pure Python stdlib</li>
+<li>Zero runtime dependencies : Python stdlib + optional Rust engine</li>
+<li>Rust-powered hot path : framing / parse / compile in native Rust, automatic pure-Python fallback</li>
 <li>Binary protocol with CRC32 integrity verification</li>
 <li>Automatic JSON raw-socket handshake with version compatibility</li>
 <li>Thread-safe callback execution : slow handlers never block reception</li>
@@ -1544,7 +1652,7 @@ dependencies.</p>
 <li><code>send_and_wait()</code> : built-in request/response correlation with timeout</li>
 <li>Text &amp; JSON payloads : <code>Request(MY_TYPE, text="hello")</code> / <code>Request(MY_TYPE, json={"k": "v"})</code></li>
 <li>Content decoding : <code>response.text</code>, <code>response.json</code>, <code>response.is_json</code>, <code>response.is_text</code></li>
-<li>Convenience send : <code>server.send()</code> / <code>client.send()</code> — no need to touch <code>Sender</code> directly</li>
+<li>Convenience send : <code>server.send()</code> / <code>client.send()</code> - no need to touch <code>Sender</code> directly</li>
 <li>Built-in ping/pong : bidirectional latency measurement</li>
 <li>Client tags : attach arbitrary metadata to connected clients</li>
 </ul>
@@ -1557,13 +1665,48 @@ dependencies.</p>
 <p><strong>Developer Experience</strong></p>
 <ul>
 <li>Integrated logger : colorized, file-rotating, thread-safe</li>
-<li>564 tests, CI on Python 3.8 / 3.10 / 3.12 / 3.14</li>
+<li>638 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)</li>
 </ul>
 <hr />
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<blockquote>
-<p>Benchmarked on Python 3.14.5 : 12-core CPU, 30.5 GB RAM, Linux (loopback).</p>
-</blockquote>
+<p><strong>Rust engine vs Python fallback (v3.0.0)</strong> - Python 3.14.7, 12-core CPU, 5-run averages:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Rust engine</th>
+<th>Python fallback</th>
+<th>Gain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Concurrent stress (100 clients)</td>
+<td>137,995 msg/s</td>
+<td>106,486 msg/s</td>
+<td><strong>+30%</strong></td>
+</tr>
+<tr>
+<td>Latency P99</td>
+<td>0.066 ms</td>
+<td>0.096 ms</td>
+<td><strong>-31%</strong></td>
+</tr>
+<tr>
+<td>FPS 64 tick stdev</td>
+<td>0.175 ms</td>
+<td>0.343 ms</td>
+<td><strong>-49%</strong></td>
+</tr>
+<tr>
+<td>Burst send</td>
+<td>71,376 msg/s</td>
+<td>59,408 msg/s</td>
+<td><strong>+20%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Socket backends, pure-Python path (Python 3.14.7, 12-core CPU, 30.5 GB RAM, loopback):</p>
 <table>
 <thead>
 <tr>
@@ -1575,23 +1718,23 @@ dependencies.</p>
 <tbody>
 <tr>
 <td>Concurrent stress (100 clients)</td>
-<td>32,297 msg/s</td>
-<td><strong>82,937 msg/s</strong></td>
+<td>51,505 msg/s</td>
+<td><strong>108,084 msg/s (2.1x)</strong></td>
 </tr>
 <tr>
 <td>Burst send</td>
-<td>49,287 msg/s</td>
-<td>49,878 msg/s</td>
+<td>64,158 msg/s</td>
+<td>60,358 msg/s</td>
 </tr>
 <tr>
 <td>Average latency</td>
-<td>0.033 ms</td>
-<td>0.036 ms</td>
+<td>0.041 ms</td>
+<td>0.050 ms</td>
 </tr>
 <tr>
 <td>Idle server memory</td>
-<td>20.8 KB</td>
-<td>4 KB</td>
+<td>60.8 KB</td>
+<td>≈0 (noise floor)</td>
 </tr>
 </tbody>
 </table>

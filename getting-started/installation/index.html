@@ -290,6 +290,26 @@
     
     
       <li class="md-tabs__item">
+        <a href="../../design/request-id-correlation/" class="md-tabs__link">
+          
+  
+  
+  Design
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
         <a href="../../api/server/" class="md-tabs__link">
           
   
@@ -521,6 +541,17 @@
     <span class="md-ellipsis">
       
         Requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-rust-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Rust engine
       
     </span>
   </a>
@@ -945,7 +976,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Design
   
 
     
@@ -958,6 +989,93 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/request-id-correlation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request-ID Correlation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1375,6 +1493,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-rust-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Rust engine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-from-pypi" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1430,8 +1559,20 @@
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Python <strong>3.8+</strong></li>
-<li>No additional dependencies</li>
+<li>Python <strong>3.11+</strong></li>
+<li>No runtime dependencies (pure stdlib, zero third-party packages)</li>
+</ul>
+<h2 id="the-rust-engine">The Rust engine<a class="headerlink" href="#the-rust-engine" title="Permanent link">&para;</a></h2>
+<p>Since v3.0.0, the message hot path (parse, compile, buffering) is compiled in Rust and ships as a
+<code>cp311-abi3</code> extension inside the prebuilt wheels - one wheel per platform covers Python 3.11+.
+No toolchain is needed to install or run Veltix:</p>
+<ul>
+<li>If the compiled <code>veltix._rust</code> extension is available, it is used automatically.</li>
+<li>Otherwise (or with <code>VELTIX_DISABLE_RUST=1</code>), Veltix falls back to the pure-Python implementation
+  transparently.</li>
+<li>At runtime you can also switch in code: <code>veltix.disable_rust()</code> / <code>veltix.enable_rust()</code>. The
+  engine is captured when a <code>Server</code>/<code>Client</code> is (re)initialized, so the switch affects new
+  instances and <code>server.restart()</code>.</li>
 </ul>
 <h2 id="install-from-pypi">Install from PyPI<a class="headerlink" href="#install-from-pypi" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>veltix
@@ -1439,9 +1580,16 @@
 <h2 id="install-latest-from-github">Install latest from GitHub<a class="headerlink" href="#install-latest-from-github" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/NytroxDev/Veltix.git
 </code></pre></div>
+<blockquote>
+<p>Building from source (e.g. <code>pip install git+...</code>) requires a Rust toolchain; the maturin build
+backend handles it automatically with build isolation.</p>
+</blockquote>
 <h2 id="verify-installation">Verify installation<a class="headerlink" href="#verify-installation" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">veltix</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">veltix</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix.network</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rust</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">_rust</span><span class="o">.</span><span class="n">rust_enabled</span><span class="p">())</span>  <span class="c1"># True when the compiled Rust engine is active</span>
 </code></pre></div>
 
 

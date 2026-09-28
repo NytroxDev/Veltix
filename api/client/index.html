@@ -284,6 +284,26 @@
   
   
   
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../design/request-id-correlation/" class="md-tabs__link">
+          
+  
+  
+  Design
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
     
   
   
@@ -823,6 +843,93 @@
       
   
   
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/request-id-correlation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request-ID Correlation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -844,10 +951,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -865,8 +972,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1971,7 +2078,7 @@ letting the caller display progress or cancel retries via stop_retry().</p>
                 <code>func</code>
             </td>
             <td>
-                  <code><span title="typing.Callable">Callable</span></code>
+                  <code><span title="collections.abc.Callable">Callable</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2004,6 +2111,7 @@ letting the caller display progress or cancel retries via stop_retry().</p>
     <div class="doc doc-contents ">
 
         <p>Register a callback for successful connection.</p>
+<p>Multiple callbacks can be registered and will be called in order.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2022,7 +2130,7 @@ letting the caller display progress or cancel retries via stop_retry().</p>
                 <code>func</code>
             </td>
             <td>
-                  <code><span title="typing.Callable">Callable</span></code>
+                  <code><span title="collections.abc.Callable">Callable</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2055,6 +2163,7 @@ letting the caller display progress or cancel retries via stop_retry().</p>
     <div class="doc doc-contents ">
 
         <p>Register a callback for disconnection.</p>
+<p>Multiple callbacks can be registered and will be called in order.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2073,7 +2182,7 @@ letting the caller display progress or cancel retries via stop_retry().</p>
                 <code>func</code>
             </td>
             <td>
-                  <code><span title="typing.Callable">Callable</span></code>
+                  <code><span title="collections.abc.Callable">Callable</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2111,7 +2220,7 @@ letting the caller display progress or cancel retries via stop_retry().</p>
 <details class="usage" open>
   <summary>Usage</summary>
   <p>@client.route(MY_TYPE)
-def on_my_type(response: Response, client=None) -&gt; None:
+def on_my_type(response: Response) -&gt; None:
     ...</p>
 </details>
 
@@ -2157,7 +2266,7 @@ def on_my_type(response: Response, client=None) -&gt; None:
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Callable">Callable</span></code>
+                  <code><span title="collections.abc.Callable">Callable</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2324,7 +2433,7 @@ config.retry times with config.retry_delay seconds between attempts.</p>
 <a href="#veltix.client.client.Client.send_and_wait" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">send_and_wait</span><span class="p">(</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Response</span><span class="p">]</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2392,12 +2501,12 @@ where the response could arrive before wait() is called.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="            veltix.network.response.Response
+                  <code><a class="autorefs autorefs-internal" title="            veltix.network.response.Response
 
 
   
       dataclass
-  " href="../request/#veltix.network.response.Response">Response</a>]</code>
+  " href="../request/#veltix.network.response.Response">Response</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2421,7 +2530,7 @@ where the response could arrive before wait() is called.</p>
 
 
 <a href="#veltix.client.client.Client.ping_server" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">ping_server</span><span class="p">(</span><span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">ping_server</span><span class="p">(</span><span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2471,7 +2580,7 @@ where the response could arrive before wait() is called.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="float">float</span>]</code>
+                  <code><span title="float">float</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2579,7 +2688,7 @@ where the response could arrive before wait() is called.</p>
 
 
 <a href="#veltix.client.client.Client.retry" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">retry</span><span class="p">(</span><span class="n">max_</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">retry</span><span class="p">(</span><span class="n">max_</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2603,7 +2712,7 @@ where the response could arrive before wait() is called.</p>
                 <code>max_</code>
             </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+                  <code><span title="int">int</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2692,7 +2801,7 @@ where the response could arrive before wait() is called.</p>
             <td>
               <div class="doc-md-description">
                 <p>Buffer size for receiving data in bytes.
-               Use BufferSize enum for common presets (default: BufferSize.SMALL).
+               Use BufferSize enum for common presets (default: BufferSize.MEDIUM).
                Can also be set to any custom integer value.</p>
               </div>
             </td>

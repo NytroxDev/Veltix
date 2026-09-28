@@ -290,6 +290,26 @@
     
     
       <li class="md-tabs__item">
+        <a href="../../design/request-id-correlation/" class="md-tabs__link">
+          
+  
+  
+  Design
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
         <a href="../../api/server/" class="md-tabs__link">
           
   
@@ -956,7 +976,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Design
   
 
     
@@ -969,6 +989,93 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Design
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/request-id-correlation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Request-ID Correlation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1462,7 +1569,7 @@ disconnection.</p>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">retry_delay</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># seconds between attempts (default: 1.0)</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">))</span>
 </code></pre></div>
-<p>With <code>retry=0</code> (default), the client behaves exactly as in v1.4.0 — no automatic reconnection.</p>
+<p>With <code>retry=0</code> (default), the client behaves exactly as in v1.4.0 - no automatic reconnection.</p>
 <h2 id="disconnectstate">DisconnectState<a class="headerlink" href="#disconnectstate" title="Permanent link">&para;</a></h2>
 <p>The client <code>on_disconnect</code> callback now receives a <code>DisconnectState</code> with full context at every event.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">DisconnectState</span><span class="p">,</span> <span class="n">DisconnectReason</span>
@@ -1530,7 +1637,7 @@ disconnection.</p>
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
 <a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_disconnect</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">DisconnectState</span><span class="p">):</span>
 <a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">permanent</span><span class="p">:</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Permanently disconnected — reason: </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">reason</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Permanently disconnected - reason: </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">reason</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="k">else</span><span class="p">:</span>
 <a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Retrying... attempt </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">attempt</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">retry_max</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>
@@ -1540,7 +1647,7 @@ disconnection.</p>
 <a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
 </code></pre></div>
 <h2 id="manual-control">Manual control<a class="headerlink" href="#manual-control" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Cancel all pending retries — fires on_disconnect(permanent=True)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Cancel all pending retries - fires on_disconnect(permanent=True)</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">client</span><span class="o">.</span><span class="n">stop_retry</span><span class="p">()</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Force a new attempt even if retry_max was reached</span>
@@ -1552,7 +1659,7 @@ disconnection.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 </div>
-<p>Callbacks and routes are preserved across reconnections — no need to re-register them.</p>
+<p>Callbacks and routes are preserved across reconnections - no need to re-register them.</p>
 
 
 
