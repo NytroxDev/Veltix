@@ -58,7 +58,7 @@ class ClientsManager:
         max_message_size: int | None = None,
         bus: VeltixBus | None = None,
         use_rust: bool | None = None,
-    ):
+    ) -> None:
         """Initialise the ClientsManager.
 
         Args:
@@ -92,30 +92,30 @@ class ClientsManager:
             )
             return self.id_count
 
-    def remove_client(self, id_client: int) -> bool:
+    def remove_client(self, client_id: int) -> bool:
         """Remove a client from the registry.
 
         Args:
-            id_client: The ID of the client to remove.
+            client_id: The ID of the client to remove.
 
         Returns:
             True if the client was found and removed, False otherwise.
         """
         with self._clients_lock:
-            entry = self.clients.pop(id_client, None)
+            entry = self.clients.pop(client_id, None)
             return entry is not None
 
-    def get_client(self, id_client: int) -> ClientEntry | None:
+    def get_client(self, client_id: int) -> ClientEntry | None:
         """Look up a client by its ID.
 
         Args:
-            id_client: The client ID to search for.
+            client_id: The client ID to search for.
 
         Returns:
             The matching :class:`ClientEntry`, or ``None`` if not found.
         """
         with self._clients_lock:
-            return self.clients.get(id_client)
+            return self.clients.get(client_id)
 
     def has_client_id(self, client_id: int) -> bool:
         """Check whether a client with the given ID is registered.
