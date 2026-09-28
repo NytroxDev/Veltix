@@ -115,14 +115,17 @@ class VeltixBus(EventBus):
         """
         self.emit(LogEvent.CRITICAL, msg)
 
-    def _has_subscribers(
+    # ── Subscriber checks ───────────────────────────────────────────────────────
+
+    def has_subscribers(
         self,
         event: Enum,
     ) -> bool:
-        """Check whether any subscriber is registered for *event*.
+        """Check whether any subscriber is registered for ``event``.
 
-        This is a lock-free fast path for hot-path emit guards. Dict
-        reads are safe under the GIL.
+        This is a lock-free fast path for hot-path emit guards: it reads
+        the subscriber dict directly instead of going through emit's
+        locked snapshot. Dict reads are safe under the GIL.
 
         Args:
             event: The event to check.

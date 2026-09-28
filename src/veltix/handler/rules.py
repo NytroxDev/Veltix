@@ -10,7 +10,7 @@ class PingRule(Rule):
 
     def handle(self, context: MessageContext) -> None:
         bus = context.handler.bus
-        if bus._has_subscribers(ProtocolEvent.PING):
+        if bus.has_subscribers(ProtocolEvent.PING):
             bus.emit(
                 ProtocolEvent.PING,
                 {
@@ -30,7 +30,7 @@ class PingRule(Rule):
             sender.send(pong, client=client.conn)
         else:
             sender.send(pong)
-        if bus._has_subscribers(ProtocolEvent.PONG):
+        if bus.has_subscribers(ProtocolEvent.PONG):
             bus.emit(
                 ProtocolEvent.PONG,
                 {
@@ -70,7 +70,7 @@ class PendingRequestRule(Rule):
         if queue is None:
             return False
         queue.put(context.response)
-        if context.handler.bus._has_subscribers(MessageEvent.PENDING_SATISFIED):
+        if context.handler.bus.has_subscribers(MessageEvent.PENDING_SATISFIED):
             context.handler.bus.emit(
                 MessageEvent.PENDING_SATISFIED,
                 {
@@ -91,7 +91,7 @@ class RouteRule(Rule):
                 f"Route for type {context.response.type} disappeared before dispatch"
             )
             return
-        if context.handler.bus._has_subscribers(MessageEvent.ROUTED):
+        if context.handler.bus.has_subscribers(MessageEvent.ROUTED):
             context.handler.bus.emit(
                 MessageEvent.ROUTED,
                 {
@@ -116,7 +116,7 @@ class OnRecvRule(Rule):
     def handle(self, context: MessageContext) -> None:
         on_recv = context.handler.on_recv
         assert on_recv is not None
-        if context.handler.bus._has_subscribers(MessageEvent.ROUTED):
+        if context.handler.bus.has_subscribers(MessageEvent.ROUTED):
             context.handler.bus.emit(
                 MessageEvent.ROUTED,
                 {
@@ -144,7 +144,7 @@ class UnhandledRule(Rule):
             src = f"client {addr}"
         else:
             src = "server"
-        if context.handler.bus._has_subscribers(MessageEvent.UNHANDLED):
+        if context.handler.bus.has_subscribers(MessageEvent.UNHANDLED):
             context.handler.bus.emit(
                 MessageEvent.UNHANDLED,
                 {

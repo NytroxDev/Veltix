@@ -130,7 +130,7 @@ def dispatch_messages(
     """
     try:
         for message in buffer.extract_messages():
-            if bus._has_subscribers(MessageEvent.RECEIVED):
+            if bus.has_subscribers(MessageEvent.RECEIVED):
                 bus.emit(
                     MessageEvent.RECEIVED,
                     {
