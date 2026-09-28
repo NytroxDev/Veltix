@@ -150,10 +150,12 @@ class ThreadingSocket(BaseSocket):
 
             except TimeoutError:
                 continue
-            except OSError:
-                self.bus.emit(ErrorEvent.ACCEPT, {"error": "OSError"})
-                self._running_event.clear()
-                return
+            except OSError as e:
+                # Transient errors (e.g. EMFILE) must not kill the accept
+                # loop: log and keep accepting, like the selector backend.
+                self.bus.emit(ErrorEvent.ACCEPT, {"error": str(e)})
+                self.bus.error(f"Accept error: {type(e).__name__}: {e}")
+                continue
             except Exception as e:
                 if self._running_event.is_set():
                     self.bus.emit(ErrorEvent.ACCEPT, {"error": f"{type(e).__name__}: {e}"})
@@ -312,6 +314,9 @@ class ThreadingSocket(BaseSocket):
             return True
 
         except (TimeoutError, ConnectionRefusedError) as e:
+            # The socket may be half-open (connect or handshake in flight):
+            # release its fd now instead of leaking it until reconnection.
+            self._sock.close()
             self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
             self.bus.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
             return False

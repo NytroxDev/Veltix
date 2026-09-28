@@ -156,17 +156,29 @@ class TestThreadingSocketUnit:
         conn_mock = MagicMock()
         sock._running_event.set()
         sock.client_manager.add_client(MagicMock())
-        with patch.object(
-            socket.socket,
-            "accept",
-            side_effect=[(conn_mock, ("1.2.3.4", 1234)), OSError("stop")],
-        ):
+
+        calls = {"n": 0}
+
+        def fake_accept():
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return (conn_mock, ("1.2.3.4", 1234))
+            if calls["n"] == 2:
+                # Transient error: the loop must keep accepting.
+                raise OSError("transient")
+            sock._running_event.clear()
+            raise OSError("stop")
+
+        with patch.object(socket.socket, "accept", side_effect=fake_accept):
             received = []
             sock.bus.subscribe(ServerEvent.CLIENT_REJECTED, lambda e, p: received.append(p))
             sock._accept_loop("0.0.0.0", 8080, 1, 1024, 0.5)
 
         conn_mock.close.assert_called_once()
         assert len(received) == 1
+        # A transient accept OSError must not kill the accept loop: reaching
+        # the third call proves it kept accepting after the error.
+        assert calls["n"] == 3
         assert not sock._running_event.is_set()
 
     def test_connect_handshake_failure(self, sock):
