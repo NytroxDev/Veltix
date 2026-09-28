@@ -199,6 +199,37 @@ class TestClientsManagerTags:
         assert info2.conn in sockets
 
 
+class TestClientsManagerIter:
+    def test_iter_on_clients_applies_to_all(self):
+        manager = ClientsManager()
+        manager.add_client(make_client_info())
+        manager.add_client(make_client_info())
+        seen = []
+
+        def collect(entry):
+            seen.append(entry)
+
+        manager.iter_on_clients(collect)
+
+        assert len(seen) == 2
+
+    def test_iter_on_clients_snapshot_allows_mutation(self):
+        """The callback may call manager methods without deadlocking."""
+        manager = ClientsManager()
+        for _ in range(3):
+            manager.add_client(make_client_info())
+        removed = []
+
+        def remove(entry):
+            manager.remove_client(entry.id)
+            removed.append(entry)
+
+        manager.iter_on_clients(remove)
+
+        assert len(removed) == 3
+        assert manager.count() == 0
+
+
 class TestClientsManagerThreadSafety:
     def test_concurrent_add(self):
         """Concurrent adds should not lose any client."""
