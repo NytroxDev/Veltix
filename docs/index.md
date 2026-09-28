@@ -136,7 +136,7 @@ Socket backends, pure-Python path (Python 3.14.7, 12-core CPU, 30.5 GB RAM, loop
 | Average latency                 | 0.041 ms        | 0.050 ms        |
 | Idle server memory              | 60.8 KB         | ≈0 (noise floor) |
 
-Full details : [Performance](../PERFORMANCE.md)
+Full details : [Performance](https://github.com/NytroxDev/Veltix/blob/main/PERFORMANCE.md)
 
 ---
 
