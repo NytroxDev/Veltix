@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   full one-slot queue, stalling the receive loop until the requester drained
   it - it is now consumed and discarded with a debug log
   ([f7558d2](https://github.com/NytroxDev/Veltix/commit/f7558d2)).
+- **`close_all()` no longer leaks clients or skips `ON_DISCONNECT`.** On the
+  threading backend, a receive thread that exited via the running-event check
+  (rather than a socket error) used to leave a zombie entry in the client
+  manager, so `server.clients` kept stale entries after `close_all()` and
+  `ON_DISCONNECT` never fired for those clients; `close_all()` now sweeps the
+  registry explicitly, and `ON_DISCONNECT` is emitted exactly once per client
+  on both backends even under a concurrent close
+  ([54927fe](https://github.com/NytroxDev/Veltix/commit/54927fe)).
 
 ## [3.0.1] - 2026-09-26
 
