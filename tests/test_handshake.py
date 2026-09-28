@@ -485,3 +485,57 @@ class TestRecvHandshakeEdgeCases:
 
         result = handler._recv_handshake(ExcSocket())
         assert result is None
+
+
+# ── Malformed / oversized payloads ─────────────────────────────────────────────
+
+
+def _pack_raw(raw: bytes) -> bytes:
+    """Length-prefix a raw JSON payload, exactly like a real peer would."""
+    return struct.pack(">H", len(raw)) + raw
+
+
+def _oversized_payload() -> bytes:
+    """Valid handshake dict whose size exceeds the 30 KiB handshake cap."""
+    payload = {
+        "v": __version__,
+        "pv": protocol_version_str(),
+        "meta": {"blob": "x" * (32 * 1024)},
+    }
+    return _pack_raw(json.dumps(payload).encode("utf-8"))
+
+
+class TestHandshakeMalformedPayload:
+    """Non-dict JSON payloads must fail cleanly, oversized ones must be capped."""
+
+    def test_client_rejects_non_dict_payload(self):
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
+        sock = MockSocket(recv_data=_pack_raw(b"[1,2,3]"))
+        success, meta = handler.do_client_handshake(sock)
+        assert success is False
+        assert meta is None
+
+    def test_client_rejects_non_dict_int_payload(self):
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
+        sock = MockSocket(recv_data=_pack_raw(b"42"))
+        success, meta = handler.do_client_handshake(sock)
+        assert success is False
+        assert meta is None
+
+    def test_server_rejects_non_dict_payload(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = MockSocket(recv_data=_pack_raw(b"[1,2,3]"))
+        assert handler.do_server_handshake(sock) is False
+
+    def test_client_rejects_oversized_payload(self):
+        handler = HandshakeHandler(mode=Mode.CLIENT, bus=VeltixBus())
+        ack = handler._encode({"result": "ok"})
+        sock = MockSocket(recv_data=_oversized_payload() + ack)
+        success, meta = handler.do_client_handshake(sock)
+        assert success is False
+        assert meta is None
+
+    def test_server_rejects_oversized_payload(self):
+        handler = HandshakeHandler(mode=Mode.SERVER, bus=VeltixBus())
+        sock = MockSocket(recv_data=_oversized_payload())
+        assert handler.do_server_handshake(sock) is False

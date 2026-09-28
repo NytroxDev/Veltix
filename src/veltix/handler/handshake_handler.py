@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import struct
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Any, Protocol
 
 from ..exceptions import ServerFullError
 from ..internal.compatibility import protocol_is_compatible, protocol_version_str
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
 
 _HANDSHAKE_STRUCT = struct.Struct(">H")
+_MAX_HANDSHAKE_SIZE = 30 * 1024
 
 
 class RawSocket(Protocol):
@@ -65,9 +66,12 @@ class HandshakeHandler:
 
     @staticmethod
     def _decode(data: bytes) -> dict[str, Any] | None:
-        """Parse length-prefixed JSON."""
+        """Parse length-prefixed JSON, rejecting non-object payloads."""
         payload_len = _HANDSHAKE_STRUCT.unpack(data[:2])[0]
-        return cast("dict[str, Any]", json.loads(data[2 : 2 + payload_len]))
+        payload = json.loads(data[2 : 2 + payload_len])
+        if not isinstance(payload, dict):
+            return None
+        return payload
 
     def _send_handshake(self, sock: RawSocket, payload: dict[str, Any]) -> bool:
         """Send a handshake JSON payload over a raw TCP socket."""
@@ -99,6 +103,9 @@ class HandshakeHandler:
             if not header:
                 return None
             payload_len = _HANDSHAKE_STRUCT.unpack(header)[0]
+            if payload_len > _MAX_HANDSHAKE_SIZE:
+                self.bus.error(f"Handshake payload too large: {payload_len} bytes")
+                return None
             data = _recv_all(sock, payload_len)
             if not data:
                 return None
