@@ -122,25 +122,6 @@ class HandshakeHandler:
         """
         return self._send_handshake(sock, {"error": reason})
 
-    def recv_rejection(self, sock: RawSocket, timeout: float = 5.0) -> str | None:
-        """Try to read a rejection message from the server.
-
-        If the server is full, it sends ``{"error": "server_full"}``
-        before the handshake starts. This method reads that payload and
-        returns the error string, or ``None`` if no rejection was received.
-
-        Args:
-            sock: A raw TCP socket conforming to :class:`RawSocket`.
-            timeout: Maximum seconds to wait for the payload.
-
-        Returns:
-            The error string (e.g. ``"server_full"``) or ``None``.
-        """
-        payload = self._recv_handshake(sock, timeout=timeout)
-        if payload and "error" in payload:
-            return str(payload["error"])
-        return None
-
     def _check_version(self, peer_pv: str) -> bool:
         """Check peer compatibility against the local protocol version.
 
