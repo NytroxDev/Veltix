@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Handshake rejects malformed and oversized payloads.** Each handshake JSON
+  payload must be an object and is capped at 30 KiB. A peer sending valid JSON
+  that is not an object (e.g. `[1,2,3]`) used to raise
+  `AttributeError`/`TypeError` inside the handshake, killing the server
+  handshake thread and leaking a zombie client in the client manager; oversized
+  payloads are now rejected before being read
+  ([62caa28](https://github.com/NytroxDev/Veltix/commit/62caa28)).
+
 ## [3.0.1] - 2026-09-26
 
 ### Fixed
