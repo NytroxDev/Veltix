@@ -96,11 +96,11 @@ class HandshakeHandler:
         try:
             sock.settimeout(timeout)
             header = _recv_all(sock, 2)
-            if not header or len(header) < 2:
+            if not header:
                 return None
             payload_len = _HANDSHAKE_STRUCT.unpack(header)[0]
             data = _recv_all(sock, payload_len)
-            if not data or len(data) < payload_len:
+            if not data:
                 return None
             return self._decode(header + data)
         except Exception as e:
