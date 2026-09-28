@@ -93,7 +93,10 @@ class AsyncSocket(BaseSocket):
         self._selector.register(self._sock, selectors.EVENT_READ, data="listen")
         self._running_event.set()
         self._selector_thread = threading.Thread(
-            target=self._selector_loop, args=(max_client, buffer_size), daemon=True
+            target=self._selector_loop,
+            args=(max_client, buffer_size),
+            daemon=True,
+            name="veltix-selector",
         )
         self._selector_thread.start()
         self.bus.debug(
@@ -169,15 +172,22 @@ class AsyncSocket(BaseSocket):
             nonblocking=False,
             use_rust=self._use_rust,
         )
-        client = ClientInfo(
-            client_sock,
-            addr,
-            self.id_count,
-            handshake_done=False,
-            bus=self.bus,
+        client_id = self.client_manager.add_client(
+            ClientInfo(
+                client_sock,
+                addr,
+                self.id_count,
+                handshake_done=False,
+                bus=self.bus,
+            )
         )
-        client_id = self.client_manager.add_client(client)
         self.id_count += 1
+
+        # thread_id mirrors the manager client_id (1-based) so the metadata
+        # stays consistent with the threading backend.
+        entry = self.client_manager.get_client(client_id)
+        if entry is not None:
+            entry.info.thread_id = client_id
 
         # The blocking handshake runs in a worker thread: a peer that connects
         # but never completes its handshake must not stall the selector loop
@@ -373,7 +383,10 @@ class AsyncSocket(BaseSocket):
                     self.client._connecting = False
 
             self._selector_thread = threading.Thread(
-                target=self._selector_loop, args=(0, buffer_size), daemon=True
+                target=self._selector_loop,
+                args=(0, buffer_size),
+                daemon=True,
+                name="veltix-selector",
             )
             self._selector_thread.start()
             self.bus.debug(f"connected to {host}:{port}")

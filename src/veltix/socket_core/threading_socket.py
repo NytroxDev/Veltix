@@ -71,6 +71,7 @@ class ThreadingSocket(BaseSocket):
             target=self._accept_loop,
             args=(host, port, max_client, buffer_size, timeout),
             daemon=True,
+            name="veltix-accept",
         )
         self.start_th.start()
         return True
@@ -142,6 +143,7 @@ class ThreadingSocket(BaseSocket):
                     target=self._handle_server_client,
                     args=(client_id, buffer_size, timeout),
                     daemon=True,
+                    name=f"veltix-client-{thread_id}",
                 )
                 thread.start()
 
@@ -309,6 +311,7 @@ class ThreadingSocket(BaseSocket):
                 target=self._handle_client,
                 args=(buffer_size, timeout),
                 daemon=True,
+                name="veltix-client-handler",
             )
             self.thread_handler.start()
             return True
