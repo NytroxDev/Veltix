@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   handshake thread and leaking a zombie client in the client manager; oversized
   payloads are now rejected before being read
   ([62caa28](https://github.com/NytroxDev/Veltix/commit/62caa28)).
+- **`shutdown()` no longer drops queued callbacks.** `CallbackExecutor`
+  `shutdown(wait=True)` used to drain its queue inline while the worker threads
+  still pulled from it, so a transient `Empty` could leave callbacks
+  unexecuted; it now waits for the workers to exit before draining the
+  remaining queue
+  ([73f7cfe](https://github.com/NytroxDev/Veltix/commit/73f7cfe)).
 
 ## [3.0.1] - 2026-09-26
 
