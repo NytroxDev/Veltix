@@ -122,10 +122,16 @@ class BaseSocket(ABC):
             port: The port number to bind to.
             max_client: Maximum number of concurrent clients (-1 for unlimited).
             buffer_size: Receive buffer size in bytes.
-            timeout: Timeout in seconds for handshakes.
+            timeout: Socket poll timeout in seconds for the accept and
+                receive loops.
 
         Returns:
-            True if binding succeeded, False otherwise.
+            True if binding succeeded. False when the server is already
+            running (threading backend).
+
+        Raises:
+            OSError: When the address cannot be bound (e.g. the port is
+                already in use); the error propagates to the caller.
         """
         ...
 
