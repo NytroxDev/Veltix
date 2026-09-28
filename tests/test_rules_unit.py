@@ -123,6 +123,25 @@ class TestPendingRequestRule:
         result = rule.try_handle(ctx)
         assert result is False
 
+    def test_try_handle_drops_duplicate_response(self):
+        rule = PendingRequestRule()
+        handler = MagicMock()
+        handler.pending_requests = {}
+        handler.pending_requests_lock = MagicMock()
+        request_id = 42
+        from queue import Queue
+
+        q = Queue(maxsize=1)
+        handler.pending_requests[request_id] = q
+        q.put("first")  # request already satisfied
+
+        ctx = make_context(handler=handler, request_id=request_id)
+        result = rule.try_handle(ctx)
+
+        assert result is True  # duplicate consumed, not routed elsewhere
+        assert q.qsize() == 1  # dropped, original response untouched
+        assert q.get() == "first"
+
 
 class TestRouteRule:
     def test_can_handle_with_route(self):

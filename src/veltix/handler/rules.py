@@ -1,3 +1,5 @@
+from queue import Full
+
 from ..exceptions import SenderError
 from ..internal.events import MessageEvent, ProtocolEvent
 from ..network.request import Request
@@ -62,14 +64,21 @@ class PendingRequestRule(Rule):
             context: The message context to process.
 
         Returns:
-            True if a pending request was satisfied.
+            True if a pending request was satisfied or a duplicate response
+            was dropped, False if there is no matching pending request.
         """
         request_id = context.response.request_id
         with context.handler.pending_requests_lock:
             queue = context.handler.pending_requests.get(request_id)
         if queue is None:
             return False
-        queue.put(context.response)
+        try:
+            queue.put_nowait(context.response)
+        except Full:
+            context.handler.bus.debug(
+                f"Duplicate response for pending request (request_id={request_id}) - dropped"
+            )
+            return True
         if context.handler.bus.has_subscribers(MessageEvent.PENDING_SATISFIED):
             context.handler.bus.emit(
                 MessageEvent.PENDING_SATISFIED,
