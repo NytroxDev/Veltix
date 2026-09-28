@@ -67,7 +67,13 @@ class BaseSocket(ABC):
             buf_size: Maximum number of bytes to receive.
 
         Returns:
-            The received bytes, or an empty byte-string on failure.
+            The received bytes, or an empty byte-string when the peer has
+            closed the connection (EOF).
+
+        Raises:
+            OSError: On socket errors, including ``ConnectionResetError``
+                and ``BrokenPipeError``. A ``TimeoutError`` is raised when
+                a timeout is set and no data arrives in time.
         """
         return self._sock.recv(buf_size)
 
