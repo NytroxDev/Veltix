@@ -74,7 +74,7 @@ Discord = "https://discord.gg/gz8K369a6p"
 # Pytest configuration
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["tests"]
+pythonpath = ["src", "tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
