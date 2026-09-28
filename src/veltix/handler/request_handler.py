@@ -64,8 +64,8 @@ class RequestHandler:
         self.init_rules_manager()
 
     def init_rules_manager(self) -> None:
-        for rule in ALL_RULES:
-            self.rules_manager.add_rule(rule)
+        for rule_cls in ALL_RULES:
+            self.rules_manager.add_rule(rule_cls())
 
     def handle(self, response: Response, client: ClientInfo | None = None) -> bool:
         """Handle an incoming message with full routing logic.

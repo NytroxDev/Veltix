@@ -195,6 +195,15 @@ class TestOnRecvRule:
         rule.handle(ctx)
         handler._executor.submit.assert_called_once()
 
+    def test_handle_without_on_recv_does_not_raise(self):
+        rule = OnRecvRule()
+        handler = MagicMock()
+        handler._executor = MagicMock()
+        handler.on_recv = None
+        ctx = make_context(handler=handler, has_on_recv=False)
+        rule.handle(ctx)  # defensive guard, should not raise
+        handler._executor.submit.assert_not_called()
+
 
 class TestUnhandledRule:
     def test_can_handle_always_true(self):
@@ -247,17 +256,16 @@ class TestAllRules:
         assert len(ALL_RULES) == 5
 
     def test_all_rules_contains_all_rule_types(self):
-        types_in_all = [type(r).__name__ for r in ALL_RULES]
-        assert "PingRule" in types_in_all
-        assert "PendingRequestRule" in types_in_all
-        assert "RouteRule" in types_in_all
-        assert "OnRecvRule" in types_in_all
-        assert "UnhandledRule" in types_in_all
+        assert PingRule in ALL_RULES
+        assert PendingRequestRule in ALL_RULES
+        assert RouteRule in ALL_RULES
+        assert OnRecvRule in ALL_RULES
+        assert UnhandledRule in ALL_RULES
 
     def test_all_rules_ordered_correctly(self):
         """Rules order matters: Ping -> Pending -> Route -> OnRecv -> Unhandled."""
-        assert isinstance(ALL_RULES[0], PingRule)
-        assert isinstance(ALL_RULES[1], PendingRequestRule)
-        assert isinstance(ALL_RULES[2], RouteRule)
-        assert isinstance(ALL_RULES[3], OnRecvRule)
-        assert isinstance(ALL_RULES[4], UnhandledRule)
+        assert ALL_RULES[0] is PingRule
+        assert ALL_RULES[1] is PendingRequestRule
+        assert ALL_RULES[2] is RouteRule
+        assert ALL_RULES[3] is OnRecvRule
+        assert ALL_RULES[4] is UnhandledRule

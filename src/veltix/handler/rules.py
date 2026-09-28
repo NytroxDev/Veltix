@@ -1,3 +1,7 @@
+"""Built-in message rules and the default rule chain."""
+
+from __future__ import annotations
+
 from queue import Full
 
 from ..exceptions import SenderError
@@ -124,7 +128,11 @@ class OnRecvRule(Rule):
 
     def handle(self, context: MessageContext) -> None:
         on_recv = context.handler.on_recv
-        assert on_recv is not None
+        if on_recv is None:
+            context.handler.bus.warning(
+                f"on_recv callback disappeared before dispatch (type={context.response.type})"
+            )
+            return
         if context.handler.bus.has_subscribers(MessageEvent.ROUTED):
             context.handler.bus.emit(
                 MessageEvent.ROUTED,
@@ -169,11 +177,14 @@ class UnhandledRule(Rule):
         return True
 
 
-ALL_RULES = [
-    PingRule(),
-    PendingRequestRule(),
-    RouteRule(),
-    OnRecvRule(),
-    UnhandledRule(),
+ALL_RULES: list[type[Rule]] = [
+    PingRule,
+    PendingRequestRule,
+    RouteRule,
+    OnRecvRule,
+    UnhandledRule,
 ]
-"""Default rule chain evaluated in order during message processing."""
+"""Default rule classes evaluated in order during message processing.
+
+Instantiated once per handler, so rules must stay stateless between messages.
+"""
