@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unexecuted; it now waits for the workers to exit before draining the
   remaining queue
   ([73f7cfe](https://github.com/NytroxDev/Veltix/commit/73f7cfe)).
+- **Duplicate pending responses are dropped instead of blocking.** A second
+  response for an already-satisfied `send_and_wait()` used to block on the
+  full one-slot queue, stalling the receive loop until the requester drained
+  it - it is now consumed and discarded with a debug log
+  ([f7558d2](https://github.com/NytroxDev/Veltix/commit/f7558d2)).
 
 ## [3.0.1] - 2026-09-26
 
