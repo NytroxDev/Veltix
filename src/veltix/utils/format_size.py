@@ -1,3 +1,5 @@
+"""Human-readable formatting for byte counts."""
+
 from __future__ import annotations
 
 
