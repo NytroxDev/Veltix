@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from queue import Empty, Queue
 from threading import Lock
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..handler.callback_executor import CallbackExecutor
 from ..handler.handshake_handler import HandshakeHandler
@@ -45,7 +45,7 @@ class RequestHandler:
         if isinstance(mode, str):
             mode = Mode(mode)
         self.bus = bus
-        self.on_recv = None
+        self.on_recv: Callable[..., Any] | None = None
         self.mode = mode
         self.is_server = self.mode == Mode.SERVER
         self.sender = sender
@@ -53,7 +53,7 @@ class RequestHandler:
         self.handshake_handler = HandshakeHandler(mode=mode, bus=self.bus)
         self._executor = CallbackExecutor(max_workers=max_workers, bus=self.bus)
 
-        self.pending_requests: dict[int, Queue] = {}
+        self.pending_requests: dict[int, Queue[Response]] = {}
         self.pending_requests_lock = Lock()
 
         self._routes: dict[MessageType, Callable] = {}
@@ -88,13 +88,13 @@ class RequestHandler:
 
         return True
 
-    def register(self, request_id: int) -> Queue:
+    def register(self, request_id: int) -> Queue[Response]:
         """
         Register a pending request BEFORE sending it.
 
         Avoids the race condition where the response arrives before the queue exists.
         """
-        queue: Queue = Queue(maxsize=1)
+        queue: Queue[Response] = Queue(maxsize=1)
         with self.pending_requests_lock:
             self.pending_requests[request_id] = queue
         self.bus.emit(
@@ -123,7 +123,7 @@ class RequestHandler:
             return None
 
         try:
-            return queue.get(timeout=timeout)  # type: ignore[no-any-return]
+            return queue.get(timeout=timeout)
         except Empty:
             self.bus.emit(
                 MessageEvent.PENDING_TIMEOUT,
@@ -138,8 +138,8 @@ class RequestHandler:
             with self.pending_requests_lock:
                 self.pending_requests.pop(request_id, None)
 
-    def set_on_recv(self, callback: Callable) -> None:
-        self.on_recv = callback  # type: ignore[assignment]
+    def set_on_recv(self, callback: Callable[..., Any]) -> None:
+        self.on_recv = callback
 
     def has_route(self, type_: MessageType) -> bool:
         with self._routes_lock:
