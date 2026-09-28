@@ -83,6 +83,18 @@ class TestCallbackExecutor:
 
         assert len(results) == 1
 
+    def test_shutdown_runs_all_queued_callbacks(self):
+        """wait=True must run every callback submitted before shutdown."""
+        executor = CallbackExecutor(max_workers=4)
+        results = []
+
+        for i in range(30):
+            executor.submit(results.append, i)
+
+        executor.shutdown()
+
+        assert sorted(results) == list(range(30))
+
 
 @pytest.mark.usefixtures("socket_core_backend")
 class TestCallbackExecutorIntegration:

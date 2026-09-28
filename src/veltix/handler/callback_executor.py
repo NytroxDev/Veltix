@@ -81,12 +81,14 @@ class CallbackExecutor:
                 worker thread has exited.
         """
         self._stopped.set()
+        if not wait:
+            return
 
-        if wait:
-            while not self._queue.empty():
-                try:
-                    self._queue.get_nowait()()
-                except Empty:
-                    break
-            for worker in self._workers:
-                worker.join()
+        for worker in self._workers:
+            worker.join()
+        while True:
+            try:
+                item = self._queue.get_nowait()
+            except Empty:
+                break
+            item()
