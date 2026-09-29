@@ -135,7 +135,7 @@ class MessageBuffer:
         return messages
 
     def _extract_python(self) -> list[Response]:
-        messages = []
+        messages: list[Response] = []
         buffer = self._engine
 
         while True:
