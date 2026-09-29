@@ -68,6 +68,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   garbage collection. The unregister is now tolerant, the cleanup runs,
   and `close()` returns `True`, consistent with `ThreadingSocket`
   ([89a1be2](https://github.com/NytroxDev/Veltix/commit/89a1be2)).
+- **`Client.connect()` can be called again after a failure, drop, or manual
+  disconnect.** A failed attempt closed the socket fd (AsyncSocket) or left
+  it in a stale state (ThreadingSocket), so a manual retry kept failing on
+  the dead socket and only the auto-reconnect loop (which rebuilds
+  components) recovered. A repeat `connect()` now rebuilds the socket stack,
+  preserving registered routes and the `on_recv` callback
+  ([e415d94](https://github.com/NytroxDev/Veltix/commit/e415d94)).
+- **`disconnect()` during an active reconnect loop no longer fires a second,
+  misleading `on_disconnect`.** The loop kept reporting its own reason
+  (`SERVER_CLOSED`/`ERROR`) after the manual disconnect had already reported
+  `MANUAL`, so callers saw two callbacks with the loop's reason last. The
+  loop now stays quiet once a manual disconnect is recorded
+  ([5b801e2](https://github.com/NytroxDev/Veltix/commit/5b801e2)).
 
 ### Internal
 
