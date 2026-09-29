@@ -446,6 +446,7 @@ class Client:
                 self.running = False
                 self.is_connected = False
             if self._reconnect_handler is not None:
+                self._reconnect_handler.mark_manual_disconnect()
                 self._reconnect_handler.stop_retry()
             self.request_handler.shutdown(wait=False)
             self.socket.close()

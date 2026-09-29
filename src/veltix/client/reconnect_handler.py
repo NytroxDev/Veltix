@@ -59,13 +59,25 @@ class ReconnectHandler:
         self._stop_retry_flag = False
         self._stop_event = threading.Event()
         self._reconnect_lock = threading.Lock()
+        self._manual_disconnect = False
 
     def init_connect(self) -> None:
         """Reset the internal state before a fresh connection attempt."""
         with self._state_lock:
             self._fail_count = 0
             self._stop_retry_flag = False
+            self._manual_disconnect = False
         self._stop_event.clear()
+
+    def mark_manual_disconnect(self) -> None:
+        """Record that the owning client is disconnecting manually.
+
+        A manual disconnect already reports ``DisconnectReason.MANUAL``, so
+        the reconnect loop must not fire its own on_disconnect callbacks
+        afterwards, even if it is mid-backoff or mid-attempt.
+        """
+        with self._state_lock:
+            self._manual_disconnect = True
 
     def fire_on_disconnect(self, permanent: bool, reason: DisconnectReason) -> None:
         """Build a :class:`DisconnectState` and invoke the client's on_disconnect callback.
@@ -165,7 +177,8 @@ class ReconnectHandler:
                         "attempt": attempt,
                     },
                 )
-            self.fire_on_disconnect(permanent=False, reason=reason)
+            if not self._manual_disconnect:
+                self.fire_on_disconnect(permanent=False, reason=reason)
 
             if attempt >= max_retry:
                 break
@@ -175,7 +188,8 @@ class ReconnectHandler:
             if self._stop_event.wait(timeout=self._context.config.retry_delay):
                 break
 
-        self.fire_on_disconnect(permanent=True, reason=reason)
+        if not self._manual_disconnect:
+            self.fire_on_disconnect(permanent=True, reason=reason)
         self._context._context_set_running(False)
         return False
 
@@ -235,6 +249,7 @@ class ReconnectHandler:
             with self._state_lock:
                 self._stop_retry_flag = False
                 self._fail_count = 0
+                self._manual_disconnect = False
             self._stop_event.clear()
             self.reset()
             self.reconnect_loop(retry_max=max_)

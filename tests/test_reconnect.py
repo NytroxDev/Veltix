@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from veltix import Client, ClientConfig, Server, ServerConfig
+from veltix import Client, ClientConfig, DisconnectReason, Server, ServerConfig
 from veltix.exceptions import ServerFullError
 
 
@@ -324,6 +324,46 @@ class TestConnectAgain:
             # disconnect() closed the socket; connect() must recover.
             assert client.connect() is True
             client.disconnect()
+        finally:
+            server.close_all()
+            client.disconnect()
+
+
+@pytest.mark.usefixtures("socket_core_backend")
+class TestDisconnectDuringRetry:
+    """disconnect() during an active reconnect loop must not double-fire."""
+
+    def test_disconnect_during_reconnect_loop_fires_manual_once(self):
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
+        server.start()
+
+        states = []
+        client = Client(
+            ClientConfig(
+                server_addr="127.0.0.1",
+                port=port,
+                retry=10,
+                retry_delay=0.2,
+            )
+        )
+        try:
+            assert client.connect() is True
+            client.on_disconnect(lambda s: states.append(s))
+
+            server.close_all()
+            assert _wait_for_disconnect(client), "Client did not detect disconnection"
+
+            client.disconnect()
+
+            # The retry loop wakes from its backoff afterwards; give it time
+            # to (wrongly) fire a second callback, then assert MANUAL is the
+            # last callback ever reported.
+            time.sleep(0.4)
+            manual_idx = [i for i, s in enumerate(states) if s.reason == DisconnectReason.MANUAL]
+            assert len(manual_idx) == 1, [s.reason for s in states]
+            assert manual_idx[0] == len(states) - 1, [s.reason for s in states]
+            assert states[manual_idx[0]].permanent
         finally:
             server.close_all()
             client.disconnect()
