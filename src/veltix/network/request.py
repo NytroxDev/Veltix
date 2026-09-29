@@ -66,6 +66,8 @@ class Request:
             self.content = content
         elif text is not _UNSET:
             self.content = encode_utf8(text)
+            if not isinstance(self.content, bytes):
+                raise RequestError("'text' must be str or bytes")
         else:
             self.content = encode_json(json)
 

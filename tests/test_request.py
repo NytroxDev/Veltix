@@ -65,6 +65,10 @@ class TestRequestPayloadValidation:
         with pytest.raises(RequestError):
             Request(test_message_type, content="hello")  # type: ignore[arg-type]
 
+    def test_text_must_be_str_or_bytes(self, test_message_type):
+        with pytest.raises(RequestError):
+            Request(test_message_type, text=123)
+
 
 class TestRequestPayloadEdgeCases:
     def test_empty_bytes_payload(self, test_message_type):
