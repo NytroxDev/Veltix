@@ -63,12 +63,6 @@ class Logger:
             self._file_handler.close()
             self._file_handler = None
 
-        if not config.enabled:
-            self._internal.setLevel(logging.CRITICAL + 10)
-            return
-
-        self._internal.setLevel(int(config.level))
-
         # Console handler
         self._console_handler = logging.StreamHandler(config.stream)
         self._console_handler.setFormatter(
@@ -93,6 +87,13 @@ class Logger:
                 VeltixFormatter(use_colors=False, show_caller=config.show_caller)
             )
             self._internal.addHandler(self._file_handler)
+
+        # Apply the enabled state last: handlers stay attached (same as
+        # disable()), so a later enable() restores output without rebuilding.
+        if config.enabled:
+            self._internal.setLevel(int(config.level))
+        else:
+            self._internal.setLevel(logging.CRITICAL + 10)
 
     @classmethod
     def get_instance(cls, config: LoggerConfig | None = None) -> Logger:

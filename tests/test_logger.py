@@ -1,5 +1,7 @@
 """Tests for Logger functionality."""
 
+import io
+
 from veltix import Logger, LoggerConfig, LogLevel
 
 
@@ -35,6 +37,14 @@ class TestLogger:
         logger.info("Disabled message")
         logger.enable()
         logger.info("Re-enabled message")
+
+    def test_enable_after_disabled_config_restores_output(self, reset_logger):
+        """enable() must restore output when logging was disabled via config."""
+        stream = io.StringIO()
+        logger = Logger.get_instance(LoggerConfig(enabled=False, stream=stream))
+        logger.enable()
+        logger.info("hello after enable")
+        assert "hello after enable" in stream.getvalue()
 
     def test_logger_set_level(self, reset_logger):
         logger = Logger.get_instance()
