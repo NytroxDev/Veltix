@@ -354,9 +354,24 @@ class TestAsyncSocketUnit:
         result = sock.disconnect()
         assert result is True
 
-    def test_close_not_running(self, sock):
-        result = sock.close()
-        assert result is False
+    def test_close_unbound_socket_cleans_up(self, sock):
+        """A never-bound server socket must be fully closed, not skipped.
+
+        Regression: close() called selector.unregister unconditionally, which
+        raised KeyError on an unregistered socket; close() then returned False
+        and skipped closing the raw socket and the selector (fd held until
+        GC). An unbound socket is a no-op teardown, like ThreadingSocket, and
+        must return True.
+        """
+        assert sock.close() is True
+        assert sock._sock.fileno() == -1
+        # The epoll descriptor must be released: fileno() reports -1 on
+        # Python < 3.14 and raises ValueError on 3.14+ (closed object).
+        try:
+            selector_fd = sock._selector.fileno()
+        except ValueError:
+            selector_fd = -1
+        assert selector_fd == -1
 
     def test_connect_handshake_failure(self, sock):
         with (

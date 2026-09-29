@@ -347,7 +347,8 @@ class AsyncSocket(BaseSocket):
         try:
             self.bus.debug("closing server socket")
             self._running_event.clear()
-            self._selector.unregister(self._sock)
+            with contextlib.suppress(KeyError):
+                self._selector.unregister(self._sock)
             self._shutdown_socket()
             with contextlib.suppress(OSError):
                 self._sock.close()
