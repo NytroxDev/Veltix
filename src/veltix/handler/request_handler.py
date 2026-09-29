@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from queue import Empty, Queue
 from threading import Lock
 from typing import TYPE_CHECKING, Any
@@ -158,6 +159,7 @@ class RequestHandler:
             if type_ in self._routes:
                 self.bus.warning(f"Route for type {type_} already registered - ignoring")
                 return False
+            self._validate_route(type_, function)
             self._routes[type_] = function
         self.bus.emit(
             MessageEvent.ROUTE_REGISTERED,
@@ -167,6 +169,67 @@ class RequestHandler:
             },
         )
         return True
+
+    def _validate_route(self, type_: MessageType, function: Callable) -> None:
+        """Check that a route handler can accept its dispatched arguments.
+
+        Server routes are called with ``(client, response)``, client routes
+        with ``(response)``. A mismatched signature used to fail lazily inside
+        the callback thread pool with a generic ``TypeError``; now it fails
+        fast at registration with a message that shows the expected signature.
+
+        Args:
+            type_: The message type being registered.
+            function: The route handler.
+
+        Raises:
+            TypeError: If the handler cannot accept the dispatched arguments.
+        """
+        try:
+            sig = inspect.signature(function)
+        except (TypeError, ValueError):
+            return  # uninspectable callable: let the runtime decide
+
+        params = list(sig.parameters.values())
+        if any(
+            p.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+            for p in params
+        ):
+            return  # *args/**kwargs absorb the dispatched arguments
+
+        positional = [
+            p
+            for p in params
+            if p.kind
+            in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+        ]
+        required = sum(1 for p in positional if p.default is inspect.Parameter.empty)
+        max_pos = len(positional)
+        kwonly_required = any(
+            p.kind is inspect.Parameter.KEYWORD_ONLY and p.default is inspect.Parameter.empty
+            for p in params
+        )
+
+        if self.mode is Mode.SERVER:
+            expected = 2
+            dispatched = "client, response"
+            fix_sig = "client: ClientInfo, response: Response"
+        else:
+            expected = 1
+            dispatched = "response"
+            fix_sig = "response: Response"
+
+        if required <= expected <= max_pos and not kwonly_required:
+            return
+
+        name = getattr(function, "__name__", type(function).__name__)
+        span = str(required) if required == max_pos else f"{required}-{max_pos}"
+        kw_hint = " and missing keyword-only arguments" if kwonly_required else ""
+        raise TypeError(
+            f"Route handler '{name}' for '{type_.name}' cannot be called with "
+            f"({dispatched}): its signature accepts {span} positional "
+            f"argument(s){kw_hint}. Fix: def {name}({fix_sig}) -> None."
+        )
 
     def unregister_route(self, type_: MessageType) -> bool:
         with self._routes_lock:
