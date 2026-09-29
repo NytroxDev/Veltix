@@ -24,6 +24,71 @@ if TYPE_CHECKING:
     from ..server.client_info import ClientInfo
 
 
+def validate_callback_signature(
+    callback: Callable,
+    *,
+    label: str,
+    expected: int,
+    dispatched: str,
+    fix_sig: str,
+    target: str | None = None,
+) -> None:
+    """Check that a callback can accept its dispatched arguments.
+
+    Server routes and callbacks are dispatched with ``(client, response)``
+    (or ``(client)`` for connect/disconnect), client callbacks with
+    ``(response)`` / ``(state)`` / none. A mismatched signature used to fail
+    lazily inside the callback thread pool with a generic ``TypeError``; now
+    it fails at registration with a message that shows the expected signature.
+
+    Args:
+        callback: The function or callable being registered.
+        label: Short description used in the error (e.g. "Route handler").
+        expected: Number of positional arguments dispatched at call time.
+        dispatched: Argument list shown in the error (e.g. "client, response").
+        fix_sig: Recommended parameter list for the fix message.
+        target: Optional scope shown after the name (e.g. a message type name).
+
+    Raises:
+        TypeError: If the callback cannot accept the dispatched arguments.
+    """
+    try:
+        sig = inspect.signature(callback)
+    except (TypeError, ValueError):
+        return  # uninspectable callable: let the runtime decide
+
+    params = list(sig.parameters.values())
+    if any(
+        p.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD) for p in params
+    ):
+        return  # *args/**kwargs absorb the dispatched arguments
+
+    positional = [
+        p
+        for p in params
+        if p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+    ]
+    required = sum(1 for p in positional if p.default is inspect.Parameter.empty)
+    max_pos = len(positional)
+    kwonly_required = any(
+        p.kind is inspect.Parameter.KEYWORD_ONLY and p.default is inspect.Parameter.empty
+        for p in params
+    )
+
+    if required <= expected <= max_pos and not kwonly_required:
+        return
+
+    name = getattr(callback, "__name__", type(callback).__name__)
+    target_hint = f" for '{target}'" if target else ""
+    span = str(required) if required == max_pos else f"{required}-{max_pos}"
+    kw_hint = " and missing keyword-only arguments" if kwonly_required else ""
+    raise TypeError(
+        f"{label} '{name}'{target_hint} cannot be called with ({dispatched}): "
+        f"its signature accepts {span} positional argument(s){kw_hint}. "
+        f"Fix: def {name}({fix_sig}) -> None."
+    )
+
+
 class RequestHandler:
     """
     Routes incoming messages, correlates request/response pairs, and dispatches callbacks.
@@ -140,6 +205,22 @@ class RequestHandler:
                 self.pending_requests.pop(request_id, None)
 
     def set_on_recv(self, callback: Callable[..., Any]) -> None:
+        if self.mode is Mode.SERVER:
+            validate_callback_signature(
+                callback,
+                label="on_recv callback",
+                expected=2,
+                dispatched="client, response",
+                fix_sig="client: ClientInfo, response: Response",
+            )
+        else:
+            validate_callback_signature(
+                callback,
+                label="on_recv callback",
+                expected=1,
+                dispatched="response",
+                fix_sig="response: Response",
+            )
         self.on_recv = callback
 
     def has_route(self, type_: MessageType) -> bool:
@@ -185,51 +266,24 @@ class RequestHandler:
         Raises:
             TypeError: If the handler cannot accept the dispatched arguments.
         """
-        try:
-            sig = inspect.signature(function)
-        except (TypeError, ValueError):
-            return  # uninspectable callable: let the runtime decide
-
-        params = list(sig.parameters.values())
-        if any(
-            p.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-            for p in params
-        ):
-            return  # *args/**kwargs absorb the dispatched arguments
-
-        positional = [
-            p
-            for p in params
-            if p.kind
-            in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
-        ]
-        required = sum(1 for p in positional if p.default is inspect.Parameter.empty)
-        max_pos = len(positional)
-        kwonly_required = any(
-            p.kind is inspect.Parameter.KEYWORD_ONLY and p.default is inspect.Parameter.empty
-            for p in params
-        )
-
         if self.mode is Mode.SERVER:
-            expected = 2
-            dispatched = "client, response"
-            fix_sig = "client: ClientInfo, response: Response"
+            validate_callback_signature(
+                function,
+                label="Route handler",
+                expected=2,
+                dispatched="client, response",
+                fix_sig="client: ClientInfo, response: Response",
+                target=type_.name,
+            )
         else:
-            expected = 1
-            dispatched = "response"
-            fix_sig = "response: Response"
-
-        if required <= expected <= max_pos and not kwonly_required:
-            return
-
-        name = getattr(function, "__name__", type(function).__name__)
-        span = str(required) if required == max_pos else f"{required}-{max_pos}"
-        kw_hint = " and missing keyword-only arguments" if kwonly_required else ""
-        raise TypeError(
-            f"Route handler '{name}' for '{type_.name}' cannot be called with "
-            f"({dispatched}): its signature accepts {span} positional "
-            f"argument(s){kw_hint}. Fix: def {name}({fix_sig}) -> None."
-        )
+            validate_callback_signature(
+                function,
+                label="Route handler",
+                expected=1,
+                dispatched="response",
+                fix_sig="response: Response",
+                target=type_.name,
+            )
 
     def unregister_route(self, type_: MessageType) -> bool:
         with self._routes_lock:

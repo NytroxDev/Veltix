@@ -8,7 +8,7 @@ import time
 from typing import TYPE_CHECKING
 
 from ..exceptions import ServerFullError
-from ..handler.request_handler import RequestHandler
+from ..handler.request_handler import RequestHandler, validate_callback_signature
 from ..internal.bus import VeltixBus
 from ..internal.events import ClientEvent, ErrorEvent
 from ..network import _rust
@@ -213,6 +213,13 @@ class Client:
         Args:
             func: func()
         """
+        validate_callback_signature(
+            func,
+            label="on_connect callback",
+            expected=0,
+            dispatched="",
+            fix_sig="",
+        )
         self.bus.subscribe(ClientEvent.ON_CONNECT, lambda e, p: func())
 
     def on_disconnect(self, func: Callable) -> None:
@@ -223,6 +230,13 @@ class Client:
         Args:
             func: func(state: DisconnectState)
         """
+        validate_callback_signature(
+            func,
+            label="on_disconnect callback",
+            expected=1,
+            dispatched="state",
+            fix_sig="state: DisconnectState",
+        )
         self.bus.subscribe(ClientEvent.ON_DISCONNECT, lambda e, p: func(p))
 
     def route(self, type_: MessageType) -> Callable:
