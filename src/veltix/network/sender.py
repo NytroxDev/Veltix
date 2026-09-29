@@ -142,14 +142,14 @@ class Sender:
     def broadcast(
         self,
         data: Request,
-        list_of_client: Sequence[_ClientLike] | None = None,
+        list_of_clients: Sequence[_ClientLike] | None = None,
         except_clients: Sequence[_ClientLike] | None = None,
     ) -> bool:
         """Send a request to multiple clients (SERVER mode only).
 
         Args:
             data: Request to broadcast.
-            list_of_client: Target clients. Accepts BaseSocket or ClientInfo. Defaults to all connected clients.
+            list_of_clients: Target clients. Accepts BaseSocket or ClientInfo. Defaults to all connected clients.
             except_clients: Clients to exclude. Accepts BaseSocket or ClientInfo.
 
         Returns:
@@ -160,13 +160,13 @@ class Sender:
             return False
 
         if self._get_all_clients is None:
-            if list_of_client is None:
+            if list_of_clients is None:
                 self._log_error("No client list provided and no get_all_clients callback")
                 return False
-        elif list_of_client is None:
-            list_of_client = self._get_all_clients()
+        elif list_of_clients is None:
+            list_of_clients = self._get_all_clients()
 
-        if not list_of_client:
+        if not list_of_clients:
             return True
 
         # Allocate a direction-scoped ID so unsolicited broadcasts never carry
@@ -183,7 +183,7 @@ class Sender:
             return False
         all_ok = True
 
-        for client in list_of_client:
+        for client in list_of_clients:
             socket = self._resolve_socket(client)
             if socket in exclude:
                 continue
