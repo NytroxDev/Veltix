@@ -117,3 +117,29 @@ class TestResponseContentDetection:
         from veltix.exceptions import VeltixError
 
         assert issubclass(InvalidContentError, VeltixError)
+
+
+class TestResponseRequestId:
+    def test_request_id_defaults_to_zero(self, test_message_type):
+        response = Response(_type=test_message_type, content=b"x")
+
+        assert response.request_id == 0
+
+    def test_request_id_override_wins(self, test_message_type):
+        response = Response(
+            _type=test_message_type,
+            content=b"x",
+            _request_id=7,
+            request_id=42,
+        )
+
+        assert response.request_id == 42
+
+    def test_request_id_internal_fallback(self, test_message_type):
+        response = Response(
+            _type=test_message_type,
+            content=b"x",
+            _request_id=7,
+        )
+
+        assert response.request_id == 7

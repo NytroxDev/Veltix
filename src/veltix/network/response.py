@@ -20,7 +20,7 @@ _UNSET = object()
 _INVALID = object()
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True)
 class Response:
     """Represents a response received through the Veltix protocol.
 
@@ -35,6 +35,8 @@ class Response:
     content: bytes
     _hash: bytes = dataclasses.field(repr=False)
     _request_id: int = dataclasses.field(repr=False)
+    _text_cached: Any = dataclasses.field(default=_UNSET, init=False, repr=False, compare=False)
+    _json_cached: Any = dataclasses.field(default=_UNSET, init=False, repr=False, compare=False)
 
     def __init__(
         self,
