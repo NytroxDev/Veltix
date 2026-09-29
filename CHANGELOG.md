@@ -40,6 +40,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   could receive the same code and one would fail with a spurious
   `MessageTypeError`; allocation and registration now happen atomically
   ([9efec6a](https://github.com/NytroxDev/Veltix/commit/9efec6a)).
+- **`ServerConfig` and `ClientConfig` validate their network values at
+  construction.** Invalid ports, zero or negative buffer sizes, message
+  limits, timeouts, or worker counts previously failed later with obscure
+  errors (non-blocking sockets, thread pools with no workers, busy reconnect
+  loops); they now raise a clear `ValueError` immediately. `port=0`
+  (OS-assigned) and `max_connection=-1` (unlimited) stay valid
+  ([cf78005](https://github.com/NytroxDev/Veltix/commit/cf78005)).
+- **Config docstrings no longer advertise an unimplemented RUST socket
+  core.** `SocketCore.RUST` is still planned for a future major, but the
+  `ServerConfig`/`ClientConfig` docs claimed it was available in v3.0.0;
+  they now document THREADING and ASYNC only
+  ([8072d8d](https://github.com/NytroxDev/Veltix/commit/8072d8d)).
 
 ### Internal
 
@@ -66,6 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-`bytes` buffers (bytearray, memoryview) still get a single copy; no
   behavior change
   ([7c30d66](https://github.com/NytroxDev/Veltix/commit/7c30d66)).
+- **`ServerConfig` and `ClientConfig` gained `__slots__`** via
+  `dataclass(slots=True)`; no behavior change
+  ([acd7f24](https://github.com/NytroxDev/Veltix/commit/acd7f24)).
 
 ## [3.0.2] - 2026-09-28
 
