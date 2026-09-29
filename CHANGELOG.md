@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`Sender.broadcast()` parameter `list_of_client` renamed to `list_of_clients`.**
+  The singular name was a typo and mismatched the documented API. No in-repo
+  caller used the keyword (all calls are positional), so only external callers
+  passing `list_of_client=` need to update
+  ([48f3812](https://github.com/NytroxDev/Veltix/commit/48f3812)).
+
 ## [3.0.2] - 2026-09-28
 
 ### Fixed
