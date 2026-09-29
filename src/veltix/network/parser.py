@@ -59,6 +59,8 @@ class MessageParser:
 
         header = data[:HEADER_SIZE]
         content = data[HEADER_SIZE:]
+        if not isinstance(content, bytes):
+            content = bytes(content)
 
         magic, flags, code, size, hash_received, request_id_raw = HEADER_STRUCT.unpack(header)
         request_id = int.from_bytes(request_id_raw, "big")
@@ -79,7 +81,7 @@ class MessageParser:
 
         return Response(
             _type=msg_type,
-            content=bytes(content),
+            content=content,
             _hash=hash_received,
             _request_id=request_id,
         )
