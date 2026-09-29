@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`Logger.enable()` restores output after logging was disabled via
+  config.** `_setup` used to destroy the console and file handlers whenever
+  `LoggerConfig(enabled=False)` was applied (constructor, `get_instance(config)`
+  or `configure()`), so a later `enable()` re-enabled the level but no handler
+  remained to emit anything: messages were silently swallowed. Handlers are now
+  always attached and the disabled state is applied only as an elevated level,
+  matching `disable()` semantics
+  ([853ac6c](https://github.com/NytroxDev/Veltix/commit/853ac6c)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
