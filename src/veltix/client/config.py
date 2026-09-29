@@ -6,7 +6,7 @@ from ..internal.buffer_size import BufferSize
 from ..socket_core.core import SocketCore
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True)
 class ClientConfig:
     """
     TCP client configuration.
