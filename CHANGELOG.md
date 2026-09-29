@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   matching `disable()` semantics
   ([853ac6c](https://github.com/NytroxDev/Veltix/commit/853ac6c)).
 
+- **Log calls now support %-style formatting arguments like stdlib
+  `logging`.** `Logger.info("... %s", val)` and every `VeltixBus` level method
+  (`bus.error("Something went wrong: %s", exc)`) previously raised `TypeError`
+  on a second argument, even though the documented usage passed one. A single
+  mapping argument applies to named `%(key)s` placeholders, and messages
+  without arguments stay untouched
+  ([ddedfce](https://github.com/NytroxDev/Veltix/commit/ddedfce)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
