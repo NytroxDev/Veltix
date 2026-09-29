@@ -60,6 +60,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   recovered. A failed bind now resets the start state and logs the
   error, so retrying `start()` after freeing the port works
   ([f79af5f](https://github.com/NytroxDev/Veltix/commit/f79af5f)).
+- **`AsyncSocket.close()` now fully cleans up an unbound server socket.**
+  It used to call `selector.unregister()` unconditionally, which raised
+  `KeyError` when the socket was never bound (e.g. after a failed
+  `Server.start()`); the exception was swallowed, so `close()` returned
+  `False` and the raw socket and epoll descriptor were only released at
+  garbage collection. The unregister is now tolerant, the cleanup runs,
+  and `close()` returns `True`, consistent with `ThreadingSocket`
+  ([89a1be2](https://github.com/NytroxDev/Veltix/commit/89a1be2)).
 
 ### Internal
 
