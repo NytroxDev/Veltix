@@ -38,3 +38,19 @@ class ClientConfig:
     retry: int = 0
     retry_delay: float = 1.0
     socket_core: SocketCore = SocketCore.ASYNC
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.port <= 65535:
+            raise ValueError(f"port ({self.port}) must be between 0 and 65535")
+        if self.buffer_size <= 0:
+            raise ValueError(f"buffer_size ({self.buffer_size}) must be positive")
+        if self.max_message_size <= 0:
+            raise ValueError(f"max_message_size ({self.max_message_size}) must be positive")
+        if self.handshake_timeout <= 0:
+            raise ValueError(f"handshake_timeout ({self.handshake_timeout}) must be positive")
+        if self.max_workers < 1:
+            raise ValueError(f"max_workers ({self.max_workers}) must be at least 1")
+        if self.retry < 0:
+            raise ValueError(f"retry ({self.retry}) must be zero or positive")
+        if self.retry_delay <= 0:
+            raise ValueError(f"retry_delay ({self.retry_delay}) must be positive")

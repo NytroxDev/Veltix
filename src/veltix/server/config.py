@@ -40,5 +40,20 @@ class ServerConfig:
     id_window: int = 30000
 
     def __post_init__(self) -> None:
+        if not 0 <= self.port <= 65535:
+            raise ValueError(f"port ({self.port}) must be between 0 and 65535")
+        if self.buffer_size <= 0:
+            raise ValueError(f"buffer_size ({self.buffer_size}) must be positive")
+        if self.max_connection != -1 and self.max_connection < 1:
+            raise ValueError(
+                f"max_connection ({self.max_connection}) must be -1 (unlimited) or a "
+                "positive integer"
+            )
+        if self.max_message_size <= 0:
+            raise ValueError(f"max_message_size ({self.max_message_size}) must be positive")
+        if self.handshake_timeout <= 0:
+            raise ValueError(f"handshake_timeout ({self.handshake_timeout}) must be positive")
+        if self.max_workers < 1:
+            raise ValueError(f"max_workers ({self.max_workers}) must be at least 1")
         if not 1 <= self.id_window <= 65535:
             raise ValueError(f"id_window ({self.id_window}) must be between 1 and 65535")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from veltix import ServerConfig
+from veltix import ClientConfig, ServerConfig
 
 
 class TestServerConfigIDWindow:
@@ -25,3 +25,85 @@ class TestServerConfigIDWindow:
     def test_negative_rejected(self) -> None:
         with pytest.raises(ValueError):
             ServerConfig(id_window=-1)
+
+
+class TestServerConfigValidation:
+    def test_port_zero_ephemeral_accepted(self) -> None:
+        assert ServerConfig(port=0).port == 0
+
+    def test_port_negative_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ServerConfig(port=-1)
+
+    def test_port_above_uint16_max_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ServerConfig(port=65536)
+
+    def test_buffer_size_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ServerConfig(buffer_size=0)
+
+    def test_max_connection_unlimited_accepted(self) -> None:
+        assert ServerConfig(max_connection=-1).max_connection == -1
+
+    def test_max_connection_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ServerConfig(max_connection=0)
+
+    def test_max_connection_below_minus_one_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ServerConfig(max_connection=-2)
+
+    def test_max_message_size_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ServerConfig(max_message_size=0)
+
+    def test_handshake_timeout_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ServerConfig(handshake_timeout=0)
+
+    def test_max_workers_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ServerConfig(max_workers=0)
+
+
+class TestClientConfigValidation:
+    def test_defaults_valid(self) -> None:
+        assert ClientConfig().port == 8080
+        assert ClientConfig().retry == 0
+        assert ClientConfig().retry_delay == 1.0
+
+    def test_port_zero_ephemeral_accepted(self) -> None:
+        assert ClientConfig(port=0).port == 0
+
+    def test_port_negative_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ClientConfig(port=-1)
+
+    def test_port_above_uint16_max_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ClientConfig(port=65536)
+
+    def test_buffer_size_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ClientConfig(buffer_size=0)
+
+    def test_max_message_size_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ClientConfig(max_message_size=0)
+
+    def test_handshake_timeout_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ClientConfig(handshake_timeout=0)
+
+    def test_max_workers_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ClientConfig(max_workers=0)
+
+    def test_retry_negative_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ClientConfig(retry=-1)
+
+    def test_retry_delay_zero_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            ClientConfig(retry_delay=0)
