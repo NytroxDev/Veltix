@@ -78,6 +78,21 @@ class TestIDAllocator:
         alloc.max_ids = 6
         assert [alloc.allocate() for _ in range(7)] == [0, 1, 2, 3, 4, 5, 0]
 
+    def test_max_ids_shrink_normalizes_counter(self) -> None:
+        alloc = IDAllocator(max_ids=100)
+        for _ in range(95):
+            alloc.allocate()
+        alloc.max_ids = 10
+        ids = [alloc.allocate() for _ in range(5)]
+        assert all(0 <= i < 10 for i in ids)
+
+    def test_max_ids_setter_rejects_non_positive(self) -> None:
+        alloc = IDAllocator(max_ids=100)
+        with pytest.raises(ValueError):
+            alloc.max_ids = 0
+        with pytest.raises(ValueError):
+            alloc.max_ids = -1
+
     def test_single_id_allocator(self) -> None:
         alloc = IDAllocator(max_ids=1)
         assert alloc.allocate() == 0

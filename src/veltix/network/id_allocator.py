@@ -71,6 +71,12 @@ class IDAllocator:
 
         Args:
             value: The new maximum number of IDs.
+
+        Raises:
+            ValueError: If value is not a positive integer.
         """
+        if value <= 0:
+            raise ValueError("max_ids must be positive")
         with self._lock:
             self._max = value
+            self._counter %= value
