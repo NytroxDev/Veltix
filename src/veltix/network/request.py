@@ -108,7 +108,6 @@ class Request:
         if size > max_size:
             raise RequestError(f"Content too large: {size} bytes (max: {max_size})")
 
-        hash_value = zlib.crc32(self.content).to_bytes(4, "big")
         max_request_id = (1 << (8 * REQUEST_ID_SIZE)) - 1
         if self.request_id is not None and (
             not isinstance(self.request_id, int) or not (0 <= self.request_id <= max_request_id)
