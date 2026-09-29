@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without arguments stay untouched
   ([ddedfce](https://github.com/NytroxDev/Veltix/commit/ddedfce)).
 
+- **`LoggerConfig` now validates its inputs with clear errors.** `level` must
+  be a `LogLevel` member (a bare int or string previously blew up later with a
+  `KeyError`/`TypeError` far from the cause), `stream` must be writable, and
+  `file_path=""` raises a `ValueError` instead of silently skipping file
+  logging. Opening an unreachable log file (missing directory, permissions)
+  now reports `cannot open log file '...': ...` instead of leaking a raw
+  `FileNotFoundError`
+  ([cd7fd35](https://github.com/NytroxDev/Veltix/commit/cd7fd35)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
