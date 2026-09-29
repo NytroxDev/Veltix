@@ -35,12 +35,28 @@ class MessageTypeRegistry:
             cls._registry[msg_type.code] = msg_type
 
     @classmethod
-    def _next_code(cls) -> int:
-        """Find the next available user code (200-9999)."""
-        for code in range(_USER_CODE_MIN, _USER_CODE_MAX + 1):
-            if code not in cls._registry:
-                return code
-        raise MessageTypeError(f"No available codes in range {_USER_CODE_MIN}-{_USER_CODE_MAX}")
+    def allocate(cls, msg_type: MessageType) -> int:
+        """Reserve and register *msg_type* under the next free user code.
+
+        Allocation and registration happen under a single lock acquisition so
+        concurrent auto-allocating constructors never race for the same code.
+
+        Args:
+            msg_type: MessageType instance to allocate a code for.
+
+        Returns:
+            The allocated user code.
+
+        Raises:
+            MessageTypeError: If no user code is free in the range.
+        """
+        with cls._lock:
+            for code in range(_USER_CODE_MIN, _USER_CODE_MAX + 1):
+                if code not in cls._registry:
+                    cls._registry[code] = msg_type
+                    msg_type.code = code
+                    return code
+            raise MessageTypeError(f"No available codes in range {_USER_CODE_MIN}-{_USER_CODE_MAX}")
 
     @classmethod
     def get(cls, code: int) -> MessageType | None:
@@ -92,27 +108,29 @@ class MessageType:
         if code is None:
             if _system:
                 raise MessageTypeError("System messages must have an explicit code")
-            code = MessageTypeRegistry._next_code()
+            MessageTypeRegistry.allocate(self)
+        else:
+            if not isinstance(code, int):
+                raise MessageTypeError(
+                    f"Code must be an int, str, or None, got: {type(code).__name__}"
+                )
 
-        if not isinstance(code, int):
-            raise MessageTypeError(f"Code must be an int, str, or None, got: {type(code).__name__}")
+            if not (0 <= code <= _PROTOCOL_MAX):
+                raise MessageTypeError(f"Code must be between 0 and {_PROTOCOL_MAX}, got: {code}")
 
-        if not (0 <= code <= _PROTOCOL_MAX):
-            raise MessageTypeError(f"Code must be between 0 and {_PROTOCOL_MAX}, got: {code}")
+            if code < _USER_CODE_MIN and not _system:
+                raise MessageTypeError(
+                    f"Code {code} is reserved for system messages "
+                    f"(0-{_USER_CODE_MIN - 1}). "
+                    f"Use a code between {_USER_CODE_MIN} and {_USER_CODE_MAX} "
+                    f"for user messages."
+                )
 
-        if code < _USER_CODE_MIN and not _system:
-            raise MessageTypeError(
-                f"Code {code} is reserved for system messages "
-                f"(0-{_USER_CODE_MIN - 1}). "
-                f"Use a code between {_USER_CODE_MIN} and {_USER_CODE_MAX} "
-                f"for user messages."
-            )
+            self.code: int = code
+            MessageTypeRegistry.register(self)
 
-        self.code: int = code
-        self.name: str = name or f"type_{code}"
+        self.name: str = name or f"type_{self.code}"
         self.description: str | None = description
-
-        MessageTypeRegistry.register(self)
 
     def __repr__(self) -> str:
         return f"MessageType(code={self.code}, name='{self.name}')"

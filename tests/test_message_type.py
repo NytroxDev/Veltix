@@ -107,3 +107,14 @@ class TestAutoAllocate:
         msg = MessageType(code=5001, name="backward_kw")
         assert msg.code == 5001
         assert msg.name == "backward_kw"
+
+
+class TestRegistryAllocation:
+    def test_allocate_assigns_and_registers(self):
+        """Auto-allocation and registration happen under one lock acquisition."""
+        msg = MessageType.__new__(MessageType)
+        code = MessageTypeRegistry.allocate(msg)
+
+        assert _USER_CODE_MIN <= code <= _USER_CODE_MAX
+        assert msg.code == code
+        assert MessageTypeRegistry.get(code) is msg
