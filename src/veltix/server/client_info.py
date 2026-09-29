@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import threading
 from typing import TYPE_CHECKING, Any
 
@@ -109,6 +110,50 @@ class ClientInfo:
             A string like ``ClientInfo(ip='127.0.0.1', port=54321, id=3)``.
         """
         return f"ClientInfo(ip='{self.ip}', port={self.port}, id={self._id})"
+
+    def __setattr__(self, name: str, value: object) -> None:
+        """Block writes to attributes outside ``__slots__`` with a guiding error.
+
+        Args:
+            name: The attribute name being written.
+            value: The value being assigned.
+        """
+        if name not in ClientInfo.__slots__:
+            raise self._attr_error(name)
+        object.__setattr__(self, name, value)
+
+    def __getattr__(self, name: str) -> object:
+        """Raise a guiding error when an unknown attribute is read.
+
+        Args:
+            name: The attribute name being read.
+
+        Returns:
+            Never returns: always raises :class:`AttributeError`.
+        """
+        raise self._attr_error(name)
+
+    def _attr_error(self, name: str) -> AttributeError:
+        """Build an error that guides toward the tags API.
+
+        Args:
+            name: The attribute that was accessed.
+
+        Returns:
+            An :class:`AttributeError` that suggests a close typo and points
+            to :meth:`add_tag` / :meth:`set_tag` for custom client data.
+        """
+        hint = ""
+        matches = difflib.get_close_matches(name, _PUBLIC_MEMBERS, n=1, cutoff=0.6)
+        if matches:
+            hint = f" Did you mean '{matches[0]}'?"
+        return AttributeError(
+            f"'ClientInfo' object has no attribute '{name}'.{hint} To attach "
+            "custom data to a client, use client.add_tag(name, value) or "
+            "client.set_tag(name, value), for example "
+            "client.set_tag('room', 'lobby'). Core attributes: conn, addr, "
+            "thread_id, handshake_done."
+        )
 
     @property
     def ip(self) -> str:
@@ -266,3 +311,8 @@ class ClientInfo:
                     "client": self.addr,
                 },
             )
+
+
+# Public member names (slots, properties, methods) used to suggest close
+# typos in ClientInfo attribute errors. Computed once at import time.
+_PUBLIC_MEMBERS = tuple(name for name in dir(ClientInfo) if not name.startswith("_"))

@@ -51,6 +51,26 @@ class TestClientInfoProperties:
         s = {client}
         assert client in s
 
+    def test_set_unknown_attribute_raises_clear_error(self):
+        """Writing to an attribute outside __slots__ must guide toward tags."""
+        client = self.make_client()
+        with pytest.raises(AttributeError, match=r"no attribute 'name'") as exc:
+            client.name = "test"
+        assert "client.add_tag" in str(exc.value)
+        assert "client.set_tag" in str(exc.value)
+
+    def test_get_unknown_attribute_raises_clear_error(self):
+        """Reading an unknown attribute must guide toward tags too."""
+        client = self.make_client()
+        with pytest.raises(AttributeError, match="client.add_tag"):
+            _ = client.name
+
+    def test_typo_suggests_closest_attribute(self):
+        """A close typo must hint at the intended attribute."""
+        client = self.make_client()
+        with pytest.raises(AttributeError, match=r"Did you mean 'addr'\?"):
+            _ = client.adrr
+
 
 @pytest.mark.usefixtures("socket_core_backend")
 class TestServerGetClientsByTag:
