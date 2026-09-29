@@ -2,6 +2,8 @@
 
 import io
 
+import pytest
+
 from veltix import Logger, LoggerConfig, LogLevel
 from veltix.internal.bus import VeltixBus
 
@@ -69,12 +71,41 @@ class TestLogger:
         assert "100% ready" in stream.getvalue()
 
     def test_bus_printf_style_arguments(self, reset_logger):
-        """bus.error(\"... %s\", exc) must format the args, not raise TypeError."""
+        """bus.error("... %s", exc) must format the args, not raise TypeError."""
         stream = io.StringIO()
         Logger.get_instance(LoggerConfig(stream=stream, level=LogLevel.DEBUG))
         bus = VeltixBus()
         bus.error("Something went wrong: %s", ValueError("boom"))
         assert "Something went wrong: boom" in stream.getvalue()
+
+    def test_config_rejects_invalid_level(self):
+        """level must be a LogLevel member, not a bare int or string."""
+        with pytest.raises(TypeError, match="LogLevel"):
+            LoggerConfig(level=25)
+        with pytest.raises(TypeError, match="LogLevel"):
+            LoggerConfig(level="INFO")
+
+    def test_config_rejects_empty_file_path(self):
+        """file_path="" must raise a clear ValueError, not be silently skipped."""
+        with pytest.raises(ValueError, match="file_path"):
+            LoggerConfig(file_path="")
+
+    def test_config_rejects_non_path_file_path(self):
+        """file_path must be a str or Path."""
+        with pytest.raises(TypeError, match="file_path"):
+            LoggerConfig(file_path=123)
+
+    def test_config_rejects_non_writable_stream(self):
+        """stream must expose a write() method."""
+        with pytest.raises(TypeError, match="write"):
+            LoggerConfig(stream=object())
+        with pytest.raises(TypeError, match="write"):
+            LoggerConfig(stream=42)
+
+    def test_setup_reports_unopenable_log_file_clearly(self, reset_logger):
+        """A missing directory must raise a clear ValueError, not a raw OSError."""
+        with pytest.raises(ValueError, match="cannot open log file"):
+            Logger.get_instance(LoggerConfig(file_path="/nonexistent_dir_xyz_veltix/log.txt"))
 
     def test_logger_set_level(self, reset_logger):
         logger = Logger.get_instance()

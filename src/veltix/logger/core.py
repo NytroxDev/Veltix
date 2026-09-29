@@ -97,12 +97,15 @@ class Logger:
 
         # File handler
         if config.file_path is not None:
-            self._file_handler = logging.handlers.RotatingFileHandler(
-                config.file_path,
-                maxBytes=config.file_rotation_size,
-                backupCount=config.file_backup_count,
-                encoding="utf-8",
-            )
+            try:
+                self._file_handler = logging.handlers.RotatingFileHandler(
+                    config.file_path,
+                    maxBytes=config.file_rotation_size,
+                    backupCount=config.file_backup_count,
+                    encoding="utf-8",
+                )
+            except OSError as exc:
+                raise ValueError(f"cannot open log file '{config.file_path}': {exc}") from exc
             self._file_handler.setFormatter(
                 VeltixFormatter(use_colors=False, show_caller=config.show_caller)
             )

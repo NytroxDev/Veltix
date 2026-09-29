@@ -50,8 +50,19 @@ class LoggerConfig:
 
     def __post_init__(self) -> None:
         """Validate and normalize configuration."""
-        if self.file_path:
+        if not isinstance(self.level, LogLevel):
+            members = ", ".join(level.name for level in LogLevel)
+            raise TypeError(f"level must be a LogLevel member ({members}), got {self.level!r}")
+        if isinstance(self.file_path, (str, Path)):
+            if not self.file_path:
+                raise ValueError("file_path must not be empty")
             self.file_path = Path(self.file_path)
+        elif self.file_path is not None:
+            raise TypeError(f"file_path must be a str or Path, got {type(self.file_path).__name__}")
+        if not hasattr(self.stream, "write"):
+            raise TypeError(
+                f"stream must be writable (have a write() method), got {type(self.stream).__name__}"
+            )
         if self.file_rotation_size <= 0:
             raise ValueError(f"file_rotation_size must be positive, got {self.file_rotation_size}")
         if self.file_backup_count <= 0:
