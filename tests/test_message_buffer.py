@@ -4,6 +4,24 @@ from veltix import MessageType, Request
 from veltix.network.message_buffer import MessageBuffer
 
 
+class _RecordingBus:
+    """Minimal event bus recording calls for assertions."""
+
+    def __init__(self) -> None:
+        self.debug_messages: list[str] = []
+        self.error_messages: list[str] = []
+        self.warning_messages: list[str] = []
+
+    def debug(self, message: str) -> None:
+        self.debug_messages.append(message)
+
+    def error(self, message: str) -> None:
+        self.error_messages.append(message)
+
+    def warning(self, message: str) -> None:
+        self.warning_messages.append(message)
+
+
 class TestMessageBuffer:
     def test_single_complete_message(self, test_message_type):
         """A single complete message should be extracted correctly."""
@@ -263,3 +281,23 @@ class TestMessageBuffer:
 
         assert len(messages) == 1
         assert messages[0].content == content
+
+    def test_resync_debug_log(self, test_message_type):
+        """Resync debug log reports discarded bytes without a bogus MAGIC offset."""
+        bus = _RecordingBus()
+        buf = MessageBuffer(bus=bus)
+
+        request = Request(test_message_type, b"Hello")
+        compiled = request.compile()
+
+        garbage = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+        buf.add_data(garbage + compiled)
+        messages = buf.extract_messages()
+
+        assert len(messages) == 1
+        assert messages[0].content == b"Hello"
+
+        resync = [m for m in bus.debug_messages if m.startswith("Resynced:")]
+        assert len(resync) == 1
+        assert "discarded 10 bytes" in resync[0]
+        assert "MAGIC at offset" not in resync[0]

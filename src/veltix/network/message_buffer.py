@@ -131,9 +131,7 @@ class MessageBuffer:
                 if self._bus:
                     self._bus.error(f"{detail}{suffix}")
             elif kind == "resynced" and self._bus:
-                self._bus.debug(
-                    f"Resynced: discarded {payload} bytes, found MAGIC at offset {payload}"
-                )
+                self._bus.debug(f"Resynced: discarded {payload} bytes")
         return messages
 
     def _extract_python(self) -> list[Response]:
@@ -198,9 +196,7 @@ class MessageBuffer:
             discarded = idx
             del self._engine[:idx]
             if self._bus:
-                self._bus.debug(
-                    f"Resynced: discarded {discarded} bytes, found MAGIC at offset {idx}"
-                )
+                self._bus.debug(f"Resynced: discarded {discarded} bytes")
 
     def clear(self) -> None:
         """Discard all data currently held in the buffer."""
