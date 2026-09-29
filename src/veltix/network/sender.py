@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, TypeAlias
 
 from ..exceptions import SenderError
 from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
+from ..server.client_info import ClientInfo
 from . import _rust
 
 if TYPE_CHECKING:
@@ -14,12 +15,11 @@ if TYPE_CHECKING:
     from enum import Enum
 
     from ..internal.bus import VeltixBus
-    from ..server.client_info import ClientInfo
     from ..socket_core.base_socket import BaseSocket
     from .id_allocator import IDAllocator
     from .request import Request
 
-_ClientLike = Union["BaseSocket", "ClientInfo"]
+_ClientLike: TypeAlias = "BaseSocket | ClientInfo"
 
 
 class Sender:
@@ -79,7 +79,7 @@ class Sender:
     def _log_send_error(self, error: Exception, context: str = "send") -> None:
         self._emit(
             ErrorEvent.SEND,
-            {"error": str(error), "mode": self.mode.value if self.mode else "unknown"},
+            {"error": str(error), "mode": self.mode.value},
         )
         if self.bus:
             self.bus.warning(f"Connection error during {context}: {type(error).__name__}")
@@ -130,8 +130,6 @@ class Sender:
 
     @staticmethod
     def _resolve_socket(client: _ClientLike) -> BaseSocket:
-        from ..server.client_info import ClientInfo
-
         return client.conn if isinstance(client, ClientInfo) else client
 
     def _build_exclude_set(self, except_clients: Sequence[_ClientLike] | None) -> set[BaseSocket]:
