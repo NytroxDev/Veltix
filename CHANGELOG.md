@@ -60,6 +60,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`Response` lazy decode logic was deduplicated** behind shared helpers,
   dropping a redundant `str()` conversion; no behavior change
   ([0dbd907](https://github.com/NytroxDev/Veltix/commit/0dbd907)).
+- **`MessageParser` avoids an extra copy when parsing `bytes` input.** The
+  content slice was converted with `bytes()` even when it was already a
+  `bytes` object, doubling the allocation on the pure-Python fallback path;
+  non-`bytes` buffers (bytearray, memoryview) still get a single copy; no
+  behavior change
+  ([7c30d66](https://github.com/NytroxDev/Veltix/commit/7c30d66)).
 
 ## [3.0.2] - 2026-09-28
 
