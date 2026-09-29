@@ -57,6 +57,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   or optional parameters are still accepted
   ([8b3b901](https://github.com/NytroxDev/Veltix/commit/8b3b901)).
 
+- **`on_recv`, `on_connect` and `on_disconnect` callbacks with a wrong
+  signature now fail fast at registration with a guiding error.** The same
+  validation as routes now applies to every callback entry point. Server and
+  client expected signatures differ, and each message shows the exact fix:
+  `on_connect callback 'on_join' cannot be called with (client): its signature
+  accepts 0 positional argument(s). Fix: def on_join(client: ClientInfo) ->
+  None.` Client `on_connect` takes no argument, client `on_disconnect` takes a
+  `DisconnectState`, and `*args`/`**kwargs` and optional parameters remain
+  accepted ([57be78e](https://github.com/NytroxDev/Veltix/commit/57be78e)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
