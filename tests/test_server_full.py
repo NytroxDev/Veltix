@@ -164,3 +164,44 @@ class TestServerFullRejection:
             c1.disconnect()
         finally:
             server.close_all()
+
+
+@pytest.mark.usefixtures("socket_core_backend")
+class TestStartBindFailure:
+    def test_start_raises_oserror_when_port_occupied(self) -> None:
+        port = find_free_port()
+        blocker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        blocker.bind(("127.0.0.1", port))
+        blocker.listen(1)
+
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
+        try:
+            with pytest.raises(OSError):
+                server.start()
+        finally:
+            blocker.close()
+            server.close_all()
+
+    def test_server_restartable_after_bind_failure(self) -> None:
+        port = find_free_port()
+        blocker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        blocker.bind(("127.0.0.1", port))
+        blocker.listen(1)
+
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
+        try:
+            with pytest.raises(OSError):
+                server.start()
+
+            blocker.close()
+
+            # A failed start must not leave the server stuck in the
+            # "started" state: retrying works once the port is free.
+            server.start()
+
+            client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
+            assert client.connect()
+            client.disconnect()
+        finally:
+            blocker.close()
+            server.close_all()

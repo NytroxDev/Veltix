@@ -365,13 +365,19 @@ class Server:
                 self.request_handler.register_route(type_, func)
             if old_on_recv:
                 self.request_handler.set_on_recv(old_on_recv)
-        self.socket.bind(
-            host=self.config.host,
-            port=self.config.port,
-            max_client=self.config.max_connection,
-            buffer_size=self.config.buffer_size,
-            timeout=0.5,
-        )
+        try:
+            self.socket.bind(
+                host=self.config.host,
+                port=self.config.port,
+                max_client=self.config.max_connection,
+                buffer_size=self.config.buffer_size,
+                timeout=0.5,
+            )
+        except OSError as e:
+            with self._state_lock:
+                self._started = False
+            self.bus.error(f"Failed to bind on {self.config.host}:{self.config.port}: {e}")
+            raise
         self.bus.emit(
             ServerEvent.STARTED,
             {
