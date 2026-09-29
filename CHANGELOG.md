@@ -23,6 +23,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   around; the counter is now normalized on shrink, and non-positive values are
   rejected with `ValueError` instead of a later `ZeroDivisionError`
   ([1d1c96f](https://github.com/NytroxDev/Veltix/commit/1d1c96f)).
+- **Message buffer resync debugging no longer logs a bogus MAGIC offset.**
+  The Rust engine only reports the number of discarded bytes during stream
+  resynchronization, but the wrapper logged the same value as the offset
+  where the next MAGIC was found. Both engines now log only the discarded
+  byte count
+  ([a2edaec](https://github.com/NytroxDev/Veltix/commit/a2edaec)).
+
+### Internal
+
+- **`MessageBuffer._extract_python` annotates the extracted message list**
+  for typing symmetry with the Rust backend path; no behavior change
+  ([d1bd3a3](https://github.com/NytroxDev/Veltix/commit/d1bd3a3)).
 
 ## [3.0.2] - 2026-09-28
 
