@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from ..exceptions import InvalidContentError
 from ..utils.encoding import decode_json, decode_utf8
@@ -76,6 +76,22 @@ class Response:
         """
         return self._request_id
 
+    def _json_value(self) -> Any:
+        if self._json_cached is _UNSET:
+            try:
+                self._json_cached = decode_json(self.content)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                self._json_cached = _INVALID
+        return self._json_cached
+
+    def _text_value(self) -> Any:
+        if self._text_cached is _UNSET:
+            try:
+                self._text_cached = decode_utf8(self.content)
+            except UnicodeDecodeError:
+                self._text_cached = _INVALID
+        return self._text_cached
+
     @property
     def json(self) -> Any:
         """Return the response content decoded as JSON.
@@ -88,16 +104,11 @@ class Response:
         Returns:
             The decoded JSON value.
         """
-        if self._json_cached is _UNSET:
-            try:
-                self._json_cached = decode_json(self.content)
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                self._json_cached = _INVALID
-
-        if self._json_cached is _INVALID:
+        value = self._json_value()
+        if value is _INVALID:
             raise InvalidContentError("Content is not valid JSON")
 
-        return self._json_cached
+        return value
 
     @property
     def is_json(self) -> bool:
@@ -109,13 +120,7 @@ class Response:
         Returns:
             True if the content contains valid JSON, otherwise False.
         """
-        if self._json_cached is _UNSET:
-            try:
-                self._json_cached = decode_json(self.content)
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                self._json_cached = _INVALID
-
-        return self._json_cached is not _UNSET and self._json_cached is not _INVALID
+        return self._json_value() is not _INVALID
 
     @property
     def text(self) -> str:
@@ -129,16 +134,11 @@ class Response:
         Returns:
             The decoded text content.
         """
-        if self._text_cached is _UNSET:
-            try:
-                self._text_cached = decode_utf8(self.content)
-            except UnicodeDecodeError:
-                self._text_cached = _INVALID
-
-        if self._text_cached is _INVALID:
+        value = self._text_value()
+        if value is _INVALID:
             raise InvalidContentError("Content is not valid UTF-8")
 
-        return str(self._text_cached)
+        return cast("str", value)
 
     @property
     def is_text(self) -> bool:
@@ -150,10 +150,4 @@ class Response:
         Returns:
             True if the content can be decoded as UTF-8 text, otherwise False.
         """
-        if self._text_cached is _UNSET:
-            try:
-                self._text_cached = decode_utf8(self.content)
-            except UnicodeDecodeError:
-                self._text_cached = _INVALID
-
-        return self._text_cached is not _UNSET and self._text_cached is not _INVALID
+        return self._text_value() is not _INVALID
