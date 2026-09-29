@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Async backend no longer drops messages larger than the kernel send
+  buffer.** On a non-blocking socket, `sendall()` raised
+  `BlockingIOError` as soon as the kernel send buffer filled and the
+  message was discarded (fail-fast behavior from v3.0.1), so any payload
+  above the buffer (`tcp_wmem` max, 4 MiB on typical Linux) was lost:
+  `send_and_wait` timed out while the peer never received a byte. The
+  unsent tail is now queued per socket and flushed by the selector loop
+  when the socket becomes writable, so oversized messages are delivered
+  in order on both the client and server sides
+  ([3338e73](https://github.com/NytroxDev/Veltix/commit/3338e73)).
+
+### Internal
+
+- **ASYNC sockets now track write interest per socket instead of walking
+  the client list.** Senders report queued outbound data to the owner
+  selector (dirty set, O(1) fast path); only sockets in backlog get
+  `EVENT_WRITE`, and queued sends wake the selector via `wakeup()` so
+  flushes are prompt. THREADING (blocking sockets) is unchanged.
+
 ## [3.1.0] - 2026-09-29
 
 ### Changed
