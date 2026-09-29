@@ -35,6 +35,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `FileNotFoundError`
   ([cd7fd35](https://github.com/NytroxDev/Veltix/commit/cd7fd35)).
 
+- **`ClientInfo` now raises a guiding error when an unknown attribute is set
+  or read.** Because the class uses `__slots__`, assigning `client.name = "test"`
+  already raised, but with Python's generic message (`no __dict__ for setting
+  new attributes`). Writes and reads now point toward the solution: custom
+  client data belongs in tags (`client.add_tag(name, value)` /
+  `client.set_tag(name, value)`, with an example), list the core attributes,
+  and suggest the intended name on a close typo (`client.adrr` ->
+  `Did you mean 'addr'?`)
+  ([54130ea](https://github.com/NytroxDev/Veltix/commit/54130ea)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
