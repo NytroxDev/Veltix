@@ -23,7 +23,7 @@ class ServerConfig:
         max_workers:       Number of worker threads for callback execution (default: 4).
                            Increase if your on_recv callback is slow or blocking.
         socket_core:       Socket implementation to use (default: ASYNC).
-                            Switch to THREADING or RUST (v3.0.0) without changing
+                            Switch between THREADING and ASYNC without changing
                             any other code.
         id_window:         Number of unique request IDs per direction in the protocol (default: 30000).
                             Must fit in REQUEST_ID_SIZE bytes (max 65535).

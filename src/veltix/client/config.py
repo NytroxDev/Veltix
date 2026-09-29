@@ -25,7 +25,7 @@ class ClientConfig:
                            Applies both to the initial connect() and to mid-session disconnections.
         retry_delay:       Seconds to wait between reconnection attempts (default: 1.0).
         socket_core:       Socket implementation to use (default: ASYNC).
-                            Switch to THREADING or RUST (v3.0.0) without changing
+                            Switch between THREADING and ASYNC without changing
                             any other code.
     """
 
