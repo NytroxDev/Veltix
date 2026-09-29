@@ -35,7 +35,9 @@ class Logger:
     """Thread-safe singleton logger backed by stdlib logging.
 
     The logger is implemented as a singleton: calling ``Logger()`` or
-    ``Logger.get_instance()`` always returns the same object.
+    ``Logger.get_instance()`` always returns the same object. Passing a
+    :class:`LoggerConfig` to either call re-configures the singleton in
+    place and resets the level counters, exactly like ``configure()``.
 
     Typical usage::
 
@@ -120,7 +122,17 @@ class Logger:
 
     @classmethod
     def get_instance(cls, config: LoggerConfig | None = None) -> Logger:
-        """Get or create the singleton instance."""
+        """Get the singleton, optionally reconfiguring it with *config*.
+
+        Passing a config re-applies it to the existing instance (handlers are
+        rebuilt and the level counters reset), exactly like ``configure()``.
+
+        Args:
+            config: Optional configuration to apply to the singleton.
+
+        Returns:
+            The shared :class:`Logger` instance.
+        """
         return cls(config)
 
     def configure(self, config: LoggerConfig) -> None:
@@ -218,6 +230,9 @@ class Logger:
         if not self.config.enabled or level < self.config.level:
             return
 
+        # Deliberately lock-free: _log runs on the network hot path and the
+        # GIL keeps the dict intact; counts are best-effort and may be
+        # slightly under-reported under heavy multi-thread contention.
         self._stats[level] += 1
         self._internal.log(int(level), _format_message(message, args), stacklevel=stacklevel)
 
@@ -245,6 +260,10 @@ class Logger:
 
     def get_stats(self) -> dict[LogLevel, int]:
         """Return per-level message counts since the last reset.
+
+        Counts are best-effort: under heavy multi-thread contention a few
+        increments may be lost (no lock on the hot path), so treat them as
+        an approximation rather than an exact tally.
 
         Returns:
             A dictionary mapping each :class:`LogLevel` to the number of
