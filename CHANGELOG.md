@@ -29,12 +29,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   where the next MAGIC was found. Both engines now log only the discarded
   byte count
   ([a2edaec](https://github.com/NytroxDev/Veltix/commit/a2edaec)).
+- **`Request(text=...)` rejects invalid payload types.** Passing a value that
+  is neither `str` nor `bytes` (such as an integer or `None`) used to fail
+  with an opaque error deep inside the encoder; it now raises a clear
+  `RequestError` at construction
+  ([6521a0b](https://github.com/NytroxDev/Veltix/commit/6521a0b)).
 
 ### Internal
 
 - **`MessageBuffer._extract_python` annotates the extracted message list**
   for typing symmetry with the Rust backend path; no behavior change
   ([d1bd3a3](https://github.com/NytroxDev/Veltix/commit/d1bd3a3)).
+- **`Request` computes the CRC32 checksum only in the Python fallback path.**
+  The Rust compiler computes its own hash, so the Python-side checksum was
+  wasted work whenever the compiled engine is active; no behavior change
+  ([cf28c2c](https://github.com/NytroxDev/Veltix/commit/cf28c2c)).
+- **`Request` gained `__slots__` and dropped a redundant `content`
+  annotation**; no behavior change
+  ([5c0f665](https://github.com/NytroxDev/Veltix/commit/5c0f665)).
+- **`Response` gained `__slots__`** (the lazy decode caches became
+  non-comparing fields) and **the `request_id` override contract is now
+  covered by tests**; no behavior change
+  ([90e0876](https://github.com/NytroxDev/Veltix/commit/90e0876)).
+- **`Response` lazy decode logic was deduplicated** behind shared helpers,
+  dropping a redundant `str()` conversion; no behavior change
+  ([0dbd907](https://github.com/NytroxDev/Veltix/commit/0dbd907)).
 
 ## [3.0.2] - 2026-09-28
 
