@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with an opaque error deep inside the encoder; it now raises a clear
   `RequestError` at construction
   ([6521a0b](https://github.com/NytroxDev/Veltix/commit/6521a0b)).
+- **`MessageType` auto-allocated codes can no longer collide under
+  concurrency.** The free-code scan and the registry insert used to lock
+  separately, so two threads constructing `MessageType`s at the same time
+  could receive the same code and one would fail with a spurious
+  `MessageTypeError`; allocation and registration now happen atomically
+  ([9efec6a](https://github.com/NytroxDev/Veltix/commit/9efec6a)).
 
 ### Internal
 
