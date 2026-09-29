@@ -45,6 +45,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Did you mean 'addr'?`)
   ([54130ea](https://github.com/NytroxDev/Veltix/commit/54130ea)).
 
+- **Route handlers with a wrong signature now fail fast at registration with
+  a guiding error.** A server handler is dispatched with `(client, response)`
+  and a client handler with `(response)`; previously a mismatch only surfaced
+  later, as a generic `TypeError` inside the callback thread pool. `@server.route(...)`
+  / `@client.route(...)` now reject a mismatched signature immediately and
+  print the expected one:
+  `Route handler 'on_msg' for 'chat' cannot be called with (client, response):
+  its signature accepts 1 positional argument(s). Fix: def on_msg(client:
+  ClientInfo, response: Response) -> None.` Handlers with `*args`/`**kwargs`
+  or optional parameters are still accepted
+  ([8b3b901](https://github.com/NytroxDev/Veltix/commit/8b3b901)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
