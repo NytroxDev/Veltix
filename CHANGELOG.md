@@ -52,6 +52,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ServerConfig`/`ClientConfig` docs claimed it was available in v3.0.0;
   they now document THREADING and ASYNC only
   ([8072d8d](https://github.com/NytroxDev/Veltix/commit/8072d8d)).
+- **`Server.start()` no longer leaves the server stuck in the "started"
+  state when binding fails.** If the port was already in use, `start()`
+  raised `OSError` but kept `_started = True`, so every subsequent
+  `start()` answered "Server is already started" and did nothing, and
+  `wait_until_closed()` blocked forever; only a manual `close_all()`
+  recovered. A failed bind now resets the start state and logs the
+  error, so retrying `start()` after freeing the port works
+  ([f79af5f](https://github.com/NytroxDev/Veltix/commit/f79af5f)).
 
 ### Internal
 
