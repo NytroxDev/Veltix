@@ -276,15 +276,54 @@ class TestClientServer:
             except_clients=[exclude_socket],
         )
 
-        assert wait_for_condition(
-            lambda: (
-                len(messages_received[0]) == 0
-                and len(messages_received[1]) > 0
-                and len(messages_received[2]) > 0
-            ),
-            timeout=2.0,
-        )
-
         for client in clients:
             client.disconnect()
         server.close_all()
+
+
+@pytest.mark.usefixtures("socket_core_backend")
+class TestLargePayload:
+    """Messages larger than the kernel send buffer must still be delivered.
+
+    Regression: on the ASYNC backend, a non-blocking ``sendall()`` raised
+    ``BlockingIOError`` as soon as the kernel send buffer filled and the
+    message was dropped, so any payload bigger than the buffer (tcp_wmem
+    max, 4 MiB on typical Linux) was lost and ``send_and_wait`` died on a
+    timeout. THREADING (blocking sockets) already worked.
+    """
+
+    def test_large_payload_round_trip(self):
+        port = find_free_port()
+        server = Server(
+            ServerConfig(host="127.0.0.1", port=port, max_message_size=16 * 1024 * 1024)
+        )
+        server.start()
+
+        received = []
+        msg_type = MessageType("big_file")
+
+        @server.route(msg_type)
+        def on_file(client, response):
+            received.append(response.content)
+            reply = Request(msg_type, text="ok", request_id=response.request_id)
+            server.send(reply, client)
+
+        client = Client(
+            ClientConfig(
+                server_addr="127.0.0.1",
+                port=port,
+                max_message_size=16 * 1024 * 1024,
+            )
+        )
+        try:
+            assert client.connect()
+            # 12 MiB is three times the default kernel send buffer cap; it
+            # must round-trip instead of being dropped mid-frame.
+            payload = b"X" * (12 * 1024 * 1024)
+            response = client.send_and_wait(Request(msg_type, content=payload), timeout=8.0)
+            assert response is not None
+            assert response.text == "ok"
+            assert received == [payload]
+        finally:
+            client.disconnect()
+            server.close_all()

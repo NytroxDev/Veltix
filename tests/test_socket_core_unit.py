@@ -2,6 +2,7 @@
 
 import socket
 import threading
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -242,27 +243,27 @@ class TestAsyncSocketUnit:
             assert sock.settimeout(1.0) is False
 
     def test_send_failure(self, sock):
-        with patch.object(socket.socket, "sendall", side_effect=OSError("mock")):
+        with patch.object(socket.socket, "send", side_effect=OSError("mock")):
             assert sock.send(b"data") is False
 
-    def test_send_blockingioerror_returns_false(self, sock):
-        """A full send buffer must fail fast without toggling blocking mode."""
+    def test_send_blockingioerror_queues_remainder(self, sock):
+        """A full send buffer queues the remainder instead of dropping it."""
         with (
             patch.object(socket.socket, "setblocking", return_value=None) as setblocking,
-            patch.object(
-                socket.socket,
-                "sendall",
-                side_effect=BlockingIOError("mock"),
-            ),
+            patch.object(socket.socket, "send", side_effect=BlockingIOError("mock")),
         ):
-            assert sock.send(b"data") is False
+            assert sock.send(b"data") is True
             setblocking.assert_not_called()
+        assert sock._has_outbound()
+        assert bytes(sock._outbound[0]) == b"data"
 
-    def test_send_full_buffer_returns_false_and_stays_nonblocking(self):
-        """A full kernel send buffer returns False; the socket stays nonblocking.
+    def test_send_full_buffer_queues_and_delivers_to_peer(self):
+        """A full kernel send buffer queues; the peer receives every byte.
 
-        Regression: the old code switched to a blocking sendall, which never
-        returned while the peer was not reading, freezing the selector loop.
+        Regression: the old code dropped the message on BlockingIOError
+        (fail-fast from v3.0.1), so anything larger than the kernel send
+        buffer was lost. The remainder is now queued and flushed when the
+        socket becomes writable.
         """
         from veltix.socket_core.async_socket import AsyncSocket
 
@@ -279,15 +280,56 @@ class TestAsyncSocketUnit:
             client._sock.close()
             client._sock = a
 
-            # Fill the kernel send buffer until not even one byte fits.
-            for _ in range(4 * 1024 * 1024):
-                try:
-                    a.sendall(b"x")
-                except (BlockingIOError, ConnectionError):
-                    break
+            payload = b"Y" * (1024 * 1024)
+            assert client.send(payload) is True  # queued, not dropped
+            assert a.getblocking() is False  # never toggled
 
-            assert client.send(b"y" * 1024) is False
-            assert a.getblocking() is False
+            received = bytearray()
+            deadline = time.time() + 5
+            while len(received) < len(payload) and time.time() < deadline:
+                client._flush_outbound()  # selector-style write flush
+                try:
+                    received += b.recv(262144)
+                except BlockingIOError:
+                    time.sleep(0.005)
+            assert bytes(received) == payload
+        finally:
+            a.close()
+            b.close()
+
+    def test_multiple_queued_sends_preserve_order(self):
+        """Queued chunks flush in FIFO order with partial sends re-queued."""
+        from veltix.socket_core.async_socket import AsyncSocket
+
+        a, b = socket.socketpair()
+        try:
+            a.setblocking(False)
+            b.setblocking(False)
+            a.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
+            b.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
+
+            client = AsyncSocket(
+                request_handler=_make_handler(), max_message_size=1024, bus=_make_bus()
+            )
+            client._sock.close()
+            client._sock = a
+
+            first = b"M" * (512 * 1024)
+            second = b"N" * (512 * 1024)
+            assert client.send(first) is True
+            assert client.send(second) is True
+
+            received = bytearray()
+            deadline = time.time() + 5
+            while len(received) < len(first) + len(second) and time.time() < deadline:
+                client._flush_outbound()
+                try:
+                    received += b.recv(262144)
+                except BlockingIOError:
+                    time.sleep(0.005)
+
+            assert bytes(received[: len(first)]) == first
+            assert bytes(received[len(first) :]) == second
         finally:
             a.close()
             b.close()

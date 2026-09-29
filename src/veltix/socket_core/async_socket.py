@@ -7,7 +7,8 @@ import queue
 import selectors
 import socket
 import threading
-from typing import TYPE_CHECKING
+from collections import deque
+from typing import TYPE_CHECKING, cast
 
 from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
@@ -54,6 +55,23 @@ class AsyncSocket(BaseSocket):
 
         self._selector_thread: threading.Thread | None = None
 
+        # Outbound queue: bytes that did not fit the kernel send buffer are
+        # buffered here and flushed by the selector loop when the socket
+        # becomes writable, so messages larger than the buffer are delivered
+        # instead of being dropped (see send()).
+        self._outbound: deque[bytes] = deque()
+        self._outbound_lock = threading.Lock()
+        # Write-interest registration state, selector thread only.
+        self._write_state: dict[int, bool] = {}
+        self._is_client = False
+        # Sockets with queued outbound data, reported by senders (any thread)
+        # and consumed by the selector thread once per loop iteration. The
+        # fast path stays O(1): no per-client work when nothing is queued.
+        self._owner = self
+        self._write_dirty: list[AsyncSocket] = []
+        self._write_dirty_lock = threading.Lock()
+        self._conn_ids: dict[int, int] = {}
+
         self.max_message_size = max_message_size
         self.request_handler = request_handler
         self.handshake_timeout = handshake_timeout
@@ -90,7 +108,7 @@ class AsyncSocket(BaseSocket):
             self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._sock.bind((host, port))
         self._sock.listen()
-        self._selector.register(self._sock, selectors.EVENT_READ, data="listen")
+        self._selector.register(self, selectors.EVENT_READ, data="listen")
         self._running_event.set()
         self._selector_thread = threading.Thread(
             target=self._selector_loop,
@@ -107,17 +125,22 @@ class AsyncSocket(BaseSocket):
     def _selector_loop(self, max_client: int, buffer_size: int) -> None:
         while self._running_event.is_set():
             self._drain_handshake_queue(max_client)
+            self._sync_dirty_sockets()
             events = self._selector.select(0.5)
 
-            for key, _ in events:
+            for key, mask in events:
                 if key.data == "listen":
                     self._accept_client(max_client)
                 elif key.data == "client":
-                    self._handle_self_read(buffer_size)
-                    if not self._running_event.is_set():
-                        break
+                    if mask & selectors.EVENT_WRITE:
+                        self._flush_outbound()
+                    if mask & selectors.EVENT_READ and self._running_event.is_set():
+                        self._handle_self_read(buffer_size)
                 else:
-                    self._handle_server_client(key.data, buffer_size)
+                    if mask & selectors.EVENT_WRITE:
+                        self._flush_client_outbound(key.data)
+                    if mask & selectors.EVENT_READ:
+                        self._handle_server_client(key.data, buffer_size)
 
     def _accept_client(self, max_client: int) -> None:
         if not self._running_event.is_set():
@@ -172,6 +195,11 @@ class AsyncSocket(BaseSocket):
             nonblocking=False,
             use_rust=self._use_rust,
         )
+        # Accepted sockets are managed by the parent selector (only the
+        # selector thread touches it); give them the references so an
+        # outbound enqueue can wake it up and report itself as dirty.
+        client_sock._selector = self._selector
+        client_sock._owner = self
         client_id = self.client_manager.add_client(
             ClientInfo(
                 client_sock,
@@ -182,6 +210,7 @@ class AsyncSocket(BaseSocket):
             )
         )
         self.id_count += 1
+        self._conn_ids[id(client_sock)] = client_id
 
         # thread_id mirrors the manager client_id (1-based) so the metadata
         # stays consistent with the threading backend.
@@ -310,6 +339,171 @@ class AsyncSocket(BaseSocket):
                 lambda response: self.request_handler.handle(response),
             )
 
+    # ── Outbound queue (large sends) ─────────────────────────────────────────
+
+    def send(self, data: bytes) -> bool:
+        """Send raw bytes, queueing any remainder past the kernel buffer.
+
+        Non-blocking by design: the selector thread never blocks on a slow
+        peer. When the kernel send buffer is full, the unsent tail is queued
+        and flushed by the selector loop as soon as the socket becomes
+        writable again, so messages larger than the buffer are delivered
+        instead of being dropped.
+
+        Args:
+            data: The bytes to send.
+
+        Returns:
+            True when the data was sent or queued for delivery, False on a
+            hard connection error.
+        """
+        try:
+            sent = self._sock.send(data)
+        except BlockingIOError as e:
+            self._enqueue(data[getattr(e, "characters_written", 0) :])
+            return True
+        except OSError as e:
+            self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
+            self.bus.error(f"send failed: {e}")
+            return False
+
+        if sent < len(data):
+            remainder = self._send_rest(data, sent)
+            if remainder is None:
+                return False
+            if remainder:
+                self._enqueue(remainder)
+        return True
+
+    def _send_rest(self, data: bytes, start: int) -> bytes | None:
+        """Send ``data[start:]`` until the kernel buffer blocks.
+
+        Args:
+            data: The bytes being sent.
+            start: Offset of the first unsent byte.
+
+        Returns:
+            The unsent remainder (``b""`` when everything was sent), or
+            ``None`` on a hard connection error.
+        """
+        view = memoryview(data)
+        total = start
+        while total < len(view):
+            try:
+                n = self._sock.send(view[total:])
+            except BlockingIOError:
+                break
+            except OSError as e:
+                self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
+                self.bus.error(f"send failed: {e}")
+                return None
+            if n <= 0:
+                break
+            total += n
+
+        return bytes(view[total:])
+
+    def _enqueue(self, data: bytes) -> None:
+        with self._outbound_lock:
+            self._outbound.append(data)
+        # Wake the owner selector so the queued bytes are registered for
+        # writing and flushed promptly instead of waiting for the next poll
+        # cycle. wakeup() lives on the concrete selector (e.g. EpollSelector),
+        # not on BaseSelector, so resolve it dynamically.
+        self._owner._mark_dirty(self)
+
+    def _has_outbound(self) -> bool:
+        with self._outbound_lock:
+            return bool(self._outbound)
+
+    def _drop_outbound(self) -> None:
+        with self._outbound_lock:
+            self._outbound.clear()
+
+    def _flush_outbound(self) -> None:
+        """Push queued bytes on a writable socket (selector thread)."""
+        while True:
+            with self._outbound_lock:
+                if not self._outbound:
+                    return
+                chunk = self._outbound.popleft()
+            try:
+                sent = self._sock.send(chunk)
+            except BlockingIOError as e:
+                with self._outbound_lock:
+                    self._outbound.appendleft(chunk[getattr(e, "characters_written", 0) :])
+                return
+            except OSError as e:
+                self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
+                self.bus.error(f"send failed: {e}")
+                with self._outbound_lock:
+                    self._outbound.clear()
+                return
+            if sent < len(chunk):
+                remainder = self._send_rest(chunk, sent)
+                if remainder is None:
+                    with self._outbound_lock:
+                        self._outbound.clear()
+                    return
+                # Keep the unsent tail in front: it is the current head of
+                # the byte stream and must go out before later chunks.
+                with self._outbound_lock:
+                    self._outbound.appendleft(remainder)
+                return
+
+    def _sync_dirty_sockets(self) -> None:
+        """Register write interest for sockets that reported queued data."""
+        with self._write_dirty_lock:
+            dirty = self._write_dirty
+            self._write_dirty = []
+        for sock in dirty:
+            if sock is self:
+                if self._is_client:
+                    self._sync_socket_interest(sock, "client")
+                continue
+            client_id = self._conn_ids.get(id(sock))
+            if client_id is None:
+                continue
+            self._sync_socket_interest(sock, client_id)
+
+    def _mark_dirty(self, sock: AsyncSocket) -> None:
+        """Report a socket with queued outbound data to the owner selector."""
+        with self._write_dirty_lock:
+            self._write_dirty.append(sock)
+        wakeup = getattr(self._selector, "wakeup", None)
+        if wakeup is not None:
+            with contextlib.suppress(OSError):
+                wakeup()
+
+    def _sync_socket_interest(self, sock: AsyncSocket, data: int | str) -> None:
+        """Mirror a socket's outbound state onto the selector interest set.
+
+        Only the selector thread calls this. Sockets with queued data are
+        registered for ``EVENT_WRITE``; once drained they go back to
+        ``EVENT_READ`` only, so the loop never spins on a busy-tick.
+
+        Args:
+            sock: The socket to sync.
+            data: Selector data key carried by the registration.
+        """
+        wants_write = sock._has_outbound()
+        sid = id(sock)
+        current = self._write_state.get(sid)
+        if current == wants_write:
+            return
+        with contextlib.suppress(KeyError, OSError, ValueError):
+            if wants_write:
+                self._selector.modify(sock, selectors.EVENT_READ | selectors.EVENT_WRITE, data=data)
+            else:
+                self._selector.modify(sock, selectors.EVENT_READ, data=data)
+        self._write_state[sid] = wants_write
+
+    def _flush_client_outbound(self, client_id: int) -> None:
+        entry = self.client_manager.get_client(client_id)
+        if entry is None:
+            return
+        cast("AsyncSocket", entry.info.conn)._flush_outbound()
+
     def close_client(self, client: ClientEntry | int) -> bool:
         if isinstance(client, ClientEntry):
             self._close_server_client(client)
@@ -323,7 +517,11 @@ class AsyncSocket(BaseSocket):
 
     def _close_server_client(self, entry: ClientEntry) -> None:
         self.bus.debug(f"closing server client {entry.id} ({entry.info.addr})")
-        client_sock = entry.info.conn
+        client_sock = cast("AsyncSocket", entry.info.conn)
+
+        self._write_state.pop(id(client_sock), None)
+        self._conn_ids.pop(id(client_sock), None)
+        client_sock._drop_outbound()
 
         with contextlib.suppress(KeyError):
             self._selector.unregister(client_sock)
@@ -348,7 +546,12 @@ class AsyncSocket(BaseSocket):
             self.bus.debug("closing server socket")
             self._running_event.clear()
             with contextlib.suppress(KeyError):
-                self._selector.unregister(self._sock)
+                self._selector.unregister(self)
+            self._drop_outbound()
+            self._write_state.clear()
+            self._conn_ids.clear()
+            with self._write_dirty_lock:
+                self._write_dirty.clear()
             self._shutdown_socket()
             with contextlib.suppress(OSError):
                 self._sock.close()
@@ -376,7 +579,8 @@ class AsyncSocket(BaseSocket):
 
             self._sock.setblocking(False)
             self._running_event.set()
-            self._selector.register(self._sock, selectors.EVENT_READ, data="client")
+            self._is_client = True
+            self._selector.register(self, selectors.EVENT_READ, data="client")
 
             if hasattr(self, "client") and self.client:
                 with self.client._state_lock:
@@ -411,7 +615,12 @@ class AsyncSocket(BaseSocket):
             self.bus.debug("disconnecting client socket")
             self._running_event.clear()
             with contextlib.suppress(KeyError):
-                self._selector.unregister(self._sock)
+                self._selector.unregister(self)
+            self._drop_outbound()
+            self._write_state.clear()
+            self._conn_ids.clear()
+            with self._write_dirty_lock:
+                self._write_dirty.clear()
             self._shutdown_socket()
             self._sock.close()
             if self._selector_thread and threading.current_thread() != self._selector_thread:
