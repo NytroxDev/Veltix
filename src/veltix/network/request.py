@@ -30,6 +30,8 @@ class Request:
     and protocol flags used during serialization.
     """
 
+    __slots__ = ("content", "request_id", "flags", "type")
+
     def __init__(
         self,
         _type: MessageType,
@@ -57,8 +59,6 @@ class Request:
 
         if provided != 1:
             raise RequestError("Provide exactly one of 'content', 'text', or 'json'.")
-
-        self.content: bytes
 
         if content is not _UNSET:
             if not isinstance(content, bytes):
