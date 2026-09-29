@@ -11,6 +11,26 @@ from .formatter import VeltixFormatter
 from .levels import LogLevel
 
 
+def _format_message(message: str, args: tuple[object, ...]) -> str:
+    """Apply %-style formatting to a log message like stdlib ``logging``.
+
+    With no args the message is returned untouched. A single mapping
+    argument applies to named ``%(key)s`` placeholders.
+
+    Args:
+        message: The raw log message.
+        args: Formatting arguments (positional or a single mapping).
+
+    Returns:
+        The formatted message.
+    """
+    if len(args) == 1 and isinstance(args[0], dict):
+        return message % args[0]
+    if args:
+        return message % args
+    return message
+
+
 class Logger:
     """Thread-safe singleton logger backed by stdlib logging.
 
@@ -119,70 +139,84 @@ class Logger:
 
     # ── Log methods ───────────────────────────────────────────────────────────
 
-    def trace(self, message: str) -> None:
+    def trace(self, message: str, *args: object) -> None:
         """Log a TRACE-level message (severity 5).
 
         Args:
-            message: The log message.
+            message: The log message, with %-style placeholders when *args
+                are provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self._log(LogLevel.TRACE, message)
+        self._log(LogLevel.TRACE, message, *args)
 
-    def debug(self, message: str) -> None:
+    def debug(self, message: str, *args: object) -> None:
         """Log a DEBUG-level message (severity 10).
 
         Args:
-            message: The log message.
+            message: The log message, with %-style placeholders when *args
+                are provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self._log(LogLevel.DEBUG, message)
+        self._log(LogLevel.DEBUG, message, *args)
 
-    def info(self, message: str) -> None:
+    def info(self, message: str, *args: object) -> None:
         """Log an INFO-level message (severity 20).
 
         Args:
-            message: The log message.
+            message: The log message, with %-style placeholders when *args
+                are provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self._log(LogLevel.INFO, message)
+        self._log(LogLevel.INFO, message, *args)
 
-    def success(self, message: str) -> None:
+    def success(self, message: str, *args: object) -> None:
         """Log a SUCCESS-level message (severity 25).
 
         Args:
-            message: The log message.
+            message: The log message, with %-style placeholders when *args
+                are provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self._log(LogLevel.SUCCESS, message)
+        self._log(LogLevel.SUCCESS, message, *args)
 
-    def warning(self, message: str) -> None:
+    def warning(self, message: str, *args: object) -> None:
         """Log a WARNING-level message (severity 30).
 
         Args:
-            message: The log message.
+            message: The log message, with %-style placeholders when *args
+                are provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self._log(LogLevel.WARNING, message)
+        self._log(LogLevel.WARNING, message, *args)
 
-    def error(self, message: str) -> None:
+    def error(self, message: str, *args: object) -> None:
         """Log an ERROR-level message (severity 40).
 
         Args:
-            message: The log message.
+            message: The log message, with %-style placeholders when *args
+                are provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self._log(LogLevel.ERROR, message)
+        self._log(LogLevel.ERROR, message, *args)
 
-    def critical(self, message: str) -> None:
+    def critical(self, message: str, *args: object) -> None:
         """Log a CRITICAL-level message (severity 50).
 
         Args:
-            message: The log message.
+            message: The log message, with %-style placeholders when *args
+                are provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self._log(LogLevel.CRITICAL, message)
+        self._log(LogLevel.CRITICAL, message, *args)
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
-    def _log(self, level: LogLevel, message: str, stacklevel: int = 3) -> None:
+    def _log(self, level: LogLevel, message: str, *args: object, stacklevel: int = 3) -> None:
         if not self.config.enabled or level < self.config.level:
             return
 
         self._stats[level] += 1
-        self._internal.log(int(level), message, stacklevel=stacklevel)
+        self._internal.log(int(level), _format_message(message, args), stacklevel=stacklevel)
 
     def set_level(self, level: LogLevel) -> None:
         """Change the minimum log level at runtime.

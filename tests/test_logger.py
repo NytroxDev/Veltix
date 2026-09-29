@@ -3,6 +3,7 @@
 import io
 
 from veltix import Logger, LoggerConfig, LogLevel
+from veltix.internal.bus import VeltixBus
 
 
 class TestLogger:
@@ -45,6 +46,35 @@ class TestLogger:
         logger.enable()
         logger.info("hello after enable")
         assert "hello after enable" in stream.getvalue()
+
+    def test_logger_printf_style_arguments(self, reset_logger):
+        """Log calls accept %-style formatting arguments like stdlib logging."""
+        stream = io.StringIO()
+        logger = Logger.get_instance(LoggerConfig(stream=stream, level=LogLevel.DEBUG))
+        logger.info("Value: %d", 42)
+        assert "Value: 42" in stream.getvalue()
+
+    def test_logger_mapping_arguments(self, reset_logger):
+        """A single mapping argument applies to named placeholders."""
+        stream = io.StringIO()
+        logger = Logger.get_instance(LoggerConfig(stream=stream, level=LogLevel.DEBUG))
+        logger.info("hello %(name)s", {"name": "world"})
+        assert "hello world" in stream.getvalue()
+
+    def test_logger_message_without_args_unchanged(self, reset_logger):
+        """A message with no args stays untouched (lone % is fine)."""
+        stream = io.StringIO()
+        logger = Logger.get_instance(LoggerConfig(stream=stream, level=LogLevel.DEBUG))
+        logger.info("100% ready")
+        assert "100% ready" in stream.getvalue()
+
+    def test_bus_printf_style_arguments(self, reset_logger):
+        """bus.error(\"... %s\", exc) must format the args, not raise TypeError."""
+        stream = io.StringIO()
+        Logger.get_instance(LoggerConfig(stream=stream, level=LogLevel.DEBUG))
+        bus = VeltixBus()
+        bus.error("Something went wrong: %s", ValueError("boom"))
+        assert "Something went wrong: boom" in stream.getvalue()
 
     def test_logger_set_level(self, reset_logger):
         logger = Logger.get_instance()

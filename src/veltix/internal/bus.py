@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .._vendor.avyra import EventBus
-from ..logger.core import Logger
+from ..logger.core import Logger, _format_message
 from ..logger.levels import LogLevel
 from .events import (
     ClientEvent,
@@ -59,61 +59,79 @@ class VeltixBus(EventBus):
 
     # ── Sugar emit ─────────────────────────────────────────────────────────────
 
-    def trace(self, msg: str) -> None:
+    def _emit_log_event(self, event: LogEvent, msg: str, args: tuple[object, ...]) -> None:
+        """Emit a log event with %-style formatting applied."""
+        self.emit(event, _format_message(msg, args))
+
+    def trace(self, msg: str, *args: object) -> None:
         """Emit a TRACE-level log event.
 
         Args:
-            msg: The log message.
+            msg: The log message, with %-style placeholders when *args are
+                provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self.emit(LogEvent.TRACE, msg)
+        self._emit_log_event(LogEvent.TRACE, msg, args)
 
-    def debug(self, msg: str) -> None:
+    def debug(self, msg: str, *args: object) -> None:
         """Emit a DEBUG-level log event.
 
         Args:
-            msg: The log message.
+            msg: The log message, with %-style placeholders when *args are
+                provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self.emit(LogEvent.DEBUG, msg)
+        self._emit_log_event(LogEvent.DEBUG, msg, args)
 
-    def info(self, msg: str) -> None:
+    def info(self, msg: str, *args: object) -> None:
         """Emit an INFO-level log event.
 
         Args:
-            msg: The log message.
+            msg: The log message, with %-style placeholders when *args are
+                provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self.emit(LogEvent.INFO, msg)
+        self._emit_log_event(LogEvent.INFO, msg, args)
 
-    def success(self, msg: str) -> None:
+    def success(self, msg: str, *args: object) -> None:
         """Emit a SUCCESS-level log event.
 
         Args:
-            msg: The log message.
+            msg: The log message, with %-style placeholders when *args are
+                provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self.emit(LogEvent.SUCCESS, msg)
+        self._emit_log_event(LogEvent.SUCCESS, msg, args)
 
-    def warning(self, msg: str) -> None:
+    def warning(self, msg: str, *args: object) -> None:
         """Emit a WARNING-level log event.
 
         Args:
-            msg: The log message.
+            msg: The log message, with %-style placeholders when *args are
+                provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self.emit(LogEvent.WARNING, msg)
+        self._emit_log_event(LogEvent.WARNING, msg, args)
 
-    def error(self, msg: str) -> None:
+    def error(self, msg: str, *args: object) -> None:
         """Emit an ERROR-level log event.
 
         Args:
-            msg: The log message.
+            msg: The log message, with %-style placeholders when *args are
+                provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self.emit(LogEvent.ERROR, msg)
+        self._emit_log_event(LogEvent.ERROR, msg, args)
 
-    def critical(self, msg: str) -> None:
+    def critical(self, msg: str, *args: object) -> None:
         """Emit a CRITICAL-level log event.
 
         Args:
-            msg: The log message.
+            msg: The log message, with %-style placeholders when *args are
+                provided.
+            *args: Optional formatting arguments, like stdlib logging.
         """
-        self.emit(LogEvent.CRITICAL, msg)
+        self._emit_log_event(LogEvent.CRITICAL, msg, args)
 
     # ── Subscriber checks ───────────────────────────────────────────────────────
 
