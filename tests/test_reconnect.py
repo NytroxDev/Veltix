@@ -286,3 +286,44 @@ class TestServerFullDuringRetry:
 
         # The socket loop must be stopped at the end (never left running).
         assert ctx.running_values[-1] is False
+
+
+@pytest.mark.usefixtures("socket_core_backend")
+class TestConnectAgain:
+    """connect() must be callable again after a failure or manual disconnect."""
+
+    def test_connect_after_failed_initial_attempt(self):
+        port = find_free_port()
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=0))
+
+        try:
+            assert client.connect() is False  # no server listening yet
+
+            server = Server(ServerConfig(host="127.0.0.1", port=port))
+            server.start()
+            try:
+                # The failed attempt closed the socket fd; a manual retry
+                # must rebuild the stack and succeed once the server is up.
+                assert client.connect() is True
+                client.disconnect()
+            finally:
+                server.close_all()
+        finally:
+            client.disconnect()
+
+    def test_connect_after_manual_disconnect(self):
+        port = find_free_port()
+        server = Server(ServerConfig(host="127.0.0.1", port=port))
+        server.start()
+        client = Client(ClientConfig(server_addr="127.0.0.1", port=port))
+        try:
+            assert client.connect() is True
+            client.disconnect()
+            assert client.is_connected is False
+
+            # disconnect() closed the socket; connect() must recover.
+            assert client.connect() is True
+            client.disconnect()
+        finally:
+            server.close_all()
+            client.disconnect()

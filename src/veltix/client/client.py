@@ -60,6 +60,7 @@ class Client:
         self._connecting: bool = False
         self.running: bool = True
         self._shutdown_event = threading.Event()
+        self._socket_used = False
 
         self.init_components()
 
@@ -120,6 +121,23 @@ class Client:
 
         if not self.bus.has_subscriber(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect):
             self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
+
+    def _rebuild_components(self) -> None:
+        """Rebuild the socket stack for a fresh connection cycle.
+
+        A failed, dropped, or manually closed connection leaves the client
+        socket unusable for a new ``connect()``: AsyncSocket releases the fd,
+        ThreadingSocket leaves it in a stale state. Recreating the components
+        restores a connectable socket while preserving the registered routes
+        and the ``on_recv`` callback, mirroring ``ReconnectHandler.reset``.
+        """
+        old_routes = self.request_handler.copy_routes()
+        old_on_recv = self.request_handler.on_recv
+        self.init_components()
+        for type_, func in old_routes.items():
+            self.request_handler.register_route(type_, func)
+        if old_on_recv:
+            self.request_handler.set_on_recv(old_on_recv)
 
     # -------------------------------------------------------------------------
     # Internal context (used by ReconnectHandler)
@@ -253,6 +271,13 @@ class Client:
             self.running = True
             self._connecting = True
         self._shutdown_event.clear()
+
+        if not _from_retry and self._socket_used and not self.is_connected:
+            # A previous failure, drop, or disconnect left the old socket
+            # unusable (AsyncSocket releases the fd, ThreadingSocket leaves it
+            # stale). Rebuild the stack so connect() can be called again.
+            self._rebuild_components()
+        self._socket_used = True
 
         try:
             self.bus.emit(
