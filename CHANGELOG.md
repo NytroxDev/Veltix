@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   passing `list_of_client=` need to update
   ([48f3812](https://github.com/NytroxDev/Veltix/commit/48f3812)).
 
+### Fixed
+
+- **`IDAllocator.max_ids` shrinking no longer leaks out-of-range IDs.** Reducing
+  the window below the current counter used to make the next allocations fall
+  outside the documented `[offset, offset + max_ids)` range before wrapping
+  around; the counter is now normalized on shrink, and non-positive values are
+  rejected with `ValueError` instead of a later `ZeroDivisionError`
+  ([1d1c96f](https://github.com/NytroxDev/Veltix/commit/1d1c96f)).
+
 ## [3.0.2] - 2026-09-28
 
 ### Fixed
