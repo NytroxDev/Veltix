@@ -67,6 +67,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DisconnectState`, and `*args`/`**kwargs` and optional parameters remain
   accepted ([57be78e](https://github.com/NytroxDev/Veltix/commit/57be78e)).
 
+- **`Request` construction now fails fast with a guiding error for every
+  bad payload.** Previously a missing or double payload raised a generic
+  `Provide exactly one of 'content', 'text', or 'json'` with no way forward,
+  `content="..."` said `'content' must be bytes` without mentioning `text=`,
+  a non-serializable `json=` leaked the raw `TypeError` from `json.dumps`, and
+  an out-of-range `request_id` only blew up later at `compile()`. Each case
+  now names the actual type received, lists what was provided, shows the fix
+  and an example: `'content' must be bytes, got str. Fix: Request(MY_TYPE,
+  content=b'...') - or use text= for a str: Request(MY_TYPE, text='...').`
+  `request_id` is validated at construction (and still at `compile()`, since
+  it can be reassigned via `respond()`)
+  ([56743ec](https://github.com/NytroxDev/Veltix/commit/56743ec)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
