@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2430,7 +2430,7 @@ increases from 14 to 16 bytes. v1.7.0 <strong>cannot communicate</strong> with e
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Before (v1.6.10) : [2B  size][2B  code][4B CRC][4B request_id][     content     ]
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>After  (v1.7.0)  : [2B MAGIC][2B  size][2B  code][4B CRC][4B request_id][content ]
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>                    ^^^^^^^^
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                    new - always 0x56 0x58 (&quot;VX&quot;)
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                    new - always 0x56 0x58 ("VX")
 </code></pre></div>
 <h3 id="action-required_5">Action required<a class="headerlink" href="#action-required_5" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2458,10 +2458,10 @@ timeout is now hardcoded. If you were setting a performance mode, remove that co
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Before (v1.6.9)</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">PerformanceMode</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">performance_mode</span><span class="o">=</span><span class="n">PerformanceMode</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"0.0.0.0"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">performance_mode</span><span class="o">=</span><span class="n">PerformanceMode</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># After (v1.6.10) - just remove the parameter</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">)</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"0.0.0.0"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="serverroute-callback-order-flipped"><code>@server.route</code> callback order flipped<a class="headerlink" href="#serverroute-callback-order-flipped" title="Permanent link">&para;</a></h3>
 <p>Server route callbacks now receive <code>(client, response)</code> instead of <code>(response, client)</code>. Client routes
@@ -2482,11 +2482,11 @@ timeout is now hardcoded. If you were setting a performance mode, remove that co
 <code>server.ping_client()</code> for latency measurement instead.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Before (v1.6.9)</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">send_and_wait</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">latency</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">latency</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">ms"</span><span class="p">)</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># After (v1.6.10)</span>
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">send_and_wait</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Got: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="serverclients-now-returns-listclientinfo"><code>server.clients</code> now returns <code>list[ClientInfo]</code><a class="headerlink" href="#serverclients-now-returns-listclientinfo" title="Permanent link">&para;</a></h3>
 <p>The <code>clients</code> property on <code>Server</code> now returns <code>list[ClientInfo]</code> directly instead of internal <code>ClientEntry</code> objects.
@@ -2544,13 +2544,13 @@ pattern.</p>
 </ul>
 <h3 id="custom-request-id-migration-v160-v162">Custom request id migration (v1.6.0 → v1.6.2)<a class="headerlink" href="#custom-request-id-migration-v160-v162" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Before (v1.5.x)</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="s2">&quot;my-id&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="s2">"my-id"</span><span class="p">)</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># After (v1.6.2)</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x02\x03\x04</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># bytes</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">b</span><span class="s2">"</span><span class="se">\x01\x02\x03\x04</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># bytes</span>
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="c1"># After (v2.0.0)</span>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># int</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="n">Request</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="sa">b</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># int</span>
 </code></pre></div>
 <h3 id="loggingdisplay-migration-v160-v162">Logging/display migration (v1.6.0 → v1.6.2)<a class="headerlink" href="#loggingdisplay-migration-v160-v162" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Before (v1.5.x)</span>
@@ -2575,10 +2575,10 @@ pattern.</p>
 <h2 id="v140-v150">v1.4.0 → v1.5.0<a class="headerlink" href="#v140-v150" title="Permanent link">&para;</a></h2>
 <p><strong>Breaking change:</strong> <code>on_disconnect</code> on the client now receives a <code>DisconnectState</code> argument.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Before (v1.4.0)</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Disconnected&quot;</span><span class="p">))</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">"Disconnected"</span><span class="p">))</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># After (v1.5.0)</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Disconnected - permanent=</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">permanent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">client</span><span class="o">.</span><span class="n">set_callback</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ON_DISCONNECT</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Disconnected - permanent=</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">permanent</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
 </code></pre></div>
 <p>New optional fields in <code>ClientConfig</code>: <code>retry</code>, <code>retry_delay</code>, <code>buffer_size</code>.</p>
 <p>New optional fields in <code>ServerConfig</code>: <code>buffer_size</code>.</p>
@@ -2701,7 +2701,7 @@ pattern.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
