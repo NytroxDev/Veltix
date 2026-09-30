@@ -118,3 +118,59 @@ class TestRegistryAllocation:
         assert _USER_CODE_MIN <= code <= _USER_CODE_MAX
         assert msg.code == code
         assert MessageTypeRegistry.get(code) is msg
+
+
+class TestMessageTypeGuidingErrors:
+    def test_negative_code_guides(self):
+        with pytest.raises(MessageTypeError) as exc:
+            MessageType(code=-1, name="negative")
+
+        text = str(exc.value)
+        assert "between 0 and 65535" in text
+        assert "Fix:" in text
+        assert "MessageType(" in text
+
+    def test_too_big_code_guides(self):
+        with pytest.raises(MessageTypeError) as exc:
+            MessageType(code=70000, name="too_big")
+
+        text = str(exc.value)
+        assert "between 0 and 65535" in text
+        assert "Fix:" in text
+
+    def test_reserved_code_guides(self):
+        with pytest.raises(MessageTypeError) as exc:
+            MessageType(code=50, name="sys")
+
+        text = str(exc.value)
+        assert "reserved for system" in text
+        assert "200" in text  # rappelle le range user
+        assert "Fix:" in text
+        assert "auto-allocate" in text
+
+    def test_duplicate_code_guides(self):
+        MessageType(code=1300, name="unique_guide")
+        with pytest.raises(MessageTypeError) as exc:
+            MessageType(code=1300, name="dup_guide")
+
+        text = str(exc.value)
+        assert "already registered" in text
+        assert "unique_guide" in text
+        assert "Fix:" in text
+
+    def test_conflicting_name_guides(self):
+        with pytest.raises(MessageTypeError) as exc:
+            MessageType("conflict", name="other")
+
+        text = str(exc.value)
+        assert "Cannot pass a name" in text
+        assert "Fix:" in text
+        assert "MessageType(" in text
+
+    def test_bad_code_type_guides(self):
+        with pytest.raises(MessageTypeError) as exc:
+            MessageType(code=3.14, name="float_code")  # type: ignore[arg-type]
+
+        text = str(exc.value)
+        assert "got: float" in text
+        assert "Fix:" in text

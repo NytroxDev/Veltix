@@ -30,7 +30,9 @@ class MessageTypeRegistry:
                         f"'{existing.name}' is already registered there."
                     )
                 raise MessageTypeError(
-                    f"Code {msg_type.code} already registered as '{existing.name}'"
+                    f"Code {msg_type.code} already registered as '{existing.name}'. "
+                    'Fix: use a different code or MessageType("chat") to '
+                    "auto-allocate an unused one."
                 )
             cls._registry[msg_type.code] = msg_type
 
@@ -99,7 +101,9 @@ class MessageType:
         if isinstance(code, str):
             if name is not None:
                 raise MessageTypeError(
-                    "Cannot pass a name as both first argument and 'name' keyword"
+                    "Cannot pass a name as both first argument and 'name' keyword. "
+                    'Fix: use one of MessageType("chat"), MessageType(name="chat") '
+                    'or MessageType(code=200, name="chat").'
                 )
             name = code
             code = None
@@ -112,18 +116,24 @@ class MessageType:
         else:
             if not isinstance(code, int):
                 raise MessageTypeError(
-                    f"Code must be an int, str, or None, got: {type(code).__name__}"
+                    f"Code must be an int, str, or None, got: {type(code).__name__}. "
+                    'Fix: MessageType("chat") auto-allocates a code, or pass an '
+                    'explicit int: MessageType(code=200, name="chat").'
                 )
 
             if not (0 <= code <= _PROTOCOL_MAX):
-                raise MessageTypeError(f"Code must be between 0 and {_PROTOCOL_MAX}, got: {code}")
+                raise MessageTypeError(
+                    f"Code must be between 0 and {_PROTOCOL_MAX}, got: {code}. "
+                    'Fix: MessageType("chat") auto-allocates a free user code '
+                    "(200-9999), or pass an explicit code in range."
+                )
 
             if code < _USER_CODE_MIN and not _system:
                 raise MessageTypeError(
                     f"Code {code} is reserved for system messages "
-                    f"(0-{_USER_CODE_MIN - 1}). "
-                    f"Use a code between {_USER_CODE_MIN} and {_USER_CODE_MAX} "
-                    f"for user messages."
+                    f"(0-{_USER_CODE_MIN - 1}). Use a code between "
+                    f"{_USER_CODE_MIN} and {_USER_CODE_MAX} for user messages. "
+                    'Fix: MessageType("chat") auto-allocates a free user code.'
                 )
 
             self.code: int = code
