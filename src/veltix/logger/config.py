@@ -22,13 +22,9 @@ class LoggerConfig:
         show_timestamp: Show timestamp in logs
         show_level: Show log level name
         show_caller: Show caller file and line number (e.g. server.py:42)
-
-        # File output
         file_path: Path to log file
         file_rotation_size: Max file size in bytes before rotation
         file_backup_count: Number of backup files to keep
-
-        # Advanced
         stream: Output stream for console logs
     """
 
