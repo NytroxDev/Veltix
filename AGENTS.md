@@ -9,7 +9,7 @@ It handles framing, threading, handshake, routing, and reconnection. Since v3.0.
 hot path (parse, compile, buffering) is compiled in Rust via PyO3, with an automatic pure-Python
 fallback.
 
-- **Version:** 3.1.1
+- **Version:** 3.2.0
 - **Python:** 3.11+
 - **License:** MIT
 - **Zero runtime dependencies:** pure stdlib only - the Rust engine ships as a prebuilt wheel and
