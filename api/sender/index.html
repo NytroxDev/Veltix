@@ -1604,7 +1604,8 @@ SERVER: sends to individual clients or broadcasts.</p>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">get_all_clients</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">_ClientLike</span><span class="p">]]</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">id_allocator</span><span class="p">:</span> <span class="n">IDAllocator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">use_rust</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1697,6 +1698,23 @@ SERVER: sends to individual clients or broadcasts.</p>
             <td>
               <div class="doc-md-description">
                 <p>ID allocator for auto-assigning request IDs.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>use_rust</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Pin the protocol engine for outgoing compilation.
+<code>None</code> (default) captures the process-wide engine.</p>
               </div>
             </td>
             <td>
@@ -1815,7 +1833,7 @@ In SERVER mode, uses the provided client socket.</p>
 <a href="#veltix.network.sender.Sender.broadcast" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">broadcast</span><span class="p">(</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">data</span><span class="p">:</span> <span class="n">Request</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">list_of_client</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">_ClientLike</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">list_of_clients</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">_ClientLike</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">except_clients</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">_ClientLike</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </code></pre></div>
@@ -1854,7 +1872,7 @@ In SERVER mode, uses the provided client socket.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>list_of_client</code>
+                <code>list_of_clients</code>
             </td>
             <td>
                   <code><span title="collections.abc.Sequence">Sequence</span>[<span title="veltix.network.sender._ClientLike">_ClientLike</span>] | None</code>

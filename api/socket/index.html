@@ -1336,6 +1336,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label=" AsyncSocket">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#veltix.socket_core.async_socket.AsyncSocket.send" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;send
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1722,6 +1739,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label=" AsyncSocket">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#veltix.socket_core.async_socket.AsyncSocket.send" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;send
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2022,7 +2056,42 @@ swapped at runtime.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The received bytes, or an empty byte-string on failure.</p>
+                <p>The received bytes, or an empty byte-string when the peer has</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bytes">bytes</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>closed the connection (EOF).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="OSError">OSError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>On socket errors, including <code>ConnectionResetError</code>
+and <code>BrokenPipeError</code>. A <code>TimeoutError</code> is raised when
+a timeout is set and no data arrives in time.</p>
               </div>
             </td>
           </tr>
@@ -2308,7 +2377,8 @@ swapped at runtime.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Timeout in seconds for handshakes.</p>
+                <p>Socket poll timeout in seconds for the accept and
+receive loops.</p>
               </div>
             </td>
             <td>
@@ -2334,7 +2404,41 @@ swapped at runtime.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>True if binding succeeded, False otherwise.</p>
+                <p>True if binding succeeded. False when the server is already</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>running (threading backend).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="OSError">OSError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>When the address cannot be bound (e.g. the port is
+already in use); the error propagates to the caller.</p>
               </div>
             </td>
           </tr>
@@ -2735,6 +2839,95 @@ swapped at runtime.</p>
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="veltix.socket_core.async_socket.AsyncSocket.send" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">send</span>
+
+
+<a href="#veltix.socket_core.async_socket.AsyncSocket.send" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">send</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Send raw bytes, queueing any remainder past the kernel buffer.</p>
+<p>Non-blocking by design: the selector thread never blocks on a slow
+peer. When the kernel send buffer is full, the unsent tail is queued
+and flushed by the selector loop as soon as the socket becomes
+writable again, so messages larger than the buffer are delivered
+instead of being dropped.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>data</code>
+            </td>
+            <td>
+                  <code><span title="bytes">bytes</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The bytes to send.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>True when the data was sent or queued for delivery, False on a</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>hard connection error.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
 
 
 
