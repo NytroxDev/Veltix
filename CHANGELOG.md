@@ -140,6 +140,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   SocketCore.THREADING.` Value range checks are unchanged
   ([140afab](https://github.com/NytroxDev/Veltix/commit/140afab)).
 
+- **Client connect and reconnect failures now explain what to do next
+  instead of a bare log line.** A failed `connect()` said only
+  `Connection failed to 127.0.0.1:8080` and a rejected handshake said
+  `Server rejected connection: server full (...)`, leaving an agent with no
+  way forward; both now add a `Fix:` hint (`check that the server is running
+  on that address and port, then call connect() again` /
+  `raise ServerConfig(max_connection=...) on the server side`). `client.retry()`
+  with `ClientConfig(retry=0)` used to fire a misleading final
+  `on_disconnect(permanent=True)` even though nothing was retried; it now
+  warns `retry() has nothing to retry: ClientConfig.retry is 0 and no max_
+  override was given. Fix: call retry(max_=N)` and stays silent. Retries that
+  run out now log `Reconnection failed after N attempt(s). Fix: ...`, and a
+  `retry()` / `try_reconnect` while a loop is already running points to
+  `stop_retry()` instead of just saying `reconnect loop already active`
+  ([da6694a](https://github.com/NytroxDev/Veltix/commit/da6694a)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
