@@ -104,6 +104,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of raising, as documented
   ([65cdf87](https://github.com/NytroxDev/Veltix/commit/65cdf87)).
 
+- **`Response.text` / `Response.json` decode failures now explain how to read
+  the payload instead of a bare message.** `content` that is not valid UTF-8
+  said only `Content is not valid UTF-8` and `content` that is not valid JSON
+  said only `Content is not valid JSON`, with no way forward. Each now points
+  to the safe check first (`response.is_text` / `response.is_json`, which
+  never raise) and the raw-bytes escape hatch:
+  `Content is not valid UTF-8 text. Fix: check response.is_text first (no
+  exception), or use response.content for raw bytes if the payload is
+  binary.`
+  ([33e91f5](https://github.com/NytroxDev/Veltix/commit/33e91f5)).
+
+- **`Server.send_and_wait()` and `Server.close_client()` now guide misuse
+  instead of failing silently or with a bare `AttributeError`.** Passing a raw
+  socket (or `None`) as the target of `send_and_wait()` used to raise
+  `'AsyncSocket' object has no attribute 'addr'` deep inside the request
+  flow; it now raises up front:
+  `send_and_wait() target must be a ClientInfo, got AsyncSocket. Fix: pass the
+  client argument of a route/on_connect callback, or pick one from
+  server.clients - a raw socket is not enough.` `close_client(None)` and a
+  `ClientInfo` that is not in the client list still return `False` as
+  documented, but now log a warning that names the fix
+  (`pass a ClientInfo from server.clients or from the on_connect callback`)
+  ([e261efe](https://github.com/NytroxDev/Veltix/commit/e261efe)).
+
+- **`ServerConfig` and `ClientConfig` now reject wrong-typed fields with a
+  guiding error instead of a raw comparison `TypeError` or a silent
+  mismatch.** Passing `port="8080"` used to blow up with `'<=' not supported
+  between instances of 'int' and 'str'`, and a string `socket_core="ASYNC"`
+  was accepted silently and only misbehaved when the server started. Each type
+  check names the field, the value received and the fix with an example:
+  `ServerConfig.port must be an int, got str ('8080'). Fix: pass a number
+  without quotes, e.g. ServerConfig(port=8080).` and `ServerConfig.socket_core
+  must be a SocketCore value, got str ('ASYNC'). Fix: pass SocketCore.ASYNC or
+  SocketCore.THREADING.` Value range checks are unchanged
+  ([140afab](https://github.com/NytroxDev/Veltix/commit/140afab)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
