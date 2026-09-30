@@ -80,6 +80,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it can be reassigned via `respond()`)
   ([56743ec](https://github.com/NytroxDev/Veltix/commit/56743ec)).
 
+- **`MessageType` construction now fails fast with a guiding error for every
+  bad code.** An out-of-range code said `Code must be between 0 and 65535`
+  with no way forward, a reserved code suggested the numeric range but not the
+  one-line solution, an already-registered code and the double-name conflict
+  had no fix at all, and a non-int code gave a bare type name. Every message
+  now shows the way out, and where relevant the auto-allocation shortcut:
+  `Code 50 is reserved for system messages (0-199). Use a code between 200 and
+  9999 for user messages. Fix: MessageType("chat") auto-allocates a free user
+  code.` and `Code 1300 already registered as 'unique_guide'. Fix: use a
+  different code or MessageType("chat") to auto-allocate an unused one.`
+  ([9fd94d6](https://github.com/NytroxDev/Veltix/commit/9fd94d6)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
