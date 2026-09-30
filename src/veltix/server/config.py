@@ -1,9 +1,26 @@
 from __future__ import annotations
 
 import dataclasses
+from typing import Any
 
 from ..internal.buffer_size import BufferSize
 from ..socket_core.core import SocketCore
+
+
+def _check_type(
+    config: str,
+    field: str,
+    value: Any,
+    expected: str,
+    kinds: tuple[type, ...],
+    fix: str,
+) -> None:
+    """Raise a guiding TypeError when a config field has the wrong type."""
+    if not isinstance(value, kinds):
+        raise TypeError(
+            f"{config}.{field} must be {expected}, got "
+            f"{type(value).__name__} ({value!r}). Fix: {fix}"
+        )
 
 
 @dataclasses.dataclass(slots=True)
@@ -40,6 +57,78 @@ class ServerConfig:
     id_window: int = 30000
 
     def __post_init__(self) -> None:
+        _check_type(
+            "ServerConfig",
+            "host",
+            self.host,
+            "a str",
+            (str,),
+            "pass the address as a string, e.g. ServerConfig(host='0.0.0.0')",
+        )
+        _check_type(
+            "ServerConfig",
+            "port",
+            self.port,
+            "an int",
+            (int,),
+            "pass a number without quotes, e.g. ServerConfig(port=8080)",
+        )
+        _check_type(
+            "ServerConfig",
+            "buffer_size",
+            self.buffer_size,
+            "an int",
+            (int,),
+            "pass an int (BufferSize presets or a raw byte count)",
+        )
+        _check_type(
+            "ServerConfig",
+            "max_connection",
+            self.max_connection,
+            "an int",
+            (int,),
+            "pass -1 for unlimited or a positive count",
+        )
+        _check_type(
+            "ServerConfig",
+            "max_message_size",
+            self.max_message_size,
+            "an int",
+            (int,),
+            "pass the max message size in bytes",
+        )
+        _check_type(
+            "ServerConfig",
+            "handshake_timeout",
+            self.handshake_timeout,
+            "a number (int or float)",
+            (int, float),
+            "pass seconds as a number, e.g. ServerConfig(handshake_timeout=5.0)",
+        )
+        _check_type(
+            "ServerConfig",
+            "max_workers",
+            self.max_workers,
+            "an int",
+            (int,),
+            "pass a positive worker count",
+        )
+        _check_type(
+            "ServerConfig",
+            "socket_core",
+            self.socket_core,
+            "a SocketCore value",
+            (SocketCore,),
+            "pass SocketCore.ASYNC or SocketCore.THREADING",
+        )
+        _check_type(
+            "ServerConfig",
+            "id_window",
+            self.id_window,
+            "an int",
+            (int,),
+            "pass a request-ID window between 1 and 65535",
+        )
         if not 0 <= self.port <= 65535:
             raise ValueError(f"port ({self.port}) must be between 0 and 65535")
         if self.buffer_size <= 0:

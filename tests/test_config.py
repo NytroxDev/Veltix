@@ -67,6 +67,36 @@ class TestServerConfigValidation:
             ServerConfig(max_workers=0)
 
 
+class TestConfigGuidingErrors:
+    def test_server_port_string_guides(self) -> None:
+        with pytest.raises(TypeError, match="must be an int"):
+            ServerConfig(port="8080")
+
+    def test_server_socket_core_string_guides(self) -> None:
+        with pytest.raises(TypeError, match="SocketCore"):
+            ServerConfig(socket_core="ASYNC")
+
+    def test_server_handshake_timeout_string_guides(self) -> None:
+        with pytest.raises(TypeError, match="handshake_timeout"):
+            ServerConfig(handshake_timeout="5.0")
+
+    def test_client_addr_wrong_type_guides(self) -> None:
+        with pytest.raises(TypeError, match="server_addr"):
+            ClientConfig(server_addr=8080)
+
+    def test_client_retry_string_guides(self) -> None:
+        with pytest.raises(TypeError, match="retry"):
+            ClientConfig(retry="3")
+
+    def test_config_errors_show_fix_and_value(self) -> None:
+        with pytest.raises(TypeError) as exc:
+            ServerConfig(port="8080")
+
+        text = str(exc.value)
+        assert "got str" in text
+        assert "Fix:" in text
+
+
 class TestClientConfigValidation:
     def test_defaults_valid(self) -> None:
         assert ClientConfig().port == 8080

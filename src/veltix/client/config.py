@@ -1,9 +1,26 @@
 from __future__ import annotations
 
 import dataclasses
+from typing import Any
 
 from ..internal.buffer_size import BufferSize
 from ..socket_core.core import SocketCore
+
+
+def _check_type(
+    config: str,
+    field: str,
+    value: Any,
+    expected: str,
+    kinds: tuple[type, ...],
+    fix: str,
+) -> None:
+    """Raise a guiding TypeError when a config field has the wrong type."""
+    if not isinstance(value, kinds):
+        raise TypeError(
+            f"{config}.{field} must be {expected}, got "
+            f"{type(value).__name__} ({value!r}). Fix: {fix}"
+        )
 
 
 @dataclasses.dataclass(slots=True)
@@ -40,6 +57,78 @@ class ClientConfig:
     socket_core: SocketCore = SocketCore.ASYNC
 
     def __post_init__(self) -> None:
+        _check_type(
+            "ClientConfig",
+            "server_addr",
+            self.server_addr,
+            "a str",
+            (str,),
+            "pass the address as a string, e.g. ClientConfig(server_addr='127.0.0.1')",
+        )
+        _check_type(
+            "ClientConfig",
+            "port",
+            self.port,
+            "an int",
+            (int,),
+            "pass a number without quotes, e.g. ClientConfig(port=8080)",
+        )
+        _check_type(
+            "ClientConfig",
+            "buffer_size",
+            self.buffer_size,
+            "an int",
+            (int,),
+            "pass an int (BufferSize presets or a raw byte count)",
+        )
+        _check_type(
+            "ClientConfig",
+            "max_message_size",
+            self.max_message_size,
+            "an int",
+            (int,),
+            "pass the max message size in bytes",
+        )
+        _check_type(
+            "ClientConfig",
+            "handshake_timeout",
+            self.handshake_timeout,
+            "a number (int or float)",
+            (int, float),
+            "pass seconds as a number, e.g. ClientConfig(handshake_timeout=5.0)",
+        )
+        _check_type(
+            "ClientConfig",
+            "max_workers",
+            self.max_workers,
+            "an int",
+            (int,),
+            "pass a positive worker count",
+        )
+        _check_type(
+            "ClientConfig",
+            "retry",
+            self.retry,
+            "an int",
+            (int,),
+            "pass a number without quotes, e.g. ClientConfig(retry=3)",
+        )
+        _check_type(
+            "ClientConfig",
+            "retry_delay",
+            self.retry_delay,
+            "a number (int or float)",
+            (int, float),
+            "pass seconds as a number, e.g. ClientConfig(retry_delay=1.0)",
+        )
+        _check_type(
+            "ClientConfig",
+            "socket_core",
+            self.socket_core,
+            "a SocketCore value",
+            (SocketCore,),
+            "pass SocketCore.ASYNC or SocketCore.THREADING",
+        )
         if not 0 <= self.port <= 65535:
             raise ValueError(f"port ({self.port}) must be between 0 and 65535")
         if self.buffer_size <= 0:
