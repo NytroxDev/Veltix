@@ -6,6 +6,36 @@ from veltix.exceptions import InvalidContentError
 from veltix.network.response import Response
 
 
+class TestResponseGuidingErrors:
+    def test_text_invalid_guides(self, test_message_type):
+        response = Response(
+            _type=test_message_type,
+            content=b"\xff\xfe\xfd",
+        )
+
+        with pytest.raises(InvalidContentError) as exc:
+            _ = response.text
+
+        text = str(exc.value)
+        assert "is_text" in text
+        assert "content" in text
+        assert "Fix:" in text
+
+    def test_json_invalid_guides(self, test_message_type):
+        response = Response(
+            _type=test_message_type,
+            content=b"{not json}",
+        )
+
+        with pytest.raises(InvalidContentError) as exc:
+            _ = response.json
+
+        text = str(exc.value)
+        assert "is_json" in text
+        assert "content" in text
+        assert "Fix:" in text
+
+
 class TestResponseText:
     def test_valid_text(self, test_message_type):
         response = Response(

@@ -106,7 +106,10 @@ class Response:
         """
         value = self._json_value()
         if value is _INVALID:
-            raise InvalidContentError("Content is not valid JSON")
+            raise InvalidContentError(
+                "Content is not valid JSON. Fix: check response.is_json first "
+                "(no exception), or use response.content to read the raw bytes."
+            )
 
         return value
 
@@ -136,7 +139,11 @@ class Response:
         """
         value = self._text_value()
         if value is _INVALID:
-            raise InvalidContentError("Content is not valid UTF-8")
+            raise InvalidContentError(
+                "Content is not valid UTF-8 text. Fix: check response.is_text "
+                "first (no exception), or use response.content for raw bytes if "
+                "the payload is binary."
+            )
 
         return cast("str", value)
 
