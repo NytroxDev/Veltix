@@ -309,7 +309,11 @@ class Client:
                 self.config.handshake_timeout,
             )
             if not connected:
-                self.bus.error(f"Connection failed to {self.config.server_addr}:{self.config.port}")
+                self.bus.error(
+                    f"Connection failed to {self.config.server_addr}:{self.config.port}. "
+                    "Fix: check that the server is running on that address and port, "
+                    "then call connect() again."
+                )
                 return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
             with self._state_lock:
@@ -336,14 +340,17 @@ class Client:
             )
             self.bus.error(
                 f"Connection failed to {self.config.server_addr}:{self.config.port}: "
-                f"{type(e).__name__}"
+                f"{type(e).__name__}. Fix: check that the server is running on that "
+                "address and port, then call connect() or retry() again."
             )
             return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
 
         except ServerFullError:
             self.bus.error(
                 f"Server rejected connection: server full "
-                f"({self.config.server_addr}:{self.config.port})"
+                f"({self.config.server_addr}:{self.config.port}). "
+                "Fix: raise ServerConfig(max_connection=...) on the server side, "
+                "or connect again when the server has free slots."
             )
             if _from_retry:
                 # The reconnect loop reports the failed attempt and fires its

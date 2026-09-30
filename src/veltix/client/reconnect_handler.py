@@ -188,7 +188,16 @@ class ReconnectHandler:
             if self._stop_event.wait(timeout=self._context.config.retry_delay):
                 break
 
-        if not self._manual_disconnect:
+        if not self._manual_disconnect and self._fail_count > 0 and not self._stop_retry_flag:
+            if self.bus:
+                self.bus.error(
+                    f"Reconnection failed after {self._fail_count} attempt(s). "
+                    "Fix: check that the server is reachable at "
+                    f"{self._context.config.server_addr}:{self._context.config.port}, "
+                    "then call retry() again, or raise ClientConfig.retry."
+                )
+            self.fire_on_disconnect(permanent=True, reason=reason)
+        elif not self._manual_disconnect:
             self.fire_on_disconnect(permanent=True, reason=reason)
         self._context._context_set_running(False)
         return False
@@ -212,7 +221,10 @@ class ReconnectHandler:
 
         if not self._reconnect_lock.acquire(blocking=False):
             if self.bus:
-                self.bus.warning("try_reconnect ignored - reconnect loop already active")
+                self.bus.warning(
+                    "try_reconnect ignored - a reconnect loop is already running. "
+                    "Fix: wait for it to finish, or call stop_retry() to cancel it."
+                )
             return False
 
         try:
@@ -242,10 +254,21 @@ class ReconnectHandler:
     def _retry_in_thread(self, max_: int | None = None) -> None:
         if not self._reconnect_lock.acquire(blocking=False):
             if self.bus:
-                self.bus.warning("retry() ignored - reconnect loop already active")
+                self.bus.warning(
+                    "retry() ignored - a reconnect loop is already running. "
+                    "Fix: wait for it to finish, or call stop_retry() to cancel it."
+                )
             return
 
         try:
+            if max_ is None and self._context.config.retry <= 0:
+                if self.bus:
+                    self.bus.warning(
+                        "retry() has nothing to retry: ClientConfig.retry is 0 and "
+                        "no max_ override was given. Fix: call retry(max_=N) with an "
+                        "explicit attempt count, or raise ClientConfig.retry."
+                    )
+                return
             with self._state_lock:
                 self._stop_retry_flag = False
                 self._fail_count = 0
