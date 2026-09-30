@@ -58,22 +58,63 @@ class Request:
         provided = sum(x is not _UNSET for x in (content, text, json))
 
         if provided != 1:
-            raise RequestError("Provide exactly one of 'content', 'text', or 'json'.")
+            given = [
+                name
+                for name, value in (("content", content), ("text", text), ("json", json))
+                if value is not _UNSET
+            ]
+            if provided == 0:
+                raise RequestError(
+                    "Request requires exactly one payload: 'content' (raw bytes), "
+                    "'text' (str, UTF-8 encoded) or 'json' (any JSON-serializable "
+                    'object). Fix: Request(MY_TYPE, text="hello world").'
+                )
+            quoted = ", ".join(f"'{name}'" for name in given)
+            raise RequestError(
+                f"Request received {provided} payloads ({quoted}), expected exactly "
+                f"one. Fix: pass only one - e.g. Request(MY_TYPE, {given[0]}=...)."
+            )
 
         if content is not _UNSET:
             if not isinstance(content, bytes):
-                raise RequestError("'content' must be bytes")
+                raise RequestError(
+                    f"'content' must be bytes, got {type(content).__name__}. "
+                    f"Fix: Request(MY_TYPE, content=b'...') - or use text= for a "
+                    f"str: Request(MY_TYPE, text='...')."
+                )
             self.content = content
         elif text is not _UNSET:
+            if not isinstance(text, (str, bytes)):
+                raise RequestError(
+                    f"'text' must be str or bytes, got {type(text).__name__}. "
+                    f"Fix: Request(MY_TYPE, text='hello world')."
+                )
             self.content = encode_utf8(text)
-            if not isinstance(self.content, bytes):
-                raise RequestError("'text' must be str or bytes")
         else:
-            self.content = encode_json(json)
+            try:
+                self.content = encode_json(json)
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise RequestError(
+                    f"'json' must be JSON-serializable (dict/list/str/int/float/"
+                    f"bool/None), got {type(json).__name__}: {exc}. "
+                    f"Fix: Request(MY_TYPE, json={{'key': 'value'}})."
+                ) from exc
 
         self.request_id: int | None = request_id
+        self._validate_request_id()
         self.flags: MessageFlag = MessageFlag.NONE
         self.type: MessageType = _type
+
+    def _validate_request_id(self) -> None:
+        max_request_id = (1 << (8 * REQUEST_ID_SIZE)) - 1
+        if self.request_id is not None and (
+            not isinstance(self.request_id, int) or not (0 <= self.request_id <= max_request_id)
+        ):
+            raise RequestError(
+                f"'request_id' must be an int between 0 and {max_request_id}, "
+                f"got {self.request_id!r}. Fix: pass request_id=42 or leave it "
+                f"None for auto-assignment."
+            )
 
     def respond(self, response: Response) -> None:
         """Associate this request with a received response.
@@ -108,14 +149,7 @@ class Request:
         if size > max_size:
             raise RequestError(f"Content too large: {size} bytes (max: {max_size})")
 
-        max_request_id = (1 << (8 * REQUEST_ID_SIZE)) - 1
-        if self.request_id is not None and (
-            not isinstance(self.request_id, int) or not (0 <= self.request_id <= max_request_id)
-        ):
-            raise RequestError(
-                f"request_id must be an int between 0 and {max_request_id}, "
-                f"got: {self.request_id!r}"
-            )
+        self._validate_request_id()
 
         use_rust = _rust.rust_enabled() if use_rust is None else use_rust
         if use_rust:

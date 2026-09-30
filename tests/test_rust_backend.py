@@ -265,5 +265,5 @@ class TestCompileBackend:
 
     def test_compile_invalid_request_id_raises(self, backend, test_message_type):
         """Out-of-range request_id raises RequestError before compilation."""
-        with pytest.raises(RequestError, match="request_id must be an int between"):
+        with pytest.raises(RequestError, match="'request_id' must be an int between"):
             Request(test_message_type, b"x", request_id=70000).compile()
