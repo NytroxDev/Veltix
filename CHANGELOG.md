@@ -92,6 +92,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   different code or MessageType("chat") to auto-allocate an unused one.`
   ([9fd94d6](https://github.com/NytroxDev/Veltix/commit/9fd94d6)).
 
+- **`Sender` errors now point toward the right API instead of generic
+  messages.** `CLIENT mode requires a socket connection` gained a fix
+  (`Sender(mode=Mode.CLIENT, conn=client_socket)`), a server `send()` without
+  a target now shows `sender.send(request, client=client_info)`, `broadcast()`
+  in client mode suggests `send(request)`, a broadcast without clients shows
+  `broadcast(request, list_of_clients=[client1, client2])`, and passing raw
+  bytes instead of a `Request` (which used to surface as a bare
+  `AttributeError`) is caught up front with an example
+  (`Request(MY_TYPE, text="hello world")`). All cases keep returning `False`
+  instead of raising, as documented
+  ([65cdf87](https://github.com/NytroxDev/Veltix/commit/65cdf87)).
+
 ## [3.1.1] - 2026-09-29
 
 ### Fixed
