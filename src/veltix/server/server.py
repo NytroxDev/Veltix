@@ -259,6 +259,15 @@ class Server:
         Returns:
             Matching Response, or None on timeout or send failure.
         """
+        from .client_info import ClientInfo
+
+        if not isinstance(client, ClientInfo):
+            raise TypeError(
+                f"send_and_wait() target must be a ClientInfo, got {type(client).__name__}. "
+                "Fix: pass the client argument of a route/on_connect callback, or "
+                "pick one from server.clients - a raw socket is not enough."
+            )
+
         if request.request_id is None:
             request.request_id = self._id_allocator.allocate()
 
@@ -329,12 +338,20 @@ class Server:
             return self.socket.close_client(id_)
 
         if not client:
+            self.bus.warning(
+                "close_client() got no client. Fix: pass a ClientInfo from "
+                "server.clients or from the on_connect callback."
+            )
             return False
 
         entry = next(
             (e for e in self.socket.client_manager.get_all_clients() if e.info == client), None
         )
         if not entry:
+            self.bus.warning(
+                f"close_client() could not find {client.addr} in the client list. "
+                "Fix: pass a ClientInfo currently present in server.clients."
+            )
             return False
         return self.socket.close_client(entry)
 

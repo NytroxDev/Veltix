@@ -80,3 +80,23 @@ class TestSendAndWait:
 
         client.disconnect()
         server.close_all()
+
+
+class TestSendAndWaitGuides:
+    def test_server_send_and_wait_wrong_target_guides(self, test_message_type):
+        server = Server(ServerConfig(host="127.0.0.1", port=0))
+
+        with pytest.raises(TypeError, match="ClientInfo"):
+            server.send_and_wait(  # type: ignore[arg-type]
+                Request(test_message_type, b"x"), client=None
+            )
+
+    def test_server_send_and_wait_raw_socket_guides(self, test_message_type):
+        server = Server(ServerConfig(host="127.0.0.1", port=0))
+        fake_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        with pytest.raises(TypeError, match="ClientInfo"):
+            server.send_and_wait(  # type: ignore[arg-type]
+                Request(test_message_type, b"x"), client=fake_socket
+            )
+        fake_socket.close()

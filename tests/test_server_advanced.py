@@ -1,6 +1,7 @@
 """Tests for advanced Server and ClientInfo features."""
 
 import socket
+from unittest.mock import patch
 
 import pytest
 
@@ -277,4 +278,17 @@ class TestServerCloseClient:
         result = server.close_client(client=fake_info)
         assert result is False
         sock.close()
+        server.close_all()
+
+    def test_close_client_with_none_guides(self):
+        """close_client(None) returns False and warns toward the fix."""
+        server = Server(ServerConfig(host="127.0.0.1", port=find_free_port()))
+
+        with patch.object(server.bus, "warning") as warn:
+            result = server.close_client(client=None)
+
+        assert result is False
+        message = warn.call_args[0][0]
+        assert "ClientInfo" in message
+        assert "Fix:" in message
         server.close_all()
