@@ -165,3 +165,69 @@ class TestSenderBroadcast:
         server_sender.broadcast(Request(MSG_TYPE, b"test"), [sock])
         assert received[-1]["mode"] == "server"
         assert received[-1]["broadcast"] is True
+
+
+class TestSenderGuidingErrors:
+    def test_client_mode_requires_socket_guides(self):
+        bus = MagicMock()
+        with pytest.raises(SenderError) as exc:
+            Sender(mode=Mode.CLIENT, conn=None, bus=bus)
+
+        text = str(exc.value)
+        assert "conn=" in text
+        assert "Fix:" in text
+
+    def test_server_send_no_client_guides(self):
+        bus = MagicMock()
+        sender = Sender(mode=Mode.SERVER, bus=bus)
+
+        result = sender.send(Request(MSG_TYPE, b"hello"), client=None)
+
+        assert result is False
+        error = bus.error.call_args[0][0]
+        assert "client=" in error
+        assert "Fix:" in error
+
+    def test_client_broadcast_guides(self):
+        bus = MagicMock()
+        sender = Sender(mode=Mode.CLIENT, conn=make_mock_socket(), bus=bus)
+
+        result = sender.broadcast(Request(MSG_TYPE, b"test"), [make_mock_socket()])
+
+        assert result is False
+        error = bus.error.call_args[0][0]
+        assert "send(" in error
+        assert "Fix:" in error
+
+    def test_server_broadcast_no_clients_guides(self):
+        bus = MagicMock()
+        sender = Sender(mode=Mode.SERVER, bus=bus)
+
+        result = sender.broadcast(Request(MSG_TYPE, b"test"))
+
+        assert result is False
+        error = bus.error.call_args[0][0]
+        assert "list_of_clients" in error
+        assert "Fix:" in error
+
+    def test_send_non_request_guides(self):
+        bus = MagicMock()
+        sender = Sender(mode=Mode.SERVER, bus=bus)
+
+        result = sender.send(b"raw bytes")  # type: ignore[arg-type]
+
+        assert result is False
+        error = bus.error.call_args[0][0]
+        assert "Request" in error
+        assert "Fix:" in error
+
+    def test_broadcast_non_request_guides(self):
+        bus = MagicMock()
+        sender = Sender(mode=Mode.SERVER, bus=bus)
+
+        result = sender.broadcast(b"raw bytes", [make_mock_socket()])  # type: ignore[arg-type]
+
+        assert result is False
+        error = bus.error.call_args[0][0]
+        assert "Request" in error
+        assert "Fix:" in error

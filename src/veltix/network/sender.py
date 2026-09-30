@@ -9,6 +9,7 @@ from ..internal.events import ErrorEvent, MessageEvent
 from ..internal.mode import Mode
 from ..server.client_info import ClientInfo
 from . import _rust
+from .request import Request
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -17,7 +18,6 @@ if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
     from ..socket_core.base_socket import BaseSocket
     from .id_allocator import IDAllocator
-    from .request import Request
 
 _ClientLike: TypeAlias = "BaseSocket | ClientInfo"
 
@@ -58,7 +58,11 @@ class Sender:
             mode = Mode(mode)
 
         if mode == Mode.CLIENT and conn is None:
-            raise SenderError("CLIENT mode requires a socket connection")
+            raise SenderError(
+                "CLIENT mode requires a socket connection. "
+                "Fix: Sender(mode=Mode.CLIENT, conn=client_socket) - conn is the "
+                "BaseSocket created by Client.connect()."
+            )
 
         self.mode = mode
         self.is_client = mode == Mode.CLIENT
@@ -97,12 +101,28 @@ class Sender:
         Returns:
             True if the send succeeded, False otherwise.
         """
+        if not isinstance(data, Request):
+            self._log_error(
+                f"send() expects a Request, got {type(data).__name__}. "
+                'Fix: build one first: Request(MY_TYPE, text="hello world"), '
+                'Request(MY_TYPE, content=b"...") or Request(MY_TYPE, json={...}).'
+            )
+            return False
+
         target = self._resolve_target(client)
 
         if target is None:
-            self._log_error(
-                "No connection available" if self.is_client else "No client socket provided"
-            )
+            if self.is_client:
+                self._log_error(
+                    "No connection available. Fix: connect first and build the "
+                    "Sender with conn=client_socket."
+                )
+            else:
+                self._log_error(
+                    "No client socket provided. Fix: sender.send(request, "
+                    "client=client_info) - in SERVER mode the target client "
+                    "(ClientInfo or BaseSocket) is required."
+                )
             return False
 
         if data.request_id is None and self._id_allocator is not None:
@@ -153,13 +173,28 @@ class Sender:
         Returns:
             True if all sends succeeded, False otherwise.
         """
+        if not isinstance(data, Request):
+            self._log_error(
+                f"broadcast() expects a Request, got {type(data).__name__}. "
+                'Fix: build one first: Request(MY_TYPE, text="hello world"), '
+                'Request(MY_TYPE, content=b"...") or Request(MY_TYPE, json={...}).'
+            )
+            return False
+
         if self.is_client:
-            self._log_error("Broadcast not available in CLIENT mode")
+            self._log_error(
+                "Broadcast not available in CLIENT mode. "
+                "Fix: use send(request) to talk to the server instead."
+            )
             return False
 
         if self._get_all_clients is None:
             if list_of_clients is None:
-                self._log_error("No client list provided and no get_all_clients callback")
+                self._log_error(
+                    "No client list provided and no get_all_clients callback. "
+                    "Fix: broadcast(request, list_of_clients=[client1, client2]) "
+                    "- the list accepts ClientInfo or BaseSocket objects."
+                )
                 return False
         elif list_of_clients is None:
             list_of_clients = self._get_all_clients()
