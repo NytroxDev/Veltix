@@ -2,22 +2,20 @@
 
 from __future__ import annotations
 
-import threading
-import time
 from typing import TYPE_CHECKING, Any
 
 from ..handler.request_handler import validate_callback_signature
 from ..internal.bus import VeltixBus
 from ..internal.events import ServerEvent
-from ..network.request import Request
-from ..network.system_types import PING
 from .core import ServerCore
 from .lifecycle import ServerLifecycle
+from .messaging import ServerMessaging
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ..handler.request_handler import RequestHandler
+    from ..network.request import Request
     from ..network.response import Response
     from ..network.sender import Sender
     from ..network.types import MessageType
@@ -49,7 +47,7 @@ class Server:
         server.start()
     """
 
-    __slots__ = ("_core", "_lifecycle")
+    __slots__ = ("_core", "_lifecycle", "_messaging")
 
     def __init__(self, config: ServerConfig) -> None:
         """
@@ -60,6 +58,7 @@ class Server:
         """
         self._core = ServerCore(config, VeltixBus())
         self._lifecycle = ServerLifecycle(self._core)
+        self._messaging = ServerMessaging(self._core)
 
         self._init_components()
 
@@ -188,10 +187,7 @@ class Server:
         Returns:
             True if the send succeeded.
         """
-        from .client_info import ClientInfo
-
-        socket = client.conn if isinstance(client, ClientInfo) else client
-        return self.sender.send(request, client=socket)
+        return self._messaging.send(request, client)
 
     def broadcast(
         self,
@@ -207,7 +203,7 @@ class Server:
         Returns:
             True if all sends succeeded.
         """
-        return self.sender.broadcast(request, except_clients=except_clients)
+        return self._messaging.broadcast(request, except_clients=except_clients)
 
     def send_and_wait(
         self, request: Request, client: ClientInfo, timeout: float = 5.0
@@ -223,29 +219,7 @@ class Server:
         Returns:
             Matching Response, or None on timeout or send failure.
         """
-        from .client_info import ClientInfo
-
-        if not isinstance(client, ClientInfo):
-            raise TypeError(
-                f"send_and_wait() target must be a ClientInfo, got {type(client).__name__}. "
-                "Fix: pass the client argument of a route/on_connect callback, or "
-                "pick one from server.clients - a raw socket is not enough."
-            )
-
-        if request.request_id is None:
-            request.request_id = self._core.id_allocator.allocate()
-
-        request_id = request.request_id
-        self.bus.debug(f"send_and_wait: {request_id}... → {client.addr}")
-
-        self.request_handler.register(request_id)
-
-        if not self.sender.send(request, client=client.conn):
-            self.bus.error(f"Failed to send request {request_id}... to {client.addr}")
-            self.request_handler.unregister(request_id)
-            return None
-
-        return self.request_handler.wait(request_id, timeout)
+        return self._messaging.send_and_wait(request, client, timeout=timeout)
 
     def ping_client(self, client: ClientInfo, timeout: float = 5.0) -> float | None:
         """
@@ -258,19 +232,7 @@ class Server:
         Returns:
             Latency in milliseconds, or None on timeout.
         """
-        self.bus.debug(f"Pinging client {client.addr}")
-        request = Request(PING, b"")
-        t_send = time.perf_counter()
-        response = self.send_and_wait(request, client, timeout=timeout)
-        t_recv = time.perf_counter()
-
-        if response:
-            rtt = (t_recv - t_send) * 1000
-            self.bus.info(f"Ping {client.addr}: {rtt:.2f}ms")
-            return rtt
-
-        self.bus.warning(f"Ping timeout for client {client.addr}")
-        return None
+        return self._messaging.ping_client(client, timeout=timeout)
 
     def ping_client_async(
         self,
@@ -286,15 +248,7 @@ class Server:
             callback: Called with latency in ms, or None on timeout.
             timeout:  Timeout in seconds (default: 5.0).
         """
-
-        def _ping() -> None:
-            try:
-                callback(self.ping_client(client, timeout=timeout))
-            except Exception as e:
-                self.bus.error(f"Error in async ping: {e}")
-                callback(None)
-
-        threading.Thread(target=_ping, daemon=True).start()
+        self._messaging.ping_client_async(client, callback, timeout=timeout)
 
     def close_client(self, client: ClientInfo, id_: int | None = None) -> bool:
         """Forcefully close a specific client connection."""
