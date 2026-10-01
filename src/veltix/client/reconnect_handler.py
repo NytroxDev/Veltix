@@ -22,7 +22,8 @@ class ClientContext(Protocol):
     This avoids a circular import between ``client.py`` and ``reconnect_handler.py``.
     """
 
-    config: ClientConfig
+    @property
+    def config(self) -> ClientConfig: ...
 
     def _context_connect(self) -> bool: ...
     def _context_on_disconnect(self, state: DisconnectState) -> None: ...

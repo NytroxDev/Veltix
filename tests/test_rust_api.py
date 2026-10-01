@@ -120,7 +120,7 @@ def test_client_pins_engine_at_init(rust_switch) -> None:
     _rust.disable_rust()
     client = Client(ClientConfig(server_addr="127.0.0.1", port=0))
     try:
-        assert client._sender._use_rust is False
+        assert client.sender._use_rust is False
         assert client.socket._use_rust is False
     finally:
         client.socket.close()
@@ -132,12 +132,12 @@ def test_client_reinit_repins_engine(rust_switch) -> None:
     _rust.disable_rust()
     client = Client(ClientConfig(server_addr="127.0.0.1", port=0))
     try:
-        assert client._sender._use_rust is False
+        assert client.sender._use_rust is False
 
         _rust.enable_rust()
         client.init_components()  # called on reconnection
 
-        assert client._sender._use_rust is True
+        assert client.sender._use_rust is True
         assert client.socket._use_rust is True
     finally:
         client.socket.close()

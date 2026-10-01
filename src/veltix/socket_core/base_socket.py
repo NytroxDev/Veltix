@@ -26,9 +26,11 @@ class BaseSocket(ABC):
         client_manager: Manages connected client entries.
         handshake_timeout: Timeout in seconds for the handshake phase.
         bus: Event bus for structured observability.
+        request_handler: Wired after construction on the client side.
     """
 
     client: Any | None = None
+    request_handler: Any = None
     client_manager: ClientsManager
     handshake_timeout: float
     bus: VeltixBus

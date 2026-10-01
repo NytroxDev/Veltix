@@ -8,23 +8,22 @@ import time
 from typing import TYPE_CHECKING
 
 from ..exceptions import ServerFullError
-from ..handler.request_handler import RequestHandler, validate_callback_signature
+from ..handler.request_handler import validate_callback_signature
 from ..internal.bus import VeltixBus
 from ..internal.events import ClientEvent, ErrorEvent
-from ..network import _rust
-from ..network.constants import REQUEST_ID_HALF
-from ..network.id_allocator import IDAllocator
 from ..network.request import Request
-from ..network.sender import Mode, Sender
 from ..network.system_types import PING
 from .config import ClientConfig  # noqa: TC001 - re-exported by __init__.py
+from .core import ClientCore
 from .disconnect import DisconnectReason, DisconnectState
 from .reconnect_handler import ReconnectHandler
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from ..handler.request_handler import RequestHandler
     from ..network.response import Response
+    from ..network.sender import Sender
     from ..network.types import MessageType
     from ..socket_core.base_socket import BaseSocket
 
@@ -50,8 +49,7 @@ class Client:
         Args:
             config: Client configuration.
         """
-        self.bus = VeltixBus()
-        self.config: ClientConfig = config
+        self._core = ClientCore(config, VeltixBus())
 
         self._reconnect_handler: ReconnectHandler | None = None
 
@@ -72,55 +70,33 @@ class Client:
 
     def init_components(self) -> None:
         """(Re)initialise all internal components (socket, sender, handler)."""
-        use_rust = _rust.rust_enabled()
-
-        old_handler = getattr(self, "request_handler", None)
-        old_socket = getattr(self, "socket", None)
-
-        if old_handler:
-            old_handler.shutdown(wait=False)
-        if old_socket:
-            old_socket.close()
-
-        self.socket: BaseSocket = self.config.socket_core.value(
-            request_handler=None,
-            max_message_size=self.config.max_message_size,
-            bus=self.bus,
-            use_rust=use_rust,
-        )
-        self.socket.client = self
-        self.socket.settimeout(self.config.handshake_timeout)
-
-        self.request_handler: RequestHandler = RequestHandler(
-            mode=Mode.CLIENT,
-            bus=self.bus,
-            max_workers=self.config.max_workers,
-        )
-
-        # Clients allocate from the lower half of the request-ID space so
-        # their auto-assigned IDs never collide with a server pending (see
-        # docs/design/request-id-correlation.md).
-        self._id_allocator = IDAllocator(
-            max_ids=REQUEST_ID_HALF,
-            is_pending=lambda rid: rid in self.request_handler.pending_requests,
-        )
-
-        self._sender: Sender = Sender(
-            mode=Mode.CLIENT,
-            conn=self.socket,
-            bus=self.bus,
-            id_allocator=self._id_allocator,
-            use_rust=use_rust,
-        )
-        self.request_handler.sender = self._sender
-
-        self.socket.request_handler = self.request_handler
+        self._core.init_components(self)
 
         if self._reconnect_handler is None:
             self._reconnect_handler = ReconnectHandler(context=self, bus=self.bus)
 
         if not self.bus.has_subscriber(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect):
             self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
+
+    @property
+    def config(self) -> ClientConfig:
+        """Return the client configuration."""
+        return self._core.config
+
+    @property
+    def bus(self) -> VeltixBus:
+        """Return the event bus for this client."""
+        return self._core.bus
+
+    @property
+    def socket(self) -> BaseSocket:
+        """Return the active socket backend."""
+        return self._core.socket
+
+    @property
+    def request_handler(self) -> RequestHandler:
+        """Return the underlying request handler."""
+        return self._core.request_handler
 
     def _rebuild_components(self) -> None:
         """Rebuild the socket stack for a fresh connection cycle.
@@ -385,7 +361,7 @@ class Client:
     @property
     def sender(self) -> Sender:
         """Return the sender instance for this client."""
-        return self._sender
+        return self._core.sender
 
     def send(self, request: Request) -> bool:
         """Send a request to the server.
@@ -413,7 +389,7 @@ class Client:
             Matching Response, or None on timeout or send failure.
         """
         if request.request_id is None:
-            request.request_id = self._id_allocator.allocate()
+            request.request_id = self._core.id_allocator.allocate()
 
         request_id = request.request_id
         self.bus.debug(f"send_and_wait: registering request {request_id}...")
