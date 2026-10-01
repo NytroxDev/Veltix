@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from ..internal.bus import VeltixBus
+from .clients import ServerClients
 from .core import ServerCore
 from .lifecycle import ServerLifecycle
 from .messaging import ServerMessaging
@@ -46,7 +47,7 @@ class Server:
         server.start()
     """
 
-    __slots__ = ("_core", "_lifecycle", "_messaging", "_routing")
+    __slots__ = ("_core", "_lifecycle", "_messaging", "_routing", "_clients")
 
     def __init__(self, config: ServerConfig) -> None:
         """
@@ -59,6 +60,7 @@ class Server:
         self._lifecycle = ServerLifecycle(self._core)
         self._messaging = ServerMessaging(self._core)
         self._routing = ServerRouting(self._core)
+        self._clients = ServerClients(self._core)
 
         self._init_components()
 
@@ -104,13 +106,11 @@ class Server:
             True if max_connection is set and all slots are taken,
             False otherwise.
         """
-        if self.config.max_connection < 0:
-            return False
-        return self.socket.client_manager.count() >= self.config.max_connection
+        return self._clients.is_full
 
     @property
     def clients(self) -> list[ClientInfo]:
-        return self._core.clients
+        return self._clients.clients
 
     def on_recv(self, func: Callable) -> None:
         """Register a callback for all received messages (before routing).
@@ -233,26 +233,7 @@ class Server:
 
     def close_client(self, client: ClientInfo, id_: int | None = None) -> bool:
         """Forcefully close a specific client connection."""
-        if id_ is not None:
-            return self.socket.close_client(id_)
-
-        if not client:
-            self.bus.warning(
-                "close_client() got no client. Fix: pass a ClientInfo from "
-                "server.clients or from the on_connect callback."
-            )
-            return False
-
-        entry = next(
-            (e for e in self.socket.client_manager.get_all_clients() if e.info == client), None
-        )
-        if not entry:
-            self.bus.warning(
-                f"close_client() could not find {client.addr} in the client list. "
-                "Fix: pass a ClientInfo currently present in server.clients."
-            )
-            return False
-        return self.socket.close_client(entry)
+        return self._clients.close_client(client, id_)
 
     def get_clients_by_tag(self, tag: str, value: Any = None) -> list[ClientInfo]:
         """Get all clients that have a specific tag, optionally matching a value.
@@ -264,8 +245,7 @@ class Server:
         Returns:
             List of matching ClientInfo objects.
         """
-        entries = self.socket.client_manager.get_clients_by_tag(tag, value)
-        return [e.info for e in entries]
+        return self._clients.get_clients_by_tag(tag, value)
 
     # -------------------------------------------------------------------------
     # Server lifecycle
