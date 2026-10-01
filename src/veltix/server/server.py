@@ -12,6 +12,7 @@ from ..internal.events import ServerEvent
 from ..network.request import Request
 from ..network.system_types import PING
 from .core import ServerCore
+from .lifecycle import ServerLifecycle
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -48,13 +49,7 @@ class Server:
         server.start()
     """
 
-    __slots__ = (
-        "_core",
-        "_shutdown_event",
-        "_state_lock",
-        "_started",
-        "_closed",
-    )
+    __slots__ = ("_core", "_lifecycle")
 
     def __init__(self, config: ServerConfig) -> None:
         """
@@ -64,10 +59,7 @@ class Server:
             config: Server configuration.
         """
         self._core = ServerCore(config, VeltixBus())
-        self._shutdown_event = threading.Event()
-        self._state_lock = threading.Lock()
-        self._started = False
-        self._closed = False
+        self._lifecycle = ServerLifecycle(self._core)
 
         self._init_components()
 
@@ -350,82 +342,16 @@ class Server:
 
         Non-blocking - starts a background thread and returns immediately.
         """
-        with self._state_lock:
-            if self._started:
-                self.bus.warning("Server is already started")
-                return
-
-            self._started = True
-            should_reinit = self._closed
-            self._closed = False
-
-        self._shutdown_event.clear()
-        if should_reinit:
-            old_routes = self.request_handler.copy_routes()
-            old_on_recv = self.request_handler.on_recv
-            self._init_components()
-            for type_, func in old_routes.items():
-                self.request_handler.register_route(type_, func)
-            if old_on_recv:
-                self.request_handler.set_on_recv(old_on_recv)
-        try:
-            self.socket.bind(
-                host=self.config.host,
-                port=self.config.port,
-                max_client=self.config.max_connection,
-                buffer_size=self.config.buffer_size,
-                timeout=0.5,
-            )
-        except OSError as e:
-            with self._state_lock:
-                self._started = False
-            self.bus.error(f"Failed to bind on {self.config.host}:{self.config.port}: {e}")
-            raise
-        self.bus.emit(
-            ServerEvent.STARTED,
-            {
-                "host": self.config.host,
-                "port": self.config.port,
-            },
-        )
-        self.bus.info(f"Server started on {self.config.host}:{self.config.port}")
+        self._lifecycle.start()
 
     def close_all(self) -> None:
         """Stop the server and close all client connections."""
-        with self._state_lock:
-            if self._closed:
-                self.bus.warning("Server is already closed")
-                return
-            self._closed = True
-            self._started = False
-
-        self.bus.info("Shutting down server")
-
-        try:
-            self.request_handler.shutdown(wait=False)
-            self.socket.close()
-            self.bus.info("Server socket closed")
-        except Exception as e:
-            self.bus.error(f"Error closing server socket: {e}")
-
-        self._shutdown_event.set()
-
-        self.bus.emit(
-            ServerEvent.STOPPED,
-            {
-                "host": self.config.host,
-                "port": self.config.port,
-            },
-        )
+        self._lifecycle.close_all()
 
     def wait_until_closed(self) -> None:
         """Block until the server is shut down via close_all() or Ctrl+C."""
-        try:
-            self._shutdown_event.wait()
-        except KeyboardInterrupt:
-            self.close_all()
+        self._lifecycle.wait_until_closed()
 
     def restart(self) -> None:
         """Stop the server and start it again, preserving routes and callbacks."""
-        self.close_all()
-        self.start()
+        self._lifecycle.restart()
