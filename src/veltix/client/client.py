@@ -3,20 +3,18 @@
 
 from __future__ import annotations
 
-import threading
 import time
 from typing import TYPE_CHECKING
 
-from ..exceptions import ServerFullError
 from ..handler.request_handler import validate_callback_signature
 from ..internal.bus import VeltixBus
-from ..internal.events import ClientEvent, ErrorEvent
+from ..internal.events import ClientEvent
 from ..network.request import Request
 from ..network.system_types import PING
 from .config import ClientConfig  # noqa: TC001 - re-exported by __init__.py
 from .core import ClientCore
-from .disconnect import DisconnectReason, DisconnectState
-from .reconnect_handler import ReconnectHandler
+from .disconnect import DisconnectReason  # noqa: TC001 - re-exported by __init__.py
+from .lifecycle import ClientLifecycle
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -26,6 +24,7 @@ if TYPE_CHECKING:
     from ..network.sender import Sender
     from ..network.types import MessageType
     from ..socket_core.base_socket import BaseSocket
+    from .disconnect import DisconnectState
 
 
 class Client:
@@ -50,15 +49,7 @@ class Client:
             config: Client configuration.
         """
         self._core = ClientCore(config, VeltixBus())
-
-        self._reconnect_handler: ReconnectHandler | None = None
-
-        self._state_lock = threading.Lock()
-        self.is_connected: bool = False
-        self._connecting: bool = False
-        self.running: bool = True
-        self._shutdown_event = threading.Event()
-        self._socket_used = False
+        self._connection = ClientLifecycle(self._core)
 
         self.init_components()
 
@@ -70,13 +61,7 @@ class Client:
 
     def init_components(self) -> None:
         """(Re)initialise all internal components (socket, sender, handler)."""
-        self._core.init_components(self)
-
-        if self._reconnect_handler is None:
-            self._reconnect_handler = ReconnectHandler(context=self, bus=self.bus)
-
-        if not self.bus.has_subscriber(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect):
-            self.bus.subscribe(ClientEvent.SOCKET_DISCONNECTED, self._on_socket_disconnect)
+        self._connection.init_components()
 
     @property
     def config(self) -> ClientConfig:
@@ -98,22 +83,20 @@ class Client:
         """Return the underlying request handler."""
         return self._core.request_handler
 
-    def _rebuild_components(self) -> None:
-        """Rebuild the socket stack for a fresh connection cycle.
+    @property
+    def is_connected(self) -> bool:
+        """Return whether the client currently holds a live connection."""
+        return self._connection.is_connected
 
-        A failed, dropped, or manually closed connection leaves the client
-        socket unusable for a new ``connect()``: AsyncSocket releases the fd,
-        ThreadingSocket leaves it in a stale state. Recreating the components
-        restores a connectable socket while preserving the registered routes
-        and the ``on_recv`` callback, mirroring ``ReconnectHandler.reset``.
-        """
-        old_routes = self.request_handler.copy_routes()
-        old_on_recv = self.request_handler.on_recv
-        self.init_components()
-        for type_, func in old_routes.items():
-            self.request_handler.register_route(type_, func)
-        if old_on_recv:
-            self.request_handler.set_on_recv(old_on_recv)
+    @property
+    def running(self) -> bool:
+        """Return whether the client is still considered running."""
+        return self._connection.running
+
+    @property
+    def _fail_count(self) -> int:
+        """Expose reconnect fail count for backward compatibility and tests."""
+        return self._connection._fail_count
 
     # -------------------------------------------------------------------------
     # Internal context (used by ReconnectHandler)
@@ -121,53 +104,35 @@ class Client:
 
     def _context_connect(self) -> bool:
         """Connect from within a retry context (suppresses own reconnect)."""
-        return self.connect(_from_retry=True)
+        return self._connection._context_connect()
 
     def _context_on_disconnect(self, state: DisconnectState) -> None:
         """Forward disconnect state to subscribers."""
-        self.bus.emit(ClientEvent.ON_DISCONNECT, state)
+        self._connection._context_on_disconnect(state)
 
     def _context_init(self) -> None:
         """Reinitialise components before a reconnection attempt."""
-        self.init_components()
+        self._connection._context_init()
 
     def _context_set_running(self, value: bool) -> None:
         """Set whether the client is considered running."""
-        with self._state_lock:
-            old = self.running
-            self.running = value
-        if old != value:
-            self.bus.info(f"Client running state: {value}")
-            if not value:
-                self._shutdown_event.set()
+        self._connection._context_set_running(value)
 
     def _context_set_connected(self, value: bool) -> None:
         """Set the connection flag without triggering side effects."""
-        with self._state_lock:
-            old = self.is_connected
-            self.is_connected = value
-        if old != value:
-            self.bus.debug(f"Client connected state: {value}")
+        self._connection._context_set_connected(value)
 
     def _context_get_request_handler(self) -> RequestHandler | None:
         """Return the current request handler instance."""
-        return self.request_handler
+        return self._connection._context_get_request_handler()
 
     def _context_get_on_recv(self) -> Callable | None:
         """Return the current on_recv callback."""
-        return self.request_handler.on_recv if self.request_handler else None
+        return self._connection._context_get_on_recv()
 
     def _context_get_socket(self) -> BaseSocket | None:
         """Return the current socket instance."""
-        return self.socket
-
-    def _on_socket_disconnect(self, event: object = None, payload: object = None) -> None:
-        """Handle socket-level disconnect from the server (triggers reconnect)."""
-        with self._state_lock:
-            if not self.running or self._connecting:
-                return
-            self.is_connected = False
-        self._try_reconnect(DisconnectReason.SERVER_CLOSED)
+        return self._connection._context_get_socket()
 
     # -------------------------------------------------------------------------
     # Public API
@@ -239,10 +204,7 @@ class Client:
 
     def _try_reconnect(self, reason: DisconnectReason) -> bool:
         """Internal reconnect entrypoint used by connect() and tests."""
-        handler = self._reconnect_handler
-        if handler is None:
-            return False
-        return handler.try_reconnect(reason)
+        return self._connection._try_reconnect(reason)
 
     def connect(self, _from_retry: bool = False) -> bool:
         """
@@ -257,106 +219,7 @@ class Client:
         Returns:
             True if connection and handshake succeeded, False otherwise.
         """
-        with self._state_lock:
-            self.running = True
-            self._connecting = True
-        self._shutdown_event.clear()
-
-        if not _from_retry and self._socket_used and not self.is_connected:
-            # A previous failure, drop, or disconnect left the old socket
-            # unusable (AsyncSocket releases the fd, ThreadingSocket leaves it
-            # stale). Rebuild the stack so connect() can be called again.
-            self._rebuild_components()
-        self._socket_used = True
-
-        try:
-            self.bus.emit(
-                ClientEvent.CONNECTING,
-                {
-                    "host": self.config.server_addr,
-                    "port": self.config.port,
-                },
-            )
-            self.bus.info(f"Connecting to server {self.config.server_addr}:{self.config.port}")
-            connected = self.socket.connect(
-                self.config.server_addr,
-                self.config.port,
-                self.config.buffer_size,
-                self.config.handshake_timeout,
-            )
-            if not connected:
-                self.bus.error(
-                    f"Connection failed to {self.config.server_addr}:{self.config.port}. "
-                    "Fix: check that the server is running on that address and port, "
-                    "then call connect() again."
-                )
-                return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
-
-            with self._state_lock:
-                self.is_connected = True
-
-            if self._reconnect_handler is not None:
-                self._reconnect_handler.init_connect()
-            self.bus.info(
-                f"Successfully connected to server {self.config.server_addr}:{self.config.port}"
-            )
-
-            self.bus.emit(ClientEvent.ON_CONNECT, None)
-
-            return True
-
-        except (TimeoutError, ConnectionRefusedError) as e:
-            self.bus.emit(
-                ErrorEvent.NETWORK,
-                {
-                    "error": str(e),
-                    "host": self.config.server_addr,
-                    "port": self.config.port,
-                },
-            )
-            self.bus.error(
-                f"Connection failed to {self.config.server_addr}:{self.config.port}: "
-                f"{type(e).__name__}. Fix: check that the server is running on that "
-                "address and port, then call connect() or retry() again."
-            )
-            return False if _from_retry else self._try_reconnect(DisconnectReason.ERROR)
-
-        except ServerFullError:
-            self.bus.error(
-                f"Server rejected connection: server full "
-                f"({self.config.server_addr}:{self.config.port}). "
-                "Fix: raise ServerConfig(max_connection=...) on the server side, "
-                "or connect again when the server has free slots."
-            )
-            if _from_retry:
-                # The reconnect loop reports the failed attempt and fires its
-                # own on_disconnect. Raising would escape and kill the loop.
-                return False
-            self.bus.emit(
-                ClientEvent.ON_DISCONNECT,
-                DisconnectState(
-                    permanent=False,
-                    attempt=0,
-                    retry_max=0,
-                    reason=DisconnectReason.SERVER_CLOSED,
-                ),
-            )
-            raise
-
-        except Exception as e:
-            self.bus.emit(
-                ErrorEvent.NETWORK,
-                {
-                    "error": str(e),
-                    "host": self.config.server_addr,
-                    "port": self.config.port,
-                },
-            )
-            self.bus.error(f"Unexpected error during connection: {type(e).__name__}: {e}")
-            return False
-        finally:
-            with self._state_lock:
-                self._connecting = False
+        return self._connection.connect(_from_retry=_from_retry)
 
     @property
     def sender(self) -> Sender:
@@ -436,43 +299,15 @@ class Client:
         Returns:
             True if disconnection succeeded, False on unexpected error.
         """
-        try:
-            self.bus.emit(ClientEvent.DISCONNECTING)
-            self.bus.info("Disconnecting from server")
-            with self._state_lock:
-                self.running = False
-                self.is_connected = False
-            if self._reconnect_handler is not None:
-                self._reconnect_handler.mark_manual_disconnect()
-                self._reconnect_handler.stop_retry()
-            self.request_handler.shutdown(wait=False)
-            self.socket.close()
-            self.bus.debug("Socket closed")
-
-            if self._reconnect_handler is not None:
-                self._reconnect_handler.fire_on_disconnect(
-                    permanent=True, reason=DisconnectReason.MANUAL
-                )
-
-            self.bus.info("Successfully disconnected from server")
-            self._shutdown_event.set()
-            return True
-
-        except Exception as e:
-            self.bus.error(f"Error during disconnection: {type(e).__name__}: {e}")
-            return False
+        return self._connection.disconnect()
 
     def stop_retry(self) -> None:
         """Cancel all pending reconnection attempts."""
-        if self._reconnect_handler is not None:
-            self._reconnect_handler.stop_retry()
+        self._connection.stop_retry()
 
     def wait_until_closed(self) -> None:
         """Block until the client is disconnected (via disconnect() or server close)."""
-        try:
-            self._shutdown_event.wait()
-        except KeyboardInterrupt:
-            self.disconnect()
+        self._connection.wait_until_closed()
 
     def retry(self, max_: int | None = None) -> None:
         """
@@ -481,10 +316,4 @@ class Client:
         Args:
             max_: Override retry_max for this session.
         """
-        if self._reconnect_handler is not None:
-            self._reconnect_handler.retry(max_=max_)
-
-    @property
-    def _fail_count(self) -> int:
-        """Expose reconnect fail count for backward compatibility and tests."""
-        return self._reconnect_handler._fail_count if self._reconnect_handler else 0
+        self._connection.retry(max_=max_)

@@ -7,6 +7,7 @@ import time
 import pytest
 
 from veltix import Client, ClientConfig, DisconnectReason, Server, ServerConfig
+from veltix.client.lifecycle import ClientLifecycle
 from veltix.exceptions import ServerFullError
 
 
@@ -70,13 +71,13 @@ class TestRetryInitial:
 
         attempt_count = []
 
-        original_try_reconnect = Client._try_reconnect
+        original_try_reconnect = ClientLifecycle._try_reconnect
 
         def patched_try_reconnect(self_, reason):
             attempt_count.append(1)
             return original_try_reconnect(self_, reason)
 
-        Client._try_reconnect = patched_try_reconnect
+        ClientLifecycle._try_reconnect = patched_try_reconnect
 
         def start_server_late():
             time.sleep(0.3)
@@ -87,7 +88,7 @@ class TestRetryInitial:
         client = Client(ClientConfig(server_addr="127.0.0.1", port=port, retry=5, retry_delay=0.2))
         result = client.connect()
 
-        Client._try_reconnect = original_try_reconnect  # restore
+        ClientLifecycle._try_reconnect = original_try_reconnect  # restore
 
         assert result is True
         assert client.is_connected
