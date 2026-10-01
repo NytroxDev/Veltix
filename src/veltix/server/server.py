@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from ..handler.request_handler import validate_callback_signature
 from ..internal.bus import VeltixBus
-from ..internal.events import ServerEvent
 from .core import ServerCore
 from .lifecycle import ServerLifecycle
 from .messaging import ServerMessaging
+from .routing import ServerRouting
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -47,7 +46,7 @@ class Server:
         server.start()
     """
 
-    __slots__ = ("_core", "_lifecycle", "_messaging")
+    __slots__ = ("_core", "_lifecycle", "_messaging", "_routing")
 
     def __init__(self, config: ServerConfig) -> None:
         """
@@ -59,6 +58,7 @@ class Server:
         self._core = ServerCore(config, VeltixBus())
         self._lifecycle = ServerLifecycle(self._core)
         self._messaging = ServerMessaging(self._core)
+        self._routing = ServerRouting(self._core)
 
         self._init_components()
 
@@ -118,7 +118,7 @@ class Server:
         Args:
             func: func(client: ClientInfo, response: Response)
         """
-        self.request_handler.set_on_recv(func)
+        self._routing.on_recv(func)
 
     def on_connect(self, func: Callable) -> None:
         """Register a callback for client connections.
@@ -126,14 +126,7 @@ class Server:
         Args:
             func: func(client: ClientInfo)
         """
-        validate_callback_signature(
-            func,
-            label="on_connect callback",
-            expected=1,
-            dispatched="client",
-            fix_sig="client: ClientInfo",
-        )
-        self.bus.subscribe(ServerEvent.ON_CONNECT, lambda e, p: func(p))
+        self._routing.on_connect(func)
 
     def on_disconnect(self, func: Callable) -> None:
         """Register a callback for client disconnections.
@@ -141,14 +134,7 @@ class Server:
         Args:
             func: func(client: ClientInfo)
         """
-        validate_callback_signature(
-            func,
-            label="on_disconnect callback",
-            expected=1,
-            dispatched="client",
-            fix_sig="client: ClientInfo",
-        )
-        self.bus.subscribe(ServerEvent.ON_DISCONNECT, lambda e, p: func(p))
+        self._routing.on_disconnect(func)
 
     def route(self, type_: MessageType) -> Callable:
         """
@@ -165,12 +151,7 @@ class Server:
         Returns:
             Decorator function.
         """
-
-        def decorator(func: Callable) -> Callable:
-            self.request_handler.register_route(type_, func)
-            return func
-
-        return decorator
+        return self._routing.route(type_)
 
     @property
     def sender(self) -> Sender:
