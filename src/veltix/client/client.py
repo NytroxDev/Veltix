@@ -5,14 +5,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..handler.request_handler import validate_callback_signature
 from ..internal.bus import VeltixBus
-from ..internal.events import ClientEvent
 from .config import ClientConfig  # noqa: TC001 - re-exported by __init__.py
 from .core import ClientCore
 from .disconnect import DisconnectReason  # noqa: TC001 - re-exported by __init__.py
 from .lifecycle import ClientLifecycle
 from .messaging import ClientMessaging
+from .routing import ClientRouting
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -50,6 +49,7 @@ class Client:
         self._core = ClientCore(config, VeltixBus())
         self._connection = ClientLifecycle(self._core)
         self._messaging = ClientMessaging(self._core)
+        self._routing = ClientRouting(self._core)
 
         self.init_components()
 
@@ -144,7 +144,7 @@ class Client:
         Args:
             func: func(response: Response)
         """
-        self.request_handler.set_on_recv(func)
+        self._routing.on_recv(func)
 
     def on_connect(self, func: Callable) -> None:
         """Register a callback for successful connection.
@@ -154,14 +154,7 @@ class Client:
         Args:
             func: func()
         """
-        validate_callback_signature(
-            func,
-            label="on_connect callback",
-            expected=0,
-            dispatched="",
-            fix_sig="",
-        )
-        self.bus.subscribe(ClientEvent.ON_CONNECT, lambda e, p: func())
+        self._routing.on_connect(func)
 
     def on_disconnect(self, func: Callable) -> None:
         """Register a callback for disconnection.
@@ -171,14 +164,7 @@ class Client:
         Args:
             func: func(state: DisconnectState)
         """
-        validate_callback_signature(
-            func,
-            label="on_disconnect callback",
-            expected=1,
-            dispatched="state",
-            fix_sig="state: DisconnectState",
-        )
-        self.bus.subscribe(ClientEvent.ON_DISCONNECT, lambda e, p: func(p))
+        self._routing.on_disconnect(func)
 
     def route(self, type_: MessageType) -> Callable:
         """
@@ -195,12 +181,7 @@ class Client:
         Returns:
             Decorator function.
         """
-
-        def decorator(func: Callable) -> Callable:
-            self.request_handler.register_route(type_, func)
-            return func
-
-        return decorator
+        return self._routing.route(type_)
 
     def _try_reconnect(self, reason: DisconnectReason) -> bool:
         """Internal reconnect entrypoint used by connect() and tests."""
