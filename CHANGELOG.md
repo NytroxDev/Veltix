@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Internal
+
+- **`Server` split into collaborators, one responsibility each.** The class
+  carried component wiring, lifecycle, messaging, routing and client
+  management at once (459 lines). It is now a facade forwarding to `ServerCore`
+  (the components rebuilt by `restart()`), `ServerLifecycle` (start/stop state
+  machine), `ServerMessaging` (outbound side), `ServerRouting` (inbound
+  callbacks and routes) and `ServerClients` (connection list). Every public
+  attribute and method keeps its name and its behaviour, `server.socket`,
+  `server.sender`, `server.clients` and `@server.route(...)` included
+  ([c2e2e6b](https://github.com/NytroxDev/Veltix/commit/c2e2e6b)).
+
+- **`Client` split the same way (514 lines).** `ClientCore` owns the components
+  rebuilt on every (re)connect, `ClientLifecycle` the connection state machine
+  and the reconnect loop, `ClientMessaging` the outbound side, `ClientRouting`
+  the inbound callbacks and routes. The public `Client` API is unchanged:
+  `client.socket`, `client.sender`, `client.is_connected`,
+  `client.init_components()`, `client.stop_retry()` and `@client.route(...)`
+  all behave as before. Collaborators are private (`client._core`,
+  `client._connection`, `client._messaging`, `client._routing`) and read state
+  through the core, so a re-init stays consistent; the socket backend now flags
+  its connect/disconnect state through the lifecycle and the `ReconnectHandler`
+  keeps driving it through the existing `ClientContext` protocol
+  ([22589fc](https://github.com/NytroxDev/Veltix/commit/22589fc)).
+
+- **`BaseSocket.request_handler` is now declared on the abstract base class.**
+  Both backends stored it while only the concrete classes declared it, so any
+  code holding a `BaseSocket` reference had to be narrowed to a subclass to
+  touch it. `ClientContext.config` also became a read-only property, matching
+  how the reconnect handler actually uses it.
+
 ## [3.2.0] - 2026-09-30
 
 ### Fixed
