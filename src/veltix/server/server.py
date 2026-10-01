@@ -6,20 +6,19 @@ import threading
 import time
 from typing import TYPE_CHECKING, Any
 
-from ..handler.request_handler import RequestHandler, validate_callback_signature
+from ..handler.request_handler import validate_callback_signature
 from ..internal.bus import VeltixBus
 from ..internal.events import ServerEvent
-from ..network import _rust
-from ..network.constants import REQUEST_ID_HALF
-from ..network.id_allocator import IDAllocator
 from ..network.request import Request
-from ..network.sender import Mode, Sender
 from ..network.system_types import PING
+from .core import ServerCore
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from ..handler.request_handler import RequestHandler
     from ..network.response import Response
+    from ..network.sender import Sender
     from ..network.types import MessageType
     from ..socket_core.base_socket import BaseSocket
     from .client_info import ClientInfo
@@ -50,16 +49,11 @@ class Server:
     """
 
     __slots__ = (
-        "config",
-        "bus",
-        "_sender",
-        "request_handler",
-        "socket",
+        "_core",
         "_shutdown_event",
         "_state_lock",
         "_started",
         "_closed",
-        "_id_allocator",
     )
 
     def __init__(self, config: ServerConfig) -> None:
@@ -69,9 +63,7 @@ class Server:
         Args:
             config: Server configuration.
         """
-        self.bus = VeltixBus()
-
-        self.config: ServerConfig = config
+        self._core = ServerCore(config, VeltixBus())
         self._shutdown_event = threading.Event()
         self._state_lock = threading.Lock()
         self._started = False
@@ -87,47 +79,27 @@ class Server:
 
     def _init_components(self) -> None:
         """(Re)create internal components (handler, sender, socket)."""
-        use_rust = _rust.rust_enabled()
+        self._core.init_components()
 
-        self.request_handler = RequestHandler(
-            mode=Mode.SERVER,
-            bus=self.bus,
-            max_workers=self.config.max_workers,
-        )
+    @property
+    def config(self) -> ServerConfig:
+        """Return the server configuration."""
+        return self._core.config
 
-        # Servers reserve the upper half of the request-ID space so their
-        # auto-assigned IDs never collide with client pendings (see
-        # docs/design/request-id-correlation.md).
-        server_pool = min(self.config.id_window, REQUEST_ID_HALF)
-        if server_pool < self.config.id_window:
-            self.bus.warning(
-                f"id_window capped to {server_pool} "
-                f"(upper half of the ID space is reserved for the server)"
-            )
+    @property
+    def bus(self) -> VeltixBus:
+        """Return the event bus for this server."""
+        return self._core.bus
 
-        self._id_allocator = IDAllocator(
-            max_ids=server_pool,
-            offset=REQUEST_ID_HALF,
-            is_pending=lambda rid: rid in self.request_handler.pending_requests,
-        )
+    @property
+    def request_handler(self) -> RequestHandler:
+        """Return the underlying request handler."""
+        return self._core.request_handler
 
-        self._sender = Sender(
-            mode=Mode.SERVER,
-            bus=self.bus,
-            get_all_clients=lambda: self.clients,
-            id_allocator=self._id_allocator,
-            use_rust=use_rust,
-        )
-
-        self.request_handler.sender = self._sender
-
-        self.socket: BaseSocket = self.config.socket_core.value(
-            request_handler=self.request_handler,
-            max_message_size=self.config.max_message_size,
-            bus=self.bus,
-            use_rust=use_rust,
-        )
-        self.socket.handshake_timeout = self.config.handshake_timeout
+    @property
+    def socket(self) -> BaseSocket:
+        """Return the active socket backend."""
+        return self._core.socket
 
     # -------------------------------------------------------------------------
     # Public API
@@ -147,7 +119,7 @@ class Server:
 
     @property
     def clients(self) -> list[ClientInfo]:
-        return [e.info for e in self.socket.client_manager.get_all_clients()]
+        return self._core.clients
 
     def on_recv(self, func: Callable) -> None:
         """Register a callback for all received messages (before routing).
@@ -212,7 +184,7 @@ class Server:
     @property
     def sender(self) -> Sender:
         """Return the sender instance for this server."""
-        return self._sender
+        return self._core.sender
 
     def send(self, request: Request, client: ClientInfo | BaseSocket) -> bool:
         """Send a request to a client. Accepts ClientInfo or BaseSocket.
@@ -269,7 +241,7 @@ class Server:
             )
 
         if request.request_id is None:
-            request.request_id = self._id_allocator.allocate()
+            request.request_id = self._core.id_allocator.allocate()
 
         request_id = request.request_id
         self.bus.debug(f"send_and_wait: {request_id}... → {client.addr}")

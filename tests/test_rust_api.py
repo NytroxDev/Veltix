@@ -91,7 +91,7 @@ def test_server_pins_engine_at_init(rust_switch) -> None:
     _rust.disable_rust()
     server = Server(ServerConfig(host="127.0.0.1", port=0))
     try:
-        assert server._sender._use_rust is False
+        assert server.sender._use_rust is False
         assert server.socket._use_rust is False
     finally:
         server.close_all()
@@ -103,14 +103,14 @@ def test_server_reinit_repins_engine(rust_switch) -> None:
     _rust.disable_rust()
     server = Server(ServerConfig(host="127.0.0.1", port=0))
     try:
-        assert server._sender._use_rust is False
+        assert server.sender._use_rust is False
 
         _rust.enable_rust()
         old_socket = server.socket
         server._init_components()  # the exact re-init path used by restart()
         old_socket.close()
 
-        assert server._sender._use_rust is True
+        assert server.sender._use_rust is True
         assert server.socket._use_rust is True
     finally:
         server.close_all()
