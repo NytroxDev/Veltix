@@ -3,23 +3,22 @@
 
 from __future__ import annotations
 
-import time
 from typing import TYPE_CHECKING
 
 from ..handler.request_handler import validate_callback_signature
 from ..internal.bus import VeltixBus
 from ..internal.events import ClientEvent
-from ..network.request import Request
-from ..network.system_types import PING
 from .config import ClientConfig  # noqa: TC001 - re-exported by __init__.py
 from .core import ClientCore
 from .disconnect import DisconnectReason  # noqa: TC001 - re-exported by __init__.py
 from .lifecycle import ClientLifecycle
+from .messaging import ClientMessaging
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ..handler.request_handler import RequestHandler
+    from ..network.request import Request
     from ..network.response import Response
     from ..network.sender import Sender
     from ..network.types import MessageType
@@ -50,6 +49,7 @@ class Client:
         """
         self._core = ClientCore(config, VeltixBus())
         self._connection = ClientLifecycle(self._core)
+        self._messaging = ClientMessaging(self._core)
 
         self.init_components()
 
@@ -235,7 +235,7 @@ class Client:
         Returns:
             True if the send succeeded.
         """
-        return self.sender.send(request)
+        return self._messaging.send(request)
 
     def send_and_wait(self, request: Request, timeout: float = 5.0) -> Response | None:
         """
@@ -251,20 +251,7 @@ class Client:
         Returns:
             Matching Response, or None on timeout or send failure.
         """
-        if request.request_id is None:
-            request.request_id = self._core.id_allocator.allocate()
-
-        request_id = request.request_id
-        self.bus.debug(f"send_and_wait: registering request {request_id}...")
-
-        self.request_handler.register(request_id)
-
-        if not self.sender.send(request):
-            self.bus.error(f"Failed to send request {request_id}...")
-            self.request_handler.unregister(request_id)
-            return None
-
-        return self.request_handler.wait(request_id, timeout)
+        return self._messaging.send_and_wait(request, timeout=timeout)
 
     def ping_server(self, timeout: float = 5.0) -> float | None:
         """
@@ -276,19 +263,7 @@ class Client:
         Returns:
             Latency in milliseconds, or None on timeout.
         """
-        self.bus.debug("Pinging server")
-        request = Request(PING, b"")
-        t_send = time.perf_counter()
-        response = self.send_and_wait(request, timeout=timeout)
-        t_recv = time.perf_counter()
-
-        if response:
-            rtt = (t_recv - t_send) * 1000
-            self.bus.info(f"Ping: {rtt:.2f}ms")
-            return rtt
-
-        self.bus.warning("Ping timed out")
-        return None
+        return self._messaging.ping_server(timeout)
 
     def disconnect(self) -> bool:
         """
