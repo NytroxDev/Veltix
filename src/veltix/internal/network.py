@@ -8,11 +8,12 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING
 
 from ..logger.core import Logger
-from .events import ErrorEvent, MessageEvent
+from .events import ErrorEvent, MessageEvent, ServerEvent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from ..handler.handshake_handler import HandshakeHandler
     from ..network.message_buffer import MessageBuffer
     from ..network.response import Response
     from ..socket_core.base_socket import BaseSocket
@@ -105,6 +106,51 @@ def recv(conn: BaseSocket, buf_size: int = 1024) -> RecvResult:
     except Exception as e:
         logger.error(f"Unexpected recv error: {type(e).__name__}: {e}")
         return RecvResult(RecvStatus.ERROR)
+
+
+def reject_full_connection(
+    conn: socket.socket,
+    addr: tuple[str, int],
+    bus: VeltixBus,
+    handshake_handler: HandshakeHandler,
+    current: int,
+    max_client: int,
+) -> None:
+    """Reject a freshly accepted connection because the server is at capacity.
+
+    Emits the same observability events on both socket backends, sends the
+    rejection payload, then closes the connection.
+
+    Args:
+        conn: The accepted raw socket, closed by this call.
+        addr: ``(host, port)`` of the rejected peer.
+        bus: Event bus used to emit events and log the rejection.
+        handshake_handler: Handler able to send the rejection payload.
+        current: Number of clients connected when the rejection happened.
+        max_client: The server capacity that was reached.
+    """
+    bus.info(f"Connection rejected: server full ({addr}, {current}/{max_client})")
+    bus.emit(
+        ErrorEvent.CONNECTION_REFUSED,
+        {
+            "max_client": max_client,
+            "current": current,
+            "addr": addr,
+        },
+    )
+    bus.emit(
+        ServerEvent.CLIENT_REJECTED,
+        {
+            "max_client": max_client,
+            "current": current,
+            "reason": "server_full",
+            "addr": addr,
+        },
+    )
+    with contextlib.suppress(OSError):
+        handshake_handler.send_rejection(conn, "server_full")
+    with contextlib.suppress(OSError):
+        conn.close()
 
 
 def dispatch_messages(

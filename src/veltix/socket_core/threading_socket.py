@@ -9,7 +9,13 @@ from typing import TYPE_CHECKING
 
 from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
-from ..internal.network import RecvResult, apply_tcp_tunings, dispatch_messages, recv
+from ..internal.network import (
+    RecvResult,
+    apply_tcp_tunings,
+    dispatch_messages,
+    recv,
+    reject_full_connection,
+)
 from ..network import _rust
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
@@ -87,31 +93,14 @@ class ThreadingSocket(BaseSocket):
                 conn_, addr = self._sock.accept()
 
                 if max_client >= 0 and self.client_manager.count() >= max_client:
-                    self.bus.info(
-                        f"Connection rejected: server full ({addr}, "
-                        f"{self.client_manager.count()}/{max_client})"
+                    reject_full_connection(
+                        conn_,
+                        addr,
+                        self.bus,
+                        self.request_handler.handshake_handler,
+                        self.client_manager.count(),
+                        max_client,
                     )
-                    self.bus.emit(
-                        ErrorEvent.CONNECTION_REFUSED,
-                        {
-                            "max_client": max_client,
-                            "current": self.client_manager.count(),
-                            "addr": addr,
-                        },
-                    )
-                    self.bus.emit(
-                        ServerEvent.CLIENT_REJECTED,
-                        {
-                            "max_client": max_client,
-                            "current": self.client_manager.count(),
-                            "reason": "server_full",
-                            "addr": addr,
-                        },
-                    )
-                    with contextlib.suppress(OSError):
-                        self.request_handler.handshake_handler.send_rejection(conn_, "server_full")
-                    with contextlib.suppress(OSError):
-                        conn_.close()
                     continue
                 conn = ThreadingSocket(
                     self.request_handler,

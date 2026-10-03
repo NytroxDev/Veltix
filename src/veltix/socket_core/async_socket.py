@@ -14,6 +14,7 @@ from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import (
     apply_tcp_tunings,
     dispatch_messages,
+    reject_full_connection,
 )
 from ..internal.network import (
     recv as _network_recv,
@@ -154,31 +155,14 @@ class AsyncSocket(BaseSocket):
             return
 
         if max_client >= 0 and self.client_manager.count() >= max_client:
-            self.bus.info(
-                f"Connection rejected: server full ({addr}, "
-                f"{self.client_manager.count()}/{max_client})"
+            reject_full_connection(
+                conn,
+                addr,
+                self.bus,
+                self.request_handler.handshake_handler,
+                self.client_manager.count(),
+                max_client,
             )
-            self.bus.emit(
-                ErrorEvent.CONNECTION_REFUSED,
-                {
-                    "max_client": max_client,
-                    "current": self.client_manager.count(),
-                    "addr": addr,
-                },
-            )
-            self.bus.emit(
-                ServerEvent.CLIENT_REJECTED,
-                {
-                    "max_client": max_client,
-                    "current": self.client_manager.count(),
-                    "reason": "server_full",
-                    "addr": addr,
-                },
-            )
-            with contextlib.suppress(OSError):
-                self.request_handler.handshake_handler.send_rejection(conn, "server_full")
-            with contextlib.suppress(OSError):
-                conn.close()
             return
 
         self.bus.debug(f"accepted client from {addr}")
