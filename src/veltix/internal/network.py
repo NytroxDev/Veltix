@@ -7,6 +7,7 @@ import socket
 from enum import Enum, auto
 from typing import TYPE_CHECKING
 
+from ..exceptions import ServerFullError
 from ..logger.core import Logger
 from .events import ErrorEvent, MessageEvent, ServerEvent
 
@@ -151,6 +152,63 @@ def reject_full_connection(
         handshake_handler.send_rejection(conn, "server_full")
     with contextlib.suppress(OSError):
         conn.close()
+
+
+def connect_and_handshake(
+    sock: socket.socket,
+    bus: VeltixBus,
+    handshake_handler: HandshakeHandler,
+    host: str,
+    port: int,
+    timeout: float,
+) -> bool:
+    """Connect a client socket and run the protocol handshake.
+
+    Shared by both socket backends: covers the raw ``connect``, the
+    blocking handshake and the error mapping, so each backend only owns
+    what happens after (selector registration or receive thread).
+
+    Args:
+        sock: The raw socket to connect. Closed by this call on failure.
+        bus: Event bus used to emit events and log the attempt.
+        handshake_handler: Handler running the client-side handshake.
+        host: Server address.
+        port: Server port.
+        timeout: Handshake timeout, in seconds.
+
+    Returns:
+        True when the handshake completed, False otherwise.
+
+    Raises:
+        ServerFullError: The server rejected the connection as being full.
+            Propagated so the caller can distinguish it from a plain failure.
+    """
+    try:
+        sock.connect((host, port))
+
+        success, _ = handshake_handler.do_client_handshake(sock, timeout=timeout)
+        if not success:
+            bus.error("Client handshake failed")
+            sock.close()
+            return False
+
+        return True
+
+    except (TimeoutError, ConnectionRefusedError) as e:
+        # The socket may be half-open (connect or handshake in flight):
+        # release its fd now instead of leaking it until reconnection.
+        sock.close()
+        bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
+        bus.error(f"Connection failed to {host}:{port}: {type(e).__name__}")
+        return False
+
+    except ServerFullError:
+        raise
+
+    except Exception as e:
+        bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
+        bus.error(f"Unexpected connection error: {type(e).__name__}: {e}")
+        return False
 
 
 def dispatch_messages(

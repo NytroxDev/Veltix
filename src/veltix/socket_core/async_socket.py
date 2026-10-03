@@ -9,10 +9,10 @@ import socket
 import threading
 from typing import TYPE_CHECKING, cast
 
-from ..exceptions import ServerFullError
 from ..internal.events import ClientEvent, ErrorEvent, ServerEvent
 from ..internal.network import (
     apply_tcp_tunings,
+    connect_and_handshake,
     dispatch_messages,
     reject_full_connection,
 )
@@ -408,49 +408,35 @@ class AsyncSocket(BaseSocket):
             return False
 
     def connect(self, host: str, port: int, buffer_size: int, timeout: float) -> bool:
-        try:
-            self._sock.connect((host, port))
-
-            success, _ = self.request_handler.handshake_handler.do_client_handshake(
-                self._sock, timeout=timeout
-            )
-            if not success:
-                self.bus.error("Client handshake failed")
-                self._sock.close()
-                return False
-
-            self._sock.setblocking(False)
-            self._running_event.set()
-            self._write_interest.set_owner_key("client")
-            self._selector.register(self, selectors.EVENT_READ, data="client")
-
-            if hasattr(self, "client") and self.client:
-                with self.client._state_lock:
-                    self.client.is_connected = True
-                    self.client._connecting = False
-
-            self._selector_thread = threading.Thread(
-                target=self._selector_loop,
-                args=(0, buffer_size),
-                daemon=True,
-                name="veltix-selector",
-            )
-            self._selector_thread.start()
-            self.bus.debug(f"connected to {host}:{port}")
-            return True
-        except (TimeoutError, ConnectionRefusedError) as e:
-            # The socket may be half-open (connect or handshake in flight):
-            # release its fd now instead of leaking it until reconnection.
-            self._sock.close()
-            self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
-            self.bus.debug(f"connect to {host}:{port} failed: {e}")
+        if not connect_and_handshake(
+            self._sock,
+            self.bus,
+            self.request_handler.handshake_handler,
+            host,
+            port,
+            timeout,
+        ):
             return False
-        except ServerFullError:
-            raise
-        except Exception as e:
-            self.bus.emit(ErrorEvent.NETWORK, {"error": str(e), "host": host, "port": port})
-            self.bus.debug(f"connect to {host}:{port} failed: {e}")
-            return False
+
+        self._sock.setblocking(False)
+        self._running_event.set()
+        self._write_interest.set_owner_key("client")
+        self._selector.register(self, selectors.EVENT_READ, data="client")
+
+        if hasattr(self, "client") and self.client:
+            with self.client._state_lock:
+                self.client.is_connected = True
+                self.client._connecting = False
+
+        self._selector_thread = threading.Thread(
+            target=self._selector_loop,
+            args=(0, buffer_size),
+            daemon=True,
+            name="veltix-selector",
+        )
+        self._selector_thread.start()
+        self.bus.debug(f"connected to {host}:{port}")
+        return True
 
     def disconnect(self, timeout: float = 5.0) -> bool:
         try:
