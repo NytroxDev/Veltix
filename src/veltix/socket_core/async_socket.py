@@ -7,7 +7,6 @@ import queue
 import selectors
 import socket
 import threading
-from collections import deque
 from typing import TYPE_CHECKING, cast
 
 from ..exceptions import ServerFullError
@@ -22,6 +21,7 @@ from ..internal.network import (
 from ..network import _rust
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
+from .async_outbound import AsyncOutbound
 from .base_socket import BaseSocket
 from .managers.clients_manager import ClientEntry, ClientsManager
 
@@ -55,12 +55,6 @@ class AsyncSocket(BaseSocket):
 
         self._selector_thread: threading.Thread | None = None
 
-        # Outbound queue: bytes that did not fit the kernel send buffer are
-        # buffered here and flushed by the selector loop when the socket
-        # becomes writable, so messages larger than the buffer are delivered
-        # instead of being dropped (see send()).
-        self._outbound: deque[bytes] = deque()
-        self._outbound_lock = threading.Lock()
         # Write-interest registration state, selector thread only.
         self._write_state: dict[int, bool] = {}
         self._is_client = False
@@ -98,6 +92,18 @@ class AsyncSocket(BaseSocket):
             apply_tcp_tunings(self._sock)
 
             self.bus.debug(f"created client socket instance (fd={self._sock.fileno()})")
+
+        # Outbound queue: bytes that did not fit the kernel send buffer are
+        # buffered here and flushed by the selector loop when the socket
+        # becomes writable, so messages larger than the buffer are delivered
+        # instead of being dropped (see send()). The callback resolves _owner
+        # at call time, so an accepted socket later re-pointed at a parent
+        # selector notifies that parent instead of itself.
+        self._outbound = AsyncOutbound(
+            lambda: self._sock,
+            self.bus,
+            on_queued=lambda: self._owner._mark_dirty(self),
+        )
 
     # ── Server ────────────────────────────────────────────────────────────────
 
@@ -344,12 +350,6 @@ class AsyncSocket(BaseSocket):
     def send(self, data: bytes) -> bool:
         """Send raw bytes, queueing any remainder past the kernel buffer.
 
-        Non-blocking by design: the selector thread never blocks on a slow
-        peer. When the kernel send buffer is full, the unsent tail is queued
-        and flushed by the selector loop as soon as the socket becomes
-        writable again, so messages larger than the buffer are delivered
-        instead of being dropped.
-
         Args:
             data: The bytes to send.
 
@@ -357,99 +357,16 @@ class AsyncSocket(BaseSocket):
             True when the data was sent or queued for delivery, False on a
             hard connection error.
         """
-        try:
-            sent = self._sock.send(data)
-        except BlockingIOError as e:
-            self._enqueue(data[getattr(e, "characters_written", 0) :])
-            return True
-        except OSError as e:
-            self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
-            self.bus.error(f"send failed: {e}")
-            return False
-
-        if sent < len(data):
-            remainder = self._send_rest(data, sent)
-            if remainder is None:
-                return False
-            if remainder:
-                self._enqueue(remainder)
-        return True
-
-    def _send_rest(self, data: bytes, start: int) -> bytes | None:
-        """Send ``data[start:]`` until the kernel buffer blocks.
-
-        Args:
-            data: The bytes being sent.
-            start: Offset of the first unsent byte.
-
-        Returns:
-            The unsent remainder (``b""`` when everything was sent), or
-            ``None`` on a hard connection error.
-        """
-        view = memoryview(data)
-        total = start
-        while total < len(view):
-            try:
-                n = self._sock.send(view[total:])
-            except BlockingIOError:
-                break
-            except OSError as e:
-                self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
-                self.bus.error(f"send failed: {e}")
-                return None
-            if n <= 0:
-                break
-            total += n
-
-        return bytes(view[total:])
-
-    def _enqueue(self, data: bytes) -> None:
-        with self._outbound_lock:
-            self._outbound.append(data)
-        # Wake the owner selector so the queued bytes are registered for
-        # writing and flushed promptly instead of waiting for the next poll
-        # cycle. wakeup() lives on the concrete selector (e.g. EpollSelector),
-        # not on BaseSelector, so resolve it dynamically.
-        self._owner._mark_dirty(self)
+        return self._outbound.send(data)
 
     def _has_outbound(self) -> bool:
-        with self._outbound_lock:
-            return bool(self._outbound)
+        return self._outbound.has_data()
 
     def _drop_outbound(self) -> None:
-        with self._outbound_lock:
-            self._outbound.clear()
+        self._outbound.drop()
 
     def _flush_outbound(self) -> None:
-        """Push queued bytes on a writable socket (selector thread)."""
-        while True:
-            with self._outbound_lock:
-                if not self._outbound:
-                    return
-                chunk = self._outbound.popleft()
-            try:
-                sent = self._sock.send(chunk)
-            except BlockingIOError as e:
-                with self._outbound_lock:
-                    self._outbound.appendleft(chunk[getattr(e, "characters_written", 0) :])
-                return
-            except OSError as e:
-                self.bus.emit(ErrorEvent.SEND, {"error": str(e)})
-                self.bus.error(f"send failed: {e}")
-                with self._outbound_lock:
-                    self._outbound.clear()
-                return
-            if sent < len(chunk):
-                remainder = self._send_rest(chunk, sent)
-                if remainder is None:
-                    with self._outbound_lock:
-                        self._outbound.clear()
-                    return
-                # Keep the unsent tail in front: it is the current head of
-                # the byte stream and must go out before later chunks.
-                with self._outbound_lock:
-                    self._outbound.appendleft(remainder)
-                return
+        self._outbound.flush()
 
     def _sync_dirty_sockets(self) -> None:
         """Register write interest for sockets that reported queued data."""

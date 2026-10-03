@@ -255,7 +255,7 @@ class TestAsyncSocketUnit:
             assert sock.send(b"data") is True
             setblocking.assert_not_called()
         assert sock._has_outbound()
-        assert bytes(sock._outbound[0]) == b"data"
+        assert bytes(sock._outbound.queue[0]) == b"data"
 
     def test_send_full_buffer_queues_and_delivers_to_peer(self):
         """A full kernel send buffer queues; the peer receives every byte.
