@@ -15,15 +15,15 @@ if TYPE_CHECKING:
 
 
 class BaseSocket(ABC):
-    """Abstract base class defining the socket backend interface.
+    """Abstract base class for a single TCP connection.
 
-    Concrete implementations (``ThreadingSocket``, ``AsyncSocket``) must
-    implement every abstract method declared here. The server and client
-    layers depend only on this interface, allowing socket backends to be
-    swapped at runtime.
+    Defines only the transport surface every connection shares: raw send,
+    recv, timeout, and close. Both the backends (``ThreadingSocket``,
+    ``AsyncSocket``) and the per-connection objects they accept
+    (``AcceptedSocket``) derive from it, so a connection never has to
+    implement listener or peer lifecycle it has no use for.
 
     Attributes:
-        client_manager: Manages connected client entries.
         handshake_timeout: Timeout in seconds for the handshake phase.
         bus: Event bus for structured observability.
         request_handler: Wired after construction on the client side.
@@ -31,7 +31,6 @@ class BaseSocket(ABC):
 
     client: Any | None = None
     request_handler: Any = None
-    client_manager: ClientsManager
     handshake_timeout: float
     bus: VeltixBus
     _sock: socket.socket
@@ -114,6 +113,21 @@ class BaseSocket(ABC):
             True if the socket was closed successfully, False otherwise.
         """
         ...
+
+
+class ServerSocket(BaseSocket):
+    """Abstract base class for a socket that owns a connection lifecycle.
+
+    Adds the listener and peer operations on top of :class:`BaseSocket`:
+    accepting connections, dialing out, and tearing down one or all
+    clients. Only the backends (``ThreadingSocket``, ``AsyncSocket``) play
+    that role; an accepted connection deliberately does not.
+
+    Attributes:
+        client_manager: Manages connected client entries.
+    """
+
+    client_manager: ClientsManager
 
     @abstractmethod
     def bind(self, host: str, port: int, max_client: int, buffer_size: int, timeout: float) -> bool:

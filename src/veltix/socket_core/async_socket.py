@@ -24,7 +24,7 @@ from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
 from .async_outbound import AsyncOutbound
 from .async_write_interest import AsyncWriteInterest
-from .base_socket import BaseSocket
+from .base_socket import ServerSocket
 from .managers.clients_manager import ClientEntry, ClientsManager
 
 MAX_DRAIN_ITERATIONS = 100
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
 
 
-class AsyncSocket(BaseSocket):
+class AsyncSocket(ServerSocket):
     """Selector-based socket implementation for Veltix."""
 
     def __init__(

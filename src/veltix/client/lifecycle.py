@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ..handler.request_handler import RequestHandler
-    from ..socket_core.base_socket import BaseSocket
+    from ..socket_core.base_socket import ServerSocket
     from .config import ClientConfig
     from .core import ClientCore
 
@@ -119,7 +119,7 @@ class ClientLifecycle:
         """Return the current on_recv callback."""
         return self._core.request_handler.on_recv
 
-    def _context_get_socket(self) -> BaseSocket | None:
+    def _context_get_socket(self) -> ServerSocket | None:
         """Return the current socket instance."""
         return self._core.socket
 

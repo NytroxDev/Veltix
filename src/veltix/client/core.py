@@ -12,7 +12,7 @@ from ..network.sender import Mode, Sender
 
 if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
-    from ..socket_core.base_socket import BaseSocket
+    from ..socket_core.base_socket import ServerSocket
     from .config import ClientConfig
 
 
@@ -32,7 +32,7 @@ class ClientCore:
         self.config = config
         self.bus = bus
         # All set by init_components(); declared here for the type checker.
-        self.socket: BaseSocket
+        self.socket: ServerSocket
         self.request_handler: RequestHandler
         self.sender: Sender
         self.id_allocator: IDAllocator

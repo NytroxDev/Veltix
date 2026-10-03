@@ -19,7 +19,7 @@ from ..internal.network import (
 from ..network import _rust
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
-from .base_socket import BaseSocket
+from .base_socket import ServerSocket
 from .managers.clients_manager import ClientEntry, ClientsManager
 from .thread_registry import ThreadRegistry
 
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from ..internal.bus import VeltixBus
 
 
-class ThreadingSocket(BaseSocket):
+class ThreadingSocket(ServerSocket):
     """Threading-based socket implementation for Veltix (one thread per client)."""
 
     def __init__(
