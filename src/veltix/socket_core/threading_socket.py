@@ -15,6 +15,7 @@ from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
 from .base_socket import BaseSocket
 from .managers.clients_manager import ClientEntry, ClientsManager
+from .thread_registry import ThreadRegistry
 
 if TYPE_CHECKING:
     from ..handler.request_handler import RequestHandler
@@ -34,18 +35,12 @@ class ThreadingSocket(BaseSocket):
         use_rust: bool | None = None,
     ) -> None:
         self.bus = bus
-        self.n_th = 0
-        self._n_th_lock = threading.Lock()
         self._use_rust: bool = _rust.rust_enabled() if use_rust is None else use_rust
 
         self.client_manager = ClientsManager(max_message_size, bus=bus, use_rust=self._use_rust)
 
-        self.threads: dict[int, threading.Thread] = {}
-        self._threads_lock = threading.Lock()
-
         self._running_event = threading.Event()
-        self.start_th: threading.Thread | None = None
-        self.thread_handler: threading.Thread | None = None
+        self._registry = ThreadRegistry()
 
         self.max_message_size = max_message_size
         self.request_handler = request_handler
@@ -55,6 +50,11 @@ class ThreadingSocket(BaseSocket):
             sock if sock is not None else socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         )
         apply_tcp_tunings(self._sock)
+
+    @property
+    def threads(self) -> dict[int, threading.Thread]:
+        """Return the live per-client receive threads, keyed by thread id."""
+        return self._registry.threads
 
     # ── Server ────────────────────────────────────────────────────────────────
 
@@ -67,13 +67,13 @@ class ThreadingSocket(BaseSocket):
         self._sock.bind((host, port))
         self._sock.listen()
         self._running_event.set()
-        self.start_th = threading.Thread(
+        self._registry.start_th = threading.Thread(
             target=self._accept_loop,
             args=(host, port, max_client, buffer_size, timeout),
             daemon=True,
             name="veltix-accept",
         )
-        self.start_th.start()
+        self._registry.start_th.start()
         return True
 
     def _accept_loop(
@@ -121,9 +121,7 @@ class ThreadingSocket(BaseSocket):
                     handshake_timeout=self.handshake_timeout,
                 )
 
-                with self._n_th_lock:
-                    self.n_th += 1
-                    thread_id = self.n_th
+                thread_id = self._registry.next_id()
 
                 client = ClientInfo(
                     conn=conn,
@@ -147,8 +145,7 @@ class ThreadingSocket(BaseSocket):
                 )
                 thread.start()
 
-                with self._threads_lock:
-                    self.threads[thread_id] = thread
+                self._registry.register(thread_id, thread)
 
             except TimeoutError:
                 continue
@@ -218,10 +215,7 @@ class ThreadingSocket(BaseSocket):
     def _close_server_client(self, entry: ClientEntry) -> None:
         entry.info.conn.close()
 
-        with self._threads_lock:
-            thread = self.threads.pop(entry.info.thread_id, None)
-            if thread and thread != threading.current_thread():
-                thread.join(timeout=0.2)
+        self._registry.pop_and_join(entry.info.thread_id, 0.2)
 
         # Only the caller that actually removed the entry emits the event: a
         # concurrent close (close_all, close_client, the client's own recv
@@ -252,8 +246,7 @@ class ThreadingSocket(BaseSocket):
             with contextlib.suppress(OSError):
                 self._sock.close()
 
-            with self._threads_lock:
-                threads = list(self.threads.values())
+            threads = self._registry.snapshot()
 
             # Close every client socket first so the receive threads exit in
             # parallel and clean up themselves.
@@ -261,13 +254,9 @@ class ThreadingSocket(BaseSocket):
                 entry.info.conn.close()
 
             for thread in threads:
-                if thread != threading.current_thread():
-                    thread.join(timeout=0.2)
-
-            if self.start_th and self.start_th != threading.current_thread():
-                self.start_th.join(timeout=0.2)
-            if self.thread_handler and self.thread_handler != threading.current_thread():
-                self.thread_handler.join(timeout=0.2)
+                self._registry.join_foreign(thread, 0.2)
+            self._registry.join_foreign(self._registry.start_th, 0.2)
+            self._registry.join_foreign(self._registry.thread_handler, 0.2)
 
             # Sweep the registry: receive threads that exited via the
             # running-event check (rather than a socket error) never clean
@@ -276,8 +265,7 @@ class ThreadingSocket(BaseSocket):
             # against a concurrent close from a receive thread.
             self.client_manager.iter_on_clients(self._close_server_client)
 
-            with self._threads_lock:
-                self.threads.clear()
+            self._registry.clear()
             return True
         except Exception:
             return False
@@ -307,13 +295,13 @@ class ThreadingSocket(BaseSocket):
                     self.client.is_connected = True
                     self.client._connecting = False
 
-            self.thread_handler = threading.Thread(
+            self._registry.thread_handler = threading.Thread(
                 target=self._handle_client,
                 args=(buffer_size, timeout),
                 daemon=True,
                 name="veltix-client-handler",
             )
-            self.thread_handler.start()
+            self._registry.thread_handler.start()
             return True
 
         except (TimeoutError, ConnectionRefusedError) as e:
@@ -361,8 +349,7 @@ class ThreadingSocket(BaseSocket):
             self._shutdown_socket()
             self._sock.close()
 
-            if self.thread_handler and threading.current_thread() != self.thread_handler:
-                self.thread_handler.join(timeout=timeout + 0.1)
+            self._registry.join_foreign(self._registry.thread_handler, timeout + 0.1)
 
             self.bus.info("Disconnected from server")
             return True
