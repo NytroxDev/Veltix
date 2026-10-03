@@ -440,16 +440,118 @@ class TestAsyncSocketUnit:
         assert sock._sock.fileno() == -1
 
     def test_init_with_sock_no_selector_or_buffer(self, sock):
-        from veltix.socket_core.async_socket import AsyncSocket
+        from veltix.socket_core.accepted_socket import AsyncAcceptedSocket
 
         raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            client = AsyncSocket(
-                sock.request_handler, 1024, sock.bus, sock=raw_sock, handshake_timeout=3.0
+            client = AsyncAcceptedSocket(
+                raw_sock, sock.bus, on_queued=lambda s: None, handshake_timeout=3.0
             )
             assert client._sock is raw_sock
             assert client.handshake_timeout == 3.0
+            # The leaf carries no listener state: the parent selector and its
+            # handshake queue stay with the backend that owns them.
             assert not hasattr(client, "_selector")
-            assert not hasattr(client, "_client_buffer")
+            assert not hasattr(client, "_handshake_queue")
+            assert not hasattr(client, "client_manager")
         finally:
             raw_sock.close()
+
+
+class TestAcceptedSocket:
+    """The per-connection leaf returned by both accept loops."""
+
+    def test_close_does_not_run_a_server_teardown(self):
+        """Closing one connection must not tear the owner down.
+
+        Regression guard: the leaf used to be a full backend, so
+        ``close()`` inherited ``close_all()`` and, when called from the
+        threading backend's own close_all, re-entered a server teardown
+        that should never have started.
+        """
+        from veltix.socket_core.accepted_socket import AcceptedSocket
+
+        a, b = socket.socketpair()
+        try:
+            conn = AcceptedSocket(a, _make_bus(), handshake_timeout=3.0)
+            assert conn.close() is True
+            assert a.fileno() == -1
+            # The sibling connection is untouched by a leaf close.
+            assert b.fileno() != -1
+        finally:
+            a.close()
+            b.close()
+
+    def test_threading_accept_loop_yields_the_leaf(self):
+        from veltix.socket_core.accepted_socket import AcceptedSocket
+        from veltix.socket_core.threading_socket import ThreadingSocket
+
+        sock = ThreadingSocket(_make_handler(), 1024, _make_bus())
+        try:
+            sock._running_event.set()
+            sock._sock.bind(("127.0.0.1", 0))
+            sock._sock.listen(1)
+            host, port = sock._sock.getsockname()
+
+            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            conn.connect((host, port))
+            accepted = sock._sock.accept()[0]
+            accepted.setblocking(True)
+
+            leaf = AcceptedSocket(accepted, sock.bus)
+            entry = sock.client_manager.add_client(
+                ClientInfo(conn=leaf, addr=("127.0.0.1", 0), thread_id=1)
+            )
+            # A leaf close must not clear the running event or the registry.
+            assert leaf.close() is True
+            assert sock._running_event.is_set()
+            assert sock.client_manager.count() == 1
+            sock.client_manager.remove_client(entry)
+            conn.close()
+        finally:
+            sock._sock.close()
+
+    def test_async_leaf_queues_instead_of_blocking(self):
+        """The async leaf must never fall back to the blocking sendall."""
+        from veltix.socket_core.accepted_socket import AsyncAcceptedSocket
+
+        a, b = socket.socketpair()
+        try:
+            # The owning backend switches the socket to non-blocking once the
+            # handshake is done; from then on the selector drives every send.
+            a.setblocking(False)
+            reported: list[object] = []
+            leaf = AsyncAcceptedSocket(a, _make_bus(), on_queued=reported.append)
+
+            assert leaf.send(b"ping") is True
+            assert leaf._has_outbound() is False
+            assert not reported
+
+            # A full kernel buffer must queue and notify the owner selector,
+            # never block the selector loop.
+            big = b"x" * (1024 * 1024)
+            assert leaf.send(big) is True
+            assert leaf._has_outbound() is True
+            assert reported == [leaf]
+
+            leaf._drop_outbound()
+            assert leaf._has_outbound() is False
+        finally:
+            a.close()
+            b.close()
+
+    def test_async_leaf_drops_queue_on_close(self):
+        from veltix.socket_core.accepted_socket import AsyncAcceptedSocket
+
+        a, b = socket.socketpair()
+        try:
+            a.setblocking(False)
+            leaf = AsyncAcceptedSocket(a, _make_bus(), on_queued=lambda s: None)
+            leaf.send(b"y" * (1024 * 1024))
+            assert leaf._has_outbound() is True
+            assert leaf.close() is True
+            # A closed connection must not keep undelivered bytes referenced.
+            assert leaf._has_outbound() is False
+        finally:
+            a.close()
+            b.close()

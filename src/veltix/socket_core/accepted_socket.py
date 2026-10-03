@@ -62,6 +62,9 @@ class AcceptedSocket(BaseSocket):
         except OSError:
             return False
 
+    def _drop_outbound(self) -> None:
+        """Discard pending outbound data. No-op without an outbound queue."""
+
 
 class AsyncAcceptedSocket(AcceptedSocket):
     """One connection accepted by the async backend.
@@ -87,7 +90,10 @@ class AsyncAcceptedSocket(AcceptedSocket):
         """Wrap an accepted raw socket and prepare its outbound queue.
 
         Args:
-            sock: The raw socket returned by ``accept()``.
+            sock: The raw socket returned by ``accept()``. The owning
+                backend switches it to non-blocking once the handshake is
+                done; until then it must stay blocking, the handshake
+                relies on it.
             bus: Event bus for structured observability.
             on_queued: Called with this socket after each enqueue, so the
                 owning selector can register it for writing and wake up.
@@ -115,6 +121,18 @@ class AsyncAcceptedSocket(AcceptedSocket):
     def _drop_outbound(self) -> None:
         """Discard every queued chunk."""
         self._outbound.drop()
+
+    def close(self) -> bool:
+        """Drop the outbound queue, then shut the connection down.
+
+        A closed connection must not keep undelivered bytes referenced, so
+        the queue goes first.
+
+        Returns:
+            True if the socket was closed successfully, False otherwise.
+        """
+        self._drop_outbound()
+        return super().close()
 
     def _flush_outbound(self) -> None:
         """Push queued bytes on a writable socket (selector thread)."""
