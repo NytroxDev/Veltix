@@ -19,6 +19,7 @@ from ..internal.network import (
 from ..network import _rust
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
+from .accepted_socket import AcceptedSocket
 from .base_socket import ServerSocket
 from .managers.clients_manager import ClientEntry, ClientsManager
 from .thread_registry import ThreadRegistry
@@ -102,11 +103,9 @@ class ThreadingSocket(ServerSocket):
                         max_client,
                     )
                     continue
-                conn = ThreadingSocket(
-                    self.request_handler,
-                    self.max_message_size,
+                conn = AcceptedSocket(
+                    conn_,
                     self.bus,
-                    sock=conn_,
                     handshake_timeout=self.handshake_timeout,
                 )
 
