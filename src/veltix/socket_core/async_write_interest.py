@@ -5,10 +5,24 @@ from __future__ import annotations
 import contextlib
 import selectors
 import threading
-from typing import TYPE_CHECKING
+from typing import Protocol
 
-if TYPE_CHECKING:
-    from .async_socket import AsyncSocket
+
+class WriteInterestSocket(Protocol):
+    """A socket whose selector registration this registry can mirror.
+
+    Implemented by both the async backend itself (for the client role) and
+    by the connections it accepts. ``fileno`` is what the selector keys
+    registrations on; ``_has_outbound`` is what decides the interest set.
+    """
+
+    def fileno(self) -> int:
+        """Return the underlying file descriptor."""
+        ...
+
+    def _has_outbound(self) -> bool:
+        """Return True when the socket has bytes queued for writing."""
+        ...
 
 
 class AsyncWriteInterest:
@@ -37,7 +51,7 @@ class AsyncWriteInterest:
         """
         self._selector = selector
         self._state: dict[int, bool] = {}
-        self._dirty: list[AsyncSocket] = []
+        self._dirty: list[WriteInterestSocket] = []
         self._dirty_lock = threading.Lock()
         self._conn_ids: dict[int, int] = {}
         self._owner_key: int | str | None = None
@@ -51,7 +65,7 @@ class AsyncWriteInterest:
         """
         self._owner_key = key
 
-    def register_conn(self, sock: AsyncSocket, client_id: int) -> None:
+    def register_conn(self, sock: WriteInterestSocket, client_id: int) -> None:
         """Record the selector data key of an accepted socket.
 
         Args:
@@ -60,7 +74,7 @@ class AsyncWriteInterest:
         """
         self._conn_ids[id(sock)] = client_id
 
-    def forget(self, sock: AsyncSocket) -> None:
+    def forget(self, sock: WriteInterestSocket) -> None:
         """Drop every trace of a socket that is going away.
 
         Args:
@@ -69,7 +83,7 @@ class AsyncWriteInterest:
         self._state.pop(id(sock), None)
         self._conn_ids.pop(id(sock), None)
 
-    def mark_dirty(self, sock: AsyncSocket) -> None:
+    def mark_dirty(self, sock: WriteInterestSocket) -> None:
         """Report a socket with queued outbound data and wake the selector.
 
         Called from whichever thread ran the send, so the fast path is a
@@ -87,7 +101,7 @@ class AsyncWriteInterest:
             with contextlib.suppress(OSError):
                 wakeup()
 
-    def sync_dirty(self, owner: AsyncSocket) -> None:
+    def sync_dirty(self, owner: WriteInterestSocket) -> None:
         """Register write interest for sockets that reported queued data.
 
         Only the selector thread calls this, once per loop iteration.
@@ -110,7 +124,7 @@ class AsyncWriteInterest:
                 continue
             self.sync_socket_interest(sock, client_id)
 
-    def sync_socket_interest(self, sock: AsyncSocket, data: int | str) -> None:
+    def sync_socket_interest(self, sock: WriteInterestSocket, data: int | str) -> None:
         """Mirror a socket's outbound state onto the selector interest set.
 
         Only the selector thread calls this. Sockets with queued data are

@@ -22,6 +22,7 @@ from ..internal.network import (
 from ..network import _rust
 from ..network.message_buffer import MessageBuffer
 from ..server.client_info import ClientInfo
+from .accepted_socket import AsyncAcceptedSocket
 from .async_outbound import AsyncOutbound
 from .async_write_interest import AsyncWriteInterest
 from .base_socket import ServerSocket
@@ -55,10 +56,6 @@ class AsyncSocket(ServerSocket):
 
         self._selector_thread: threading.Thread | None = None
 
-        # Sockets with queued outbound data report themselves here (from any
-        # thread); only the owning selector may touch it.
-        self._owner = self
-
         self.max_message_size = max_message_size
         self.request_handler = request_handler
         self.handshake_timeout = handshake_timeout
@@ -90,13 +87,11 @@ class AsyncSocket(ServerSocket):
         # Outbound queue: bytes that did not fit the kernel send buffer are
         # buffered here and flushed by the selector loop when the socket
         # becomes writable, so messages larger than the buffer are delivered
-        # instead of being dropped (see send()). The callback resolves _owner
-        # at call time, so an accepted socket later re-pointed at a parent
-        # reports through that parent's write-interest registry.
+        # instead of being dropped (see send()).
         self._outbound = AsyncOutbound(
             lambda: self._sock,
             self.bus,
-            on_queued=lambda: self._owner._write_interest.mark_dirty(self),
+            on_queued=lambda: self._write_interest.mark_dirty(self),
         )
 
     # ── Server ────────────────────────────────────────────────────────────────
@@ -169,19 +164,15 @@ class AsyncSocket(ServerSocket):
 
         apply_tcp_tunings(conn)
 
-        client_sock = AsyncSocket(
-            self.request_handler,
-            self.max_message_size,
-            self.bus,
-            sock=conn,
-            handshake_timeout=self.handshake_timeout,
-            nonblocking=False,
-            use_rust=self._use_rust,
-        )
         # Accepted sockets are managed by the parent selector (only the
-        # selector thread touches it); point them at the parent so an
-        # outbound enqueue reports through its write-interest registry.
-        client_sock._owner = self
+        # selector thread touches it); an outbound enqueue reports through
+        # this parent's write-interest registry.
+        client_sock = AsyncAcceptedSocket(
+            conn,
+            self.bus,
+            on_queued=self._write_interest.mark_dirty,
+            handshake_timeout=self.handshake_timeout,
+        )
         # thread_id is a placeholder: the manager assigns the client id on
         # add_client, and thread_id then mirrors it (1-based) below so the
         # metadata stays consistent with the threading backend.
@@ -348,7 +339,7 @@ class AsyncSocket(ServerSocket):
         entry = self.client_manager.get_client(client_id)
         if entry is None:
             return
-        cast("AsyncSocket", entry.info.conn)._flush_outbound()
+        cast("AsyncAcceptedSocket", entry.info.conn)._flush_outbound()
 
     def close_client(self, client: ClientEntry | int) -> bool:
         if isinstance(client, ClientEntry):
@@ -363,7 +354,7 @@ class AsyncSocket(ServerSocket):
 
     def _close_server_client(self, entry: ClientEntry) -> None:
         self.bus.debug(f"closing server client {entry.id} ({entry.info.addr})")
-        client_sock = cast("AsyncSocket", entry.info.conn)
+        client_sock = cast("AsyncAcceptedSocket", entry.info.conn)
 
         self._write_interest.forget(client_sock)
         client_sock._drop_outbound()
