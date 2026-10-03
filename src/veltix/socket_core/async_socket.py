@@ -50,8 +50,6 @@ class AsyncSocket(BaseSocket):
         self._use_rust: bool = _rust.rust_enabled() if use_rust is None else use_rust
         self.client_manager = ClientsManager(max_message_size, bus=bus, use_rust=self._use_rust)
 
-        self.id_count = 0
-
         self._running_event = threading.Event()
 
         self._selector_thread: threading.Thread | None = None
@@ -200,20 +198,20 @@ class AsyncSocket(BaseSocket):
         # selector thread touches it); point them at the parent so an
         # outbound enqueue reports through its write-interest registry.
         client_sock._owner = self
+        # thread_id is a placeholder: the manager assigns the client id on
+        # add_client, and thread_id then mirrors it (1-based) below so the
+        # metadata stays consistent with the threading backend.
         client_id = self.client_manager.add_client(
             ClientInfo(
                 client_sock,
                 addr,
-                self.id_count,
+                thread_id=0,
                 handshake_done=False,
                 bus=self.bus,
             )
         )
-        self.id_count += 1
         self._write_interest.register_conn(client_sock, client_id)
 
-        # thread_id mirrors the manager client_id (1-based) so the metadata
-        # stays consistent with the threading backend.
         entry = self.client_manager.get_client(client_id)
         if entry is not None:
             entry.info.thread_id = client_id
