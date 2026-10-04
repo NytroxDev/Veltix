@@ -38,6 +38,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   touch it. `ClientContext.config` also became a read-only property, matching
   how the reconnect handler actually uses it.
 
+- **Socket backends split by responsibility, like `Server` and `Client`
+  before them.** `async_socket.py` (633 lines) and `threading_socket.py`
+  (372 lines) each played three roles at once: listener, client peer, and
+  every connection they accept. The outbound send queue moved to
+  `AsyncOutbound`, the worker-thread bookkeeping and its three locks to
+  `ThreadRegistry`, and the selector `EVENT_WRITE` bookkeeping to
+  `AsyncWriteInterest` (633 → 449 and 372 → 330 lines). `AsyncSocket` is now
+  449 lines and `ThreadingSocket` 330, each with a single role left: owning a
+  selector loop or an accept thread
+  ([94972ce](https://github.com/NytroxDev/Veltix/commit/94972ce),
+  [67c48d7](https://github.com/NytroxDev/Veltix/commit/67c48d7),
+  [2044af6](https://github.com/NytroxDev/Veltix/commit/2044af6)).
+
+- **An accepted connection is now a leaf (`AcceptedSocket`) instead of a full
+  backend.** Constructing a child used to build a second complete backend:
+  its own `ClientsManager`, its own `ThreadRegistry`, its own selector
+  reference, none of which the child could ever use. Accepted sockets now
+  carry only the raw socket, the bus and (async) the outbound queue, and
+  `AsyncAcceptedSocket` composes `AsyncOutbound` rather than inheriting a
+  blocking `sendall`. Measured per connection: 1743 → 460 B on the threading
+  backend, 2089 → 582 B on the async one (-74 % and -72 %), so roughly 125 KB
+  reclaimed on a 100-client server. An accepted socket no longer receives the
+  parent's selector, and its `_owner` back-pointer is gone: an enqueue reports
+  through the parent's write-interest registry directly
+  ([e7da55a](https://github.com/NytroxDev/Veltix/commit/e7da55a),
+  [8331b10](https://github.com/NytroxDev/Veltix/commit/8331b10)).
+
+- **`BaseSocket` split into transport and lifecycle.** The ABC declared five
+  abstract methods, three of which (`bind`, `connect`, `close_client`) are
+  meaningless on an established connection, so every accepted socket had to
+  implement methods it could never honour. `BaseSocket` now covers only what a
+  connection shares (send, recv, timeout, close); `ServerSocket` adds the
+  listener and peer operations. Both backends derive from `ServerSocket`, the
+  leaves from `BaseSocket`, and the server and client layers declare the socket
+  they actually hold
+  ([f15d72c](https://github.com/NytroxDev/Veltix/commit/f15d72c)).
+
+- **Closing a client no longer re-enters a server teardown.** Because an
+  accepted socket used to be a full backend, `entry.info.conn.close()` called
+  by `ThreadingSocket.close_all()` resolved to the inherited `close_all()`
+  rather than a connection close, starting a server shutdown from inside a
+  per-client teardown. It was harmless only because the dead state absorbed
+  it. A leaf's `close()` shuts down and closes the connection only, and the
+  async leaf additionally drops its outbound queue so a closed connection
+  holds no undelivered bytes
+  ([e7da55a](https://github.com/NytroxDev/Veltix/commit/e7da55a),
+  [8331b10](https://github.com/NytroxDev/Veltix/commit/8331b10)).
+
+- **~105 duplicated lines shared by the two backends.** The server-full
+  rejection (~26 lines) moved to `reject_full_connection()` and the client
+  connect-and-handshake skeleton (~30 lines, including its exception mapping)
+  to `connect_and_handshake()`, both in `internal/network.py`. The backends
+  keep only what differs: selector registration and the receive thread
+  ([0b14c2c](https://github.com/NytroxDev/Veltix/commit/0b14c2c),
+  [35ea921](https://github.com/NytroxDev/Veltix/commit/35ea921)).
+
+- **Dropped `AsyncSocket.id_count`.** The counter was passed as `ClientInfo`'s
+  `thread_id` and overwritten two lines later by the manager-assigned client
+  id, so it was never read
+  ([b4540c1](https://github.com/NytroxDev/Veltix/commit/b4540c1)).
+
 ## [3.2.0] - 2026-09-30
 
 ### Fixed
