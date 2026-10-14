@@ -334,6 +334,58 @@ class TestAsyncSocketUnit:
             a.close()
             b.close()
 
+    def test_send_never_jumps_ahead_of_queued_bytes(self):
+        """A direct send must not overtake an earlier chunk still queued.
+
+        Regression for the burst loss: when a send was partially written and
+        its tail queued, a following send that found room in the kernel buffer
+        used to write straight to the socket and overtook that tail, so the
+        peer saw the two messages out of order, failed the frame on CRC and
+        dropped it.
+        """
+        from veltix.socket_core.async_outbound import AsyncOutbound
+
+        class ScriptedSock:
+            def __init__(self) -> None:
+                self.script: list[int | Exception] = []
+                self.written = bytearray()
+
+            def send(self, data):
+                step = self.script.pop(0)
+                if isinstance(step, Exception):
+                    raise step
+                n = min(step, len(data))
+                self.written += bytes(data[:n])
+                return n
+
+        fake = ScriptedSock()
+        notified: list[bool] = []
+        outbound = AsyncOutbound(lambda: fake, _make_bus(), lambda: notified.append(True))
+
+        first = b"A" * 10
+        second = b"B" * 10
+
+        # `first` is partially written (3 bytes) then the buffer blocks, so
+        # its 7-byte tail is queued.
+        fake.script = [3, BlockingIOError("full")]
+        assert outbound.send(first) is True
+        assert bytes(fake.written) == first[:3]
+        assert list(outbound.queue) == [first[3:]]
+
+        # The buffer has room again: `second` must queue behind the tail, not
+        # be written straight to the socket.
+        fake.script = [10]
+        assert outbound.send(second) is True
+        assert bytes(fake.written) == first[:3]
+        assert list(outbound.queue) == [first[3:], second]
+
+        # The selector flush then drains everything in FIFO order.
+        fake.script = [10, 10]
+        outbound.flush()
+        assert bytes(fake.written) == first + second
+        assert not outbound.has_data()
+        assert notified  # the owner was asked to register for writing
+
     def test_accept_client_rejects_and_closes_when_full(self, sock):
         from veltix.internal.events import ServerEvent
 

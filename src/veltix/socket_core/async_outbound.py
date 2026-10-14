@@ -63,6 +63,13 @@ class AsyncOutbound:
         writable again, so messages larger than the buffer are delivered
         instead of being dropped.
 
+        Writes are serialised with :meth:`flush` under ``_lock`` and never
+        jump ahead of already-queued bytes: while the queue is non-empty this
+        chunk is appended behind it. Writing straight to the socket here
+        would let a later message overtake an earlier queued one on the wire;
+        the peer then fails the frame on CRC and resynchronises, dropping
+        messages.
+
         Args:
             data: The bytes to send.
 
@@ -70,26 +77,40 @@ class AsyncOutbound:
             True when the data was sent or queued for delivery, False on a
             hard connection error.
         """
-        try:
-            sent = self._get_sock().send(data)
-        except BlockingIOError as e:
-            self.enqueue(data[getattr(e, "characters_written", 0) :])
-            return True
-        except OSError as e:
-            self._bus.emit(ErrorEvent.SEND, {"error": str(e)})
-            self._bus.error(f"send failed: {e}")
-            return False
-
-        if sent < len(data):
-            remainder = self._send_rest(data, sent)
-            if remainder is None:
-                return False
-            if remainder:
-                self.enqueue(remainder)
+        queued = False
+        with self._lock:
+            if self._queue:
+                self._queue.append(data)
+                queued = True
+            else:
+                try:
+                    sent = self._get_sock().send(data)
+                except BlockingIOError as e:
+                    self._queue.append(data[getattr(e, "characters_written", 0) :])
+                    queued = True
+                except OSError as e:
+                    self._on_send_error(e)
+                    return False
+                else:
+                    if sent < len(data):
+                        remainder = self._send_rest(data, sent)
+                        if remainder is None:
+                            return False
+                        if remainder:
+                            self._queue.append(remainder)
+                            queued = True
+        if queued:
+            self._on_queued()
         return True
+
+    def _on_send_error(self, error: OSError) -> None:
+        self._bus.emit(ErrorEvent.SEND, {"error": str(error)})
+        self._bus.error(f"send failed: {error}")
 
     def _send_rest(self, data: bytes, start: int) -> bytes | None:
         """Send ``data[start:]`` until the kernel buffer blocks.
+
+        The caller must hold ``_lock`` so this never races :meth:`flush`.
 
         Args:
             data: The bytes being sent.
@@ -108,8 +129,7 @@ class AsyncOutbound:
             except BlockingIOError:
                 break
             except OSError as e:
-                self._bus.emit(ErrorEvent.SEND, {"error": str(e)})
-                self._bus.error(f"send failed: {e}")
+                self._on_send_error(e)
                 return None
             if n <= 0:
                 break
@@ -138,33 +158,32 @@ class AsyncOutbound:
             self._queue.clear()
 
     def flush(self) -> None:
-        """Push queued bytes on a writable socket (selector thread)."""
+        """Push queued bytes on a writable socket (selector thread).
+
+        Holds ``_lock`` for the whole drain, so an application-thread
+        :meth:`send` can neither interleave a direct write between two queued
+        chunks nor start one concurrently, which would reorder the stream.
+        """
         sock = self._get_sock()
-        while True:
-            with self._lock:
-                if not self._queue:
-                    return
+        with self._lock:
+            while self._queue:
                 chunk = self._queue.popleft()
-            try:
-                sent = sock.send(chunk)
-            except BlockingIOError as e:
-                with self._lock:
+                try:
+                    sent = sock.send(chunk)
+                except BlockingIOError as e:
                     self._queue.appendleft(chunk[getattr(e, "characters_written", 0) :])
-                return
-            except OSError as e:
-                self._bus.emit(ErrorEvent.SEND, {"error": str(e)})
-                self._bus.error(f"send failed: {e}")
-                with self._lock:
-                    self._queue.clear()
-                return
-            if sent < len(chunk):
-                remainder = self._send_rest(chunk, sent)
-                if remainder is None:
-                    with self._lock:
-                        self._queue.clear()
                     return
-                # Keep the unsent tail in front: it is the current head of
-                # the byte stream and must go out before later chunks.
-                with self._lock:
-                    self._queue.appendleft(remainder)
-                return
+                except OSError as e:
+                    self._on_send_error(e)
+                    self._queue.clear()
+                    return
+                if sent < len(chunk):
+                    remainder = self._send_rest(chunk, sent)
+                    if remainder is None:
+                        self._queue.clear()
+                        return
+                    # Keep the unsent tail in front: it is the current head of
+                    # the byte stream and must go out before later chunks.
+                    if remainder:
+                        self._queue.appendleft(remainder)
+                    return
