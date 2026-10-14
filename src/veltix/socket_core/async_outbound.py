@@ -160,13 +160,16 @@ class AsyncOutbound:
     def flush(self) -> None:
         """Push queued bytes on a writable socket (selector thread).
 
-        Holds ``_lock`` for the whole drain, so an application-thread
-        :meth:`send` can neither interleave a direct write between two queued
-        chunks nor start one concurrently, which would reorder the stream.
+        The lock is taken per chunk, not for the whole drain: an
+        application-thread :meth:`send` only waits for the single in-flight
+        ``send()``, never for the entire backlog, while still being unable to
+        interleave a direct write between two chunks.
         """
         sock = self._get_sock()
-        with self._lock:
-            while self._queue:
+        while True:
+            with self._lock:
+                if not self._queue:
+                    return
                 chunk = self._queue.popleft()
                 try:
                     sent = sock.send(chunk)
