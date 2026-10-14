@@ -56,6 +56,13 @@ class AsyncSocket(ServerSocket):
 
         self._selector_thread: threading.Thread | None = None
 
+        # Self-pipe used to interrupt a blocking select() from another thread
+        # (a sender that queued data, a handshake worker that finished). The
+        # selectors module has no portable wakeup(), so the loop waits on this
+        # read end and other threads signal it by writing one byte.
+        self._wakeup_r: socket.socket | None = None
+        self._wakeup_w: socket.socket | None = None
+
         self.max_message_size = max_message_size
         self.request_handler = request_handler
         self.handshake_timeout = handshake_timeout
@@ -65,7 +72,13 @@ class AsyncSocket(ServerSocket):
             apply_tcp_tunings(self._sock)
 
             self._selector = selectors.DefaultSelector()
-            self._write_interest = AsyncWriteInterest(self._selector)
+
+            self._wakeup_r, self._wakeup_w = socket.socketpair()
+            self._wakeup_r.setblocking(False)
+            self._wakeup_w.setblocking(False)
+            self._selector.register(self._wakeup_r, selectors.EVENT_READ, data="wakeup")
+
+            self._write_interest = AsyncWriteInterest(self._selector, self._wakeup)
 
             # Completed (or failed) handshakes are posted here by worker
             # threads and drained by the selector loop.
@@ -124,7 +137,9 @@ class AsyncSocket(ServerSocket):
             events = self._selector.select(0.5)
 
             for key, mask in events:
-                if key.data == "listen":
+                if key.data == "wakeup":
+                    self._drain_wakeup()
+                elif key.data == "listen":
                     self._accept_client(max_client)
                 elif key.data == "client":
                     if mask & selectors.EVENT_WRITE:
@@ -136,6 +151,33 @@ class AsyncSocket(ServerSocket):
                         self._flush_client_outbound(key.data)
                     if mask & selectors.EVENT_READ:
                         self._handle_server_client(key.data, buffer_size)
+
+    def _wakeup(self) -> None:
+        """Interrupt the selector loop from any thread.
+
+        Writes one byte to the self-pipe the loop is polling. The write is
+        best-effort: a full pipe already means a wakeup is pending, so the
+        ``BlockingIOError`` is expected and ignored.
+        """
+        sock = self._wakeup_w
+        if sock is None:
+            return
+        with contextlib.suppress(BlockingIOError, OSError):
+            sock.send(b"\x00")
+
+    def _drain_wakeup(self) -> None:
+        """Drain the self-pipe after a wakeup (selector thread only)."""
+        sock = self._wakeup_r
+        if sock is None:
+            return
+        while True:
+            try:
+                if not sock.recv(4096):
+                    return
+            except (BlockingIOError, InterruptedError):
+                return
+            except OSError:
+                return
 
     def _accept_client(self, max_client: int) -> None:
         if not self._running_event.is_set():
@@ -216,6 +258,7 @@ class AsyncSocket(ServerSocket):
         if not ok:
             self.bus.warning(f"Handshake failed for {addr}")
             self._handshake_queue.put(("fail", client_id))
+            self._wakeup()
             return
 
         entry = self.client_manager.get_client(client_id)
@@ -229,6 +272,7 @@ class AsyncSocket(ServerSocket):
         with contextlib.suppress(OSError):
             conn.setblocking(False)
         self._handshake_queue.put(("ok", client_id))
+        self._wakeup()
 
     def _drain_handshake_queue(self, max_client: int) -> None:
         """Register (or clean up) clients whose handshake finished in a worker.
@@ -381,6 +425,7 @@ class AsyncSocket(ServerSocket):
         try:
             self.bus.debug("closing server socket")
             self._running_event.clear()
+            self._wakeup()
             with contextlib.suppress(KeyError):
                 self._selector.unregister(self)
             self._drop_outbound()
@@ -389,6 +434,7 @@ class AsyncSocket(ServerSocket):
             with contextlib.suppress(OSError):
                 self._sock.close()
             self.client_manager.iter_on_clients(self._close_server_client)
+            self._release_wakeup()
             self._selector.close()
             if self._selector_thread and self._selector_thread != threading.current_thread():
                 self._selector_thread.join(timeout=0.2)
@@ -433,12 +479,14 @@ class AsyncSocket(ServerSocket):
         try:
             self.bus.debug("disconnecting client socket")
             self._running_event.clear()
+            self._wakeup()
             with contextlib.suppress(KeyError):
                 self._selector.unregister(self)
             self._drop_outbound()
             self._write_interest.reset()
             self._shutdown_socket()
             self._sock.close()
+            self._release_wakeup()
             if self._selector_thread and threading.current_thread() != self._selector_thread:
                 self._selector_thread.join(timeout=timeout + 0.1)
             self.bus.debug("client socket disconnected")
@@ -447,3 +495,15 @@ class AsyncSocket(ServerSocket):
         except Exception as e:
             self.bus.debug(f"disconnect failed: {e}")
             return False
+
+    def _release_wakeup(self) -> None:
+        if self._wakeup_r is not None:
+            with contextlib.suppress(KeyError, OSError, ValueError):
+                self._selector.unregister(self._wakeup_r)
+            with contextlib.suppress(OSError):
+                self._wakeup_r.close()
+            self._wakeup_r = None
+        if self._wakeup_w is not None:
+            with contextlib.suppress(OSError):
+                self._wakeup_w.close()
+            self._wakeup_w = None

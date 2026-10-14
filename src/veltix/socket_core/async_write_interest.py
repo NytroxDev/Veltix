@@ -5,7 +5,10 @@ from __future__ import annotations
 import contextlib
 import selectors
 import threading
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class WriteInterestSocket(Protocol):
@@ -39,15 +42,31 @@ class AsyncWriteInterest:
 
     Attributes:
         _selector: The selector whose registrations are mirrored.
+        _wakeup: Callable that interrupts the selector loop, so a report is
+            drained on the next iteration instead of after the poll timeout.
     """
 
-    __slots__ = ("_selector", "_state", "_dirty", "_dirty_lock", "_conn_ids", "_owner_key")
+    __slots__ = (
+        "_selector",
+        "_state",
+        "_dirty",
+        "_dirty_lock",
+        "_conn_ids",
+        "_owner_key",
+        "_wakeup",
+    )
 
-    def __init__(self, selector: selectors.BaseSelector) -> None:
+    def __init__(
+        self,
+        selector: selectors.BaseSelector,
+        wakeup: Callable[[], None] | None = None,
+    ) -> None:
         """Initialise the registry for one selector.
 
         Args:
             selector: The selector whose interest sets are mirrored.
+            wakeup: Called when a socket reports queued data, to interrupt a
+                blocking ``select`` so the write interest is applied at once.
         """
         self._selector = selector
         self._state: dict[int, bool] = {}
@@ -55,6 +74,7 @@ class AsyncWriteInterest:
         self._dirty_lock = threading.Lock()
         self._conn_ids: dict[int, int] = {}
         self._owner_key: int | str | None = None
+        self._wakeup = wakeup
 
     def set_owner_key(self, key: int | str | None) -> None:
         """Set the selector data key of the owning socket itself.
@@ -94,12 +114,8 @@ class AsyncWriteInterest:
         """
         with self._dirty_lock:
             self._dirty.append(sock)
-        # wakeup() lives on the concrete selector (e.g. EpollSelector), not on
-        # BaseSelector, so resolve it dynamically.
-        wakeup = getattr(self._selector, "wakeup", None)
-        if wakeup is not None:
-            with contextlib.suppress(OSError):
-                wakeup()
+        if self._wakeup is not None:
+            self._wakeup()
 
     def sync_dirty(self, owner: WriteInterestSocket) -> None:
         """Register write interest for sockets that reported queued data.

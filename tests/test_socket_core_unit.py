@@ -386,6 +386,30 @@ class TestAsyncSocketUnit:
         assert not outbound.has_data()
         assert notified  # the owner was asked to register for writing
 
+    def test_queued_send_wakes_selector(self, sock):
+        """Queueing outbound bytes signals the selector's self-pipe.
+
+        Regression for the ~0.5s stall: without a wakeup the selector only
+        noticed queued data at its ``select()`` timeout, delaying the first
+        flush (and the handshake registration on the server side).
+        """
+        sock._running_event.set()
+        sock._outbound.enqueue(b"data")
+        assert sock._has_outbound()
+
+        events = sock._selector.select(0.5)
+        assert any(key.data == "wakeup" for key, _ in events)
+
+    def test_wakeup_interrupts_and_drains(self, sock):
+        """_wakeup() interrupts select(); _drain_wakeup() clears the signal."""
+        sock._wakeup()
+        events = sock._selector.select(1.0)
+        assert any(key.data == "wakeup" for key, _ in events)
+
+        sock._drain_wakeup()
+        # Draining resets the pipe: the next select times out empty.
+        assert sock._selector.select(0.05) == []
+
     def test_accept_client_rejects_and_closes_when_full(self, sock):
         from veltix.internal.events import ServerEvent
 
@@ -607,3 +631,35 @@ class TestAcceptedSocket:
         finally:
             a.close()
             b.close()
+
+
+class TestAsyncWriteInterest:
+    """The selector write-interest registry and its wakeup hook."""
+
+    def test_mark_dirty_invokes_injected_wakeup(self):
+        import selectors
+
+        from veltix.socket_core.async_write_interest import AsyncWriteInterest
+
+        sel = selectors.DefaultSelector()
+        try:
+            calls: list[bool] = []
+            interest = AsyncWriteInterest(sel, wakeup=lambda: calls.append(True))
+            # mark_dirty only records the report and pokes the wakeup hook;
+            # the socket object itself is not touched at this point.
+            interest.mark_dirty(object())
+            assert calls == [True]
+        finally:
+            sel.close()
+
+    def test_mark_dirty_without_wakeup_is_safe(self):
+        import selectors
+
+        from veltix.socket_core.async_write_interest import AsyncWriteInterest
+
+        sel = selectors.DefaultSelector()
+        try:
+            interest = AsyncWriteInterest(sel)
+            interest.mark_dirty(object())  # must not raise
+        finally:
+            sel.close()
