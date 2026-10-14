@@ -188,10 +188,10 @@ class TestMessageBufferBackend:
         assert "Unknown message type code: 60000" in warnings[0]
 
     def test_overflow_clears_and_logs(self, backend):
-        """Exceeding max_buffer_size clears the buffer and logs an error."""
+        """Exceeding max_buffer_size clears the buffer and logs a warning."""
         bus = VeltixBus()
-        errors: list[str] = []
-        bus.subscribe(LogEvent.ERROR, lambda _event, msg: errors.append(msg))
+        warnings: list[str] = []
+        bus.subscribe(LogEvent.WARNING, lambda _event, msg: warnings.append(msg))
         buf = MessageBuffer(max_message_size=100, max_buffer_size=100, bus=bus)
 
         buf.add_data(b"x" * 50)
@@ -199,7 +199,7 @@ class TestMessageBufferBackend:
         buf.add_data(b"y" * 200)
 
         assert len(buf) == 0
-        assert any("exceeds maximum 100" in msg for msg in errors)
+        assert any("exceeds maximum 100" in msg for msg in warnings)
 
     def test_resync_logs_debug(self, backend, test_message_type):
         """Garbage before a valid frame triggers a debug resync log."""
