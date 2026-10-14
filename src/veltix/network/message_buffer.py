@@ -71,11 +71,11 @@ class MessageBuffer:
         if self._use_rust:
             accepted, detail = self._engine.add_data(data)
             if not accepted and self._bus:
-                self._bus.error(detail)
+                self._bus.warning(detail)
             return
         if len(self._engine) + len(data) > self._max_buffer_size:
             if self._bus:
-                self._bus.error(
+                self._bus.warning(
                     f"Buffer size {len(self._engine) + len(data)} exceeds maximum "
                     f"{self._max_buffer_size} - clearing buffer."
                 )
@@ -129,7 +129,7 @@ class MessageBuffer:
                     else " - Resyncing."
                 )
                 if self._bus:
-                    self._bus.error(f"{detail}{suffix}")
+                    self._bus.warning(f"{detail}{suffix}")
             elif kind == "resynced" and self._bus:
                 self._bus.debug(f"Resynced: discarded {payload} bytes")
         return messages
@@ -151,7 +151,7 @@ class MessageBuffer:
 
             if total_size > self._max_message_size:
                 if self._bus:
-                    self._bus.error(
+                    self._bus.warning(
                         f"Message size {total_size} exceeds maximum {self._max_message_size} - "
                         f"possible corruption. Resyncing."
                     )
@@ -180,7 +180,7 @@ class MessageBuffer:
                 messages.append(response)
             except Exception as e:
                 if self._bus:
-                    self._bus.error(
+                    self._bus.warning(
                         f"Failed to parse message ({len(message_data)} bytes): {type(e).__name__}: {e}. "
                         f"Resyncing."
                     )
