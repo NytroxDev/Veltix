@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The async backend no longer loses messages when the outbound queue is
+  non-empty.** `AsyncOutbound.send()` wrote straight to the socket whenever the
+  kernel buffer had room, even when an earlier partial write had already queued
+  its remainder, so a later message could overtake an earlier one on the wire;
+  the peer then failed the frame on CRC and resynchronised, silently dropping
+  it (the burst benchmark lost 2 of 10 000 on every run). `send()` now appends
+  behind any pending bytes, and the flush takes the lock per chunk so an
+  application-thread send can never interleave a direct write between two
+  queued chunks
+  ([fb6670d](https://github.com/NytroxDev/Veltix/commit/fb6670d),
+  [f9e8060](https://github.com/NytroxDev/Veltix/commit/f9e8060)).
+
+- **The async selector loop now wakes promptly instead of waiting out its poll
+  timeout.** The stdlib selectors expose no `wakeup()`, so the
+  `getattr(self._selector, "wakeup", None)` in `AsyncWriteInterest.mark_dirty`
+  was dead code and `_drain_handshake_queue` could not interrupt `select(0.5)`:
+  a freshly registered client (or a queued flush) was only noticed up to 500 ms
+  later, leaving the burst drain p50 at ~361 ms. A self-pipe registered on
+  `EVENT_READ` now wakes the loop from any thread - handshake workers and
+  queued sends signal it, closing releases the fds. Burst drain p50 drops to
+  ~80 ms with no busy-spin (0 % CPU idle) and the low-latency path is
+  unchanged ([45ac0c4](https://github.com/NytroxDev/Veltix/commit/45ac0c4)).
+
 ### Internal
 
 - **`Server` split into collaborators, one responsibility each.** The class
