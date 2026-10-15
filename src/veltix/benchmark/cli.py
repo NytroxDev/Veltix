@@ -8,7 +8,9 @@ Orchestrates benchmark selection, execution, summary and JSON export.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import importlib
+import io
 import os
 import sys
 import time
@@ -23,7 +25,7 @@ from .display import print_summary, row, sep
 from .export import build_json, save_json
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
 ALL_BENCHMARKS = ["memory", "latency", "fps", "burst", "stress"]
 BACKENDS = ["threading", "async"]
@@ -144,6 +146,36 @@ def _apply_engine(engine: str) -> str:
     return _rust.engine_name()
 
 
+@contextlib.contextmanager
+def _quiet() -> Iterator[None]:
+    """Silence stdout while a discarded warmup pass runs.
+
+    Every bench prints its own detailed report from inside ``run()``; a warmup
+    pass must not add a second copy of it (nor let its discarded numbers be
+    mistaken for results), so its output is swallowed.
+    """
+    with contextlib.redirect_stdout(io.StringIO()):
+        yield
+
+
+def _invoke(
+    runner: Any,
+    backend: str,
+    args: tuple[Any, ...],
+    step_label: str,
+    *,
+    quiet: bool = False,
+) -> Any:
+    """Run one benchmark pass and tag its result with the backend name."""
+    if quiet:
+        with _quiet():
+            result = runner(*args, socket_core=backend, step_label=step_label)
+    else:
+        result = runner(*args, socket_core=backend, step_label=step_label)
+    result.backend = backend
+    return result
+
+
 def _run_for_backends(
     runner: Any,
     backends: list[str],
@@ -156,12 +188,13 @@ def _run_for_backends(
     for backend in backends:
         if warmup:
             step_label = f"warmup {bench_name} ({backend})"
+            print(f"  {step_label} ...", end="", flush=True)
+            results.append(_invoke(runner, backend, args, step_label, quiet=True))
+            print(" done")
         else:
             step_counter[0] += 1
             step_label = f"[{step_counter[0]}/{step_counter[1]}] {bench_name} ({backend})"
-        result = runner(*args, socket_core=backend, step_label=step_label)
-        result.backend = backend
-        results.append(result)
+            results.append(_invoke(runner, backend, args, step_label))
     return results
 
 
@@ -213,9 +246,7 @@ def _run_runs(
         for backend in order:
             step_counter[0] += 1
             step_label = f"[{step_counter[0]}/{step_counter[1]}] {bench_name} ({backend})"
-            result = runner(*args, socket_core=backend, step_label=step_label)
-            result.backend = backend
-            per_backend[backend].append(result)
+            per_backend[backend].append(_invoke(runner, backend, args, step_label))
 
     return [per_backend[backend][0].aggregate(per_backend[backend]) for backend in backends]
 

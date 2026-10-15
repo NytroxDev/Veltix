@@ -47,6 +47,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`sched_setaffinity`, a no-op where unsupported) recorded alongside the
   effective CPU set.
 
+### Fixed
+
+- **Discarded benchmark warmup passes no longer print a full duplicate
+  report.** Each bench prints its own detailed output from inside `run()`, so
+  the warmup pass produced a second, misleading copy of every bench's numbers
+  (and doubled the terminal output). The warmup now emits a single
+  `warmup <bench> (<backend>) ... done` line and its report is swallowed.
+
 
 ## [3.2.1] - 2026-10-15
 

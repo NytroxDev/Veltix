@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from veltix.benchmark.cli import _run_runs
+
+if TYPE_CHECKING:
+    import pytest
 
 
 class _Result:
@@ -146,3 +149,17 @@ class TestStepCounter:
             sleep=_noop_sleep([]),
         )
         assert counter[0] == 4
+
+
+class TestWarmupQuiet:
+    def test_warmup_report_is_swallowed(self, capsys: pytest.CaptureFixture[str]) -> None:
+        def runner(*args: Any, socket_core: str, step_label: str) -> _Result:
+            print(f"REPORT {step_label}")
+            return _Result(socket_core)
+
+        _run_runs(runner, ["threading"], 1, [0, 1], "bench", warmup=1, sleep=_noop_sleep([]))
+        out = capsys.readouterr().out
+
+        assert "REPORT warmup" not in out
+        assert "REPORT [1/1]" in out
+        assert "warmup bench (threading) ... done" in out
