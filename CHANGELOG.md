@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-10-15
+
 ### Fixed
 
 - **The async backend no longer loses messages when the outbound queue is
