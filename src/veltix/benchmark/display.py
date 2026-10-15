@@ -160,11 +160,24 @@ def _stress_defs() -> list[tuple[str, str, _ColFmt]]:
 # ── Single-backend mode ───────────────────────────────────────────────────────
 
 
+def _dispersion(result: Any, attr: str, fmt: _ColFmt) -> str:
+    """Render the run-to-run 95% CI for ``attr`` when several runs were averaged."""
+    metrics = getattr(result, "metrics", None)
+    if not metrics:
+        return ""
+    summary = metrics.get(attr)
+    if not isinstance(summary, dict) or summary.get("n", 0) < 2:
+        return ""
+    low, high = summary["ci95"]
+    return f"  {_DIM}[{fmt(low)} - {fmt(high)}]{_R}"
+
+
 def _show_single_section(title: str, defs: list[tuple[str, str, _ColFmt]], result: Any) -> None:
     print(f"  {_B}{_C}{title}{_R}")
     for label, attr, fmt in defs:
         value = getattr(result, attr)
-        print(f"    {_DIM}{label:<28}{_R}{_val(fmt(value))}")
+        suffix = _dispersion(result, attr, fmt)
+        print(f"    {_DIM}{label:<28}{_R}{_val(fmt(value))}{suffix}")
     print()
 
 

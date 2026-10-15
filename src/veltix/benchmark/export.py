@@ -17,8 +17,11 @@ import veltix
 if TYPE_CHECKING:
     from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
 
-# File format version of the exported JSON - bump on breaking schema changes
-FORMAT_VERSION = 1
+# File format version of the exported JSON - bump on breaking schema changes.
+# v2 adds run-to-run dispersion: ``n_runs`` and a per-metric ``metrics`` block
+# (median, IQR, 95% CI). v1 files were plain per-run means, so v1 and v2 files
+# are deliberately not comparable.
+FORMAT_VERSION = 2
 
 
 def _normalise(value: Any) -> Any:

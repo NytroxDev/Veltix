@@ -157,7 +157,7 @@ def _run_runs(
     averaged = []
     for b_idx in range(num_backends):
         run_specific = [run[b_idx] for run in all_backend_results]
-        avg = run_specific[0].average(run_specific)
+        avg = run_specific[0].aggregate(run_specific)
         averaged.append(avg)
     return averaged
 
@@ -216,8 +216,8 @@ def _main_impl() -> None:
     row("RAM", f"{psutil.virtual_memory().total / 1_073_741_824:.1f} GB")
     row("OS", sys.platform)
     row("Socket backend", args.socket_core)
-    if args.runs > 1:
-        row("Runs (avg)", str(args.runs))
+    row("Runs (n)", str(args.runs))
+    row("Aggregation", "median across runs (IQR + 95% CI)" if args.runs > 1 else "single run")
 
     # ── Step counter ────────────────────────────────────────────────────────────
     selected_benches = [b for b in ["memory", "latency", "fps", "burst", "stress"] if b in run]

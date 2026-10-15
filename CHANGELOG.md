@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Benchmark aggregation is statistically honest.** Runs are no longer
+  collapsed with a mean of per-run standard deviations. Every metric is now
+  aggregated by **median across runs** and carries its inter-quartile range and
+  a 95% bootstrap confidence interval in the exported JSON (`n_runs` +
+  `metrics`), rendered inline in the terminal summary. The suite also uses a
+  single percentile definition everywhere. The exported file format is bumped
+  to **v2** (v1 files are no longer comparable).
+
+### Added
+
+- **`veltix.benchmark.stats`** - robust statistics core (`percentile`,
+  `bootstrap_ci`, `summarize`) shared by the whole benchmark suite, so the
+  central estimate is the median and every number travels with its dispersion.
+
+
 ## [3.2.1] - 2026-10-15
 
 ### Fixed

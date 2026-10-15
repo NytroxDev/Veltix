@@ -3,12 +3,51 @@ models.py
 ---------
 Dataclasses for benchmark results.
 Each class exposes a to_dict() method for JSON export.
+
+Aggregation across runs is done through :meth:`aggregate` and delegates to
+:mod:`veltix.benchmark.stats`: the central estimate is the **median** of the
+per-run values (never a mean of per-run standard deviations) and every metric
+that varies across runs also carries its IQR and 95% confidence interval in
+``metrics``, together with ``n_runs``.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import statistics
 from dataclasses import dataclass, field
+from typing import Any
+
+from . import stats
+
+# Fields that are never aggregated: constants carried through, or the
+# aggregation metadata itself.
+_AGG_SKIP = frozenset({"metrics", "n_runs"})
+
+
+def _scalar_kwargs(results: list[Any]) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """Aggregate every numeric field of ``results`` by median across runs."""
+    base = dataclasses.asdict(results[0])
+    kwargs: dict[str, Any] = {}
+    metrics: dict[str, dict[str, Any]] = {}
+
+    for name, sample in base.items():
+        if name in _AGG_SKIP:
+            continue
+        if isinstance(sample, bool) or not isinstance(sample, (int, float)):
+            kwargs[name] = sample
+            continue
+
+        values = [getattr(r, name) for r in results]
+        if all(v == values[0] for v in values):
+            kwargs[name] = values[0]
+            continue
+
+        summary = stats.summarize(values)
+        kwargs[name] = int(round(summary.median)) if isinstance(sample, int) else summary.median
+        metrics[name] = summary.to_dict()
+
+    return kwargs, metrics
 
 
 @dataclass
@@ -19,6 +58,8 @@ class LatencyStats:
     jitter_ms: float = 0.0
     throughput: float = 0.0
     backend: str = "async"
+    n_runs: int = 1
+    metrics: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def add(self, value: float | None) -> None:
         if value is not None:
@@ -37,10 +78,7 @@ class LatencyStats:
         return statistics.median(self._samples) if self._samples else 0.0
 
     def percentile(self, pct: float) -> float:
-        if not self._samples:
-            return 0.0
-        s = sorted(self._samples)
-        return s[min(int(len(s) * pct / 100), len(s) - 1)]
+        return stats.percentile(self._samples, pct)
 
     @property
     def p95(self) -> float:
@@ -63,13 +101,42 @@ class LatencyStats:
         return statistics.stdev(self._samples) if len(self._samples) > 1 else 0.0
 
     @staticmethod
-    def average(results: list[LatencyStats]) -> LatencyStats:
+    def aggregate(results: list[LatencyStats]) -> LatencyStats:
+        """Combine per-run latency stats.
+
+        Raw samples are pooled so the displayed distribution uses every
+        observation, while the run-to-run reproducibility of each reported
+        statistic is exposed through ``metrics`` (one value per run).
+
+        Args:
+            results: One :class:`LatencyStats` per run.
+
+        Returns:
+            The combined statistics.
+        """
         combined = LatencyStats()
         for r in results:
             combined._samples.extend(r._samples)
-        combined.jitter_ms = statistics.mean(r.jitter_ms for r in results)
-        combined.throughput = statistics.mean(r.throughput for r in results)
-        combined.backend = results[0].backend if results else "async"
+        if results:
+            combined.backend = results[0].backend
+            combined.jitter_ms = statistics.median(r.jitter_ms for r in results)
+            combined.throughput = statistics.median(r.throughput for r in results)
+            combined.n_runs = len(results)
+
+        per_run: dict[str, list[float]] = {
+            "avg": [r.avg for r in results],
+            "median": [r.median for r in results],
+            "p95": [r.p95 for r in results],
+            "p99": [r.p99 for r in results],
+            "min": [r.min for r in results],
+            "max": [r.max for r in results],
+            "stdev": [r.stdev for r in results],
+            "jitter_ms": [r.jitter_ms for r in results],
+            "throughput": [r.throughput for r in results],
+        }
+        combined.metrics = {
+            name: stats.summarize(values).to_dict() for name, values in per_run.items()
+        }
         return combined
 
     def to_dict(self) -> dict:
@@ -85,6 +152,8 @@ class LatencyStats:
             "jitter_ms": round(self.jitter_ms, 3),
             "throughput": round(self.throughput, 1),
             "backend": self.backend,
+            "n_runs": self.n_runs,
+            "metrics": self.metrics,
         }
 
 
@@ -104,23 +173,16 @@ class MemoryResult:
     ram_after_teardown_kb: float
     leak_kb: float
     backend: str = "async"
+    n_runs: int = 1
+    metrics: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    @staticmethod
-    def average(results: list[MemoryResult]) -> MemoryResult:
-        return MemoryResult(
-            baseline_kb=statistics.mean(r.baseline_kb for r in results),
-            server_idle_kb=statistics.mean(r.server_idle_kb for r in results),
-            client_cost_kb=statistics.mean(r.client_cost_kb for r in results),
-            client_cost_min_kb=statistics.mean(r.client_cost_min_kb for r in results),
-            client_cost_max_kb=statistics.mean(r.client_cost_max_kb for r in results),
-            client_cost_median_kb=statistics.mean(r.client_cost_median_kb for r in results),
-            client_cost_stdev_kb=statistics.mean(r.client_cost_stdev_kb for r in results),
-            ram_10_clients_kb=statistics.mean(r.ram_10_clients_kb for r in results),
-            ram_50_clients_kb=statistics.mean(r.ram_50_clients_kb for r in results),
-            ram_after_teardown_kb=statistics.mean(r.ram_after_teardown_kb for r in results),
-            leak_kb=statistics.mean(r.leak_kb for r in results),
-            backend=results[0].backend if results else "async",
-        )
+    @classmethod
+    def aggregate(cls, results: list[MemoryResult]) -> MemoryResult:
+        """Aggregate per-run results (median across runs + dispersion)."""
+        kwargs, metrics = _scalar_kwargs(results)
+        kwargs["n_runs"] = len(results)
+        kwargs["metrics"] = metrics
+        return cls(**kwargs)
 
     def to_dict(self) -> dict:
         return {
@@ -136,6 +198,8 @@ class MemoryResult:
             "ram_after_teardown_kb": round(self.ram_after_teardown_kb, 1),
             "leak_kb": round(self.leak_kb, 1),
             "backend": self.backend,
+            "n_runs": self.n_runs,
+            "metrics": self.metrics,
         }
 
 
@@ -150,7 +214,6 @@ class FpsResult:
     success_rate: float
     ram_delta_mb: float
     errors: int
-    # Tick accuracy
     actual_tick_rate: float
     tick_avg_ms: float
     tick_min_ms: float
@@ -159,28 +222,16 @@ class FpsResult:
     tick_budget_pct: float
     overrun_ticks: int
     backend: str = "async"
+    n_runs: int = 1
+    metrics: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    @staticmethod
-    def average(results: list[FpsResult]) -> FpsResult:
-        return FpsResult(
-            players=results[0].players,
-            tick_rate=results[0].tick_rate,
-            duration_s=statistics.mean(r.duration_s for r in results),
-            total_sent=round(statistics.mean(r.total_sent for r in results)),
-            total_recv=round(statistics.mean(r.total_recv for r in results)),
-            msg_per_sec=statistics.mean(r.msg_per_sec for r in results),
-            success_rate=statistics.mean(r.success_rate for r in results),
-            ram_delta_mb=statistics.mean(r.ram_delta_mb for r in results),
-            errors=round(statistics.mean(r.errors for r in results)),
-            actual_tick_rate=statistics.mean(r.actual_tick_rate for r in results),
-            tick_avg_ms=statistics.mean(r.tick_avg_ms for r in results),
-            tick_min_ms=statistics.mean(r.tick_min_ms for r in results),
-            tick_max_ms=statistics.mean(r.tick_max_ms for r in results),
-            tick_stdev_ms=statistics.mean(r.tick_stdev_ms for r in results),
-            tick_budget_pct=statistics.mean(r.tick_budget_pct for r in results),
-            overrun_ticks=round(statistics.mean(r.overrun_ticks for r in results)),
-            backend=results[0].backend if results else "async",
-        )
+    @classmethod
+    def aggregate(cls, results: list[FpsResult]) -> FpsResult:
+        """Aggregate per-run results (median across runs + dispersion)."""
+        kwargs, metrics = _scalar_kwargs(results)
+        kwargs["n_runs"] = len(results)
+        kwargs["metrics"] = metrics
+        return cls(**kwargs)
 
     def to_dict(self) -> dict:
         return {
@@ -201,6 +252,8 @@ class FpsResult:
             "tick_budget_pct": round(self.tick_budget_pct, 1),
             "overrun_ticks": self.overrun_ticks,
             "backend": self.backend,
+            "n_runs": self.n_runs,
+            "metrics": self.metrics,
         }
 
 
@@ -222,26 +275,16 @@ class BurstResult:
     drain_jitter_ms: float
     recv_gap_avg_ms: float
     backend: str = "async"
+    n_runs: int = 1
+    metrics: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    @staticmethod
-    def average(results: list[BurstResult]) -> BurstResult:
-        return BurstResult(
-            count=round(statistics.mean(r.count for r in results)),
-            payload_bytes=results[0].payload_bytes,
-            send_throughput=statistics.mean(r.send_throughput for r in results),
-            recv_throughput=statistics.mean(r.recv_throughput for r in results),
-            data_mbps=statistics.mean(r.data_mbps for r in results),
-            success_rate=statistics.mean(r.success_rate for r in results),
-            duration_s=statistics.mean(r.duration_s for r in results),
-            send_duration_s=statistics.mean(r.send_duration_s for r in results),
-            drain_p50_ms=statistics.mean(r.drain_p50_ms for r in results),
-            drain_p95_ms=statistics.mean(r.drain_p95_ms for r in results),
-            drain_p99_ms=statistics.mean(r.drain_p99_ms for r in results),
-            drain_max_ms=statistics.mean(r.drain_max_ms for r in results),
-            drain_jitter_ms=statistics.mean(r.drain_jitter_ms for r in results),
-            recv_gap_avg_ms=statistics.mean(r.recv_gap_avg_ms for r in results),
-            backend=results[0].backend if results else "async",
-        )
+    @classmethod
+    def aggregate(cls, results: list[BurstResult]) -> BurstResult:
+        """Aggregate per-run results (median across runs + dispersion)."""
+        kwargs, metrics = _scalar_kwargs(results)
+        kwargs["n_runs"] = len(results)
+        kwargs["metrics"] = metrics
+        return cls(**kwargs)
 
     def to_dict(self) -> dict:
         return {
@@ -260,6 +303,8 @@ class BurstResult:
             "drain_jitter_ms": round(self.drain_jitter_ms, 3),
             "recv_gap_avg_ms": round(self.recv_gap_avg_ms, 3),
             "backend": self.backend,
+            "n_runs": self.n_runs,
+            "metrics": self.metrics,
         }
 
 
@@ -283,27 +328,16 @@ class StressResult:
     per_client_tps_max: float
     per_client_tps_stdev: float
     backend: str = "async"
+    n_runs: int = 1
+    metrics: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    @staticmethod
-    def average(results: list[StressResult]) -> StressResult:
-        return StressResult(
-            num_clients=results[0].num_clients,
-            msgs_per_client=results[0].msgs_per_client,
-            total_sent=round(statistics.mean(r.total_sent for r in results)),
-            total_recv=round(statistics.mean(r.total_recv for r in results)),
-            success_rate=statistics.mean(r.success_rate for r in results),
-            throughput=statistics.mean(r.throughput for r in results),
-            duration_s=statistics.mean(r.duration_s for r in results),
-            ram_delta_mb=statistics.mean(r.ram_delta_mb for r in results),
-            send_phase_s=statistics.mean(r.send_phase_s for r in results),
-            drain_time_s=statistics.mean(r.drain_time_s for r in results),
-            time_to_first_recv_ms=statistics.mean(r.time_to_first_recv_ms for r in results),
-            per_client_tps_avg=statistics.mean(r.per_client_tps_avg for r in results),
-            per_client_tps_min=statistics.mean(r.per_client_tps_min for r in results),
-            per_client_tps_max=statistics.mean(r.per_client_tps_max for r in results),
-            per_client_tps_stdev=statistics.mean(r.per_client_tps_stdev for r in results),
-            backend=results[0].backend if results else "async",
-        )
+    @classmethod
+    def aggregate(cls, results: list[StressResult]) -> StressResult:
+        """Aggregate per-run results (median across runs + dispersion)."""
+        kwargs, metrics = _scalar_kwargs(results)
+        kwargs["n_runs"] = len(results)
+        kwargs["metrics"] = metrics
+        return cls(**kwargs)
 
     def to_dict(self) -> dict:
         return {
@@ -323,4 +357,6 @@ class StressResult:
             "per_client_tps_max": round(self.per_client_tps_max, 1),
             "per_client_tps_stdev": round(self.per_client_tps_stdev, 1),
             "backend": self.backend,
+            "n_runs": self.n_runs,
+            "metrics": self.metrics,
         }

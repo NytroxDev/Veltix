@@ -31,6 +31,7 @@ from veltix import Client, ClientConfig, Request, Server, ServerConfig, SocketCo
 from ..config import PLAYER_MOVE, PORT_BURST
 from ..display import header, row
 from ..models import BurstResult
+from ..stats import percentile
 from ..utils import append_ts, track, untrack
 
 
@@ -88,15 +89,9 @@ def run(
         sorted_ts = sorted(received_ts)
         drain_latencies_ms = [(ts - t0) * 1_000 for ts in sorted_ts]
 
-    def _pct(data: list[float], p: float) -> float:
-        if not data:
-            return 0.0
-        s = sorted(data)
-        return s[int(len(s) * p / 100)]
-
-    lat_p50 = _pct(drain_latencies_ms, 50)
-    lat_p95 = _pct(drain_latencies_ms, 95)
-    lat_p99 = _pct(drain_latencies_ms, 99)
+    lat_p50 = percentile(drain_latencies_ms, 50)
+    lat_p95 = percentile(drain_latencies_ms, 95)
+    lat_p99 = percentile(drain_latencies_ms, 99)
     lat_max = max(drain_latencies_ms) if drain_latencies_ms else 0.0
 
     # ── Inter-arrival jitter ──────────────────────────────────────────────────
