@@ -35,11 +35,18 @@ def _normalise(value: Any) -> Any:
 def _get_system_info() -> dict:
     import psutil  # type: ignore[import-untyped]
 
+    from . import utils
+
     return {
         "python": sys.version.split()[0],
+        "python_impl": platform.python_implementation(),
         "cpu_logical": psutil.cpu_count(logical=True),
         "cpu_physical": psutil.cpu_count(logical=False),
-        "cpu_model": platform.processor() or "unknown",
+        "cpu_model": utils.cpu_model(),
+        "cpu_mhz": utils.cpu_freq_mhz(),
+        "cpu_governor": utils.cpu_governor(),
+        "load_avg": utils.load_average(),
+        "affinity": utils.process_affinity(),
         "ram_gb": round(psutil.virtual_memory().total / 1_073_741_824, 1),
         "os": sys.platform,
         "os_version": platform.version(),

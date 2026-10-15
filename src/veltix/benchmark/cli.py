@@ -17,6 +17,7 @@ import veltix
 from veltix import Logger, LogLevel
 from veltix.network import _rust
 
+from . import utils
 from .display import print_summary, row, sep
 from .export import build_json, save_json
 
@@ -215,6 +216,9 @@ def _main_impl() -> None:
     )
     row("RAM", f"{psutil.virtual_memory().total / 1_073_741_824:.1f} GB")
     row("OS", sys.platform)
+    row("CPU governor", utils.cpu_governor() or "n/a")
+    load = utils.load_average()
+    row("Load average", " / ".join(f"{value:.2f}" for value in load) if load else "n/a")
     row("Socket backend", args.socket_core)
     row("Runs (n)", str(args.runs))
     row("Aggregation", "median across runs (IQR + 95% CI)" if args.runs > 1 else "single run")
