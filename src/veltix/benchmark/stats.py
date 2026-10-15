@@ -30,6 +30,11 @@ BOOTSTRAP_RESAMPLES = 2000
 # Fixed seed so the interval is reproducible from the same samples.
 BOOTSTRAP_SEED = 0x5E17C5
 
+# A run-to-run 95% CI half-width wider than this fraction of the median means
+# the metric is too unstable to publish as a single number. It is only
+# assessable with n >= 2 runs: a lone run cannot reveal run-to-run noise.
+NOISY_CI_RATIO = 0.10
+
 
 def percentile(values: Sequence[float], pct: float) -> float:
     """Return the ``pct``-th percentile of ``values`` (linear interpolation).
@@ -123,8 +128,33 @@ class Summary:
         """Half-width of the 95% confidence interval."""
         return (self.ci95_high - self.ci95_low) / 2.0
 
+    @property
+    def relative_ci(self) -> float | None:
+        """95% CI half-width as a fraction of the median.
+
+        Returns:
+            The relative half-width, or None when the median is zero (the ratio
+            is undefined and the metric is not flagged).
+        """
+        if self.median == 0:
+            return None
+        return self.ci95_half / abs(self.median)
+
+    @property
+    def is_noisy(self) -> bool:
+        """Whether run-to-run dispersion exceeds the publication threshold.
+
+        A single run (``n < 2``) reveals no run-to-run noise and is never
+        flagged; it simply cannot be assessed.
+        """
+        if self.n < 2:
+            return False
+        ratio = self.relative_ci
+        return ratio is not None and ratio > NOISY_CI_RATIO
+
     def to_dict(self) -> dict[str, object]:
         """Return a JSON-serializable representation."""
+        relative = self.relative_ci
         return {
             "n": self.n,
             "median": round(self.median, 6),
@@ -136,6 +166,8 @@ class Summary:
             "min": round(self.min, 6),
             "max": round(self.max, 6),
             "ci95": [round(self.ci95_low, 6), round(self.ci95_high, 6)],
+            "rel_ci": round(relative, 6) if relative is not None else None,
+            "noisy": self.is_noisy,
         }
 
 

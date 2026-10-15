@@ -12,7 +12,9 @@ from typing import TYPE_CHECKING, Any
 
 from veltix import format_bytes
 
+from . import stats
 from .config import WIDTH
+from .models import noisy_metrics
 
 if TYPE_CHECKING:
     from .models import BurstResult, FpsResult, LatencyStats, MemoryResult, StressResult
@@ -26,6 +28,7 @@ _DIM = "\033[2m" if _USE_COLOR else ""
 _B = "\033[1m" if _USE_COLOR else ""
 _C = "\033[36m" if _USE_COLOR else ""
 _G = "\033[32m" if _USE_COLOR else ""
+_Y = "\033[33m" if _USE_COLOR else ""
 
 # ── Low-level helpers ─────────────────────────────────────────────────────────
 
@@ -169,7 +172,10 @@ def _dispersion(result: Any, attr: str, fmt: _ColFmt) -> str:
     if not isinstance(summary, dict) or summary.get("n", 0) < 2:
         return ""
     low, high = summary["ci95"]
-    return f"  {_DIM}[{fmt(low)} - {fmt(high)}]{_R}"
+    text = f"  {_DIM}[{fmt(low)} - {fmt(high)}]{_R}"
+    if summary.get("noisy"):
+        text += f"  {_Y}noisy{_R}"
+    return text
 
 
 def _show_single_section(title: str, defs: list[tuple[str, str, _ColFmt]], result: Any) -> None:
@@ -257,6 +263,18 @@ def _is_both(*groups: Any) -> bool:
     return any(g is not None and len(g) > 1 for g in groups)
 
 
+def _collect_noisy(*groups: Any) -> list[str]:
+    """Return backend-qualified names of every noisy metric across results."""
+    names: list[str] = []
+    for group in groups:
+        for result in group or []:
+            for metric in noisy_metrics(result):
+                label = f"{result.backend}.{metric}"
+                if label not in names:
+                    names.append(label)
+    return names
+
+
 def print_summary(
     mem: MemoryResult | list[MemoryResult] | None,
     lat: LatencyStats | list[LatencyStats] | None,
@@ -287,5 +305,12 @@ def print_summary(
     else:
         _show_single(mem, lat, fps, burst, stress)
 
+    noisy = _collect_noisy(mem, lat, fps, burst, stress)
     sep("─")
     print()
+    if noisy:
+        threshold = int(stats.NOISY_CI_RATIO * 100)
+        print(f"  {_Y}! noisy metrics (run-to-run 95% CI > {threshold}% of the median){_R}")
+        print(f"    {_DIM}{', '.join(noisy)}{_R}")
+        print(f"    {_DIM}raise --runs or quieten the machine before trusting these.{_R}")
+        print()

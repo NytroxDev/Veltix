@@ -50,6 +50,24 @@ def _scalar_kwargs(results: list[Any]) -> tuple[dict[str, Any], dict[str, dict[s
     return kwargs, metrics
 
 
+def noisy_metrics(result: Any) -> list[str]:
+    """Return the metric names flagged noisy by run-to-run dispersion.
+
+    Args:
+        result: Any benchmark result carrying a ``metrics`` summary mapping.
+
+    Returns:
+        Metric names whose 95% CI half-width exceeds the noise threshold; empty
+        when nothing was aggregated or everything is stable.
+    """
+    metrics = getattr(result, "metrics", None) or {}
+    return [
+        name
+        for name, summary in metrics.items()
+        if isinstance(summary, dict) and summary.get("noisy")
+    ]
+
+
 @dataclass
 class LatencyStats:
     """Accumulates latency samples and exposes common percentile statistics."""

@@ -167,3 +167,63 @@ class TestLatencyAggregation:
     def test_percentile_uses_shared_definition(self) -> None:
         lat = self._lat([1.0, 2.0, 3.0, 4.0], jitter=0.0, throughput=0.0)
         assert lat.percentile(50) == pytest.approx(stats.percentile([1.0, 2.0, 3.0, 4.0], 50))
+
+
+def _summary(n: int, median: float, ci_low: float, ci_high: float) -> stats.Summary:
+    return stats.Summary(
+        n=n,
+        median=median,
+        mean=median,
+        stdev=0.0,
+        p25=median,
+        p75=median,
+        iqr=0.0,
+        min=median,
+        max=median,
+        ci95_low=ci_low,
+        ci95_high=ci_high,
+    )
+
+
+class TestNoisyDetection:
+    def test_stable_metric_is_not_noisy(self) -> None:
+        summary = _summary(5, 100.0, 99.0, 101.0)
+        assert summary.relative_ci == pytest.approx(0.01)
+        assert summary.is_noisy is False
+
+    def test_wide_interval_is_noisy(self) -> None:
+        summary = _summary(2, 100.0, 80.0, 120.0)
+        assert summary.relative_ci == pytest.approx(0.20)
+        assert summary.is_noisy is True
+
+    def test_threshold_is_inclusive(self) -> None:
+        summary = _summary(5, 100.0, 90.0, 110.0)
+        assert summary.relative_ci == pytest.approx(stats.NOISY_CI_RATIO)
+        assert summary.is_noisy is False
+
+    def test_single_run_is_never_flagged(self) -> None:
+        summary = _summary(1, 100.0, 100.0, 100.0)
+        assert summary.is_noisy is False
+
+    def test_zero_median_has_no_relative_ci(self) -> None:
+        summary = _summary(3, 0.0, -5.0, 5.0)
+        assert summary.relative_ci is None
+        assert summary.is_noisy is False
+
+    def test_to_dict_carries_noise_flags(self) -> None:
+        entry = _summary(2, 100.0, 80.0, 120.0).to_dict()
+        assert entry["noisy"] is True
+        assert entry["rel_ci"] == pytest.approx(0.20)
+
+
+class TestNoisyMetrics:
+    def test_flags_volatile_metric(self) -> None:
+        from veltix.benchmark.models import noisy_metrics
+
+        agg = StressResult.aggregate([_stress(1.0, 100.0), _stress(2.0, 300.0)])
+        assert "throughput" in noisy_metrics(agg)
+
+    def test_empty_when_nothing_aggregated(self) -> None:
+        from veltix.benchmark.models import noisy_metrics
+
+        assert noisy_metrics(_stress(1.0, 100.0)) == []
