@@ -32,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ~80 ms with no busy-spin (0 % CPU idle) and the low-latency path is
   unchanged ([45ac0c4](https://github.com/NytroxDev/Veltix/commit/45ac0c4)).
 
+- **The threading backend no longer logs a spurious accept error on every
+  shutdown.** `close_all()` closes the listening socket while the accept loop is
+  blocked in `accept()`, which wakes it with `OSError: [Errno 9] Bad file
+  descriptor`; the loop reported that expected teardown as an `Accept error`.
+  The `OSError` branch now leaves quietly while the server is stopping, matching
+  the generic-exception branch ([4ab6317](https://github.com/NytroxDev/Veltix/commit/4ab6317)).
+
 ### Internal
 
 - **`Server` split into collaborators, one responsibility each.** The class

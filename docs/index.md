@@ -12,7 +12,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.
 
-**Mature & tested** : 638 tests · CI on Python 3.11-3.14 · v3.0.0 Rust-powered hot path
+**Mature & tested** : 790 tests · CI on Python 3.11-3.14 · v3.0.0 Rust-powered hot path
 
 ---
 
@@ -112,29 +112,29 @@ No manual framing. No thread management. No boilerplate.
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 638 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)
+- 790 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)
 
 ---
 
 ## Performance
 
-**Rust engine vs Python fallback (v3.0.0)** - Python 3.14.7, 12-core CPU, 5-run averages:
+**Rust engine vs Python fallback (v3.2.0)** - Python 3.14.8, 12-core CPU, 5-run averages:
 
 | Metric                          | Rust engine    | Python fallback | Gain      |
 |---------------------------------|----------------|-----------------|-----------|
-| Concurrent stress (100 clients) | 137,995 msg/s  | 106,486 msg/s   | **+30%**  |
-| Latency P99                     | 0.066 ms       | 0.096 ms        | **-31%**  |
-| FPS 64 tick stdev               | 0.175 ms       | 0.343 ms        | **-49%**  |
-| Burst send                      | 71,376 msg/s   | 59,408 msg/s    | **+20%**  |
+| Concurrent stress (100 clients) | 133,312 msg/s  | 110,650 msg/s   | **+20%**  |
+| Latency P99                     | 0.086 ms       | 0.116 ms        | **-26%**  |
+| FPS 64 tick stdev               | 0.233 ms       | 0.230 ms        | ±0 (noise) |
+| Burst send                      | 65,132 msg/s   | 58,082 msg/s    | **+12%**  |
 
-Socket backends, pure-Python path (Python 3.14.7, 12-core CPU, 30.5 GB RAM, loopback):
+Socket backends, pure-Python path (Python 3.14.8, 12-core CPU, 30.5 GB RAM, loopback):
 
 | Metric                          | Threading       | Async           |
 |---------------------------------|-----------------|-----------------|
-| Concurrent stress (100 clients) | 51,505 msg/s    | **108,084 msg/s (2.1x)** |
-| Burst send                      | 64,158 msg/s    | 60,358 msg/s    |
-| Average latency                 | 0.041 ms        | 0.050 ms        |
-| Idle server memory              | 60.8 KB         | ≈0 (noise floor) |
+| Concurrent stress (100 clients) | 52,596 msg/s    | **110,216 msg/s (2.1x)** |
+| Burst send                      | 65,907 msg/s    | 56,675 msg/s    |
+| Average latency                 | 0.041 ms        | 0.056 ms        |
+| Idle server memory              | ≈0 (noise)      | ≈0 (noise floor) |
 
 Full details : [Performance](https://github.com/NytroxDev/Veltix/blob/main/PERFORMANCE.md)
 

@@ -16,7 +16,7 @@
 Sync, thread-friendly, zero dependencies : TCP done right. Veltix handles framing, threading, handshake, routing, and
 reconnection so you can focus on your application logic.
 
-**Mature & tested** - 638 tests · CI on Python 3.11-3.14 · Rust-powered hot path
+**Mature & tested** - 790 tests · CI on Python 3.11-3.14 · Rust-powered hot path
 
 ---
 
@@ -241,16 +241,16 @@ Veltix 3.0.0 introduces a Rust-powered hot path for message parsing, compilation
 
 Benchmarks against the Python fallback:
 
-- **+30% throughput** under 100-client stress (138k msg/s)
-- **-31% P99 latency**
-- **-49% steadier FPS ticks** (tick stdev 0.175 ms vs 0.343 ms)
-- **+20% burst send throughput**
+- **+20% throughput** under 100-client stress (133k vs 111k msg/s)
+- **-26% latency P99** (0.086 ms vs 0.116 ms)
+- **+12% burst send throughput** (65k vs 58k msg/s)
+- Comparable FPS tick stability (both within run-to-run noise)
 
 The engine is picked at runtime: `disable_rust()` forces the pure-Python fallback, `enable_rust()`
 re-enables the compiled engine (see `veltix.network._rust.rust_enabled()`). The choice is captured
 when a `Server` / `Client` is (re)initialized - construction, `server.restart()`, client reconnection.
 
-> Results are workload-dependent and were measured on Veltix 3.0.0 (Python 3.14.7, loopback).
+> Results are workload-dependent and were measured on Veltix 3.2.0 (Python 3.14.8, loopback).
 
 ---
 
@@ -262,9 +262,9 @@ Veltix lets you switch between two socket backends via `SocketCore`. Pick the on
 |-----------------------|----------------------------------------------|------------------------------------------------|
 | **Model**             | One thread per client                        | Single-threaded event loop (selectors)         |
 | **Best for**          | Simple apps, < 50 clients, predictable loads | High concurrency, 100+ clients, variable loads |
-| **Concurrent stress** | ~51k msg/s                                   | **~108k msg/s (2.1x)**                         |
-| **Idle memory**       | 60.8 KB server + 111 KB per client           | **≈0 server (noise floor) + ~80 KB per client** |
-| **Latency**           | **0.041 ms**                                 | 0.050 ms                                       |
+| **Concurrent stress** | ~53k msg/s                                   | **~110k msg/s (2.1x)**                         |
+| **Idle memory**       | ≈0 server (noise) + 91 KB per client         | **≈0 server (noise floor) + 57 KB per client** |
+| **Latency**           | **0.041 ms**                                 | 0.056 ms                                       |
 | **Debugging**         | Straightforward (stack traces = threads)     | Harder (event loop internals)                  |
 
 **Quick rule of thumb:**
@@ -282,18 +282,18 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 
 ## Performance
 
-> Benchmarked on Python 3.14.7 : 12-core CPU, 30.5 GB RAM, Linux (loopback).
+> Benchmarked on Python 3.14.8 : 12-core CPU, 30.5 GB RAM, Linux (loopback), 5-run averages.
 > On v3.0.0+ the message hot path runs in Rust - see [Rust-powered hot path](#rust-powered-hot-path) for the
 > Rust engine vs pure-Python fallback numbers.
 
 | Metric                             | Threading       | Async            |
 |------------------------------------|-----------------|------------------|
-| Concurrent stress (100 clients)    | 51,505 msg/s    | **108,084 msg/s (2.1x)** |
-| Burst throughput                   | 64,158 / 48,558 | 60,358 / 46,351  |
-| Idle server memory                 | 60.8 KB         | ≈0 (noise floor) |
-| Per client memory (avg)            | 111 KB          | ≈80 KB (noisy)   |
-| Average latency                    | 0.041 ms        | 0.050 ms         |
-| FPS simulation (64 players @ 64Hz) | 4,489 msg/s     | 4,490 msg/s      |
+| Concurrent stress (100 clients)    | 52,596 msg/s    | **110,216 msg/s (2.1x)** |
+| Burst throughput                   | 65,907 / 55,936 | 56,675 / 44,146  |
+| Idle server memory                 | ≈0 (noise)      | ≈0 (noise floor) |
+| Per client memory (avg)            | 91 KB           | 57 KB (noisy)    |
+| Average latency                    | 0.041 ms        | 0.056 ms         |
+| FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,490 msg/s      |
 
 Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
 

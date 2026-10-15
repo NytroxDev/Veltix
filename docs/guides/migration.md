@@ -28,8 +28,8 @@ pure-Python implementation.
 
 ### Performance
 
-The Rust engine cuts hot-path overhead: **+30%** throughput under 100-client stress, **-31%** P99
-latency, **+20%** burst send, and **-49%** steadier FPS ticks vs the Python fallback - see
+The Rust engine cuts hot-path overhead: **+20%** throughput under 100-client stress, **-26%** P99
+latency, and **+12%** burst send vs the Python fallback, with comparable FPS tick stability - see
 [PERFORMANCE.md](https://github.com/NytroxDev/Veltix/blob/main/PERFORMANCE.md).
 
 ---
