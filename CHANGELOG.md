@@ -17,11 +17,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   single percentile definition everywhere. The exported file format is bumped
   to **v2** (v1 files are no longer comparable).
 
+- **The benchmark harness now reaches steady state and controls its
+  environment.** Every benchmark runs a discarded warmup pass first, settles
+  `--cooldown` seconds between measured runs, and alternates the backend order
+  each run so thermal or background drift cannot systematically favour one
+  backend. A run whose 1-minute load average exceeds the CPU count is flagged
+  before measuring. Metrics whose run-to-run 95% CI half-width exceeds 10% of
+  the median are marked **noisy** inline and in the JSON, so a number that is
+  not reproducible is never presented as if it were.
+
+- **Result files are self-describing.** The exported JSON now carries a
+  `harness` block (runs, warmup, cooldown, backends, pinning, effective CPU
+  set) next to `system`, so a file can be interpreted without the command line
+  that produced it.
+
 ### Added
 
 - **`veltix.benchmark.stats`** - robust statistics core (`percentile`,
   `bootstrap_ci`, `summarize`) shared by the whole benchmark suite, so the
   central estimate is the median and every number travels with its dispersion.
+
+- **Benchmark environment capture** - CPU model, current frequency, frequency
+  governor, load average and effective CPU affinity are recorded in the JSON
+  `system` block and shown in the suite header, so results carry the context
+  needed to reproduce them (or to explain why they did not reproduce).
+
+- **`--warmup`, `--cooldown`, `--pin`** benchmark flags - control the discarded
+  warmup passes, the inter-run settle time, and an optional best-effort CPU pin
+  (`sched_setaffinity`, a no-op where unsupported) recorded alongside the
+  effective CPU set.
 
 
 ## [3.2.1] - 2026-10-15
