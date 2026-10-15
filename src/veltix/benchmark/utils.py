@@ -95,6 +95,41 @@ def process_affinity() -> list[int] | None:
         return None
 
 
+def _affinity_target(available: list[int], count: int | None) -> list[int]:
+    """Return the CPU subset to pin to (first ``count``, at least one)."""
+    if count is None:
+        return available
+    return available[: max(1, count)]
+
+
+def pin_to_cpus(count: int | None = None) -> list[int] | None:
+    """Restrict this process to a subset of logical CPUs (best-effort).
+
+    Useful to reduce core-migration variance on a busy machine. Passing ``None``
+    keeps every currently allowed CPU (recording the effective set without
+    narrowing it).
+
+    Args:
+        count: Number of CPUs to keep, clamped to at least one.
+
+    Returns:
+        The resulting CPU set, or None when the platform offers no affinity
+        control (e.g. Windows).
+    """
+    try:
+        available = sorted(os.sched_getaffinity(0))
+    except (AttributeError, OSError):
+        return None
+    if not available:
+        return None
+    target = _affinity_target(available, count)
+    try:
+        os.sched_setaffinity(0, set(target))
+    except (AttributeError, OSError):
+        return None
+    return target
+
+
 # ── RAM helpers ───────────────────────────────────────────────────────────────
 
 

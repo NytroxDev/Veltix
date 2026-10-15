@@ -36,6 +36,21 @@ class TestAffinity:
         affinity = utils.process_affinity()
         assert affinity is None or (affinity and all(isinstance(cpu, int) for cpu in affinity))
 
+    def test_target_keeps_all_when_uncapped(self) -> None:
+        assert utils._affinity_target([0, 1, 2, 3], None) == [0, 1, 2, 3]
+
+    def test_target_limits_to_first_count(self) -> None:
+        assert utils._affinity_target([0, 1, 2, 3], 2) == [0, 1]
+
+    def test_target_clamps_to_at_least_one(self) -> None:
+        assert utils._affinity_target([3, 4, 5], 0) == [3]
+        assert utils._affinity_target([3, 4, 5], -5) == [3]
+
+    def test_pin_without_count_does_not_narrow(self) -> None:
+        result = utils.pin_to_cpus()
+        current = utils.process_affinity()
+        assert result is None or result == current
+
 
 class TestSystemInfo:
     def test_includes_environment_keys(self) -> None:

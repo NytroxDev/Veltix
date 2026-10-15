@@ -89,6 +89,13 @@ def parse_args() -> argparse.Namespace:
         metavar="S",
         help="Seconds to wait between measured runs",
     )
+    p.add_argument(
+        "--pin",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Restrict the benchmark process to the first N logical CPUs (best-effort)",
+    )
 
     # ── Per-benchmark knobs ───────────────────────────────────────────────────
     g = p.add_argument_group("latency")
@@ -251,6 +258,8 @@ def _main_impl() -> None:
         )
         sys.exit(1)
 
+    pinned_cpus = utils.pin_to_cpus(args.pin) if args.pin is not None else None
+
     # ── Suite header ──────────────────────────────────────────────────────────
     print()
     sep("═")
@@ -269,6 +278,12 @@ def _main_impl() -> None:
     row("CPU governor", utils.cpu_governor() or "n/a")
     load = utils.load_average()
     row("Load average", " / ".join(f"{value:.2f}" for value in load) if load else "n/a")
+    if args.pin is None:
+        row("CPU pinning", "off")
+    elif pinned_cpus:
+        row("CPU pinning", f"{len(pinned_cpus)} CPU(s), first={pinned_cpus[0]}")
+    else:
+        row("CPU pinning", "requested but unsupported on this platform")
     row("Socket backend", args.socket_core)
     row("Runs (n)", str(args.runs))
     row("Warmup", f"{args.warmup} discarded pass(es)")
@@ -374,6 +389,8 @@ def _main_impl() -> None:
                 "cooldown": args.cooldown,
                 "socket_backend": args.socket_core,
                 "backends": backends,
+                "pin_requested": args.pin,
+                "affinity": utils.process_affinity(),
             },
         )
         save_json(data, args.save)
