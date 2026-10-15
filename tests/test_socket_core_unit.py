@@ -182,6 +182,54 @@ class TestThreadingSocketUnit:
         assert calls["n"] == 3
         assert not sock._running_event.is_set()
 
+    def test_accept_loop_ignores_oserror_during_shutdown(self, sock):
+        """Regression: shutdown must not log a spurious accept error.
+
+        ``close_all()`` clears the running flag and closes the listening
+        socket, which wakes a blocked ``accept()`` with EBADF/EINVAL. That is
+        expected teardown and must not be surfaced as an accept failure.
+        """
+        from veltix.internal.events import ErrorEvent
+
+        errors = []
+        sock.bus.subscribe(ErrorEvent.ACCEPT, lambda e, p: errors.append(p))
+        sock._running_event.set()
+
+        def closing_accept(*_args, **_kwargs):
+            # Emulate close_all(): the flag is cleared, then the listening fd
+            # disappears and accept() raises EBADF.
+            sock._running_event.clear()
+            raise OSError(9, "Bad file descriptor")
+
+        with patch.object(socket.socket, "accept", side_effect=closing_accept):
+            sock._accept_loop("0.0.0.0", 8080, -1, 1024, 0.5)
+
+        assert errors == []
+
+    def test_accept_loop_reports_oserror_while_running(self, sock):
+        """A genuine accept() failure is still reported while running."""
+        from veltix.internal.events import ErrorEvent
+
+        errors = []
+        sock.bus.subscribe(ErrorEvent.ACCEPT, lambda e, p: errors.append(p))
+        sock._running_event.set()
+
+        calls = {"n": 0}
+
+        def flaky_accept(*_args, **_kwargs):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise OSError(24, "Too many open files")
+            sock._running_event.clear()
+            raise OSError(9, "Bad file descriptor")
+
+        with patch.object(socket.socket, "accept", side_effect=flaky_accept):
+            sock._accept_loop("0.0.0.0", 8080, -1, 1024, 0.5)
+
+        assert calls["n"] == 2
+        assert len(errors) == 1
+        assert "Too many open files" in errors[0]["error"]
+
     def test_connect_handshake_failure(self, sock):
         with (
             patch.object(socket.socket, "connect"),

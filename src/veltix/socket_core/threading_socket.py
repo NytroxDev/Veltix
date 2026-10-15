@@ -138,8 +138,13 @@ class ThreadingSocket(ServerSocket):
             except TimeoutError:
                 continue
             except OSError as e:
-                # Transient errors (e.g. EMFILE) must not kill the accept
-                # loop: log and keep accepting, like the selector backend.
+                # A shutdown closes the listening socket under us, which makes
+                # the blocked accept() fail with EBADF/EINVAL. That is expected
+                # teardown, not an accept error, so leave quietly.
+                if not self._running_event.is_set():
+                    return
+                # Other errors (e.g. EMFILE) must not kill the accept loop:
+                # log and keep accepting, like the selector backend.
                 self.bus.emit(ErrorEvent.ACCEPT, {"error": str(e)})
                 self.bus.error(f"Accept error: {type(e).__name__}: {e}")
                 continue
