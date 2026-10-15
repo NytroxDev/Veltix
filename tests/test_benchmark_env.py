@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
-from veltix.benchmark import utils
+from typing import TYPE_CHECKING
+
+from veltix.benchmark import cli, utils
 from veltix.benchmark.export import _get_system_info, build_json
+
+if TYPE_CHECKING:
+    import pytest
 
 
 class TestCpuModel:
@@ -80,3 +85,19 @@ class TestHarnessBlock:
     def test_defaults_to_empty(self) -> None:
         data = build_json(None, None, None, None, None)
         assert data["harness"] == {}
+
+
+class TestLoadWarning:
+    def test_idle_machine_has_no_warning(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(utils, "load_average", lambda: [1.0, 0.5, 0.4])
+        assert cli._load_warning(8) is None
+
+    def test_overloaded_machine_warns(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(utils, "load_average", lambda: [16.0, 8.0, 4.0])
+        warning = cli._load_warning(8)
+        assert warning is not None
+        assert "16.00" in warning
+
+    def test_missing_load_average_has_no_warning(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(utils, "load_average", lambda: None)
+        assert cli._load_warning(8) is None

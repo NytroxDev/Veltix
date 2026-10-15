@@ -220,6 +220,27 @@ def _run_runs(
     return [per_backend[backend][0].aggregate(per_backend[backend]) for backend in backends]
 
 
+def _load_warning(logical_cpus: int) -> str | None:
+    """Return a warning when the machine looks too busy to benchmark.
+
+    Args:
+        logical_cpus: Number of logical CPUs on the machine.
+
+    Returns:
+        A human-readable warning when the 1-minute load average exceeds the CPU
+        count, otherwise None (including when the load average is unavailable).
+    """
+    load = utils.load_average()
+    if not load:
+        return None
+    if load[0] <= logical_cpus:
+        return None
+    return (
+        f"1-minute load average {load[0]:.2f} exceeds {logical_cpus} logical CPU(s); "
+        "results may be noisy - check the noisy-metric report or quieten the machine."
+    )
+
+
 def main() -> None:
     try:
         _main_impl()
@@ -289,6 +310,12 @@ def _main_impl() -> None:
     row("Warmup", f"{args.warmup} discarded pass(es)")
     row("Cooldown", f"{args.cooldown:g} s between runs")
     row("Aggregation", "median across runs (IQR + 95% CI)" if args.runs > 1 else "single run")
+
+    load_warning = _load_warning(psutil.cpu_count(logical=True) or 1)
+    if load_warning:
+        print()
+        print(f"  WARNING: {load_warning}")
+        print()
 
     # ── Step counter ────────────────────────────────────────────────────────────
     selected_benches = [b for b in ["memory", "latency", "fps", "burst", "stress"] if b in run]
