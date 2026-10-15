@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from veltix.benchmark import utils
-from veltix.benchmark.export import _get_system_info
+from veltix.benchmark.export import _get_system_info, build_json
 
 
 class TestCpuModel:
@@ -55,3 +55,13 @@ class TestSystemInfo:
         import json
 
         json.dumps(_get_system_info())
+
+
+class TestHarnessBlock:
+    def test_records_harness_settings(self) -> None:
+        data = build_json(None, None, None, None, None, harness={"runs": 5, "warmup": 1})
+        assert data["harness"] == {"runs": 5, "warmup": 1}
+
+    def test_defaults_to_empty(self) -> None:
+        data = build_json(None, None, None, None, None)
+        assert data["harness"] == {}

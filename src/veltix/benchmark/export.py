@@ -66,14 +66,30 @@ def build_json(
     fps: FpsResult | list[FpsResult] | None,
     burst: BurstResult | list[BurstResult] | None,
     stress: StressResult | list[StressResult] | None,
+    *,
+    harness: dict[str, Any] | None = None,
 ) -> dict:
-    """Build a JSON-serializable dict from benchmark results."""
+    """Build the JSON payload for an exported run.
+
+    Args:
+        mem: Memory result(s), or None when the bench was not selected.
+        lat: Latency result(s), or None.
+        fps: FPS result(s), or None.
+        burst: Burst result(s), or None.
+        stress: Stress result(s), or None.
+        harness: Reproducibility settings that produced the results (runs,
+            warmup, cooldown, pinning, ...). Recorded verbatim.
+
+    Returns:
+        A JSON-serializable dict.
+    """
     return {
         "format_version": FORMAT_VERSION,
         "veltix_version": veltix.__version__,
         "engine": _engine_name(),
         "timestamp": datetime.now(UTC).isoformat(),
         "system": _get_system_info(),
+        "harness": harness or {},
         "results": {
             "memory": _normalise(mem),
             "latency": _normalise(lat),

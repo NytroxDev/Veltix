@@ -362,5 +362,18 @@ def _main_impl() -> None:
     print_summary(mem, lat, fps, burst, stress)
 
     if args.save:
-        data = build_json(mem, lat, fps, burst, stress)
+        data = build_json(
+            mem,
+            lat,
+            fps,
+            burst,
+            stress,
+            harness={
+                "runs": args.runs,
+                "warmup": args.warmup,
+                "cooldown": args.cooldown,
+                "socket_backend": args.socket_core,
+                "backends": backends,
+            },
+        )
         save_json(data, args.save)
