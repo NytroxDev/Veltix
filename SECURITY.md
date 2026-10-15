@@ -16,7 +16,7 @@ Please do NOT report security vulnerabilities through public GitHub issues.
 
 Instead, report them privately:
 
-- Email: nytrox.dev@gmail.com
+- Email: contact@nytrox.dev
 - GitHub: https://github.com/NytroxDev
 
 Please include, if possible:

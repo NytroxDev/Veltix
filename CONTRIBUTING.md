@@ -120,4 +120,4 @@ You do not need to write code to contribute meaningfully:
 
 - Open an issue with a `[Question]` tag
 - Join the Discord: [discord.gg/gz8K369a6p](https://discord.gg/gz8K369a6p)
-- Email: nytrox.dev@gmail.com
+- Email: contact@nytrox.dev

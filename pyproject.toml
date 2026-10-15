@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [
-    { name = "Nytrox", email = "nytrox.dev@gmail.com" }
+    { name = "Nytrox", email = "contact@nytrox.dev" }
 ]
 keywords = [
     "networking",
