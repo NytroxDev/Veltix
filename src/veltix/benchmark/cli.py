@@ -11,7 +11,8 @@ import argparse
 import importlib
 import os
 import sys
-from typing import Any
+import time
+from typing import TYPE_CHECKING, Any
 
 import veltix
 from veltix import Logger, LogLevel
@@ -20,6 +21,9 @@ from veltix.network import _rust
 from . import utils
 from .display import print_summary, row, sep
 from .export import build_json, save_json
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 ALL_BENCHMARKS = ["memory", "latency", "fps", "burst", "stress"]
 BACKENDS = ["threading", "async"]
@@ -69,7 +73,21 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=1,
         metavar="N",
-        help="Run each benchmark N times and average the results",
+        help="Run each benchmark N times and aggregate the results",
+    )
+    p.add_argument(
+        "--warmup",
+        type=int,
+        default=1,
+        metavar="N",
+        help="Discarded warmup passes before measuring (0 to disable)",
+    )
+    p.add_argument(
+        "--cooldown",
+        type=float,
+        default=0.5,
+        metavar="S",
+        help="Seconds to wait between measured runs",
     )
 
     # ── Per-benchmark knobs ───────────────────────────────────────────────────
@@ -125,11 +143,15 @@ def _run_for_backends(
     step_counter: list[int],
     bench_name: str,
     *args: Any,
+    warmup: bool = False,
 ) -> list[Any]:
     results = []
     for backend in backends:
-        step_counter[0] += 1
-        step_label = f"[{step_counter[0]}/{step_counter[1]}] {bench_name} ({backend})"
+        if warmup:
+            step_label = f"warmup {bench_name} ({backend})"
+        else:
+            step_counter[0] += 1
+            step_label = f"[{step_counter[0]}/{step_counter[1]}] {bench_name} ({backend})"
         result = runner(*args, socket_core=backend, step_label=step_label)
         result.backend = backend
         results.append(result)
@@ -143,24 +165,52 @@ def _run_runs(
     step_counter: list[int],
     bench_name: str,
     *args: Any,
+    warmup: int = 0,
+    cooldown: float = 0.0,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> list[Any]:
-    """Run a bench across backends, averaging over N runs."""
+    """Run a bench across backends and aggregate N runs per backend.
+
+    A discarded warmup pass runs first so cache/page-fault/TCP-window effects
+    settle, and each measured run alternates the backend order so a monotonic
+    drift (thermal, background load) cannot systematically favour one backend.
+    Per-backend results are collected by name before aggregation.
+
+    Args:
+        runner: Benchmark callable, invoked with ``socket_core`` and
+            ``step_label`` keywords plus any extra positional ``args``.
+        backends: Backends to benchmark, in canonical order.
+        runs: Number of measured runs per backend.
+        step_counter: Mutable ``[current, total]`` progress counter.
+        bench_name: Benchmark name for the progress label.
+        *args: Extra positional arguments forwarded to ``runner``.
+        warmup: Number of discarded warmup passes.
+        cooldown: Seconds to wait between measured runs.
+        sleep: Sleep implementation (injectable for tests).
+
+    Returns:
+        One result per backend: the raw result when ``runs <= 1``, otherwise
+        the aggregated result.
+    """
+    for _ in range(warmup):
+        _run_for_backends(runner, backends, step_counter, bench_name, *args, warmup=True)
+
     if runs <= 1:
         return _run_for_backends(runner, backends, step_counter, bench_name, *args)
 
-    all_backend_results: list[list] = []
-    for _run_idx in range(runs):
-        all_backend_results.append(
-            _run_for_backends(runner, backends, step_counter, bench_name, *args)
-        )
+    per_backend: dict[str, list[Any]] = {backend: [] for backend in backends}
+    for run_idx in range(runs):
+        if run_idx and cooldown > 0:
+            sleep(cooldown)
+        order = backends if run_idx % 2 == 0 else list(reversed(backends))
+        for backend in order:
+            step_counter[0] += 1
+            step_label = f"[{step_counter[0]}/{step_counter[1]}] {bench_name} ({backend})"
+            result = runner(*args, socket_core=backend, step_label=step_label)
+            result.backend = backend
+            per_backend[backend].append(result)
 
-    num_backends = len(all_backend_results[0])
-    averaged = []
-    for b_idx in range(num_backends):
-        run_specific = [run[b_idx] for run in all_backend_results]
-        avg = run_specific[0].aggregate(run_specific)
-        averaged.append(avg)
-    return averaged
+    return [per_backend[backend][0].aggregate(per_backend[backend]) for backend in backends]
 
 
 def main() -> None:
@@ -221,6 +271,8 @@ def _main_impl() -> None:
     row("Load average", " / ".join(f"{value:.2f}" for value in load) if load else "n/a")
     row("Socket backend", args.socket_core)
     row("Runs (n)", str(args.runs))
+    row("Warmup", f"{args.warmup} discarded pass(es)")
+    row("Cooldown", f"{args.cooldown:g} s between runs")
     row("Aggregation", "median across runs (IQR + 95% CI)" if args.runs > 1 else "single run")
 
     # ── Step counter ────────────────────────────────────────────────────────────
@@ -234,13 +286,28 @@ def _main_impl() -> None:
     if "memory" in run:
         from .benches.memory import run as run_memory
 
-        mem = _run_runs(run_memory, backends, args.runs, step_counter, "memory")
+        mem = _run_runs(
+            run_memory,
+            backends,
+            args.runs,
+            step_counter,
+            "memory",
+            warmup=args.warmup,
+            cooldown=args.cooldown,
+        )
 
     if "latency" in run:
         from .benches.latency import run as run_latency
 
         lat = _run_runs(
-            run_latency, backends, args.runs, step_counter, "latency", args.latency_iterations
+            run_latency,
+            backends,
+            args.runs,
+            step_counter,
+            "latency",
+            args.latency_iterations,
+            warmup=args.warmup,
+            cooldown=args.cooldown,
         )
 
     if "fps" in run:
@@ -257,6 +324,8 @@ def _main_impl() -> None:
             args.fps_tick_rate,
             args.fps_duration,
             PORT_FPS,
+            warmup=args.warmup,
+            cooldown=args.cooldown,
         )
 
     if "burst" in run:
@@ -270,6 +339,8 @@ def _main_impl() -> None:
             "burst",
             args.burst_count,
             args.burst_payload,
+            warmup=args.warmup,
+            cooldown=args.cooldown,
         )
 
     if "stress" in run:
@@ -283,6 +354,8 @@ def _main_impl() -> None:
             "stress",
             args.stress_clients,
             args.stress_msgs,
+            warmup=args.warmup,
+            cooldown=args.cooldown,
         )
 
     # ── Summary + export ──────────────────────────────────────────────────────
