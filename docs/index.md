@@ -82,6 +82,7 @@ def on_echo(client: ClientInfo, response: Response) -> None:
 
 
 server.start()
+server.wait_until_closed()
 ```
 
 No manual framing. No thread management. No boilerplate.
