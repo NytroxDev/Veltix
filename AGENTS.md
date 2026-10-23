@@ -1083,7 +1083,9 @@ server = Server(ServerConfig(port=8080))
 
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
-    server.send(Request(ECHO, response.content, request_id=response.request_id), client)
+    reply = Request(ECHO, response.content)
+    reply.respond(response)
+    server.send(reply, client)
 
 
 server.start()
