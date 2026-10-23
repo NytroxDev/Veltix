@@ -30,7 +30,7 @@ config = LoggerConfig(
     use_colors=True,
     show_timestamp=True,
     show_level=True,
-    file_path=Path("logs/veltix.log"),
+    file_path=Path("veltix.log"),  # parent directory must exist
     file_rotation_size=10 * 1024 * 1024,  # 10 MB
     file_backup_count=5,
 )

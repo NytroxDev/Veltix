@@ -53,6 +53,18 @@ client.remove_tag("guest")  # Remove a tag
 client.clear_tags()  # Remove all tags
 ```
 
+`add_tag()` only creates (it returns `False` if the tag exists), while `set_tag()` creates or
+overwrites and always returns `True`. Use `set_tag()` for mutable state such as a score.
+
+On the server side, `get_clients_by_tag()` returns every `ClientInfo` owning a tag. Pass the second
+argument to match a specific value; omit it to match on presence alone:
+
+```python
+admins = server.get_clients_by_tag("role", "admin")  # role == "admin"
+authenticated = server.get_clients_by_tag("authenticated")  # tag exists, any value
+server.broadcast(Request(ANNOUNCE, text="maintenance in 5 min"), list_of_clients=admins)
+```
+
 ## Socket Backend
 
 Veltix abstracts the socket layer behind a `SocketCore` enum. `ASYNC` (selectors-based single-thread event loop) is the

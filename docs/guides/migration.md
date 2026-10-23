@@ -2,6 +2,59 @@
 
 ---
 
+## v3.0.0 → v3.2.1
+
+**Wire-compatible (`pv` 1.0) : one small API change, plus behavior changes worth knowing.**
+
+### Action required
+
+- **`Sender.broadcast()` keyword renamed** (v3.1.0): `list_of_client=` is now `list_of_clients=`.
+  Positional calls are unaffected.
+- **Replies to `send_and_wait()` must echo the request ID** (v3.0.1): use `reply.respond(response)` or
+  `Request(..., request_id=response.request_id)`. Replying with a fresh auto-allocated ID only
+  correlated by coincidence before, and no longer does: the caller times out. Fire-and-forget echoes
+  (a route with no matching `send_and_wait()`) are unaffected.
+- **Config validation is stricter** (v3.1.0, v3.2.0): `ServerConfig` / `ClientConfig` raise
+  `TypeError` or `ValueError` at construction for wrong types and invalid values (`port="8080"`,
+  `socket_core="ASYNC"`, zero buffer sizes, timeouts, worker counts). These used to fail later with
+  obscure errors.
+- **Callback and route signatures are validated at registration** (v3.2.0): a handler that cannot
+  accept its dispatched arguments raises immediately with the expected signature, instead of failing
+  later inside the thread pool.
+
+### Behavioral changes
+
+- **Request IDs are split by role** (v3.0.1): the client allocates from `[0, 32768)`, the server from
+  `[32768, 65536)`. A push or a broadcast can no longer be mistaken for the answer to a pending
+  request. `broadcast()` now allocates an ID instead of always sending `0`. `ServerConfig.id_window`
+  is still accepted in `1..65535` but clamped to `32768` at startup (with a warning), because the
+  client half is reserved.
+- **Sends never block on a full socket buffer** (v3.0.1): the blocking fallback was removed. On the
+  `ASYNC` backend the unsent tail is queued and flushed by the selector loop (since v3.1.1), so large
+  payloads are still delivered in order; on `THREADING`, `send()` returns `False` with a warning when
+  the peer is not reading. Check the return value if you push high volume.
+- **A server-full rejection no longer kills the reconnect loop** (v3.0.1): `ServerFullError` is
+  reported as a failed attempt and retried instead of escaping the loop.
+- **`max_message_size` is honored by the pure-Python parser** (v3.0.1): a custom limit above the
+  former hard-coded default is no longer ignored on the fallback engine.
+- **Handshake hardening** (v3.0.1, v3.0.2): the ASYNC handshake runs in a worker thread, so a peer
+  that stalls no longer freezes the server; handshake payloads must be JSON objects and are capped
+  at 30 KiB.
+- **`close_all()` cleans up reliably** (v3.0.2): no zombie clients on the threading backend, and
+  `ON_DISCONNECT` fires exactly once per client. A transient `accept()` error no longer stops the
+  threading server, and a failed `connect()` releases its socket immediately.
+- **Logger** (v3.2.0): `enable()` works after the logger was disabled via config, log calls accept
+  stdlib-style arguments (`logger.info("%s", value)`), and `LoggerConfig` validates `level`, `stream`
+  and `file_path` up front.
+- **Same contract, better errors** (v3.2.0): `Request`, `MessageType`, `ClientInfo`, `Sender`, and
+  `Response.text` / `Response.json` now raise messages that name the fix. `ClientInfo` uses
+  `__slots__`, so custom per-client data belongs in tags (`add_tag()` / `set_tag()`).
+
+v3.2.1 split `Server` and `Client` into internal collaborators. The public API is unchanged
+(`server.sender`, `server.clients`, `client.is_connected`, routes and callbacks behave as before).
+
+---
+
 ## v2.0.3 → v3.0.0
 
 **Breaking change : minimum Python version - wire-compatible with v2.0.x.**

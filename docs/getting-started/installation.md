@@ -5,6 +5,11 @@
 - Python **3.11+**
 - No runtime dependencies (pure stdlib, zero third-party packages)
 
+!!! warning "No encryption yet"
+    Veltix does not encrypt traffic: messages travel in plaintext over TCP. Built-in TLS is planned for
+    the end of 2026, possibly earlier. Until then, run Veltix over a trusted network (LAN, localhost)
+    or tunnel it yourself (WireGuard, SSH, stunnel).
+
 ## The Rust engine
 
 Since v3.0.0, the message hot path (parse, compile, buffering) is compiled in Rust and ships as a

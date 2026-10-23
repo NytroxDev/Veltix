@@ -17,7 +17,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.
 
-**Mature & tested** : 790 tests · CI on Python 3.11-3.14 · Rust-powered hot path
+**Mature & tested** : 844 tests · CI on Python 3.11-3.14 · Rust-powered hot path
 
 ---
 
@@ -97,6 +97,7 @@ No manual framing. No thread management. No boilerplate.
 - Rust-powered hot path : framing / parse / compile in native Rust, automatic pure-Python fallback
 - Binary protocol with CRC32 integrity verification
 - Automatic JSON raw-socket handshake with version compatibility
+- Structured event bus : subscribe to lifecycle, message, protocol, error, and reconnect events
 - Thread-safe callback execution : slow handlers never block reception
 
 **API**
@@ -118,7 +119,7 @@ No manual framing. No thread management. No boilerplate.
 **Developer Experience**
 
 - Integrated logger : colorized, file-rotating, thread-safe
-- 790 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)
+- 844 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)
 
 ---
 
@@ -205,9 +206,13 @@ Experiment work lands on dedicated branches and only merges once fully validated
 - [Client Guide](guides/client.md)
 - [Routing](guides/routing.md)
 - [Auto-Reconnect](guides/reconnect.md)
+- [Advanced features](guides/advanced.md)
 - [Migration Guide](guides/migration.md)
+- [Request-ID Correlation](design/request-id-correlation.md)
 - [API Reference](api/server.md)
 - [Changelog](changelog.md)
+- [Performance](https://github.com/NytroxDev/Veltix/blob/main/PERFORMANCE.md)
+- [FAQ](https://github.com/NytroxDev/Veltix/blob/main/FAQ.md)
 - [GitHub](https://github.com/NytroxDev/Veltix)
 - [PyPI](https://pypi.org/project/veltix)
 - [Discord](https://discord.gg/gz8K369a6p)

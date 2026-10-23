@@ -1,5 +1,5 @@
 site_name: Veltix
-site_description: The high-level TCP library Python never had
+site_description: Python TCP, without the boilerplate.
 site_url: https://nytroxdev.github.io/Veltix
 repo_url: https://github.com/NytroxDev/Veltix
 repo_name: NytroxDev/Veltix

@@ -14,11 +14,16 @@ config = ServerConfig(
     handshake_timeout=5.0,  # Handshake timeout in seconds
     max_workers=4,  # Thread pool size for callbacks
     socket_core=SocketCore.ASYNC,  # Socket backend (default: ASYNC)
-    id_window=30000,  # Max pending request IDs before wrap (range: 1..65535)
+    id_window=30000,  # Pending request-ID window per direction (default: 30000)
 )
 
 server = Server(config)
 ```
+
+!!! note
+    `id_window` accepts `1..65535` but is clamped to `32768` at startup: the upper half of the 16-bit
+    ID space is reserved for the client's outgoing requests. See
+    [Request-ID Correlation](../design/request-id-correlation.md).
 
 ## Starting the server
 
@@ -93,9 +98,12 @@ latency = server.ping_client(client, timeout=2.0)
 ## Shutdown
 
 ```python
-server.close_all()
-server.wait_until_closed()  # block until shutdown
+server.start()
+server.wait_until_closed()  # blocks until close_all() is called (Ctrl+C works too)
 ```
+
+`close_all()` stops the server and disconnects every client without blocking; call it from a signal
+handler, a route, or another thread. `wait_until_closed()` is what keeps the main thread alive.
 
 ## Restart
 
