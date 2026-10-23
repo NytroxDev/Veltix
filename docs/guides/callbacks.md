@@ -9,7 +9,7 @@
 | `ON_DISCONNECT` | `callback(client: ClientInfo)`                     | `callback(state: DisconnectState)` |
 
 !!! note
-Client `ON_DISCONNECT` now receives a [`DisconnectState`](reconnect.md) argument as of v1.5.0.
+    Client `ON_DISCONNECT` now receives a [`DisconnectState`](reconnect.md) argument as of v1.5.0.
 
 ## Server callbacks
 
@@ -69,4 +69,4 @@ config = ServerConfig(host="0.0.0.0", port=8080, max_workers=8)
 ```
 
 !!! warning
-`on_connect` and `on_disconnect` run directly in the recv thread - keep them fast.
+    `on_connect` and `on_disconnect` run directly in the recv thread - keep them fast.

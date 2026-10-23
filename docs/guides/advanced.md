@@ -102,8 +102,8 @@ SCORE_UPDATE = MessageType("score_update", description="Custom game message")
 ```
 
 !!! tip
-Auto-allocation is ideal for quick prototyping. Use explicit codes when you need stable, predictable wire values across
-multiple services.
+    Auto-allocation is ideal for quick prototyping. Use explicit codes when you need stable, predictable wire values across
+    multiple services.
 
 ## Configuring the Thread Pool
 

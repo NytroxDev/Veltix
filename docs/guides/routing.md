@@ -80,4 +80,4 @@ server.request_handler.unregister_route(CHAT)  # returns False if not registered
 Route callbacks run in the same thread pool as `on_recv` - a slow route handler never blocks the recv loop.
 
 !!! warning
-Registering the same type twice returns `False` and keeps the original. Unregister first if you want to replace a route.
+    Registering the same type twice returns `False` and keeps the original. Unregister first if you want to replace a route.

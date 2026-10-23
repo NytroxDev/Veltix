@@ -66,10 +66,10 @@ server.on_disconnect(lambda client: print(f"Disconnected: {client.ip}:{client.po
 ```
 
 !!! note
-`on_connect` fires only after the handshake is complete. `client.handshake_done` is always `True` when it fires.
+    `on_connect` fires only after the handshake is complete. `client.handshake_done` is always `True` when it fires.
 
 !!! tip
-Use `@server.route()` for per-type handlers. `on_recv` is the fallback for unrouted messages.
+    Use `@server.route()` for per-type handlers. `on_recv` is the fallback for unrouted messages.
 
 ## Sending messages
 

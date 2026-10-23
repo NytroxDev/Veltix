@@ -297,8 +297,8 @@ entry.id  # client ID
 ```
 
 !!! note
-`ClientEntry` was replaced by `ClientInfo` in v1.6.10. See the **v1.6.9→v1.6.10** section above for the current access
-pattern.
+    `ClientEntry` was replaced by `ClientInfo` in v1.6.10. See the **v1.6.9→v1.6.10** section above for the current access
+    pattern.
 
 ## v1.6.0 → v1.6.2
 

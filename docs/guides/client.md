@@ -27,8 +27,8 @@ success = client.connect()
 ```
 
 !!! note
-`connect()` blocks until the handshake is complete. It is always safe to send messages immediately after it returns
-`True`.
+    `connect()` blocks until the handshake is complete. It is always safe to send messages immediately after it returns
+    `True`.
 
 ## Routing
 
@@ -66,7 +66,7 @@ client.on_disconnect(lambda state: print(f"Disconnected - permanent={state.perma
 ```
 
 !!! tip
-Use `@client.route()` for per-type handlers. `on_recv` is the fallback for unrouted messages.
+    Use `@client.route()` for per-type handlers. `on_recv` is the fallback for unrouted messages.
 
 ## Sending messages
 

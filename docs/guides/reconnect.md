@@ -98,4 +98,4 @@ client.retry(max_=10)
 ```
 
 !!! warning
-Callbacks and routes are preserved across reconnections - no need to re-register them.
+    Callbacks and routes are preserved across reconnections - no need to re-register them.
