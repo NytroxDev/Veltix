@@ -346,6 +346,8 @@ Everything else? Veltix has you covered.
 
 What is being worked on right now:
 
+- **Encryption (TLS)**: native transport encryption, planned for the end of 2026, possibly earlier. Until then Veltix
+  runs in plaintext (see the warning at the top).
 - **Handshake hardening**: more robust handshake handling, from per-step timeouts to cleaner version negotiation and
   failure recovery.
 - **Performance optimization**: now that framing/parse/compile run in Rust, pushing the remaining hot-path overhead
