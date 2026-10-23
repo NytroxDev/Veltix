@@ -49,12 +49,14 @@ dev = [
     "pytest-xdist>=3.0",
     "ruff>=0.15.21",
     "mypy>=2.2.0",
+    "psutil>=7.2"
 ]
 test = [
     "pytest>=8.0",
     "pytest-cov>=4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-xdist>=3.0",
+    "psutil>=7.2"
 ]
 benchmark = [
     "psutil>=5.9.0",
