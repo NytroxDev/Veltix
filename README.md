@@ -10,7 +10,7 @@
 [![Downloads](https://static.pepy.tech/personalized-badge/veltix?period=total&units=NONE&left_color=BLACK&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/veltix)
 [![Security Policy](https://img.shields.io/badge/security-policy-blue)](SECURITY.md)
 [![AI Guide](https://img.shields.io/badge/for_AI-AGENTS.md-purple)](AGENTS.md)
-[![Website](https://img.shields.io/badge/site-veltix.dev- green)](https://veltix.dev)
+[![Website](https://img.shields.io/website-up-down-with-count/tag/veltix.dev?label=website&color=green)](https://veltix.dev)
 
 [v2.0.0 release notes](v2.0.0.md) · [v3.0.0 release notes](v3.0.0.md)
 
@@ -397,3 +397,4 @@ MIT License : see [LICENSE](LICENSE) for details.
 - PyPI : [pypi.org/project/veltix](https://pypi.org/project/veltix)
 - Documentation : https://nytroxdev.github.io/Veltix/
 - Discord : [discord.gg/gz8K369a6p](https://discord.gg/gz8K369a6p)
+- Website : [veltix.dev](https://veltix.dev)
