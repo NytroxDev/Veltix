@@ -1,3 +1,8 @@
+!!! warning "Veltix does not encrypt anything"
+    Messages travel in plaintext over TCP: anyone on the network path can read or tamper with them.
+    Built-in encryption (TLS) is planned for the end of 2026, possibly earlier. Until then, run Veltix
+    over a trusted network (LAN, localhost) or tunnel it yourself (WireGuard, SSH, stunnel).
+
 # Veltix
 
 > Python TCP, without the boilerplate.
@@ -12,7 +17,7 @@ Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.
 
-**Mature & tested** : 790 tests · CI on Python 3.11-3.14 · v3.0.0 Rust-powered hot path
+**Mature & tested** : 790 tests · CI on Python 3.11-3.14 · Rust-powered hot path
 
 ---
 
@@ -140,6 +145,20 @@ Full details : [Performance](https://github.com/NytroxDev/Veltix/blob/main/PERFO
 
 ---
 
+## When NOT to use Veltix
+
+Veltix is great for TCP, but not every problem is a TCP problem.
+
+- **HTTP/REST APIs** : use Flask, FastAPI, or Django REST Framework
+- **Browser clients** : Veltix speaks raw TCP, not WebSocket; use `websockets` or Socket.IO
+- **Async-first codebases** : Veltix is sync by design; use `asyncio` directly if your whole project is async
+- **Ultra high throughput (>100k msg/s per connection)** : consider a compiled language for the hot path
+- **Single request-response** : if you just need to fetch something once, `requests` or `urllib` is simpler
+
+Everything else? Veltix has you covered.
+
+---
+
 ## Comparison
 
 | Feature                | Veltix | `socket` | `asyncio` | Twisted |
@@ -161,6 +180,19 @@ Full details : [Performance](https://github.com/NytroxDev/Veltix/blob/main/PERFO
 | Content decoding       |   ✓    |    ✗     |     ✗     |    ✗    |
 
 > ✓ Built-in &nbsp;&nbsp; ~ Possible but requires manual setup &nbsp;&nbsp; ✗ Not provided (you implement it yourself)
+
+---
+
+## In Development
+
+- **Encryption (TLS)** : native transport encryption, planned for the end of 2026, possibly earlier.
+  Until then, Veltix runs in plaintext; see the warning at the top of this page.
+- **Handshake hardening** : more robust handshake handling, from per-step timeouts to cleaner version
+  negotiation and failure recovery.
+- **Performance optimization** : the remaining hot-path overhead, now that framing/parse/compile run in
+  Rust.
+
+Experiment work lands on dedicated branches and only merges once fully validated.
 
 ---
 
