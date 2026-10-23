@@ -10,7 +10,7 @@
 [![Downloads](https://static.pepy.tech/personalized-badge/veltix?period=total&units=NONE&left_color=BLACK&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/veltix)
 [![Security Policy](https://img.shields.io/badge/security-policy-blue)](SECURITY.md)
 [![AI Guide](https://img.shields.io/badge/for_AI-AGENTS.md-purple)](AGENTS.md)
-[![Website](https://img.shields.io/website-up-down-with-count/tag/veltix.dev?label=website&color=green)](https://veltix.dev)
+[![Website](https://img.shields.io/badge/site-veltix.dev-green)](https://veltix.dev)
 
 [v2.0.0 release notes](v2.0.0.md) · [v3.0.0 release notes](v3.0.0.md)
 
@@ -231,7 +231,7 @@ targets = server.get_clients_by_tag("channel", "general")
 # Rust engine switch (captured at each Server/Client initialization:
 # construction, server.restart(), client reconnection)
 disable_rust()  # force the pure-Python engine
-enable_rust()   # re-enable the compiled Rust engine (when installed)
+enable_rust()  # re-enable the compiled Rust engine (when installed)
 ```
 
 ---
@@ -287,14 +287,14 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 > On v3.0.0+ the message hot path runs in Rust - see [Rust-powered hot path](#rust-powered-hot-path) for the
 > Rust engine vs pure-Python fallback numbers.
 
-| Metric                             | Threading       | Async            |
-|------------------------------------|-----------------|------------------|
+| Metric                             | Threading       | Async                    |
+|------------------------------------|-----------------|--------------------------|
 | Concurrent stress (100 clients)    | 52,596 msg/s    | **110,216 msg/s (2.1x)** |
-| Burst throughput                   | 65,907 / 55,936 | 56,675 / 44,146  |
-| Idle server memory                 | ≈0 (noise)      | ≈0 (noise floor) |
-| Per client memory (avg)            | 91 KB           | 57 KB (noisy)    |
-| Average latency                    | 0.041 ms        | 0.056 ms         |
-| FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,490 msg/s      |
+| Burst throughput                   | 65,907 / 55,936 | 56,675 / 44,146          |
+| Idle server memory                 | ≈0 (noise)      | ≈0 (noise floor)         |
+| Per client memory (avg)            | 91 KB           | 57 KB (noisy)            |
+| Average latency                    | 0.041 ms        | 0.056 ms                 |
+| FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,490 msg/s              |
 
 Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
 
