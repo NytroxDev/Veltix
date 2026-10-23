@@ -15,7 +15,7 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
     reply = Request(ECHO, response.content)
-    reply.respond(response)
+    reply.respond(response)  # echo the request_id so send_and_wait() can correlate
     server.send(reply, client)
 
 

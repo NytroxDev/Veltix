@@ -91,7 +91,7 @@ while True:
     threading.Thread(target=handle_client, args=(conn, addr)).start()
 ```
 
-**Same thing with Veltix (9 lines):**
+**Same thing with Veltix (7 lines):**
 
 ```python
 from veltix import Server, ServerConfig, ClientInfo, Response, MessageType, Request
@@ -102,9 +102,7 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 
 @server.route(ECHO)
 def on_echo(client: ClientInfo, response: Response) -> None:
-    reply = Request(ECHO, response.content)
-    reply.respond(response)
-    server.send(reply, client)
+    server.send(Request(ECHO, response.content), client)
 
 
 server.start()
