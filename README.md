@@ -106,6 +106,7 @@ def on_echo(client: ClientInfo, response: Response) -> None:
 
 
 server.start()
+server.wait_until_closed()
 ```
 
 No manual framing. No thread management. No boilerplate.
@@ -165,9 +166,7 @@ def on_message(client: ClientInfo, response: Response) -> None:
 
 
 server.start()
-
-input("Press Enter to stop...")
-server.close_all()
+server.wait_until_closed()
 ```
 
 **Client:**
@@ -188,8 +187,7 @@ def on_message(response: Response) -> None:
 client.connect()
 
 client.send(Request(CHAT, text="Hello Server!"))
-input("Press Enter to disconnect...")
-client.disconnect()
+client.wait_until_closed()
 ```
 
 ```bash
