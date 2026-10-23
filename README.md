@@ -1,3 +1,8 @@
+> [!WARNING]
+> **Veltix does not encrypt anything.** Messages travel in plaintext over TCP: anyone on the network path can read
+> or tamper with them. Built-in encryption (TLS) is planned for the end of 2026, possibly earlier. Until then, run
+> Veltix over a trusted network (LAN, localhost) or tunnel it yourself (WireGuard, SSH, stunnel).
+
 # Veltix
 
 > Python TCP, without the boilerplate.
@@ -34,7 +39,6 @@ reconnection so you can focus on your application logic.
 - [When NOT to use Veltix](#when-not-to-use-veltix)
 - [Comparison](#comparison)
 - [In Development](#in-development)
-- [Built with Veltix](#built-with-veltix)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -335,18 +339,6 @@ Everything else? Veltix has you covered.
 | Content decoding       |   ✓   |    ✗    |    ✗     |   ✗    |
 
 > ✓ Built-in &nbsp;&nbsp; ~ Possible but requires manual setup &nbsp;&nbsp; ✗ Not provided (you implement it yourself)
-
----
-
-## Built with Veltix
-
-Projects using Veltix in production:
-
-- A new project is under construction. It will be based on Veltix to replace the abandoned Nexo (LAN file transfer
-  tool).
-
-> Built something with Veltix ? [Open a PR](https://github.com/NytroxDev/Veltix/pulls)
-> or [start a discussion](https://github.com/NytroxDev/Veltix/discussions) to add your project.
 
 ---
 
