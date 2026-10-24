@@ -6,21 +6,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
+  contents: write
 
 jobs:
-  # ── Build the MkDocs site (strict) ─────────────────────────────────────────
-  build:
-    name: Build docs
+  deploy:
+    name: Deploy docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -30,26 +25,10 @@ jobs:
       - name: Install documentation tools
         run: pip install mkdocs-material "mkdocstrings[python]"
 
-      - name: Build documentation
-        run: mkdocs build --strict
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: site
-
-  # ── Deploy to GitHub Pages ─────────────────────────────────────────────────
-  deploy:
-    name: Deploy docs
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Build and deploy
+        run: mkdocs gh-deploy --force --strict
