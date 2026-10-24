@@ -19,7 +19,7 @@
 
 [v2.0.0 release notes](releases_notes/v2.0.0.md) · [v3.0.0 release notes](releases_notes/v3.0.0.md)
 
-Sync, thread-friendly, zero dependencies : TCP done right. Veltix handles framing, threading, handshake, routing, and
+Sync, thread-friendly, zero dependencies: TCP done right. Veltix handles framing, threading, handshake, routing, and
 reconnection so you can focus on your application logic.
 
 **Mature & tested** - 844 tests · CI on Python 3.11-3.14 · Rust-powered hot path
@@ -51,7 +51,7 @@ I wrote Veltix because I got tired of rewriting the same networking boilerplate 
 to each other.
 
 Raw sockets are powerful, but they leave framing, request routing, handshakes, reconnection, and thread management
-entirely up to you. asyncio solves part of the problem, but adopting it often means committing your whole application to
+entirely up to you. Asyncio solves part of the problem, but adopting it often means committing your whole application to
 an async architecture. Twisted is incredibly capable, but it comes with its own programming model and can feel more like
 learning a framework than writing plain Python.
 
@@ -120,13 +120,13 @@ No manual framing. No thread management. No boilerplate.
 - **Auto-reconnect**: configurable retry with disconnect state callbacks
 - **Message integrity**: CRC32 verification on every message
 - **Request/Response**: `send_and_wait()` with timeout and correlation
-- **Convenience send**: `server.send()` / `client.send()` : no need to touch `Sender` directly
-- **Content decoding**: `response.text` and `response.json` : lazy, cached
+- **Convenience send**: `server.send()` / `client.send()`: no need to touch `Sender` directly
+- **Content decoding**: `response.text` and `response.json`: lazy, cached
 - **Text & JSON payloads**: `Request(MY_TYPE, text="hello")` / `Request(MY_TYPE, json={"x": 1})`
 - **Thread-safe callbacks**: slow handlers never block reception
 - **Client tagging**: attach metadata, broadcast to groups
 - **Integrated logger**: colorized, rotating, thread-safe
-- **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra) : subscribe to lifecycle, message,
+- **Structured event bus**: powered by [Avyra](https://github.com/NytroxDev/Avyra): subscribe to lifecycle, message,
   protocol, and error events
 - **Rust-powered engine**: framing / parse / compile in native Rust - with automatic pure-Python fallback
 
@@ -285,7 +285,7 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 
 ## Performance
 
-> Benchmarked on Python 3.14.8 : 12-core CPU, 30.5 GB RAM, Linux (loopback), 5-run averages.
+> Benchmarked on Python 3.14.8: 12-core CPU, 30.5 GB RAM, Linux (loopback), 5-run averages.
 > On v3.0.0+ the message hot path runs in Rust - see [Rust-powered hot path](#rust-powered-hot-path) for the
 > Rust engine vs pure-Python fallback numbers.
 
@@ -298,7 +298,7 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 | Average latency                    | 0.041 ms        | 0.056 ms                 |
 | FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,490 msg/s              |
 
-Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](docs/performance.md)
+Full benchmark details, methodology, and how to run them yourself: [PERFORMANCE.md](docs/performance.md)
 
 ---
 
@@ -371,22 +371,22 @@ What is being worked on right now:
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
 
-- Bug reports : [Open an issue](https://github.com/NytroxDev/Veltix/issues)
-- Discussions : [Join the Discord](https://discord.gg/gz8K369a6p)
-- Pull requests : Follow the contribution guide
+- Bug reports: [Open an issue](https://github.com/NytroxDev/Veltix/issues)
+- Discussions: [Join the Discord](https://discord.gg/gz8K369a6p)
+- Pull requests: Follow the contribution guide
 
 ---
 
 ## License
 
-MIT License : see [LICENSE](LICENSE) for details.
+MIT License: see [LICENSE](LICENSE) for details.
 
 ---
 
 ## Links
 
-- GitHub : [NytroxDev/Veltix](https://github.com/NytroxDev/Veltix)
-- PyPI : [pypi.org/project/veltix](https://pypi.org/project/veltix)
-- Documentation : https://nytroxdev.github.io/Veltix/
-- Discord : [discord.gg/gz8K369a6p](https://discord.gg/gz8K369a6p)
-- Website : [veltix.dev](https://veltix.dev)
+- GitHub: [NytroxDev/Veltix](https://github.com/NytroxDev/Veltix)
+- PyPI: [pypi.org/project/veltix](https://pypi.org/project/veltix)
+- Documentation: https://nytroxdev.github.io/Veltix/
+- Discord: [discord.gg/gz8K369a6p](https://discord.gg/gz8K369a6p)
+- Website: [veltix.dev](https://veltix.dev)
