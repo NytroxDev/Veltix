@@ -322,6 +322,7 @@ Everything else? Veltix has you covered.
 | Explicit API           |   ✓   |    ✗    |     ✗     |     ✗    |
 | Sync API               |   ✓   |    ✓    |     ✗     |     ✗    |
 | No async required      |   ✓   |    ✓    |     ✗     |     ✗    |
+| Zero dependencies      |   ✓   |    ✓    |     ✓     |     ✗    |
 | Message framing        |   ✓   |    ✗    |    ✗     |    ~    |
 | Message integrity      |   ✓   |    ✗    |    ✗     |   ✗    |
 | Automatic handshake    |   ✓   |    ✗    |    ✗     |   ✗    |
