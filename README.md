@@ -14,7 +14,7 @@
 [![License](https://img.shields.io/github/license/NytroxDev/Veltix?cacheSeconds=300)](https://github.com/NytroxDev/Veltix/blob/main/LICENSE)
 [![Downloads](https://static.pepy.tech/personalized-badge/veltix?period=total&units=NONE&left_color=BLACK&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/veltix)
 [![Security Policy](https://img.shields.io/badge/security-policy-blue)](SECURITY.md)
-[![AI Guide](https://img.shields.io/badge/for_AI-AGENTS.md-purple)](AGENTS.md)
+[![AI Guide](https://img.shields.io/badge/for_AI-AGENTS.md-purple)](AI/AGENTS.md)
 [![Website](https://img.shields.io/badge/site-veltix.dev-green)](https://veltix.dev)
 
 [v2.0.0 release notes](releases_notes/v2.0.0.md) · [v3.0.0 release notes](releases_notes/v3.0.0.md)
