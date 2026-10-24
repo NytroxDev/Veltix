@@ -86,7 +86,7 @@ available; otherwise Veltix falls back to the pure-Python implementation transpa
 at runtime (the switch is captured at each `Server`/`Client` initialization; `Server.restart()`
 re-captures it). Check `veltix.network._rust.rust_enabled()` for the current decision.
 It cuts P99 latency by **-26%** and raises 100-client stress throughput by **+20%**, with **+12%**
-burst send throughput and comparable FPS tick stability - see [PERFORMANCE.md](PERFORMANCE.md).
+burst send throughput and comparable FPS tick stability - see [PERFORMANCE.md](performance.md).
 
 ## How do I debug connection issues with Veltix?
 
@@ -205,4 +205,4 @@ The built-in logger and Event Bus also help you easily monitor network activity 
 
 ## How do I contribute to Veltix?
 
-The full guide is available in [CONTRIBUTING.md](CONTRIBUTING.md).
+The full guide is available in [CONTRIBUTING.md](https://github.com/NytroxDev/Veltix/blob/main/CONTRIBUTING.md).

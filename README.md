@@ -298,7 +298,7 @@ server = Server(ServerConfig(socket_core=SocketCore.THREADING))  # or .ASYNC
 | Average latency                    | 0.041 ms        | 0.056 ms                 |
 | FPS simulation (64 players @ 64Hz) | 4,490 msg/s     | 4,490 msg/s              |
 
-Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](PERFORMANCE.md)
+Full benchmark details, methodology, and how to run them yourself : [PERFORMANCE.md](docs/performance.md)
 
 ---
 
@@ -349,7 +349,7 @@ What is being worked on right now:
 - **Handshake hardening**: more robust handshake handling, from per-step timeouts to cleaner version negotiation and
   failure recovery.
 - **Performance optimization**: now that framing/parse/compile run in Rust, pushing the remaining hot-path overhead
-  further. See [PERFORMANCE.md](PERFORMANCE.md).
+  further. See [PERFORMANCE.md](docs/performance.md).
 
 > Experimental work lands on dedicated branches and only merges once fully validated.
 
@@ -359,7 +359,7 @@ What is being worked on right now:
 
 - [Full documentation](docs/index.md)
 - [Request-ID Correlation design](docs/design/request-id-correlation.md)
-- [FAQ](FAQ.md)
+- [FAQ](docs/faq.md)
 - [Advanced features](docs/guides/advanced.md)
 - [Migration guide](docs/guides/migration.md)
 - [Changelog](CHANGELOG.md)

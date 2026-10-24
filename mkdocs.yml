@@ -75,6 +75,8 @@ nav:
       - Logger: api/logger.md
       - Utilities: api/utils.md
       - Exceptions: api/exceptions.md
+  - Performance: performance.md
+  - FAQ: faq.md
   - Changelog: changelog.md
 
 markdown_extensions:

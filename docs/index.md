@@ -143,7 +143,7 @@ Socket backends, pure-Python path (Python 3.14.8, 12-core CPU, 30.5 GB RAM, loop
 | Average latency                 | 0.041 ms        | 0.056 ms        |
 | Idle server memory              | ≈0 (noise)      | ≈0 (noise floor) |
 
-Full details : [Performance](https://github.com/NytroxDev/Veltix/blob/main/PERFORMANCE.md)
+Full details : [Performance](performance.md)
 
 ---
 
@@ -211,8 +211,8 @@ Experiment work lands on dedicated branches and only merges once fully validated
 - [Request-ID Correlation](design/request-id-correlation.md)
 - [API Reference](api/server.md)
 - [Changelog](changelog.md)
-- [Performance](https://github.com/NytroxDev/Veltix/blob/main/PERFORMANCE.md)
-- [FAQ](https://github.com/NytroxDev/Veltix/blob/main/FAQ.md)
+- [Performance](performance.md)
+- [FAQ](faq.md)
 - [GitHub](https://github.com/NytroxDev/Veltix)
 - [PyPI](https://pypi.org/project/veltix)
 - [Discord](https://discord.gg/gz8K369a6p)
