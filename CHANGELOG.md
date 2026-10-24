@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-10-24
+
 ### Changed
 
 - **Benchmark aggregation is statistically honest.** Runs are no longer
