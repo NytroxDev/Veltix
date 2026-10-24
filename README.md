@@ -358,7 +358,7 @@ What is being worked on right now:
 
 ## Documentation
 
-- [Full documentation](docs/index.md)
+- [Full documentation](https://nytroxdev.github.io/Veltix/)
 - [Request-ID Correlation design](docs/design/request-id-correlation.md)
 - [FAQ](docs/faq.md)
 - [Advanced features](docs/guides/advanced.md)
