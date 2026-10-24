@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="The high-level TCP library Python never had">
+        <meta name="description" content="Python TCP, without the boilerplate.">
       
       
       
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -319,6 +319,44 @@
         </a>
       </li>
     
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../performance/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Performance
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
   
 
       
@@ -765,6 +803,45 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-bus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event bus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Event bus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bus-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bus logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1435,6 +1512,60 @@
   
   
     <li class="md-nav__item">
+      <a href="../../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../changelog/" class="md-nav__link">
         
   
@@ -1515,6 +1646,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#event-bus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event bus
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Event bus">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bus-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bus logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#routing-vs-on_recv" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1586,8 +1756,8 @@
 </table>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-</div>
 <p>Client <code>ON_DISCONNECT</code> now receives a <a href="../reconnect/"><code>DisconnectState</code></a> argument as of v1.5.0.</p>
+</div>
 <h2 id="server-callbacks">Server callbacks<a class="headerlink" href="#server-callbacks" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">Server</span><span class="p">,</span> <span class="n">ServerConfig</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
@@ -1607,18 +1777,272 @@
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">client</span><span class="o">.</span><span class="n">on_recv</span><span class="p">(</span><span class="k">lambda</span> <span class="n">response</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">client</span><span class="o">.</span><span class="n">on_disconnect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Disconnected - permanent=</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">permanent</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
 </code></pre></div>
+<h2 id="event-bus">Event bus<a class="headerlink" href="#event-bus" title="Permanent link">&para;</a></h2>
+<p>Beyond the callbacks above, every <code>Server</code> and every <code>Client</code> owns a structured event bus
+(<code>server.bus</code> / <code>client.bus</code>), powered by <a href="https://github.com/NytroxDev/Avyra">Avyra</a>. It carries the
+lifecycle events you already know plus message, protocol, error and reconnect events that have no
+callback equivalent.</p>
+<p>Subscribers always receive two arguments: <code>event</code> and <code>payload</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClientInfo</span><span class="p">,</span> <span class="n">Server</span><span class="p">,</span> <span class="n">ServerConfig</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix.internal.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">ServerEvent</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"0.0.0.0"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">))</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_join</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">ServerEvent</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">ClientInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">client</span><span class="o">.</span><span class="n">addr</span><span class="si">}</span><span class="s2"> joined"</span><span class="p">)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">server</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">ServerEvent</span><span class="o">.</span><span class="n">ON_CONNECT</span><span class="p">,</span> <span class="n">on_join</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</code></pre></div>
+<p>Passing an enum class subscribes one function to every member of that family:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">veltix.internal.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReconnectEvent</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">client</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">ReconnectEvent</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">event</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">payload</span><span class="p">))</span>
+</code></pre></div>
+<p><code>subscribe()</code> raises <code>ValueError</code> when the same function is already subscribed to that event;
+<code>unsubscribe()</code> removes it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">server</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="n">ServerEvent</span><span class="o">.</span><span class="n">ON_CONNECT</span><span class="p">,</span> <span class="n">on_join</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Subscribers run <strong>synchronously in the thread that emits the event</strong> (the accept or selector thread for
+lifecycle and protocol events), not in the <code>CallbackExecutor</code> pool. Keep them short and never block: do the
+heavy work in a route, in <code>on_recv</code>, or in your own thread.</p>
+</div>
+<h3 id="bus-logging">Bus logging<a class="headerlink" href="#bus-logging" title="Permanent link">&para;</a></h3>
+<p><code>VeltixBus</code> exposes the logging helpers used internally: <code>bus.trace()</code>, <code>debug()</code>, <code>info()</code>, <code>success()</code>,
+<code>warning()</code>, <code>error()</code> and <code>critical()</code>, with stdlib <code>logging</code>-style <code>%s</code> formatting. The singleton
+<code>Logger</code> is subscribed to every <code>LogEvent</code>, so a bus call produces normal log output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">server</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"client </span><span class="si">%s</span><span class="s2"> sent </span><span class="si">%d</span><span class="s2"> messages"</span><span class="p">,</span> <span class="n">client</span><span class="o">.</span><span class="n">addr</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="event-reference">Event reference<a class="headerlink" href="#event-reference" title="Permanent link">&para;</a></h3>
+<p><strong>Server lifecycle</strong></p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ServerEvent.ON_CONNECT</code></td>
+<td><code>ClientInfo</code> (handshake already complete)</td>
+</tr>
+<tr>
+<td><code>ServerEvent.ON_DISCONNECT</code></td>
+<td><code>ClientInfo</code></td>
+</tr>
+<tr>
+<td><code>ServerEvent.STARTED</code></td>
+<td><code>{"host": str, "port": int}</code></td>
+</tr>
+<tr>
+<td><code>ServerEvent.STOPPED</code></td>
+<td><code>{"host": str, "port": int}</code></td>
+</tr>
+<tr>
+<td><code>ServerEvent.CLIENT_REJECTED</code></td>
+<td><code>{"addr", "current", "max_client", "reason"}</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Client lifecycle</strong></p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ClientEvent.ON_CONNECT</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>ClientEvent.ON_DISCONNECT</code></td>
+<td><code>DisconnectState</code></td>
+</tr>
+<tr>
+<td><code>ClientEvent.SOCKET_DISCONNECTED</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>ClientEvent.CONNECTING</code></td>
+<td><code>{"host": str, "port": int}</code></td>
+</tr>
+<tr>
+<td><code>ClientEvent.DISCONNECTING</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>ClientEvent.TAG_ADDED</code></td>
+<td><code>{"client": (host, port), "tag": str, "value": Any}</code></td>
+</tr>
+<tr>
+<td><code>ClientEvent.TAG_UPDATED</code></td>
+<td><code>{"client": (host, port), "tag": str, "value": Any}</code></td>
+</tr>
+<tr>
+<td><code>ClientEvent.TAG_REMOVED</code></td>
+<td><code>{"client": (host, port), "tag": str}</code></td>
+</tr>
+<tr>
+<td><code>ClientEvent.TAG_CLEARED</code></td>
+<td><code>{"client": (host, port)}</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>TAG_UPDATED</code> is emitted by <code>set_tag()</code> (create or overwrite), <code>TAG_ADDED</code> by <code>add_tag()</code> (create only).</p>
+<p><strong>Message flow</strong></p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MessageEvent.RECEIVED</code></td>
+<td><code>{"type", "length", "client"?}</code></td>
+</tr>
+<tr>
+<td><code>MessageEvent.SENT</code></td>
+<td><code>{"type", "length", "mode", "broadcast"?}</code></td>
+</tr>
+<tr>
+<td><code>MessageEvent.ROUTED</code></td>
+<td><code>{"type", "route", "source"}</code> (<code>route</code> is <code>registered</code> or <code>on_recv</code>)</td>
+</tr>
+<tr>
+<td><code>MessageEvent.UNHANDLED</code></td>
+<td><code>{"type", "length", "source"}</code></td>
+</tr>
+<tr>
+<td><code>MessageEvent.PENDING_REGISTERED</code></td>
+<td><code>{"request_id"}</code></td>
+</tr>
+<tr>
+<td><code>MessageEvent.PENDING_SATISFIED</code></td>
+<td><code>{"request_id"}</code></td>
+</tr>
+<tr>
+<td><code>MessageEvent.PENDING_TIMEOUT</code></td>
+<td><code>{"request_id", "timeout"}</code></td>
+</tr>
+<tr>
+<td><code>MessageEvent.ROUTE_REGISTERED</code></td>
+<td><code>{"type", "name"}</code></td>
+</tr>
+<tr>
+<td><code>MessageEvent.ROUTE_UNREGISTERED</code></td>
+<td><code>{"type", "name"}</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Protocol and errors</strong></p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ProtocolEvent.PING</code></td>
+<td><code>{"request_id", "from"}</code></td>
+</tr>
+<tr>
+<td><code>ProtocolEvent.PONG</code></td>
+<td><code>{"request_id"}</code></td>
+</tr>
+<tr>
+<td><code>ProtocolEvent.HANDSHAKE_START</code></td>
+<td><code>{"role": "server" or "client"}</code></td>
+</tr>
+<tr>
+<td><code>ProtocolEvent.HANDSHAKE_DONE</code></td>
+<td><code>{"role", "peer_version"}</code></td>
+</tr>
+<tr>
+<td><code>ProtocolEvent.HANDSHAKE_FAIL</code></td>
+<td><code>{"role", "reason"}</code></td>
+</tr>
+<tr>
+<td><code>ErrorEvent.NETWORK</code></td>
+<td><code>{"error", "host", "port"}</code></td>
+</tr>
+<tr>
+<td><code>ErrorEvent.HANDLER</code></td>
+<td><code>{"error", "source"}</code></td>
+</tr>
+<tr>
+<td><code>ErrorEvent.CALLBACK</code></td>
+<td><code>{"error", "func"}</code></td>
+</tr>
+<tr>
+<td><code>ErrorEvent.SEND</code></td>
+<td><code>{"error"}</code> (+ <code>"mode"</code> on sender failures)</td>
+</tr>
+<tr>
+<td><code>ErrorEvent.ACCEPT</code></td>
+<td><code>{"error"}</code></td>
+</tr>
+<tr>
+<td><code>ErrorEvent.CONNECTION_REFUSED</code></td>
+<td><code>{"addr", "current", "max_client"}</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reconnect</strong></p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ReconnectEvent.ATTEMPT</code></td>
+<td><code>{"attempt", "max_retry"}</code></td>
+</tr>
+<tr>
+<td><code>ReconnectEvent.FAIL</code></td>
+<td><code>{"attempt"}</code></td>
+</tr>
+<tr>
+<td><code>ReconnectEvent.SUCCESS</code></td>
+<td><code>{"attempt"}</code></td>
+</tr>
+<tr>
+<td><code>ReconnectEvent.CANCELLED</code></td>
+<td><code>{"attempt"}</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Logging</strong></p>
+<p><code>LogEvent.TRACE</code>, <code>DEBUG</code>, <code>INFO</code>, <code>SUCCESS</code>, <code>WARNING</code>, <code>ERROR</code> and <code>CRITICAL</code> carry the formatted
+message as a <code>str</code>. They are already wired to <code>Logger</code>; subscribe only if you need to forward them
+somewhere else.</p>
+<p>The full enum definitions live in <code>veltix.internal.events</code>.</p>
 <h2 id="routing-vs-on_recv">Routing vs on_recv<a class="headerlink" href="#routing-vs-on_recv" title="Permanent link">&para;</a></h2>
 <p>For per-type handling, prefer <code>@server.route()</code> / <code>@client.route()</code> over a global <code>on_recv</code>. Routes take priority and
 run in the thread pool just like <code>on_recv</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="s2">"chat"</span><span class="p">)</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="o">...</span>  <span class="c1"># only called for CHAT messages</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">server</span><span class="o">.</span><span class="n">on_recv</span><span class="p">(</span><span class="n">fallback</span><span class="p">)</span>  <span class="c1"># called for everything else</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">CHAT</span> <span class="o">=</span> <span class="n">MessageType</span><span class="p">(</span><span class="s2">"chat"</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">CHAT</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_chat</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="o">...</span>  <span class="c1"># only called for CHAT messages</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="n">server</span><span class="o">.</span><span class="n">on_recv</span><span class="p">(</span><span class="n">fallback</span><span class="p">)</span>  <span class="c1"># called for everything else</span>
 </code></pre></div>
 <p>See the <a href="../routing/">Routing guide</a> for full details.</p>
 <h2 id="thread-pool">Thread pool<a class="headerlink" href="#thread-pool" title="Permanent link">&para;</a></h2>
@@ -1628,13 +2052,13 @@ run in the thread pool just like <code>on_recv</code>.</p>
 <li>Exceptions inside callbacks are caught and logged - they never crash the recv loop</li>
 <li>Workers are configurable via <code>max_workers</code> in <code>ServerConfig</code> / <code>ClientConfig</code></li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Increase workers for slow callbacks</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"0.0.0.0"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Increase workers for slow callbacks</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ServerConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"0.0.0.0"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-</div>
 <p><code>on_connect</code> and <code>on_disconnect</code> run directly in the recv thread - keep them fast.</p>
+</div>
 
 
 
@@ -1728,10 +2152,10 @@ run in the thread pool just like <code>on_recv</code>.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

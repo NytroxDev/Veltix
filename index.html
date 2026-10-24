@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="The high-level TCP library Python never had">
+        <meta name="description" content="Python TCP, without the boilerplate.">
       
       
       
@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -326,6 +326,44 @@
   
   
     <li class="md-tabs__item">
+      <a href="performance/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Performance
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
       <a href="changelog/" class="md-tabs__link">
         
   
@@ -495,10 +533,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#when-not-to-use-veltix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When NOT to use Veltix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#comparison" class="md-nav__link">
     <span class="md-ellipsis">
       
         Comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#in-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In Development
       
     </span>
   </a>
@@ -1439,6 +1499,60 @@
   
   
     <li class="md-nav__item">
+      <a href="performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="changelog/" class="md-nav__link">
         
   
@@ -1530,10 +1644,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#when-not-to-use-veltix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When NOT to use Veltix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#comparison" class="md-nav__link">
     <span class="md-ellipsis">
       
         Comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#in-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In Development
       
     </span>
   </a>
@@ -1571,6 +1707,12 @@
   
 
 
+<div class="admonition warning">
+<p class="admonition-title">Veltix does not encrypt anything</p>
+<p>Messages travel in plaintext over TCP: anyone on the network path can read or tamper with them.
+Built-in encryption (TLS) is planned for the end of 2026, possibly earlier. Until then, run Veltix
+over a trusted network (LAN, localhost) or tunnel it yourself (WireGuard, SSH, stunnel).</p>
+</div>
 <h1 id="veltix">Veltix<a class="headerlink" href="#veltix" title="Permanent link">&para;</a></h1>
 <blockquote>
 <p>Python TCP, without the boilerplate.</p>
@@ -1583,7 +1725,7 @@
 <p>Sync, thread-friendly, zero dependencies : TCP done right.
 Veltix handles framing, threading, handshake, routing, and reconnection
 so you can focus on your application logic.</p>
-<p><strong>Mature &amp; tested</strong> : 638 tests · CI on Python 3.11-3.14 · v3.0.0 Rust-powered hot path</p>
+<p><strong>Mature &amp; tested</strong> : 844 tests · CI on Python 3.11-3.14 · Rust-powered hot path</p>
 <hr />
 <h2 id="why-veltix">Why Veltix?<a class="headerlink" href="#why-veltix" title="Permanent link">&para;</a></h2>
 <p>I wrote Veltix because I got tired of rewriting the same networking boilerplate every time I needed two programs to talk
@@ -1630,10 +1772,11 @@ runtime dependencies.</p>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nd">@server</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">ECHO</span><span class="p">)</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">on_echo</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">ClientInfo</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">server</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">Request</span><span class="p">(</span><span class="n">ECHO</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">request_id</span><span class="p">),</span> <span class="n">client</span><span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">server</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">Request</span><span class="p">(</span><span class="n">ECHO</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">),</span> <span class="n">client</span><span class="p">)</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">server</span><span class="o">.</span><span class="n">wait_until_closed</span><span class="p">()</span>
 </code></pre></div>
 <p>No manual framing. No thread management. No boilerplate.</p>
 <hr />
@@ -1644,6 +1787,7 @@ runtime dependencies.</p>
 <li>Rust-powered hot path : framing / parse / compile in native Rust, automatic pure-Python fallback</li>
 <li>Binary protocol with CRC32 integrity verification</li>
 <li>Automatic JSON raw-socket handshake with version compatibility</li>
+<li>Structured event bus : subscribe to lifecycle, message, protocol, error, and reconnect events</li>
 <li>Thread-safe callback execution : slow handlers never block reception</li>
 </ul>
 <p><strong>API</strong></p>
@@ -1665,11 +1809,11 @@ runtime dependencies.</p>
 <p><strong>Developer Experience</strong></p>
 <ul>
 <li>Integrated logger : colorized, file-rotating, thread-safe</li>
-<li>638 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)</li>
+<li>844 tests, CI on Python 3.11 / 3.12 / 3.13 / 3.14 (Rust engine and pure-Python fallback)</li>
 </ul>
 <hr />
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
-<p><strong>Rust engine vs Python fallback (v3.0.0)</strong> - Python 3.14.7, 12-core CPU, 5-run averages:</p>
+<p><strong>Rust engine vs Python fallback (v3.2.0)</strong> - Python 3.14.8, 12-core CPU, 5-run averages:</p>
 <table>
 <thead>
 <tr>
@@ -1682,31 +1826,31 @@ runtime dependencies.</p>
 <tbody>
 <tr>
 <td>Concurrent stress (100 clients)</td>
-<td>137,995 msg/s</td>
-<td>106,486 msg/s</td>
-<td><strong>+30%</strong></td>
+<td>133,312 msg/s</td>
+<td>110,650 msg/s</td>
+<td><strong>+20%</strong></td>
 </tr>
 <tr>
 <td>Latency P99</td>
-<td>0.066 ms</td>
-<td>0.096 ms</td>
-<td><strong>-31%</strong></td>
+<td>0.086 ms</td>
+<td>0.116 ms</td>
+<td><strong>-26%</strong></td>
 </tr>
 <tr>
 <td>FPS 64 tick stdev</td>
-<td>0.175 ms</td>
-<td>0.343 ms</td>
-<td><strong>-49%</strong></td>
+<td>0.233 ms</td>
+<td>0.230 ms</td>
+<td>±0 (noise)</td>
 </tr>
 <tr>
 <td>Burst send</td>
-<td>71,376 msg/s</td>
-<td>59,408 msg/s</td>
-<td><strong>+20%</strong></td>
+<td>65,132 msg/s</td>
+<td>58,082 msg/s</td>
+<td><strong>+12%</strong></td>
 </tr>
 </tbody>
 </table>
-<p>Socket backends, pure-Python path (Python 3.14.7, 12-core CPU, 30.5 GB RAM, loopback):</p>
+<p>Socket backends, pure-Python path (Python 3.14.8, 12-core CPU, 30.5 GB RAM, loopback):</p>
 <table>
 <thead>
 <tr>
@@ -1718,27 +1862,38 @@ runtime dependencies.</p>
 <tbody>
 <tr>
 <td>Concurrent stress (100 clients)</td>
-<td>51,505 msg/s</td>
-<td><strong>108,084 msg/s (2.1x)</strong></td>
+<td>52,596 msg/s</td>
+<td><strong>110,216 msg/s (2.1x)</strong></td>
 </tr>
 <tr>
 <td>Burst send</td>
-<td>64,158 msg/s</td>
-<td>60,358 msg/s</td>
+<td>65,907 msg/s</td>
+<td>56,675 msg/s</td>
 </tr>
 <tr>
 <td>Average latency</td>
 <td>0.041 ms</td>
-<td>0.050 ms</td>
+<td>0.056 ms</td>
 </tr>
 <tr>
 <td>Idle server memory</td>
-<td>60.8 KB</td>
+<td>≈0 (noise)</td>
 <td>≈0 (noise floor)</td>
 </tr>
 </tbody>
 </table>
-<p>Full details : <a href="https://github.com/NytroxDev/Veltix/blob/main/PERFORMANCE.md">Performance</a></p>
+<p>Full details : <a href="performance/">Performance</a></p>
+<hr />
+<h2 id="when-not-to-use-veltix">When NOT to use Veltix<a class="headerlink" href="#when-not-to-use-veltix" title="Permanent link">&para;</a></h2>
+<p>Veltix is great for TCP, but not every problem is a TCP problem.</p>
+<ul>
+<li><strong>HTTP/REST APIs</strong> : use Flask, FastAPI, or Django REST Framework</li>
+<li><strong>Browser clients</strong> : Veltix speaks raw TCP, not WebSocket; use <code>websockets</code> or Socket.IO</li>
+<li><strong>Async-first codebases</strong> : Veltix is sync by design; use <code>asyncio</code> directly if your whole project is async</li>
+<li><strong>Ultra high throughput (&gt;100k msg/s per connection)</strong> : consider a compiled language for the hot path</li>
+<li><strong>Single request-response</strong> : if you just need to fetch something once, <code>requests</code> or <code>urllib</code> is simpler</li>
+</ul>
+<p>Everything else? Veltix has you covered.</p>
 <hr />
 <h2 id="comparison">Comparison<a class="headerlink" href="#comparison" title="Permanent link">&para;</a></h2>
 <table>
@@ -1863,6 +2018,17 @@ runtime dependencies.</p>
 <p>✓ Built-in &nbsp;&nbsp; ~ Possible but requires manual setup &nbsp;&nbsp; ✗ Not provided (you implement it yourself)</p>
 </blockquote>
 <hr />
+<h2 id="in-development">In Development<a class="headerlink" href="#in-development" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Encryption (TLS)</strong> : native transport encryption, planned for the end of 2026, possibly earlier.
+  Until then, Veltix runs in plaintext; see the warning at the top of this page.</li>
+<li><strong>Handshake hardening</strong> : more robust handshake handling, from per-step timeouts to cleaner version
+  negotiation and failure recovery.</li>
+<li><strong>Performance optimization</strong> : the remaining hot-path overhead, now that framing/parse/compile run in
+  Rust.</li>
+</ul>
+<p>Experiment work lands on dedicated branches and only merges once fully validated.</p>
+<hr />
 <h2 id="quick-links">Quick links<a class="headerlink" href="#quick-links" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="getting-started/installation/">Installation</a></li>
@@ -1871,9 +2037,13 @@ runtime dependencies.</p>
 <li><a href="guides/client/">Client Guide</a></li>
 <li><a href="guides/routing/">Routing</a></li>
 <li><a href="guides/reconnect/">Auto-Reconnect</a></li>
+<li><a href="guides/advanced/">Advanced features</a></li>
 <li><a href="guides/migration/">Migration Guide</a></li>
+<li><a href="design/request-id-correlation/">Request-ID Correlation</a></li>
 <li><a href="api/server/">API Reference</a></li>
 <li><a href="changelog/">Changelog</a></li>
+<li><a href="performance/">Performance</a></li>
+<li><a href="faq/">FAQ</a></li>
 <li><a href="https://github.com/NytroxDev/Veltix">GitHub</a></li>
 <li><a href="https://pypi.org/project/veltix">PyPI</a></li>
 <li><a href="https://discord.gg/gz8K369a6p">Discord</a></li>
@@ -1971,10 +2141,10 @@ runtime dependencies.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
