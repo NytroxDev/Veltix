@@ -1025,7 +1025,7 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 @server.route(CHAT)
 def on_chat(client: ClientInfo, response: Response) -> None:
     print(f"[{client.ip}] {response.text}")
-    server.broadcast(Request(CHAT, response.text), except_clients=[client])
+    server.broadcast(Request(CHAT, text=response.text), except_clients=[client])
 
 
 server.on_connect(lambda c: print(f"+ {c.addr}"))
@@ -1124,6 +1124,6 @@ def on_msg(client: ClientInfo, response: Response) -> None:
     if channel:
         targets = server.get_clients_by_tag("channel", channel)
         server.broadcast(
-            Request(CHANNEL_MSG, response.text), except_clients=[client]
+            Request(CHANNEL_MSG, text=response.text), except_clients=[client]
         )
 ```

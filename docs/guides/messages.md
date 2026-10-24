@@ -77,7 +77,7 @@ Use `Request.respond()` to copy the `request_id` from a received response for co
 ```python
 @server.route(ECHO)
 def on_echo(client, response):
-    reply = Request(ECHO, response.text)
+    reply = Request(ECHO, text=response.text)
     reply.respond(response)  # copies request_id from response
     server.send(reply, client)
 ```

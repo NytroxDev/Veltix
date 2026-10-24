@@ -162,7 +162,7 @@ server = Server(ServerConfig(host="0.0.0.0", port=8080))
 @server.route(CHAT)
 def on_message(client: ClientInfo, response: Response) -> None:
     print(f"[{client.ip}] {response.text}")
-    server.broadcast(Request(CHAT, response.text))
+    server.broadcast(Request(CHAT, text=response.text))
 
 
 server.start()
