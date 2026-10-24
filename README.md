@@ -20,7 +20,7 @@
 Sync, thread-friendly, zero dependencies: TCP done right. Veltix handles framing, threading, handshake, routing, and
 reconnection so you can focus on your application logic.
 
-**Mature & tested** - 844 tests · CI on Python 3.11-3.14 · Rust-powered hot path
+**Mature & tested** - 761 tests (plus 83 vendored Avyra tests) · CI on Python 3.11-3.14 · Rust-powered hot path
 
 ---
 
@@ -319,9 +319,9 @@ Everything else? Veltix has you covered.
 
 | Feature                | Veltix | `socket` | `asyncio` | Twisted |
 |------------------------|:------:|:--------:|:---------:|:-------:|
-| High-level API         |   ✓   |    ✗    |     ~     |   ✗    |
-| Zero dependencies      |   ✓   |    ✓    |    ✓     |   ✗    |
-| No async required      |   ✓   |    ✓    |    ✗     |   ✗    |
+| Explicit API           |   ✓   |    ✗    |     ✗     |     ✗    |
+| Sync API               |   ✓   |    ✓    |     ✗     |     ✗    |
+| No async required      |   ✓   |    ✓    |     ✗     |     ✗    |
 | Message framing        |   ✓   |    ✗    |    ✗     |    ~    |
 | Message integrity      |   ✓   |    ✗    |    ✗     |   ✗    |
 | Automatic handshake    |   ✓   |    ✗    |    ✗     |   ✗    |
