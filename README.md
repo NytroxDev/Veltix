@@ -42,6 +42,7 @@ reconnection so you can focus on your application logic.
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
+- [Links](#links)
 
 ---
 
@@ -240,7 +241,7 @@ enable_rust()  # re-enable the compiled Rust engine (when installed)
 
 ## Rust-powered hot path
 
-Veltix 3.0.0 introduces a Rust-powered hot path for message parsing, compilation, and buffering.
+Since v3.0.0, message parsing, compilation, and buffering run on a Rust-powered hot path.
 
 Benchmarks against the Python fallback:
 
