@@ -121,7 +121,7 @@ No manual framing. No thread management. No boilerplate.
 - **Message integrity**: CRC32 verification on every message
 - **Request/Response**: `send_and_wait()` with timeout and correlation
 - **Convenience send**: `server.send()` / `client.send()` : no need to touch `Sender` directly
-- **Content decoding**: `response.text` and `response.json` : lazy, cached, zero-copy
+- **Content decoding**: `response.text` and `response.json` : lazy, cached
 - **Text & JSON payloads**: `Request(MY_TYPE, text="hello")` / `Request(MY_TYPE, json={"x": 1})`
 - **Thread-safe callbacks**: slow handlers never block reception
 - **Client tagging**: attach metadata, broadcast to groups
