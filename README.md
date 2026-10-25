@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **Development is paused for a few months.** I am building a very large update, and it will land as a single
+> milestone. Until then, expect little to no activity in this repository: no new features, only the occasional fix.
+> The issue tracker stays open and v3.3.0 remains the current stable release.
+
 > [!WARNING]
 > **Veltix does not encrypt anything.** Messages travel in plaintext over TCP: anyone on the network path can read
 > or tamper with them. Built-in encryption (TLS) is planned for the end of 2026, possibly earlier. Until then, run
